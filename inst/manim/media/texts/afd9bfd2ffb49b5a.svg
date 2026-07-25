@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="854" height="480" viewBox="0 0 854 480">
+<defs>
+<image id="source-140" x="0" y="0" width="18" height="30" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAeCAYAAAAhDE4sAAAABmJLR0QA/wD/AP+gvaeTAAABOElEQVRIic3UP07DMBTH8e9LmTlBh0xICCJlYkFMPUDPgEBiYQH2kISBiYqRhQMwcoHubKBwAIYILsBI+hgCbZU/jp1IiDfa1sfPvziGvy6NQ1/T4KZt3rOWvOIWOB8E6VVwBkyN+3QiceijxF3rujuSrwdgs2vZhrGbMty9zs1MHWkSTIFjG8QIIVxjcSQjpElwB2zbIo2QJsEhwokLUoM0Dn2E1BWpd1Te3vEgyOb2wk/XDSXLSa94we4r5ai+rwT5lCiblBfSK+4tEYAxIuvHn606Snf2UW+r0mtKd15zibLJEmoqTXafEDH9HjmL0YHEz2/g8h7VduL0FxkCzeQye1wf6APNJcouqoOuUM5idNQ04QZVcukL1XLpAzXm4gq15uIGGXJZr/bHX+QD0Vii19Zc/nd9AxpKV6dpmu7qAAAAAElFTkSuQmCC"/>
+</defs>
+<use xlink:href="#source-140" transform="matrix(0.24, 0, 0, 0.24, 32.4, 19.2)"/>
+</svg>

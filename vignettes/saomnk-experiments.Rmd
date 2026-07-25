@@ -1,0 +1,278 @@
+---
+title: "Computational Experiments: Batch Simulation and Analysis"
+author: "Stephen Downing"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Computational Experiments: Batch Simulation and Analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+```{r load-saomnk, include=FALSE}
+if (requireNamespace("searchnet", quietly = TRUE)) {
+  library(searchnet)
+} else {
+  dir_r <- file.path(getwd(), "R")
+  if (!file.exists(file.path(dir_r, "utils.R")))
+    dir_r <- "D:/Search_networks/SaoMNK/R"
+  .saomnk_dir <- dir_r
+  .saomnk_dir <- dir_r; source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
+}
+
+library(Matrix)
+
+DV_NAME <- "self$bipartite_rsienaDV"
+```
+
+# Overview
+
+This vignette demonstrates how to design and execute computational experiments
+with `searchnet`. The package supports systematic variation of model parameters,
+batch simulation execution, and comparative analysis of search dynamics across
+experimental conditions.
+
+# 1. Experimental Design
+
+## 1.1 Parameter Space
+
+A typical `searchnet` experiment varies one or more parameters systematically:
+
+- **Environment size**: $M$ (actors), $N$ (components)
+- **Structural effects**: density, popularity (inPop), scope (outAct)
+- **Strategy heterogeneity**: actor covariate weights
+- **Epistasis structure**: block-diagonal, random, or empirical
+- **Shock timing and magnitude**: when and how parameters change
+
+```{r exp-design}
+## Define a small experimental grid
+experiment_grid <- expand.grid(
+  M = c(6, 12),
+  density = c(-0.3, -0.5, -1.0),
+  inPop = c(0, 0.2),
+  stringsAsFactors = FALSE
+)
+
+cat("Experimental conditions:", nrow(experiment_grid), "\n")
+print(experiment_grid)
+```
+
+## 1.2 Replication Strategy
+
+Each condition should be replicated with different random seeds to capture
+stochastic variation:
+
+```{r replication}
+n_replications <- 3
+seeds <- 1000 + seq_len(n_replications)
+
+## Full design: conditions x replications
+full_design <- merge(
+  experiment_grid,
+  data.frame(seed = seeds),
+  all = TRUE
+)
+cat("Total simulation runs:", nrow(full_design), "\n")
+```
+
+# 2. Running Experiments
+
+## 2.1 Single Condition
+
+```{r single-condition}
+N <- 12
+component_int_mat <- create_block_diag(N, round(N / 3))
+
+run_single_condition <- function(M, density_param, inPop_param,
+                                  seed, N = 12, steps_per_actor = 30) {
+  env <- SaomNkRSienaBiEnv$new(list(
+    M = M, N = N, BI_PROB = 0,
+    rand_seed = seed,
+    name = sprintf("_exp_M%d_d%.1f_", M, density_param)
+  ))
+
+  sm <- list(
+    dv_bipartite = list(
+      name = DV_NAME,
+      effects = list(
+        list(effect = "density", parameter = density_param,
+             dv_name = DV_NAME, fix = TRUE),
+        list(effect = "inPop", parameter = inPop_param,
+             dv_name = DV_NAME, fix = TRUE)
+      ),
+      coDyadCovars = list(
+        list(effect = "XWX", parameter = 0.1, dv_name = DV_NAME, fix = TRUE,
+             nodeSet = c("COMPONENTS", "COMPONENTS"),
+             interaction1 = "self$component_1_coDyadCovar",
+             x = component_int_mat[1:N, 1:N])
+      )
+    )
+  )
+
+  env$search_rsiena(
+    sm,
+    iterations = M * steps_per_actor,
+    run_seed = seed
+  )
+
+  env
+}
+```
+
+## 2.2 Batch Execution
+
+```{r batch-run}
+## Run a subset of conditions for demonstration
+demo_conditions <- experiment_grid[c(1, 3, 5), ]
+
+results <- list()
+for (i in seq_len(nrow(demo_conditions))) {
+  cond <- demo_conditions[i, ]
+  cat(sprintf("Running condition %d: M=%d, density=%.1f, inPop=%.1f\n",
+              i, cond$M, cond$density, cond$inPop))
+
+  env <- tryCatch(
+    run_single_condition(
+      M = cond$M,
+      density_param = cond$density,
+      inPop_param = cond$inPop,
+      seed = 12345,
+      N = 12,
+      steps_per_actor = 20
+    ),
+    error = function(e) {
+      cat("  Error:", e$message, "\n")
+      NULL
+    }
+  )
+
+  if (!is.null(env)) {
+    results[[i]] <- list(
+      condition = cond,
+      env = env,
+      final_step = env$get_step()
+    )
+  }
+}
+
+cat("\nCompleted:", sum(!sapply(results, is.null)), "/",
+    nrow(demo_conditions), "conditions\n")
+```
+
+# 3. Comparative Analysis
+
+## 3.1 Visual Comparison Across Conditions
+
+```{r compare-k4, fig.height=10, fig.width=10}
+for (i in seq_along(results)) {
+  if (!is.null(results[[i]])) {
+    cond <- results[[i]]$condition
+    cat(sprintf("\n--- M=%d, density=%.1f, inPop=%.1f ---\n",
+                cond$M, cond$density, cond$inPop))
+    results[[i]]$env$plot_degree_4panel(loess_span = 0.3)
+  }
+}
+```
+
+## 3.2 Extracting Summary Statistics
+
+```{r summary-stats}
+summary_df <- do.call(rbind, lapply(seq_along(results), function(i) {
+  if (is.null(results[[i]])) return(NULL)
+  env <- results[[i]]$env
+  cond <- results[[i]]$condition
+
+  ## Get final bipartite matrix
+  final_mat <- env$bi_env_arr[, , env$get_step()]
+
+  data.frame(
+    M = cond$M,
+    density_param = cond$density,
+    inPop_param = cond$inPop,
+    final_density = mean(final_mat),
+    mean_actor_scope = mean(rowSums(final_mat)),
+    mean_component_pop = mean(colSums(final_mat)),
+    n_steps = env$get_step(),
+    stringsAsFactors = FALSE
+  )
+}))
+
+if (!is.null(summary_df)) {
+  print(summary_df)
+}
+```
+
+# 4. Using the SaoMNKexperiments Class
+
+For larger-scale experiments, the `SaoMNKexperiments` class (in
+`saomnk-experiments.R`) provides:
+
+- Automated batch execution with progress tracking
+- Result aggregation across replications
+- Built-in visualization for experiment comparisons
+
+```{r experiments-class, eval=FALSE}
+## SaoMNKexperiments is exported by the package (or loaded via saomnk-loader.R above)
+
+## Create experiment
+exp <- SaoMNKexperiments$new(
+  environ_params = list(M = 6, N = 12, BI_PROB = 0, rand_seed = 42),
+  structure_model = sm,
+  batch_seeds = c(1001, 1002, 1003),
+  name = "density_experiment"
+)
+
+## Run all replications
+exp$run_batch(iterations_per_actor = 50)
+
+## Process and visualize results
+exp$process_results()
+```
+
+# 5. Design Considerations
+
+## 5.1 Environment Size
+
+- **Small** ($M \leq 6$, $N \leq 8$): fast iteration, good for debugging
+  and parameter exploration
+- **Medium** ($M \sim 12$, $N \sim 16$): realistic competitive dynamics,
+  suitable for publication-quality experiments
+- **Large** ($M \geq 18$, $N \geq 24$): computationally intensive, best
+  for robustness checks with cluster computing
+
+## 5.2 Iterations per Actor
+
+- **5--10**: minimal dynamics, good for unit testing
+- **30--50**: moderate dynamics, visible K-4 evolution
+- **100+**: convergence-scale dynamics, needed for equilibrium analysis
+
+## 5.3 Number of Replications
+
+For statistical inference, use $\geq 30$ replications per condition (Monte
+Carlo standard). The `mc30` experiment scripts in the package demonstrate
+this pattern.
+
+# References
+
+- Levinthal, D. A. (1997). Adaptation on rugged landscapes.
+  *Management Science*, 43(7), 934--950.
+- Snijders, T. A. B. (1996). Stochastic actor-oriented models for network
+  change. *Journal of Mathematical Sociology*, 21(1--2), 149--172.
+
+```{r session-info}
+sessionInfo()
+```

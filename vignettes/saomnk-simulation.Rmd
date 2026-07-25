@@ -1,0 +1,286 @@
+---
+title: "Simulation Walkthrough: Strategies, Fitness, and Exogenous Shocks"
+author: "Stephen Downing"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Simulation Walkthrough: Strategies, Fitness, and Shocks}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+```{r load-saomnk, include=FALSE}
+if (requireNamespace("searchnet", quietly = TRUE)) {
+  library(searchnet)
+} else {
+  dir_r <- file.path(getwd(), "R")
+  if (!file.exists(file.path(dir_r, "utils.R")))
+    dir_r <- "D:/Search_networks/SaoMNK/R"
+  .saomnk_dir <- dir_r
+  .saomnk_dir <- dir_r; source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
+}
+
+library(Matrix)
+
+DV_NAME <- "self$bipartite_rsienaDV"
+```
+
+# Overview
+
+This vignette demonstrates the full `searchnet` simulation workflow:
+
+1. Configuring a search environment with heterogeneous actor strategies
+2. Running multi-step simulations with fitness landscape computation
+3. Introducing exogenous shocks to the utility function
+4. Analyzing results through the K-4 degree framework
+
+# 1. Strategic Search with Heterogeneous Actors
+
+## 1.1 Environment with Strategy Covariates
+
+Actors can be assigned to different strategy groups using `coCovars`. Each
+strategy group has different weights on the network statistics in the objective
+function:
+
+```{r strategy-env}
+environ_params <- list(
+  M = 12,
+  N = 12,
+  BI_PROB = 0,
+  rand_seed = 1234,
+  name = "_strategy_demo_"
+)
+
+env <- SaomNkRSienaBiEnv$new(environ_params)
+
+## Define two strategy dimensions
+strategies <- list(
+  egoX   = c(-1, 0, 1),   # scope expansion preference
+  inPopX = c( 1, 0, -1)   # popularity-seeking preference
+)
+
+## Assign strategies cyclically across M actors
+actor_strats_list <- lapply(strategies, function(strat) {
+  rep(strat, length.out = environ_params$M)
+})
+
+## Component epistasis structure: 4 blocks of 3
+component_int_mat <- create_block_diag(environ_params$N,
+                                        round(environ_params$N / 3))
+
+## Random actor-component payoff matrix
+set.seed(12345)
+component_payoffs <- runif(environ_params$N, min = 0, max = 1)
+dyad_cov_X <- matrix(
+  runif(environ_params$N * environ_params$M, min = -0.5, max = 1),
+  nrow = environ_params$M
+)
+```
+
+## 1.2 Full Structure Model with Strategies and Interactions
+
+```{r strategy-model}
+structure_model <- list(
+  dv_bipartite = list(
+    name = DV_NAME,
+    effects = list(
+      list(effect = "density", parameter = -0.3, dv_name = DV_NAME, fix = TRUE),
+      list(effect = "inPop",   parameter =  0.2, dv_name = DV_NAME, fix = TRUE),
+      list(effect = "outAct",  parameter =  0.1, dv_name = DV_NAME, fix = TRUE)
+    ),
+    coCovars = list(
+      list(effect = "egoX", parameter = 0.2, dv_name = DV_NAME, fix = TRUE,
+           interaction1 = "self$strat_1_coCovar",
+           x = actor_strats_list[[1]]),
+      list(effect = "inPopX", parameter = 0.2, dv_name = DV_NAME, fix = TRUE,
+           interaction1 = "self$strat_2_coCovar",
+           x = actor_strats_list[[2]])
+    ),
+    varCovars = list(),
+    coDyadCovars = list(
+      list(effect = "XWX", parameter = 0.02, dv_name = DV_NAME, fix = TRUE,
+           nodeSet = c("COMPONENTS", "COMPONENTS"),
+           interaction1 = "self$component_1_coDyadCovar",
+           x = component_int_mat)
+    ),
+    varDyadCovars = list(),
+    interactions = list()
+  )
+)
+```
+
+## 1.3 Run Simulation
+
+```{r run-strategy-sim}
+steps_per_actor <- 30
+
+env$search_rsiena(
+  structure_model,
+  iterations = env$M * steps_per_actor,
+  run_seed = 12345
+)
+```
+
+## 1.4 Results
+
+```{r strategy-results, fig.height=5, fig.width=11}
+n_steps <- env$get_step()
+snapshot_ids <- unique(c(1, seq(10, n_steps, by = 10), n_steps))
+env$plot_snapshots(snapshot_ids)
+```
+
+```{r strategy-degrees, fig.height=6, fig.width=6.5}
+env$plot_actor_degrees(loess_span = 0.25)
+env$plot_component_degrees(loess_span = 0.35)
+```
+
+```{r strategy-utility, fig.height=6, fig.width=8}
+env$plot_actor_utility_strategy_summary(loess_span = 0.5)
+```
+
+# 2. Fitness Landscape Analysis
+
+The `compute_fitness_landscape` method evaluates the utility of all $2^N$
+counterfactual component configurations, revealing the shape of the fitness
+landscape:
+
+```{r fitness-landscape, eval=requireNamespace("psych", quietly=TRUE)}
+## Traditional NK-style landscape: random uniform payoffs
+env$compute_fitness_landscape(component_coCovar = NA)
+```
+
+# 3. Exogenous Shocks
+
+## 3.1 Baseline Without Shocks
+
+First, establish a baseline simulation without any shocks:
+
+```{r baseline-no-shocks}
+env_baseline <- SaomNkRSienaBiEnv$new(list(
+  M = 6, N = 8, BI_PROB = 0, rand_seed = 42, name = "_baseline_"
+))
+
+component_int_mat_small <- create_block_diag(8, 2)
+
+sm_baseline <- list(
+  dv_bipartite = list(
+    name = DV_NAME,
+    effects = list(
+      list(effect = "density", parameter = -0.5, dv_name = DV_NAME, fix = TRUE)
+    ),
+    coDyadCovars = list(
+      list(effect = "XWX", parameter = 0.5, dv_name = DV_NAME, fix = TRUE,
+           nodeSet = c("COMPONENTS", "COMPONENTS"),
+           interaction1 = "self$component_1_coDyadCovar",
+           x = component_int_mat_small)
+    )
+  )
+)
+
+env_baseline$search_rsiena(
+  sm_baseline,
+  iterations_per_actor = 100,
+  run_seed = 12345
+)
+```
+
+```{r baseline-plots, fig.height=10, fig.width=10}
+env_baseline$plot_degree_4panel(loess_span = 0.3)
+```
+
+## 3.2 Simulation with Exogenous Shocks
+
+`searchnet` supports `theta_shocks`---scheduled parameter changes that model
+exogenous shocks (regulatory changes, technology disruptions, market entries):
+
+```{r shock-sim}
+env_shocked <- SaomNkRSienaBiEnv$new(list(
+  M = 6, N = 8, BI_PROB = 0, rand_seed = 42, name = "_shocked_"
+))
+
+## Define a shock schedule using the effect_level format:
+## At the midpoint (portion 1), shift density from -0.5 to -2.0
+theta_shocks <- list(
+  list(
+    effect_level = c("density_dv_bipartite"),
+    new_parameter = c(-2.0),
+    portion = 1
+  )
+)
+
+shock_ok <- tryCatch({
+  env_shocked$search_rsiena(
+    sm_baseline,
+    iterations_per_actor = 100,
+    run_seed = 12345,
+    theta_shocks = theta_shocks
+  )
+  TRUE
+}, error = function(e) {
+  cat("Shock simulation note:", e$message, "\n")
+  FALSE
+})
+```
+
+```{r shock-plots, fig.height=10, fig.width=10}
+if (exists("shock_ok") && shock_ok) {
+  env_shocked$plot_degree_4panel(loess_span = 0.3)
+} else {
+  cat("Shock simulation did not complete; see note above.\n")
+  cat("The baseline K-4 panel (Section 3.1) demonstrates the core visualization.\n")
+}
+```
+
+The shock at step 300 creates a visible structural break in the K-4 degree
+trajectories, demonstrating how exogenous parameter changes propagate through
+the coupled search system.
+
+# 4. Multi-Wave Simulations
+
+For Monte Carlo analysis, use `search_rsiena_multiwave_run` to execute
+multiple independent simulation waves:
+
+```{r multiwave}
+env_multi <- SaomNkRSienaBiEnv$new(list(
+  M = 6, N = 8, BI_PROB = 0, rand_seed = 42, name = "_multiwave_"
+))
+
+tryCatch({
+  env_multi$search_rsiena_multiwave_run(
+    structure_model = sm_baseline,
+    n_waves = 2,              # small for vignette speed
+    iterations_per_actor = 20,
+    run_seed = 12345
+  )
+  cat("Multi-wave simulation complete:", env_multi$get_step(), "total steps\n")
+}, error = function(e) {
+  cat("Multi-wave note:", e$message, "\n")
+})
+```
+
+# References
+
+- Kauffman, S. A., & Weinberger, E. D. (1989). The NK model of rugged fitness
+  landscapes. *Journal of Theoretical Biology*, 141(2), 211--245.
+- Levinthal, D. A. (1997). Adaptation on rugged landscapes.
+  *Management Science*, 43(7), 934--950.
+- Snijders, T. A. B. (1996). Stochastic actor-oriented models for network
+  change. *Journal of Mathematical Sociology*, 21(1--2), 149--172.
+
+```{r session-info}
+sessionInfo()
+```

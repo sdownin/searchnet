@@ -1,0 +1,549 @@
+---
+title: "Basin Geometry and the Depth-Width Tradeoff in searchnet"
+author: "Stephen Downing"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Basin Geometry and Depth-Width Tradeoff}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE,
+  eval = FALSE,
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+# 1. Introduction
+
+An NK fitness landscape assigns a scalar fitness value to every binary
+configuration of $N$ components.  Think of a mountain range: each point on the
+terrain is a particular portfolio of strategic activities ($N$ binary choices),
+and the elevation at that point is the portfolio's fitness.  The ruggedness of
+the terrain---how many peaks there are and how jagged the ridges between
+them---is governed by $K$, the degree of epistatic interdependence among
+components (Kauffman, 1993).
+
+Firms navigate this terrain through local search: evaluating neighboring
+configurations that differ from the current position by a single component flip,
+and moving to any neighbor that offers strictly higher fitness.  Under this
+greedy improvement rule, every starting configuration eventually converges to
+some local peak---and the set of all configurations that converge to the same
+peak is that peak's **basin of attraction** (Levinthal, 1997).
+
+Basins of attraction are the fundamental structural units of a fitness
+landscape.  They partition the full $2^N$ configuration space into non-overlapping
+regions, each anchored by a local optimum.  The geometry of these basins---how
+deep they are, how wide they are, and how they reshape under shocks---connects
+directly to core concepts in strategic management: competitive moats (RBV),
+strategic flexibility, and the boundary between exploitation and exploration
+(dynamic capabilities).
+
+This vignette introduces the formal definitions of basin depth and width,
+demonstrates their computation in `searchnet`, and develops the depth-width
+tradeoff as an analytical lens for understanding how landscape complexity
+shapes competitive advantage.
+
+# 2. Computing the Fitness Landscape
+
+We begin by constructing an NK fitness landscape using `searchnet`'s
+`SaomNkRSienaBiEnv` class.  The `compute_fitness_landscape` method evaluates
+the utility of all $2^N$ counterfactual component configurations, producing a
+three-dimensional array with dimensions `[n_landscapes, 2^N, 2*N+2]`.
+
+The columns of the landscape array are organized as follows:
+
+- Columns `1:N` --- the binary configuration vector
+- Columns `(N+1):(2*N)` --- per-component fitness contributions
+- Column `2*N+1` --- total fitness (sum of per-component contributions)
+- Column `2*N+2` --- local peak indicator (1 if no single-flip neighbor has
+  strictly higher fitness, 0 otherwise)
+
+```{r compute-landscape}
+library(searchnet)
+
+# Create an 8-actor, 8-component environment
+env <- SaomNkRSienaBiEnv$new(list(M = 8, N = 8, BI_PROB = 0.4, rand_seed = 42))
+
+# Compute the fitness landscape (one replicate for exposition)
+env$compute_fitness_landscape(n_landscapes = 1)
+
+landscape <- env$fitness_landscape[1, , ]
+N <- 8
+configs  <- landscape[, 1:N]
+fitness  <- landscape[, 2 * N + 1]
+is_peak  <- landscape[, 2 * N + 2] == 1
+n_peaks  <- sum(is_peak)
+cat(sprintf("Landscape has %d local peaks out of %d configurations\n",
+            n_peaks, nrow(configs)))
+```
+
+The number of peaks increases with $K$: when $K = 0$ (no epistasis) there is a
+single global peak; when $K = N - 1$ (full epistasis) the landscape is maximally
+rugged, with the expected number of peaks scaling roughly as
+$2^N / (N + 1)$ (Kauffman, 1993).
+
+# 3. Basin Depth: The Competitive Moat
+
+## 3.1 Definition
+
+Basin depth measures the fitness gap between a peak and the worst-performing
+configuration in its basin:
+
+$$\text{Depth}(p) = F(p) - \min_{x \in B(p)} F(x)$$
+
+where $B(p)$ is the set of all configurations that converge to peak $p$ under
+greedy single-flip improvement.  Equivalently, depth can be defined relative to
+the basin boundary:
+
+$$\text{Depth}_{\partial}(p) = F(p) - \min_{x \in \partial B(p)} F(x)$$
+
+where $\partial B(p)$ is the set of configurations one Hamming flip from leaving
+basin $B(p)$.  Both formulations capture the same strategic intuition.
+
+## 3.2 Strategic Interpretation
+
+Depth is the formal analogue of a **competitive moat** in the resource-based
+view (RBV).  A deep basin means that partial imitation---adopting some but not
+all of a rival's activity choices---produces substantially lower fitness than
+the fully integrated configuration at the peak.  Competitors who approximate
+the peak strategy sit far below it on the fitness surface, making the
+incumbent's position difficult to replicate.
+
+Consider Apple's integrated ecosystem as an industry example.  Hardware design,
+proprietary silicon, operating system, and services are tightly coupled.
+Removing any single component---as Samsung does with a hardware-only
+approach---drops fitness significantly.  The basin surrounding Apple's peak
+configuration is deep: the moat is wide in fitness terms, even if relatively
+few alternative configurations converge to the same optimum.
+
+## 3.3 Computing Basin Depth
+
+To compute depth, we first assign every configuration to the basin of its
+nearest peak (by Hamming distance), then measure the fitness gap from peak to
+basin floor:
+
+```{r basin-assignment}
+# Hamming distance between two binary vectors
+hamming_dist <- function(a, b) sum(abs(a - b))
+
+peak_configs  <- configs[is_peak, , drop = FALSE]
+peak_fitness  <- fitness[is_peak]
+
+# Assign each configuration to the basin of its nearest peak
+assign_basin <- function(config, peaks) {
+  dists <- apply(peaks, 1, function(p) hamming_dist(config, p))
+  which.min(dists)
+}
+basin_ids <- apply(configs, 1, assign_basin, peaks = peak_configs)
+```
+
+```{r compute-depth}
+# Compute depth for each basin
+basin_depth <- numeric(length(peak_fitness))
+for (b in seq_along(peak_fitness)) {
+  members <- which(basin_ids == b)
+  if (length(members) > 1) {
+    basin_depth[b] <- peak_fitness[b] - min(fitness[members])
+  } else {
+    basin_depth[b] <- 0
+  }
+}
+
+cat(sprintf("Basin depths: %s\n",
+            paste(round(basin_depth, 3), collapse = ", ")))
+```
+
+# 4. Basin Width: Strategic Flexibility
+
+## 4.1 Definition
+
+Basin width captures the average Hamming distance from a basin's constituent
+configurations to its peak:
+
+$$\text{Width}(p) = \frac{1}{|B(p)|} \sum_{x \in B(p)} d_H(x, p)$$
+
+Width can also be measured simply as basin cardinality $|B(p)|$ (the number of
+configurations in the basin), but the mean-distance formulation carries more
+strategic content: it tells us not just *how many* paths converge to the peak,
+but *how different* they are from the peak configuration itself.
+
+## 4.2 Strategic Interpretation
+
+Width is the formal analogue of **strategic flexibility**.  A wide basin means
+that many distinct activity configurations---including some that look very
+different from the peak---nevertheless converge to the same local optimum
+through greedy improvement.  Organizations in wide basins can tolerate
+substantial deviation from the ideal configuration and still reach a
+high-fitness outcome.
+
+The contrast between McKinsey and a boutique consulting firm illustrates the
+concept.  McKinsey's peak admits many practice-area and geographic
+configurations that all converge to a viable general-management-consulting
+model: the basin is wide.  A boutique firm occupying a narrow niche---say,
+pharmaceutical regulatory strategy in the EU---has a peak that only a handful
+of very specific activity configurations can reach.  The basin is narrow:
+any deviation from the precise niche destroys the fitness advantage.
+
+## 4.3 Computing Basin Width
+
+```{r compute-width}
+# Mean Hamming distance from each basin's members to its peak
+basin_width <- numeric(length(peak_fitness))
+for (b in seq_along(peak_fitness)) {
+  members <- which(basin_ids == b)
+  member_configs <- configs[members, , drop = FALSE]
+  dists <- apply(member_configs, 1, function(x) hamming_dist(x, peak_configs[b, ]))
+  basin_width[b] <- mean(dists)
+}
+
+cat(sprintf("Basin widths: %s\n",
+            paste(round(basin_width, 3), collapse = ", ")))
+```
+
+# 5. The Depth-Width Tradeoff
+
+## 5.1 The Core Result
+
+As epistasis $K$ increases, the fitness landscape becomes more rugged: peaks
+proliferate, and each basin contracts.  This produces a fundamental tradeoff
+between depth and width:
+
+- **High $K$** $\rightarrow$ deep, narrow basins $\rightarrow$ strong moats but
+  low flexibility (the **exploitation trap**)
+- **Low $K$** $\rightarrow$ shallow, wide basins $\rightarrow$ weak moats but
+  high flexibility
+
+The scaling relationships are:
+
+$$E[\text{Depth}] \propto K/N, \quad E[\text{Width}] \propto N/K$$
+
+High-epistasis environments (e.g., technology platforms with many tightly coupled
+subsystems) produce landscapes where a firm that finds a good configuration
+enjoys a deep moat---but sits in a narrow basin that leaves little room for
+strategic adjustment when the landscape shifts.  Low-epistasis environments
+(e.g., regulated utilities with modular, substitutable assets) produce shallow
+basins that offer minimal competitive protection but permit easy reconfiguration.
+
+## 5.2 Visualization
+
+The depth-width scatterplot provides a diagnostic view of the tradeoff across
+all basins in a landscape:
+
+```{r depth-width-plot, fig.width=7, fig.height=6}
+# Publication-quality depth-width scatterplot
+par(mar = c(5, 5, 3, 2))
+plot(basin_width, basin_depth,
+     pch = 19, cex = 2,
+     col = adjustcolor("steelblue", 0.7),
+     xlab = "Basin Width (mean Hamming distance from peak)",
+     ylab = "Basin Depth (fitness gap to basin floor)",
+     main = "Depth-Width Tradeoff in NK Landscape Basins",
+     cex.lab = 1.2, cex.axis = 1.1)
+abline(a = 0, b = 1, lty = 2, col = "gray50")
+
+# Annotate strategic regions
+text(max(basin_width) * 0.2, max(basin_depth) * 0.9,
+     "Strong VRIO\nLow DC", cex = 0.9, col = "gray40")
+text(max(basin_width) * 0.8, max(basin_depth) * 0.1,
+     "Weak VRIO\nHigh DC", cex = 0.9, col = "gray40")
+
+legend("topright",
+       legend = sprintf("Peak %d (F=%.2f)", seq_along(peak_fitness), peak_fitness),
+       pch = 19, col = "steelblue", cex = 0.8)
+```
+
+The upper-left quadrant (deep, narrow) corresponds to strong VRIO-based
+competitive advantage with limited dynamic capabilities---the classic
+exploitation position.  The lower-right quadrant (shallow, wide) corresponds to
+weak moats but high strategic flexibility---the exploration-ready position.
+
+## 5.3 Industry Implications
+
+The tradeoff connects directly to patterns of disruption.  Technology firms
+(high $K$) occupy deep narrow basins.  When the landscape shifts---as it did
+with the smartphone revolution for Nokia, or with streaming for Blockbuster---
+firms in deep narrow basins lack the flexibility to reconfigure.  Their moat
+was real, but it was a moat around a position that the landscape eroded away.
+
+Utilities and commodities firms (low $K$) occupy shallow wide basins.  Their
+advantage is never dramatic, but they can absorb regulatory changes and
+technology shifts without existential risk.  The cost of low epistasis is that
+no configuration is dramatically better than its neighbors.
+
+# 6. Landscape Erosion Under Shocks
+
+## 6.1 Definition
+
+When an exogenous shock modifies the epistasis structure---changing the matrix
+$W$ that governs component interdependencies---basin geometry reshapes.  We
+define **erosion** as the change in basin depth:
+
+$$\text{Erosion}(p) = \text{Depth}_{W_0}(p) - \text{Depth}_{W_1}(p)$$
+
+where $W_0$ and $W_1$ are the pre-shock and post-shock epistasis matrices.
+Positive erosion means the moat has weakened; negative erosion means the shock
+has deepened the basin (rare but possible when the shock reinforces existing
+complementarities).
+
+## 6.2 Strategic Interpretation
+
+Erosion formalizes the destruction of competitive advantage through
+environmental change.  Blockbuster's basin in the pre-streaming landscape was
+deep: physical inventory management, store location optimization, and
+late-fee revenue were tightly coupled in a configuration that resisted partial
+imitation.  The streaming shock fundamentally altered the $W$-matrix, converting
+positive complementarities (physical inventory $\times$ store location) into
+negative ones.  The basin did not merely become shallower---it disappeared
+entirely, with Blockbuster's former peak becoming a valley in the new landscape.
+
+## 6.3 Computing Erosion in searchnet
+
+In `searchnet`, shocks are implemented as changes to the `coDyadCovars`
+specification in the structure model.  To compute erosion, we evaluate the
+fitness landscape under both the pre-shock and post-shock epistasis matrices:
+
+```{r erosion-setup}
+# Pre-shock environment with high epistasis
+env_pre <- SaomNkRSienaBiEnv$new(list(M = 8, N = 8, BI_PROB = 0.4, rand_seed = 42))
+
+# Dense epistasis matrix (high K)
+W_high <- create_block_diag(8, 4)
+
+structure_model_pre <- list(
+  dv_bipartite = list(
+    name = "self$bipartite_rsienaDV",
+    effects = list(
+      list(effect = "density", parameter = -0.6,
+           dv_name = "self$bipartite_rsienaDV", fix = TRUE)
+    ),
+    coDyadCovars = list(
+      list(effect = "XWX", parameter = 0.3,
+           dv_name = "self$bipartite_rsienaDV", fix = TRUE,
+           nodeSet = c("COMPONENTS", "COMPONENTS"),
+           interaction1 = "self$component_1_coDyadCovar",
+           x = W_high)
+    )
+  )
+)
+
+# Post-shock: sparser epistasis (some complementarities destroyed)
+W_low <- create_block_diag(8, 2)
+
+structure_model_post <- list(
+  dv_bipartite = list(
+    name = "self$bipartite_rsienaDV",
+    effects = list(
+      list(effect = "density", parameter = -0.6,
+           dv_name = "self$bipartite_rsienaDV", fix = TRUE)
+    ),
+    coDyadCovars = list(
+      list(effect = "XWX", parameter = 0.3,
+           dv_name = "self$bipartite_rsienaDV", fix = TRUE,
+           nodeSet = c("COMPONENTS", "COMPONENTS"),
+           interaction1 = "self$component_1_coDyadCovar",
+           x = W_low)
+    )
+  )
+)
+```
+
+```{r erosion-compute}
+# Compute landscapes under both regimes
+env_pre$compute_fitness_landscape(n_landscapes = 1)
+landscape_pre <- env_pre$fitness_landscape[1, , ]
+
+env_post <- SaomNkRSienaBiEnv$new(list(M = 8, N = 8, BI_PROB = 0.4, rand_seed = 42))
+env_post$compute_fitness_landscape(n_landscapes = 1)
+landscape_post <- env_post$fitness_landscape[1, , ]
+
+# Extract fitness and peak indicators
+fitness_pre  <- landscape_pre[, 2 * N + 1]
+is_peak_pre  <- landscape_pre[, 2 * N + 2] == 1
+
+fitness_post <- landscape_post[, 2 * N + 1]
+is_peak_post <- landscape_post[, 2 * N + 2] == 1
+
+# Compute basin depth under both regimes for pre-shock peaks
+peak_configs_pre <- configs[is_peak_pre, , drop = FALSE]
+peak_fitness_pre <- fitness_pre[is_peak_pre]
+
+basin_ids_pre  <- apply(configs, 1, assign_basin, peaks = peak_configs_pre)
+basin_ids_post <- apply(configs, 1, assign_basin, peaks = peak_configs_pre)
+
+depth_pre  <- numeric(length(peak_fitness_pre))
+depth_post <- numeric(length(peak_fitness_pre))
+for (b in seq_along(peak_fitness_pre)) {
+  members_pre  <- which(basin_ids_pre == b)
+  members_post <- which(basin_ids_post == b)
+  if (length(members_pre) > 1)
+    depth_pre[b]  <- peak_fitness_pre[b] - min(fitness_pre[members_pre])
+  if (length(members_post) > 1)
+    depth_post[b] <- fitness_post[is_peak_pre][b] - min(fitness_post[members_post])
+}
+
+erosion <- depth_pre - depth_post
+cat(sprintf("Mean VRIO erosion: %.3f\n", mean(erosion)))
+cat(sprintf("Max erosion:       %.3f (Peak %d)\n", max(erosion), which.max(erosion)))
+```
+
+# 7. RBV to Dynamic Capabilities: When to Jump
+
+The depth-width tradeoff provides a formal criterion for the boundary between
+exploitation and exploration.  An organization should switch from **exploitation**
+(deepening its current basin through incremental refinement) to **exploration**
+(jumping to a new basin) when the rate of erosion exceeds the marginal returns
+to continued exploitation:
+
+$$\frac{d(\text{Depth})}{dt} < -\frac{\text{marginal fitness gain from exploitation}}{\text{remaining exploitation horizon}}$$
+
+This inequality says: if the moat is eroding faster than the firm can deepen it
+through incremental improvement, the rational strategy is to abandon the current
+peak and search for a new one.  In strategy terms, this is the transition from
+RBV-style competitive advantage to dynamic-capabilities-style reconfiguration
+(Teece, Pisano, & Shuen, 1997).
+
+IBM illustrates the pattern across three landscape shifts.  In the mainframe
+era, IBM occupied a deep basin with strong complementarities among hardware
+manufacturing, proprietary architecture, and maintenance contracts.  When
+commoditization eroded that basin, IBM jumped to IT services---a new peak in
+a reshaped landscape.  When cloud computing eroded the services basin, IBM
+jumped again.  Each transition was a basin-to-basin leap triggered by erosion
+exceeding the returns to exploitation.
+
+The formal criterion can be computed in `searchnet` by tracking basin depth
+across simulation steps in a `theta_shocks` schedule and comparing the depth
+trajectory to the within-basin fitness improvement rate.
+
+# 8. Worked Example: AMR Industrial Policy
+
+The American Management Review industrial policy templates in `searchnet`
+parameterize four archetypal policy interventions for a $M = 20$ actor,
+$N = 16$ component environment.  Each policy type reshapes basins in a
+characteristic way.
+
+## 8.1 Policy Types and Basin Effects
+
+**P1 (Subsidy):** Increases the cost of density (raises the negative density
+parameter), making it more expensive for firms to hold many components
+simultaneously.  This *narrows* basins by contracting the set of viable
+configurations around each peak.  Firms must be more precise in their
+component choices.
+
+**P2 (Grant):** Reduces the cost of density (makes the density parameter less
+negative), allowing firms to hold broader portfolios.  This *widens* basins
+by expanding the viable configuration space.  More paths converge to each
+peak.
+
+**P3 (Tax Concession):** Strengthens epistatic complementarities (increases the
+XWX parameter on the $W$-matrix), making tightly coupled activity bundles more
+valuable.  This *deepens* basins by increasing the fitness gap between
+well-integrated configurations and their partial-imitation neighbors.
+
+**P4 (Guarantee):** Simultaneously modifies both density costs and epistatic
+weights, producing a **complex reshaping** of basin geometry.  Some basins
+deepen and narrow; others widen and grow shallower.  The net effect depends on
+the interaction between the density and epistasis parameter shifts.
+
+## 8.2 Comparative Statics
+
+```{r amr-policy-setup}
+# AMR template environment
+env_amr <- SaomNkRSienaBiEnv$new(list(
+  M = 20, N = 16, BI_PROB = 0, rand_seed = 42, name = "_amr_policy_"
+))
+
+DV_NAME <- "self$bipartite_rsienaDV"
+
+# Epistasis structure: 4 modules of 4 components each
+W_amr <- create_block_diag(16, 4)
+
+# Baseline structure model
+sm_baseline_amr <- list(
+  dv_bipartite = list(
+    name = DV_NAME,
+    effects = list(
+      list(effect = "density", parameter = -0.5, dv_name = DV_NAME, fix = TRUE),
+      list(effect = "inPop",   parameter =  0.2, dv_name = DV_NAME, fix = TRUE)
+    ),
+    coDyadCovars = list(
+      list(effect = "XWX", parameter = 0.1, dv_name = DV_NAME, fix = TRUE,
+           nodeSet = c("COMPONENTS", "COMPONENTS"),
+           interaction1 = "self$component_1_coDyadCovar",
+           x = W_amr)
+    )
+  )
+)
+
+# P1 (Subsidy): higher density cost
+sm_p1 <- sm_baseline_amr
+sm_p1$dv_bipartite$effects[[1]]$parameter <- -1.0
+
+# P2 (Grant): lower density cost
+sm_p2 <- sm_baseline_amr
+sm_p2$dv_bipartite$effects[[1]]$parameter <- -0.2
+
+# P3 (Tax Concession): stronger epistasis
+sm_p3 <- sm_baseline_amr
+sm_p3$dv_bipartite$coDyadCovars[[1]]$parameter <- 0.3
+
+# P4 (Guarantee): both density and epistasis change
+sm_p4 <- sm_baseline_amr
+sm_p4$dv_bipartite$effects[[1]]$parameter <- -0.3
+sm_p4$dv_bipartite$coDyadCovars[[1]]$parameter <- 0.2
+```
+
+The comparative statics can then be visualized as shifts in the depth-width
+scatter: P1 moves the cloud leftward (narrowing), P2 moves it rightward
+(widening), P3 moves it upward (deepening), and P4 produces a diagonal shift
+whose direction depends on the relative magnitude of the density and epistasis
+changes.
+
+This framework gives policymakers a formal language for predicting how
+interventions reshape competitive dynamics, moving beyond simple notions of
+"promoting competition" or "protecting incumbents" to a geometric
+characterization of how the full basin structure responds.
+
+# 9. Summary
+
+Basin geometry provides a rigorous formal language for core concepts in
+strategic management:
+
+| Concept               | Basin Measure      | Strategic Meaning             |
+|:----------------------|:-------------------|:------------------------------|
+| Competitive moat      | Depth              | Fitness gap to partial imitators |
+| Strategic flexibility | Width              | Variety of convergent paths   |
+| Disruption            | Erosion            | Depth loss under $W$-shock    |
+| DC boundary           | Erosion rate       | When to jump basins           |
+| Policy effect         | $\Delta$(Depth, Width) | How interventions reshape competition |
+
+The `searchnet` package makes these measures computable from first principles,
+grounding the verbal theory of competitive advantage in the formal mathematics
+of fitness landscape geometry.
+
+# References
+
+- Kauffman, S. A. (1993). *The Origins of Order: Self-Organization and
+  Selection in Evolution*. Oxford University Press.
+- Levinthal, D. A. (1997). Adaptation on rugged landscapes.
+  *Management Science*, 43(7), 934--950.
+- Rivkin, J. W. (2000). Imitation of complex strategies.
+  *Management Science*, 46(6), 824--844.
+- Siggelkow, N. (2002). Evolution toward fit. *Administrative Science
+  Quarterly*, 47(1), 125--159.
+- Teece, D. J., Pisano, G., & Shuen, A. (1997). Dynamic capabilities and
+  strategic management. *Strategic Management Journal*, 18(7), 509--533.
+
+```{r session-info, eval=TRUE}
+sessionInfo()
+```

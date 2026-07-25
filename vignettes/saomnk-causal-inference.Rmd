@@ -1,0 +1,315 @@
+---
+title: "Causal Inference with searchnet: DID, Synthetic Control, and Regression Discontinuity"
+author: "Stephen Downing"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Causal Inference with searchnet: DID, Synthetic Control, and RD}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+```{r load-saomnk, include=FALSE}
+if (requireNamespace("searchnet", quietly = TRUE)) {
+  library(searchnet)
+} else {
+  dir_r <- file.path(getwd(), "R")
+  if (!file.exists(file.path(dir_r, "utils.R")))
+    dir_r <- "D:/Search_networks/SaoMNK/R"
+  .saomnk_dir <- dir_r
+  .saomnk_dir <- dir_r; source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
+  source(file.path(dir_r, "searchnet-causal.R"))
+}
+
+library(ggplot2)
+
+DV_NAME <- "self$bipartite_rsienaDV"
+```
+
+# 1. Overview: Theta Shocks as Natural Experiments
+
+Searchnet's `theta_shocks` mechanism changes the parameters of the SAOM
+objective function at a designated simulation step.
+Before the shock, actors search and adapt under one parameter regime
+(baseline); after the shock, the rules change---a parameter is strengthened,
+weakened, or reversed.
+
+This creates a **natural experiment within the simulation**:
+
+- **Treatment onset** is the `shock_step` (the boundary between regimes).
+- **Treated actors** can be all actors (aggregate shock) or a designated
+  subset (heterogeneous shock via strategy groups).
+- **Control actors** are those unaffected by the parameter change, or a
+  comparison simulation run without the shock.
+
+The `actor_util_df` and K-4 trajectory data (`K_AC_df`, `K_CA_df`,
+`K_AA_df`, `K_CC_df`) are panel data indexed by `(actor_id, chain_step_id)`.
+This panel structure maps directly to three causal inference designs:
+
+| Design | Package | When to use |
+|--------|---------|-------------|
+| Difference-in-Differences | `did` | Multiple treated and control actors with staggered or common treatment timing |
+| Synthetic Control | `Synth` | Single treated actor (or small group); construct a data-driven counterfactual from control actors |
+| Regression Discontinuity | `rdrobust` | Sharp change at the shock step; estimate the local treatment effect at the discontinuity |
+
+# 2. Setting Up a Shocked Simulation
+
+We use a small environment (M=6 actors, N=8 components) with a two-phase
+shock design: the first half of the simulation runs under a baseline density
+parameter, and the second half runs under a shocked (more negative) density.
+
+```{r sim-setup}
+set.seed(2026)
+env <- saomnk_env(M = 6, N = 8, seed = 42)
+
+K <- saomnk_block_diagonal(8, 2)
+
+mod <- saomnk_model(
+  density  = -0.5,
+  popularity = 0.15,
+  epistasis_matrix = K
+)
+
+# Two-phase shock: baseline (portion=1) then shocked (portion=1)
+s_baseline <- saomnk_shock("density", parameter = -0.5, portion = 1)
+s_shocked  <- saomnk_shock("density", parameter = -2.0, portion = 1)
+
+saomnk_run(env, mod, steps_per_actor = 20, seed = 12345,
+           shocks = list(s_baseline, s_shocked))
+```
+
+The shock divides the simulation roughly in half.  We compute the shock step
+as half the total number of steps:
+
+```{r shock-step}
+total_steps <- max(env$actor_util_df$chain_step_id)
+shock_step  <- round(total_steps / 2)
+cat("Total steps:", total_steps, "\nShock step:", shock_step, "\n")
+```
+
+
+# 3. Difference-in-Differences Example
+
+DID requires both treated and control actors.  In this design, we designate
+actors 1--3 as "treated" (most affected by the density shock because of
+their initial positions) and actors 4--6 as controls.
+
+```{r did-panel}
+panel_did <- searchnet_causal_panel(
+  env,
+  shock_step     = shock_step,
+  outcome        = "utility",
+  treated_actors = c(1, 2, 3)
+)
+
+head(panel_did)
+cat("\nPanel dimensions:", nrow(panel_did), "rows x", ncol(panel_did), "cols\n")
+cat("Treated actors:", sum(panel_did$treated == 1) / length(unique(panel_did$step)),
+    "\nControl actors:", sum(panel_did$treated == 0) / length(unique(panel_did$step)), "\n")
+```
+
+Now we run the Callaway & Sant'Anna (2021) estimator:
+
+```{r did-estimate}
+if (requireNamespace("did", quietly = TRUE)) {
+  tryCatch({
+    att <- searchnet_did(panel_did)
+    summary(att)
+  }, error = function(e) {
+    message("DID estimation encountered an issue: ", e$message)
+  })
+} else {
+  message("Package 'did' not installed. Install with: install.packages('did')")
+}
+```
+
+The event study plot shows the dynamic treatment effect over time:
+
+```{r did-plot, fig.cap="Event study plot from DID estimation"}
+if (requireNamespace("did", quietly = TRUE)) {
+  tryCatch({
+    att <- searchnet_did(panel_did)
+    p <- searchnet_causal_plot(att, type = "did")
+    print(p)
+  }, error = function(e) {
+    message("DID plot skipped: ", e$message)
+  })
+} else {
+  message("Skipping DID plot (package 'did' not installed)")
+}
+```
+
+
+# 4. Synthetic Control Example
+
+Synthetic control is ideal when a single actor (or a small group) is treated
+and we want to construct a data-driven counterfactual from the remaining
+control actors.  Here we treat actor 1 as the sole treated unit:
+
+```{r synth-panel}
+panel_sc <- searchnet_causal_panel(
+  env,
+  shock_step     = shock_step,
+  outcome        = "utility",
+  treated_actors = c(1)
+)
+
+cat("Treated unit: actor 1\n")
+cat("Control units:", paste(setdiff(unique(panel_sc$actor_id[panel_sc$treated == 0]),
+                                     character(0)), collapse = ", "), "\n")
+```
+
+Run the synthetic control estimator:
+
+```{r synth-estimate}
+if (requireNamespace("Synth", quietly = TRUE)) {
+  tryCatch({
+    sc_result <- searchnet_synth(
+      panel_sc,
+      treated_unit = 1
+    )
+    cat("Synthetic control weights:\n")
+    print(round(sc_result$synth_out$solution.w, 3))
+    cat("\nPre-treatment MSPE:",
+        mean(sc_result$gap$gap[sc_result$gap$step < shock_step]^2), "\n")
+  }, error = function(e) {
+    message("Synthetic control encountered an issue: ", e$message)
+  })
+} else {
+  message("Package 'Synth' not installed. Install with: install.packages('Synth')")
+}
+```
+
+Plot the treated vs. synthetic control trajectory:
+
+```{r synth-plot, fig.cap="Treated actor vs. synthetic counterfactual"}
+if (requireNamespace("Synth", quietly = TRUE)) {
+  tryCatch({
+    sc_result <- searchnet_synth(panel_sc, treated_unit = 1)
+    p <- searchnet_causal_plot(sc_result, type = "synth")
+    print(p)
+  }, error = function(e) {
+    message("Synth plot skipped: ", e$message)
+  })
+} else {
+  message("Skipping Synth plot (package 'Synth' not installed)")
+}
+```
+
+
+# 5. Regression Discontinuity Example
+
+The RD design treats the shock step as a sharp cutoff in a continuous running
+variable (the simulation step).  The local polynomial estimator from
+`rdrobust` identifies the causal effect at the boundary by comparing the
+outcome just before and just after the shock.
+
+This design works well when all actors are treated simultaneously and we
+want to estimate the immediate local effect of the parameter change:
+
+```{r rd-panel}
+panel_rd <- searchnet_causal_panel(
+  env,
+  shock_step = shock_step,
+  outcome    = "utility"
+)
+
+cat("RD panel: all actors treated at step", shock_step, "\n")
+cat("Pre-treatment steps:", sum(unique(panel_rd$step) < shock_step), "\n")
+cat("Post-treatment steps:", sum(unique(panel_rd$step) >= shock_step), "\n")
+```
+
+Run the RD estimator:
+
+```{r rd-estimate}
+if (requireNamespace("rdrobust", quietly = TRUE)) {
+  tryCatch({
+    rd_result <- searchnet_rd(panel_rd)
+    summary(rd_result$rd)
+  }, error = function(e) {
+    message("RD estimation encountered an issue: ", e$message)
+  })
+} else {
+  message("Package 'rdrobust' not installed. Install with: install.packages('rdrobust')")
+}
+```
+
+Plot the RD with pre- and post-treatment fitted curves:
+
+```{r rd-plot, fig.cap="Regression discontinuity at the shock step"}
+if (requireNamespace("rdrobust", quietly = TRUE)) {
+  tryCatch({
+    rd_result <- searchnet_rd(panel_rd)
+    p <- searchnet_causal_plot(rd_result, type = "rd")
+    print(p)
+  }, error = function(e) {
+    message("RD plot skipped: ", e$message)
+  })
+} else {
+  message("Skipping RD plot (package 'rdrobust' not installed)")
+}
+```
+
+
+# 6. Using K-4 Outcomes
+
+All three methods work with any of the K-4 coupled degree trajectories,
+not just utility.  For example, to analyze the effect of the shock on
+actor scope (K_AC):
+
+```{r k4-example}
+panel_kac <- searchnet_causal_panel(
+  env,
+  shock_step     = shock_step,
+  outcome        = "K_AC",
+  treated_actors = c(1, 2, 3)
+)
+
+cat("K_AC panel dimensions:", nrow(panel_kac), "x", ncol(panel_kac), "\n")
+head(panel_kac)
+```
+
+This panel can be passed to any of `searchnet_did()`, `searchnet_synth()`,
+or `searchnet_rd()` in the same way as the utility panels above.
+
+
+# 7. Comparison: When to Use Which Method
+
+| Criterion | DID | Synthetic Control | RD |
+|-----------|-----|-------------------|-----|
+| **Number of treated units** | Multiple | One (or few) | Any |
+| **Requires control group** | Yes | Yes | No |
+| **Parallel trends assumption** | Required | Relaxed (data-driven weights) | Not needed |
+| **Estimates** | ATT over all post-periods | Counterfactual trajectory | Local effect at cutoff |
+| **Best for** | Comparing strategy groups | Single-actor counterfactual | Immediate shock impact |
+| **searchnet use case** | Strategy group A shocked, B unshocked | One actor's parameter changed | Aggregate shock to all actors |
+
+**Practical guidance:**
+
+- **DID** is the natural choice when `theta_shocks` differentially affect
+  actor subgroups (e.g., one strategy group's density parameter is shocked
+  while another's is held constant).  The `did` package handles staggered
+  treatment timing if shocks arrive at different steps for different groups.
+
+- **Synthetic control** excels when a single actor experiences a unique
+  shock.  The method constructs an optimal weighted combination of control
+  actors that matches the treated actor's pre-shock trajectory.
+
+- **RD** is appropriate when the shock affects everyone simultaneously and
+  the researcher wants to estimate the immediate local effect at the
+  discontinuity.  It requires no explicit control group but estimates only
+  the effect at the boundary, not the full post-treatment path.

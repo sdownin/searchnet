@@ -1,0 +1,72 @@
+Package: searchnet
+Title: Network-Embedded Search Simulation Engine
+Version: 0.2.0
+Authors@R: person("Stephen", "Downing", email = "sdowning@missouri.edu",
+                  role = c("aut", "cre"))
+Description: R6-based simulation engine for strategic search and adaptation
+    on NK fitness landscapes embedded in social networks. Uses RSiena's
+    Stochastic Actor-Oriented Model methodology to represent firm activity
+    systems as bipartite actor-component networks with endogenous feedback
+    loops, coupled degree distributions (K4), and shock/intervention analysis
+    via difference-in-differences. Theorem 5 (Brock & Durlauf 2001 recovery)
+    establishes that the canonical economic discrete-choice-with-social-
+    interactions model is contained as a degenerate special case in the
+    many-actor mean-field limit, complementing Theorem 1 (NK reduction in the
+    single-actor greedy limit). Formerly known as SaoMNK.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: false
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+Depends:
+    R (>= 4.1.0)
+Imports:
+    R6,
+    RSiena,
+    igraph,
+    network,
+    Matrix,
+    visNetwork,
+    plyr,
+    dplyr,
+    tidyr,
+    reshape2,
+    ggplot2,
+    grid,
+    gridExtra,
+    cowplot,
+    ggraph,
+    ggpubr,
+    texreg,
+    uuid,
+    stringr,
+    scales,
+    RColorBrewer,
+    knitr,
+    data.table,
+    jsonlite
+Suggests:
+    psych,
+    did,
+    Synth,
+    rdrobust,
+    MatchIt,
+    rvest,
+    xml2,
+    shiny,
+    shinydashboard,
+    plumber,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    DT,
+    kableExtra,
+    ggforce,
+    gganimate,
+    plotly,
+    gifski,
+    patchwork,
+    fixest,
+    forcats,
+    broom
+VignetteBuilder: knitr
+Config/testthat/edition: 3

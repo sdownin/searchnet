@@ -1,0 +1,91 @@
+# --- Directories to exclude from package root ---
+^_test_txt$
+^_test_txt/
+^simulation_cache$
+^simulations$
+^paper$
+^docs$
+^doc$
+^Python$
+^fixgrid6$
+
+# --- Everything in R/ that is NOT a top-level .R file ---
+# Subdirectories in R/
+^R/_dev_prev$
+^R/_dev_prev/
+^R/_dev$
+^R/_dev/
+^R/SAOM_NK_tutorial_notebook_files
+^R/SaoMNK_tutorial_4_shocks_sequential_SHORT_TUTORIAL_files
+^R/smj_saomnk_4-2_Repositioning_files
+^R/smj_saomnk_5_experiment_simEgoInDist2-neg5_M6_files
+^R/smj_saomnk_5$
+^R/saomnk_smj_illustrations_innov_shock_entropy_inPop_moderation
+^R/survfitfix1$
+
+# Non-.R files in R/ by extension
+^R/.*\.Rmd$
+^R/.*\.html$
+^R/.*\.nb\.html$
+^R/.*\.png$
+^R/.*\.jpeg$
+^R/.*\.jpg$
+^R/.*\.gif$
+^R/.*\.log$
+^R/.*\.txt$
+^R/.*\.rds$
+^R/.*\.docx$
+^R/.*\.csv$
+^R/.*\.RData$
+^R/Rplot.*
+
+# Specific non-package R files in R/ (SMJ illustrations, sink files, etc.)
+^R/smj_saomnk_.*
+^R/sink_.*
+^R/SAOM_NK_.*\.Rmd$
+^R/SaoMNK_illustration_.*
+^R/SaoMNK_test_.*
+^R/SaoMNK_tutorial_.*
+^R/bipartite_network_animation.*
+^R/confinterror\.jpeg$
+^R/imgfix8\.jpeg$
+^R/survfitfix.*
+^R/test_utility_fitness.*
+
+# Dev/test scripts and loader in R/
+^R/_dev_.*
+^R/saomnk-loader\.R$
+
+# Sink/log files at any level
+^.*sink_.*\.txt$
+^.*\.log\.txt$
+
+# Top-level test output
+^_test_txt
+
+# --- Build/check scripts ---
+^_build_check\.sh$
+^_run_check\.R$
+
+# --- Standard exclusions ---
+^\.Rproj\.user$
+^.*\.Rproj$
+^\.Rhistory$
+^\.RData$
+^\.Rprofile$
+^LICENSE\.md$
+^README\.Rmd$
+^_pkgdown\.yml$
+^pkgdown$
+^\.github$
+^codecov\.yml$
+^cran-comments\.md$
+^CRAN-RELEASE$
+
+# --- Notebook/vignette build artifacts in tests ---
+^tests/testthat/sink_.*
+^tests/testthat/_problems$
+^tests/testthat/_problems/
+
+# --- Vignette build artifacts ---
+^vignettes/.*\.txt$

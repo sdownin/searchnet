@@ -1,0 +1,286 @@
+\documentclass[12pt]{article}
+
+% ---------- packages ----------
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{bbm}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{natbib}
+\usepackage{hyperref}
+\usepackage{setspace}
+\usepackage{cleveref}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{subcaption}
+
+\onehalfspacing
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!60!black,
+    citecolor=blue!60!black,
+    urlcolor=blue!60!black
+}
+
+% ---------- title ----------
+\title{%
+  \textbf{Online Appendix}\\[6pt]
+  \large SaoMNK: A Stochastic Actor-Oriented Generalization\\
+  of the NK Fitness Landscape Model\\[12pt]
+  \normalsize Formal Proofs, Computational Demonstration,\\
+  and Response to Anticipated Concerns}
+
+\author{Stephen Downing\\
+  \small University of Missouri}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\vspace{1cm}
+
+\begin{abstract}
+\noindent
+This online appendix provides three components supporting the main text's
+claim that the Stochastic Actor-Oriented Model on NK Landscapes (SaoMNK)
+formally generalizes Kauffman's (1993) NK fitness landscape framework.
+
+\medskip\noindent
+\textbf{Appendix A} presents three formal theorems with complete proofs:
+the \emph{Reduction Theorem} (NK is a degenerate special case of SaoMNK),
+the \emph{Generalization Theorem} (SaoMNK strictly extends NK along three
+independent dimensions), and the \emph{Approximation Theorem} (any NK
+payoff structure can be reproduced within SaoMNK to arbitrary precision).
+
+\medskip\noindent
+\textbf{Appendix B} provides computational verification: an R script that
+(i) implements both NK and SaoMNK side by side, (ii) verifies exact
+numerical equivalence under the reduction conditions ($M=1$,
+$\boldsymbol{\theta}=\mathbf{0}$, $\beta\to\infty$), and (iii) demonstrates
+that $M>1$ produces endogenous landscape co-evolution effects impossible
+in single-actor NK.
+
+\medskip\noindent
+\textbf{Appendix C} addresses eight anticipated reviewer concerns, with
+detailed mathematical and conceptual responses.
+
+\medskip\noindent
+Together, these materials establish that SaoMNK is a micro-founded,
+empirically estimable generalization of NK that preserves all of NK's
+theoretical insights while adding multi-actor dynamics, endogenous
+landscape co-evolution, and tunable bounded rationality.
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+% ============================================================
+%  APPENDIX A: Formal Proofs
+% ============================================================
+
+\part*{Appendix A: Formal Proofs}
+\addcontentsline{toc}{part}{Appendix A: Formal Proofs}
+
+\noindent\textit{The complete formal proof document is contained in the
+companion file} \texttt{saomnk\_nk\_equivalence\_proof.tex}\textit{.
+When compiled for the final manuscript, this content should be included
+here via} \verb|\input{saomnk_nk_equivalence_proof}| \textit{(after
+removing the duplicate preamble).}
+
+\bigskip\noindent
+\textbf{Summary of results:}
+
+\begin{enumerate}
+  \item \textbf{Theorem 1 (Reduction):} Standard NK is recovered from
+    SaoMNK by setting $M=1$, $\boldsymbol{\theta}=\mathbf{0}$,
+    $\beta\to\infty$, $\mathbf{E}=\mathbf{A}$, and constant rate functions.
+    Proved via Payoff Equivalence (Lemma 1) and Dynamic Equivalence (Lemma 2).
+
+  \item \textbf{Theorem 2 (Generalization):} SaoMNK strictly extends NK
+    along three independent dimensions:
+    \begin{itemize}
+      \item[(a)] Multi-actor interaction: state space $2^{MN}$ vs.\ $2^N$
+      \item[(b)] Endogenous landscape co-evolution via inPop and cycle4
+            network statistics
+      \item[(c)] Bounded rationality: logit precision $\beta$ nests the
+            spectrum from random ($\beta=0$) to greedy ($\beta\to\infty$)
+    \end{itemize}
+
+  \item \textbf{Theorem 3 (Approximation):} Three independent proof
+    strategies:
+    \begin{itemize}
+      \item[3a.] Constructive existence via dummy-coded dyadic covariates
+      \item[3b.] Actor heterogeneity substitution ($Q \times M \geq 2^{K+1}$)
+      \item[3c.] Universal approximation via mixed logit (McFadden \& Train 2000)
+    \end{itemize}
+\end{enumerate}
+
+
+% ============================================================
+%  APPENDIX B: Computational Demonstration
+% ============================================================
+
+\newpage
+\part*{Appendix B: Computational Demonstration}
+\addcontentsline{toc}{part}{Appendix B: Computational Demonstration}
+
+\noindent\textit{The complete R script is contained in the companion file}
+\texttt{nk\_saomnk\_computational\_demonstration.R}\textit{. Below we
+summarize the protocol and expected results.}
+
+\section*{B.1 Protocol}
+
+The computational demonstration proceeds in five parts:
+
+\begin{enumerate}
+  \item \textbf{Standalone NK implementation.} A clean implementation of
+    the NK adaptive walk (Kauffman 1993; Levinthal 1997) using standard
+    functions: \texttt{powerkey()}, \texttt{make\_nk\_interaction\_matrix()},
+    \texttt{nkland\_standard()}, \texttt{nk\_fitness()}, and
+    \texttt{nk\_adaptive\_walk()}.
+
+  \item \textbf{SaoMNK with $M=1$.} The \texttt{calc\_fit()} function
+    extracted directly from the SaoMNK R6 class (line 4593 of
+    \texttt{SAOM\_NK\_R6\_model.R}), plus a bridging function that constructs
+    the equivalent $2^N \times N$ landscape matrix from standard NK payoff
+    tables.
+
+  \item \textbf{Equivalence tests.} For each $(N,K)$ pair in
+    $\{(8,2), (8,4), (10,2), (10,5), (12,3), (12,6)\}$:
+    \begin{itemize}
+      \item 500 random landscapes $\times$ 200 adaptive walks each
+      \item Point-wise fitness comparison on 10{,}000 random configurations
+      \item Exhaustive local optima enumeration on 5 landscapes
+      \item Two-sample Kolmogorov-Smirnov tests
+    \end{itemize}
+
+  \item \textbf{Publication-quality figures} (saved as PDF):
+    \begin{itemize}
+      \item \textbf{Figure 1:} NK vs.\ SaoMNK fitness scatter plots
+            (perfect 45$^\circ$ line confirms exact equivalence)
+      \item \textbf{Figure 2:} Paired density plots of final fitness with
+            KS test $p$-value annotations
+      \item \textbf{Figure 3:} Local optima counts across $(N,K)$ pairs
+      \item \textbf{Figure 4:} ``Beyond NK'' --- $M \in \{1, 2, 5, 10\}$
+            showing crowding, fitness variance, and trajectory volatility
+    \end{itemize}
+
+  \item \textbf{Summary statistics table} (LaTeX-formatted via
+    \texttt{xtable}): mean/SD of steps to optimum, final fitness, KS
+    statistics, and local optima counts.
+\end{enumerate}
+
+\section*{B.2 Expected Results}
+
+Under the reduction conditions ($M=1$, $\boldsymbol{\theta}=\mathbf{0}$,
+$\beta\to\infty$), the NK and SaoMNK implementations should produce:
+\begin{itemize}
+  \item \textbf{Identical fitness values} for all configurations (Figure 1:
+    perfect correlation $r = 1.000$)
+  \item \textbf{Indistinguishable walk statistics} (Figure 2: KS test
+    $p \approx 1.0$)
+  \item \textbf{Identical local optima} (Figure 3: zero difference)
+\end{itemize}
+
+For $M > 1$ (Figure 4), the ``Beyond NK'' results should show:
+\begin{itemize}
+  \item Increasing cross-actor fitness variance with $M$ (crowding effects)
+  \item Non-monotonic fitness trajectories (landscape co-evolution)
+  \item Greater trajectory volatility as actors' landscapes shift
+    endogenously
+\end{itemize}
+
+\section*{B.3 Reproducibility}
+
+All results use \texttt{set.seed(42)}. Required R packages:
+\texttt{ggplot2}, \texttt{dplyr}, \texttt{tidyr}, \texttt{patchwork},
+\texttt{xtable}, \texttt{scales}, \texttt{zoo}.
+
+
+% ============================================================
+%  APPENDIX C: Response to Anticipated Concerns
+% ============================================================
+
+\newpage
+\part*{Appendix C: Response to Anticipated Concerns}
+\addcontentsline{toc}{part}{Appendix C: Response to Anticipated Concerns}
+
+\noindent\textit{The complete document is contained in the companion file}
+\texttt{saomnk\_anticipated\_objections.tex}\textit{.
+Below we list the eight concerns addressed.}
+
+\bigskip
+
+\begin{enumerate}
+  \item \textbf{``The payoff structure is too structured / not random enough.''}
+    --- The NK payoff table uses identical $U(0,1)$ random draws; SaoMNK
+    generalizes the search process, not the landscape.
+
+  \item \textbf{``This is just $M$ parallel NK searches.''}
+    --- No. The inPop and cycle4 statistics create cross-actor dependencies
+    producing endogenous landscape co-evolution absent in parallel NK.
+
+  \item \textbf{``The logit choice model has the IIA problem.''}
+    --- IIA is irrelevant under $\beta\to\infty$; for finite $\beta$, mixed
+    logit (McFadden \& Train 2000) eliminates IIA while preserving
+    tractability.
+
+  \item \textbf{``The dynamics may not converge.''}
+    --- $M=1$ converges by NK construction; $M>1$ has a Gibbs stationary
+    distribution under Blume (1993) conditions; ergodicity on finite state
+    space guarantees existence regardless.
+
+  \item \textbf{``NK needs $N \cdot 2^{K+1}$ parameters. How does SAOM
+    match this?''}
+    --- Three mechanisms: constructive dummy covariates (exact but
+    exponential), actor heterogeneity ($Q \times M \geq 2^{K+1}$), and
+    universal approximation via mixed logit.
+
+  \item \textbf{``This loses NK's analytical tractability.''}
+    --- NK has no analytical tractability beyond $N=2, K=1$; all published
+    results are simulation-based. SaoMNK ADDS estimability from empirical
+    data, which NK lacks entirely.
+
+  \item \textbf{``How is this different from ABMs that extend NK?''}
+    --- SaoMNK is a proper statistical model (exponential family), not an
+    ad hoc simulation. Parameters are estimable, interpretable, and
+    testable. NK is a proven mathematical subset, not an analogy.
+
+  \item \textbf{``The bipartite formulation changes NK fundamentally.''}
+    --- The bipartite matrix reveals structure already implicit in NK.
+    When $M=1$, the single row $\mathbf{b}_1$ IS the NK bit-string.
+    The formulation adds competitive/cooperative dynamics central to
+    strategy research.
+\end{enumerate}
+
+
+% ============================================================
+%  FILE MANIFEST
+% ============================================================
+
+\newpage
+\part*{File Manifest}
+\addcontentsline{toc}{part}{File Manifest}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}lp{8cm}@{}}
+\toprule
+\textbf{File} & \textbf{Description} \\
+\midrule
+\texttt{saomnk\_online\_appendix\_master.tex} & This document (master appendix) \\
+\texttt{saomnk\_nk\_equivalence\_proof.tex} & Appendix A: Formal proofs (Theorems 1--3) \\
+\texttt{nk\_saomnk\_computational\_demonstration.R} & Appendix B: R script for computational verification \\
+\texttt{saomnk\_anticipated\_objections.tex} & Appendix C: Response to anticipated concerns \\
+\texttt{figures/} & Directory for computational demonstration output (Figures 1--4) \\
+\bottomrule
+\end{tabular}
+\caption{Files in the \texttt{proofs/} directory.}
+\end{table}
+
+
+\end{document}

@@ -1,0 +1,784 @@
+---
+title: "How SaoMNK Generalizes the NK Model: A Tutorial"
+subtitle: "Online Appendix — Proof Walkthrough with Worked Examples"
+author: "Stephen Downing"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float:
+      collapsed: false
+    toc_depth: 3
+    number_sections: true
+    code_folding: hide
+    fig_width: 9
+    fig_height: 6
+    css: !expr NULL
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.align = "center", cache = TRUE
+)
+library(knitr)
+library(kableExtra)
+```
+
+# What This Document Proves {.unnumbered}
+
+This tutorial walks through three formal results connecting the **SaoMNK** model
+(Stochastic Actor-Oriented Model on NK Landscapes) to the **standard NK** model
+from complexity theory (Kauffman, 1993; Levinthal, 1997).
+
+| Result | Plain-English Statement |
+|--------|------------------------|
+| **Theorem 1 (Reduction)** | Standard NK is a *special case* of SaoMNK. Set five switches to their extreme positions, and SaoMNK collapses exactly to NK. |
+| **Theorem 2 (Generalization)** | SaoMNK can do things NK *cannot*: multiple actors, endogenous landscape co-evolution, and bounded rationality. |
+| **Theorem 3 (Approximation)** | For any NK landscape you can dream up, there exists an SaoMNK parameterization that reproduces it. |
+
+The takeaway: **every NK result you already know is automatically a special case of SaoMNK**, and SaoMNK opens doors that NK cannot.
+
+---
+
+# Preliminaries: The Two Models Side by Side
+
+Before diving into proofs, let's build intuition by comparing the two models on paper, then in code.
+
+## The Standard NK Model
+
+An NK landscape is defined by two integers:
+
+- **N** = number of binary components (think: decisions a firm makes)
+- **K** = number of *other* components that affect each component's payoff (epistasis)
+
+```{r nk-example-landscape}
+# A tiny NK landscape: N=4, K=1
+# Each component depends on itself + 1 other component
+N <- 4; K <- 1
+
+# Interaction matrix: component d depends on columns where E[d,] == 1
+set.seed(7)
+E <- diag(N)
+for (d in 1:N) {
+  others <- sample(setdiff(1:N, d), K)
+  E[d, others] <- 1
+}
+
+cat("Epistasis matrix E (rows = components, cols = which bits matter):\n")
+E
+```
+
+Each component $d$ has a payoff table with $2^{K+1}$ entries --- one for every
+possible configuration of its $K+1$ relevant bits:
+
+```{r nk-payoff-tables}
+# Random payoff tables (the "landscape")
+payoffs <- lapply(1:N, function(d) round(runif(2^(K+1)), 3))
+
+# Show the payoff table for component 1
+cat("Component 1 depends on bits:", which(E[1,] == 1), "\n")
+cat("Payoff table for component 1 (indexed by the 2-bit configuration):\n")
+
+epistatic_bits_1 <- which(E[1,] == 1)
+config_labels <- expand.grid(replicate(length(epistatic_bits_1), 0:1, simplify = FALSE))
+names(config_labels) <- paste0("Bit_", epistatic_bits_1)
+config_labels$Payoff <- payoffs[[1]]
+
+kable(config_labels, caption = "Component 1's payoff table") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE)
+```
+
+**Total fitness** for a configuration $\mathbf{x} \in \{0,1\}^N$ is the average
+of all $N$ component payoffs:
+
+$$W(\mathbf{x}) = \frac{1}{N} \sum_{d=1}^{N} f_d\!\bigl(\mathbf{x}_{N(d)}\bigr)$$
+
+```{r nk-fitness-function}
+# NK fitness function
+nk_fitness <- function(x, payoffs, E) {
+  N <- length(x)
+  fit <- numeric(N)
+  for (d in 1:N) {
+    epistatic_bits <- x[which(E[d, ] == 1)]
+    idx <- sum(epistatic_bits * 2^((length(epistatic_bits) - 1):0)) + 1
+    fit[d] <- payoffs[[d]][idx]
+  }
+  mean(fit)
+}
+
+# Example: fitness of x = (1, 0, 1, 0)
+x_example <- c(1, 0, 1, 0)
+cat("Fitness of x =", x_example, "is:", nk_fitness(x_example, payoffs, E), "\n")
+```
+
+## The SaoMNK Model
+
+SaoMNK uses the **same** random landscape but stores it differently: a single
+$2^N \times N$ matrix instead of $N$ separate tables.
+
+```{r saomnk-landscape}
+# SaoMNK stores the ENTIRE landscape as one matrix
+# Rows correspond to all possible configurations (indexed by Power_key)
+# Columns correspond to components
+
+powerkey <- function(N) 2^((N - 1):0)
+PK <- powerkey(N)
+cat("Power key for N=4:", PK, "\n")
+cat("  x = (1,0,1,0) maps to row:", sum(c(1,0,1,0) * PK) + 1, "\n")
+cat("  x = (0,0,0,0) maps to row:", sum(c(0,0,0,0) * PK) + 1, "\n")
+cat("  x = (1,1,1,1) maps to row:", sum(c(1,1,1,1) * PK) + 1, "\n")
+```
+
+The key operation is **epistasis masking**: for component $d$, SaoMNK zeros
+out irrelevant bits before computing the row index:
+
+$$r_d(\mathbf{x}) = \sum_{j=1}^{N} x_j \cdot E_{dj} \cdot \text{PK}_j + 1$$
+
+Because $E_{dj} = 0$ for non-epistatic bits, those bits contribute nothing to
+the index --- exactly like the standard NK lookup.
+
+```{r saomnk-calc-fit}
+# SaoMNK calc_fit: the ACTUAL function from the R6 class
+saomnk_calc_fit <- function(N, NK_land, inter_m, x, Power_key) {
+  Fit_vector <- numeric(N)
+  for (d in 1:N) {
+    Fit_vector[d] <- NK_land[sum(x * inter_m[d, ] * Power_key) + 1, d]
+  }
+  Fit_vector
+}
+```
+
+### SaoMNK adds three things NK lacks
+
+| Feature | NK | SaoMNK |
+|---------|:--:|:------:|
+| Multiple actors (M firms on same landscape) | 1 | 1, 2, 5, 10, ... |
+| Cross-actor effects (crowding, structural coupling) | None | inPop, cycle4, ... |
+| Bounded rationality (noisy search) | Greedy only | $\beta \in [0, \infty]$ |
+| Estimable from data | No | Yes (RSiena MLE) |
+
+---
+
+# Theorem 1: NK is a Special Case of SaoMNK
+
+## The Five Restrictions
+
+To turn SaoMNK into plain NK, set five switches:
+
+```{r restrictions-table, echo=FALSE}
+restrictions <- data.frame(
+  Switch = c("R1", "R2", "R3", "R4", "R5"),
+  Setting = c("M = 1", "E = A (full epistasis matrix)",
+              "theta = 0 (no network effects)",
+              "beta -> infinity (greedy search)",
+              "Constant rate function"),
+  `What.It.Eliminates` = c(
+    "Multiple actors",
+    "Bipartite projection differences",
+    "Crowding (inPop), structural coupling (cycle4)",
+    "Stochastic choice (bounded rationality)",
+    "Heterogeneous selection rates"
+  )
+)
+kable(restrictions, col.names = c("Switch", "Setting", "What It Eliminates"),
+      caption = "The five restrictions that reduce SaoMNK to NK") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+```
+
+## Worked Example: Payoff Equivalence (Lemma 1)
+
+Let's verify this numerically. We build both an NK landscape and its SaoMNK
+equivalent, then check that every possible configuration gets the same fitness.
+
+```{r payoff-equivalence}
+set.seed(42)
+N <- 6; K <- 2
+
+# Step 1: Generate shared interaction matrix
+E <- diag(N)
+for (d in 1:N) {
+  if (K > 0) {
+    others <- sample(setdiff(1:N, d), K)
+    E[d, others] <- 1
+  }
+}
+
+# Step 2: Generate standard NK payoff tables
+payoffs_std <- lapply(1:N, function(d) runif(2^(K + 1)))
+
+# Step 3: Build equivalent SaoMNK landscape
+PK <- powerkey(N)
+NK_land <- matrix(0, nrow = 2^N, ncol = N)
+
+all_configs <- expand.grid(replicate(N, 0:1, simplify = FALSE))
+for (d in 1:N) {
+  epistatic_indices <- which(E[d, ] == 1)
+  for (c_idx in 1:nrow(all_configs)) {
+    x <- as.integer(all_configs[c_idx, ])
+    # SaoMNK row index
+    saomnk_row <- sum(x * E[d, ] * PK) + 1
+    # Standard NK index
+    epistatic_bits <- x[epistatic_indices]
+    nk_idx <- sum(epistatic_bits * 2^((length(epistatic_bits) - 1):0)) + 1
+    NK_land[saomnk_row, d] <- payoffs_std[[d]][nk_idx]
+  }
+}
+
+# Step 4: Compare fitness for EVERY configuration
+max_diff <- 0
+n_configs_checked <- 0
+for (c_idx in 1:nrow(all_configs)) {
+  x <- as.integer(all_configs[c_idx, ])
+
+  # NK fitness (standard)
+  f_nk <- nk_fitness(x, payoffs_std, E)
+
+  # SaoMNK fitness (M=1)
+  f_saomnk <- mean(saomnk_calc_fit(N, NK_land, E, x, PK))
+
+  max_diff <- max(max_diff, abs(f_nk - f_saomnk))
+  n_configs_checked <- n_configs_checked + 1
+}
+
+cat(sprintf("Checked all %d configurations for N=%d, K=%d\n",
+            n_configs_checked, N, K))
+cat(sprintf("Maximum |f_NK - f_SaoMNK| = %.2e\n", max_diff))
+cat(sprintf("Result: %s\n",
+            ifelse(max_diff < 1e-12, "IDENTICAL (machine precision)", "MISMATCH")))
+```
+
+### How the index masking works (step by step)
+
+Let's trace through one component to see exactly why the payoffs match:
+
+```{r trace-masking}
+# Pick component d=1 and a specific configuration
+d <- 1
+x <- c(1, 0, 1, 1, 0, 1)
+cat("Configuration x =", x, "\n")
+cat("Component d =", d, "\n")
+cat("E[d,] =", E[d,], " (bits", which(E[d,] == 1), "are epistatic)\n\n")
+
+# NK method: extract epistatic bits, compute local index
+epistatic_bits <- x[which(E[d,] == 1)]
+nk_idx <- sum(epistatic_bits * 2^((length(epistatic_bits) - 1):0)) + 1
+cat("NK method:\n")
+cat("  Epistatic bits =", epistatic_bits, "\n")
+cat("  Local index =", nk_idx, "\n")
+cat("  Payoff = payoffs[[1]][", nk_idx, "] =", payoffs_std[[1]][nk_idx], "\n\n")
+
+# SaoMNK method: mask with E[d,], compute global index
+masked <- x * E[d,]
+saomnk_row <- sum(masked * PK) + 1
+cat("SaoMNK method:\n")
+cat("  x * E[d,] =", masked, " (non-epistatic bits zeroed out)\n")
+cat("  Row index = sum(", paste(masked, "*", PK, sep = ""), ") + 1 =", saomnk_row, "\n")
+cat("  Payoff = NK_land[", saomnk_row, ",", d, "] =", NK_land[saomnk_row, d], "\n\n")
+
+cat("Same payoff?", abs(payoffs_std[[1]][nk_idx] - NK_land[saomnk_row, d]) < 1e-15, "\n")
+```
+
+**Insight:** The epistasis mask `E[d,]` zeros out irrelevant bits in the power-key
+sum. Different configurations that agree on the epistatic bits of component $d$
+map to the **same row** in `NK_land`. This is algebraically identical to looking
+up a smaller payoff table indexed only by the epistatic bits.
+
+## Worked Example: Dynamic Equivalence (Lemma 2)
+
+Under $\beta \to \infty$, the logit choice rule becomes **greedy best-response** ---
+identical to the NK adaptive walk:
+
+$$P(\text{flip bit } d) = \frac{e^{\beta \cdot \Delta u_d}}{\sum_{d'} e^{\beta \cdot \Delta u_{d'}}} \xrightarrow{\beta \to \infty} \begin{cases} 1 & \text{if } d = \arg\max \Delta u \\ 0 & \text{otherwise} \end{cases}$$
+
+```{r dynamic-equivalence}
+set.seed(99)
+N <- 8; K <- 3
+
+# Build shared landscape
+E <- diag(N)
+for (d in 1:N) {
+  others <- sample(setdiff(1:N, d), K)
+  E[d, others] <- 1
+}
+payoffs_std <- lapply(1:N, function(d) runif(2^(K + 1)))
+
+# Build SaoMNK equivalent
+PK <- powerkey(N)
+NK_land <- matrix(0, nrow = 2^N, ncol = N)
+all_configs <- expand.grid(replicate(N, 0:1, simplify = FALSE))
+for (d in 1:N) {
+  ei <- which(E[d,] == 1)
+  for (c_idx in 1:nrow(all_configs)) {
+    x <- as.integer(all_configs[c_idx, ])
+    saomnk_row <- sum(x * E[d,] * PK) + 1
+    nk_idx <- sum(x[ei] * 2^((length(ei)-1):0)) + 1
+    NK_land[saomnk_row, d] <- payoffs_std[[d]][nk_idx]
+  }
+}
+
+# NK adaptive walk
+nk_walk <- function(x, payoffs, E) {
+  trajectory <- list(x)
+  repeat {
+    N <- length(x)
+    current_fit <- nk_fitness(x, payoffs, E)
+    best_flip <- NA; best_fit <- current_fit
+    for (d in 1:N) {
+      x_new <- x; x_new[d] <- 1 - x_new[d]
+      f_new <- nk_fitness(x_new, payoffs, E)
+      if (f_new > best_fit) { best_fit <- f_new; best_flip <- d }
+    }
+    if (is.na(best_flip)) break
+    x[best_flip] <- 1 - x[best_flip]
+    trajectory <- c(trajectory, list(x))
+  }
+  list(path = trajectory, fitness = sapply(trajectory, nk_fitness, payoffs, E))
+}
+
+# SaoMNK adaptive walk (beta -> infinity = greedy)
+saomnk_walk <- function(x, NK_land, E) {
+  N <- length(x); PK <- powerkey(N)
+  trajectory <- list(x)
+  repeat {
+    current_fit <- mean(saomnk_calc_fit(N, NK_land, E, x, PK))
+    best_flip <- NA; best_fit <- current_fit
+    for (d in 1:N) {
+      x_new <- x; x_new[d] <- 1 - x_new[d]
+      f_new <- mean(saomnk_calc_fit(N, NK_land, E, x_new, PK))
+      if (f_new > best_fit) { best_fit <- f_new; best_flip <- d }
+    }
+    if (is.na(best_flip)) break
+    x[best_flip] <- 1 - x[best_flip]
+    trajectory <- c(trajectory, list(x))
+  }
+  list(path = trajectory, fitness = sapply(trajectory, function(x)
+    mean(saomnk_calc_fit(N, NK_land, E, x, PK))))
+}
+
+# Run both from the same start
+start <- sample(0:1, N, replace = TRUE)
+res_nk <- nk_walk(start, payoffs_std, E)
+res_saomnk <- saomnk_walk(start, NK_land, E)
+
+cat("Start:", start, "\n\n")
+cat("NK walk:\n")
+cat("  Steps:", length(res_nk$fitness) - 1, "\n")
+cat("  Fitness trajectory:", round(res_nk$fitness, 4), "\n")
+cat("  Final config:", res_nk$path[[length(res_nk$path)]], "\n\n")
+
+cat("SaoMNK walk (beta -> inf):\n")
+cat("  Steps:", length(res_saomnk$fitness) - 1, "\n")
+cat("  Fitness trajectory:", round(res_saomnk$fitness, 4), "\n")
+cat("  Final config:", res_saomnk$path[[length(res_saomnk$path)]], "\n\n")
+
+cat("Trajectories identical?",
+    identical(res_nk$path, res_saomnk$path), "\n")
+```
+
+## Visual: Many Walks, Perfect Agreement
+
+```{r scatter-walks, fig.width=7, fig.height=6}
+set.seed(123)
+n_walks <- 200
+nk_finals <- numeric(n_walks)
+saomnk_finals <- numeric(n_walks)
+
+for (w in 1:n_walks) {
+  start <- sample(0:1, N, replace = TRUE)
+  nk_finals[w] <- nk_walk(start, payoffs_std, E)$fitness |> tail(1)
+  saomnk_finals[w] <- saomnk_walk(start, NK_land, E)$fitness |> tail(1)
+}
+
+plot(nk_finals, saomnk_finals,
+     pch = 16, cex = 0.8, col = adjustcolor("steelblue", 0.6),
+     xlab = "NK Final Fitness", ylab = "SaoMNK Final Fitness",
+     main = "200 Adaptive Walks: NK vs SaoMNK (M=1)",
+     sub = sprintf("Max difference: %.2e", max(abs(nk_finals - saomnk_finals))))
+abline(0, 1, col = "red", lty = 2, lwd = 2)
+legend("topleft", "Perfect agreement (y = x)", col = "red", lty = 2, lwd = 2, bty = "n")
+```
+
+Every point sits exactly on the 45-degree line. The two models produce identical
+results. **Theorem 1 is verified computationally.**
+
+---
+
+# Theorem 2: SaoMNK Strictly Extends NK
+
+SaoMNK extends NK along three **independent** dimensions. Each one introduces
+dynamics that are provably impossible in standard NK.
+
+## Dimension A: Multiple Actors ($M > 1$)
+
+NK has one searcher on a landscape of $2^N$ configurations.
+SaoMNK has $M$ searchers on a landscape of $2^{MN}$ configurations.
+
+```{r state-space-table, echo=FALSE}
+state_space <- data.frame(
+  N = c(10, 10, 10, 20),
+  M = c(1, 5, 10, 10),
+  `NK.States` = c("1,024", "1,024", "1,024", "1,048,576"),
+  `SaoMNK.States` = c("1,024", "~10^15", "~10^30", "~10^60")
+)
+kable(state_space, col.names = c("N", "M", "NK State Space", "SaoMNK State Space"),
+      caption = "State space explosion with multiple actors") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+```
+
+This isn't just "running NK in parallel." The actors **interact**.
+
+## Dimension B: Endogenous Landscape Co-Evolution
+
+In standard NK, the landscape is fixed. In SaoMNK, actor $j$ changing a component
+alters the landscape that actor $i$ faces. This happens through **network statistics**:
+
+- **inPop (crowding):** How many other actors hold the same component? If many
+  firms adopt the same technology, its value changes.
+- **cycle4 (structural coupling):** Are there 4-cycle patterns in the bipartite
+  network? This captures indirect competitive interdependence.
+
+```{r crowding-demo, fig.width=8, fig.height=5}
+# Simple crowding demonstration: 3 actors, 5 components
+# When actors overlap on components, their fitness is affected
+
+N_demo <- 5
+M_demo <- 3
+
+# Three actors with partially overlapping component choices
+actors <- matrix(c(
+  1, 1, 0, 0, 1,   # Actor 1: components 1, 2, 5
+  0, 1, 1, 0, 1,   # Actor 2: components 2, 3, 5  (overlaps on 2 & 5)
+  0, 0, 0, 1, 1    # Actor 3: components 4, 5      (overlaps on 5)
+), nrow = 3, byrow = TRUE)
+
+# Overlap structure (projected search network)
+overlap <- actors %*% t(actors)
+diag(overlap) <- 0
+
+cat("Bipartite matrix B (actors x components):\n")
+print(actors)
+cat("\nOverlap matrix (how many components each pair shares):\n")
+print(overlap)
+
+# inPop: for each component, count how many actors hold it
+inpop <- colSums(actors)
+cat("\ninPop (popularity of each component):", inpop, "\n")
+cat("  Component 5 is held by all 3 actors -- high crowding\n")
+cat("  Component 4 is held by only 1 actor -- no crowding\n\n")
+
+# Show how Actor 2 flipping component 5 changes the landscape for Actors 1 & 3
+cat("If Actor 2 DROPS component 5:\n")
+actors_new <- actors
+actors_new[2, 5] <- 0
+inpop_new <- colSums(actors_new)
+cat("  inPop changes from", inpop, "to", inpop_new, "\n")
+cat("  Actors 1 & 3 now face LESS crowding on component 5\n")
+cat("  Their utility for component 5 increases -- landscape shifted!\n")
+cat("  This is impossible in standard NK (no actor interactions)\n")
+```
+
+## Dimension C: Bounded Rationality ($\beta < \infty$)
+
+NK uses greedy search: always pick the best improving flip. SaoMNK uses a
+**logit choice** where the precision parameter $\beta$ controls rationality:
+
+```{r bounded-rationality, fig.width=8, fig.height=5}
+# Demonstrate how beta affects choice probabilities
+delta_u <- c(0.05, 0.02, -0.01, -0.03, 0.00)  # utility changes for 5 possible flips
+component_labels <- paste("Flip bit", 1:5)
+
+betas <- c(0.1, 1, 5, 20, 100, Inf)
+prob_matrix <- matrix(NA, nrow = length(betas), ncol = length(delta_u))
+
+for (b_idx in seq_along(betas)) {
+  beta <- betas[b_idx]
+  if (is.infinite(beta)) {
+    probs <- rep(0, length(delta_u))
+    probs[which.max(delta_u)] <- 1
+  } else {
+    log_probs <- beta * delta_u
+    log_probs <- log_probs - max(log_probs)  # numerical stability
+    probs <- exp(log_probs) / sum(exp(log_probs))
+  }
+  prob_matrix[b_idx, ] <- probs
+}
+
+rownames(prob_matrix) <- paste0("beta=", betas)
+colnames(prob_matrix) <- paste0("Flip ", 1:5, " (du=", delta_u, ")")
+
+cat("Choice probabilities under different rationality levels:\n\n")
+cat("  Utility changes: du =", delta_u, "\n")
+cat("  Best flip: Flip 1 (du = +0.05)\n\n")
+
+kable(round(prob_matrix, 3),
+      caption = "How beta controls search precision") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) %>%
+  column_spec(2, bold = TRUE)
+```
+
+| $\beta$ value | Behavior | NK equivalent? |
+|:---:|---|:---:|
+| $\beta = 0$ | Random search (all flips equally likely) | No |
+| $\beta \in (0, \infty)$ | Noisy best-response (bounded rationality) | No |
+| $\beta \to \infty$ | Greedy best-response (**this is NK**) | **Yes** |
+
+NK lives at **one extreme** of a continuous spectrum. SaoMNK nests the whole spectrum.
+
+At finite $\beta$, actors can make **fitness-decreasing** moves with positive
+probability. This lets them escape local optima --- addressing the competency trap
+that is central to the organizational learning literature.
+
+---
+
+# Theorem 3: Approximation
+
+**Claim:** For *any* NK(N,K) landscape, there exists an SaoMNK parameterization
+that reproduces it exactly (or to arbitrary precision).
+
+This is important because it means SaoMNK doesn't just contain NK as a special
+case --- it can *reconstruct* any specific NK landscape.
+
+## Mechanism 1: Dummy Covariates (Exact Reconstruction)
+
+The idea: create $2^{K+1}$ binary "dummy" covariates, one for each possible
+configuration of the $K+1$ epistatic bits. Set each coefficient equal to the
+NK payoff value.
+
+```{r dummy-covariates}
+# Example: N=4, K=1
+# Component 1 depends on bits {1, 3} (itself + one other)
+# The K+1 = 2 epistatic bits create 2^2 = 4 configurations
+# We create 4 dummy covariates, one per configuration
+
+N_ex <- 4; K_ex <- 1
+epistatic_bits_ex <- c(1, 3)  # component 1 depends on bits 1 and 3
+payoff_values <- c(0.23, 0.67, 0.45, 0.91)  # the NK payoff table
+
+cat("NK payoff table for component 1:\n")
+dummy_table <- data.frame(
+  `Bit_1` = c(0, 1, 0, 1),
+  `Bit_3` = c(0, 0, 1, 1),
+  `NK_Payoff` = payoff_values,
+  `Dummy_Covariate` = paste0("Z_", 1:4),
+  `SaoMNK_Coefficient` = payoff_values
+)
+kable(dummy_table,
+      col.names = c("Bit 1", "Bit 3", "NK Payoff", "Dummy Covariate", "SaoMNK Coeff."),
+      caption = "Dummy covariate construction: one covariate per epistatic configuration") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+
+cat("\nFor x = (1, ?, 0, ?), only Z_2 is 'active' (bit1=1, bit3=0)\n")
+cat("SaoMNK utility contribution = 1 * 0.67 = 0.67 = NK payoff. Exact match.\n")
+```
+
+**Cost:** This needs $N \times 2^{K+1}$ dummy covariates --- exponentially many.
+But it proves *existence*: the SaoMNK model class contains every NK landscape.
+
+## Mechanism 2: Actor Heterogeneity (Practical Sufficiency)
+
+With $M$ actors and $Q$ continuous covariates, SaoMNK has $Q \times M \times N$
+effective parameters. We need $Q \cdot M \geq 2^{K+1}$:
+
+```{r actor-heterogeneity, echo=FALSE}
+het_table <- data.frame(
+  M = c(5, 10, 10, 20),
+  K = c(2, 3, 5, 7),
+  `Needed` = c("8", "16", "64", "256"),
+  Q_needed = c(2, 2, 7, 13),
+  Interpretation = c(
+    "2 covariates (e.g., size + experience)",
+    "2 covariates suffice for moderate epistasis",
+    "7 covariates for high epistasis",
+    "13 covariates (may need richer specification)"
+  )
+)
+kable(het_table,
+      col.names = c("M (actors)", "K (epistasis)", "2^(K+1) params needed",
+                     "Q (covariates needed)", "Interpretation"),
+      caption = "How many covariates Q does SaoMNK need to match NK dimensionality?") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+```
+
+**Key insight:** Actor heterogeneity is not a trick --- it's a *natural, empirically
+grounded* source of landscape complexity. Real firms differ in size, capabilities,
+and strategic positioning. These differences generate the landscape richness
+that NK achieves through random numbers.
+
+## Mechanism 3: Universal Approximation (Strongest Guarantee)
+
+McFadden & Train (2000) proved that **mixed logit** can approximate *any* random
+utility model to arbitrary precision. Since:
+
+1. SAOM is a conditional logit model
+2. Adding random effects to SAOM gives mixed logit
+3. NK payoffs define a discrete-choice utility
+
+...it follows that mixed SaoMNK can approximate any NK landscape to any desired
+precision. This is the strongest theoretical guarantee --- infinite-dimensional
+and non-constructive.
+
+---
+
+# Putting It All Together: The Multi-Actor Difference
+
+```{r multi-actor-demo, fig.width=10, fig.height=8}
+set.seed(42)
+N_ma <- 8; K_ma <- 2
+
+# Build a shared landscape
+E_ma <- diag(N_ma)
+for (d in 1:N_ma) {
+  others <- sample(setdiff(1:N_ma, d), K_ma)
+  E_ma[d, others] <- 1
+}
+PK_ma <- powerkey(N_ma)
+NK_land_ma <- matrix(runif(2^N_ma * N_ma), nrow = 2^N_ma, ncol = N_ma)
+
+# Simulate M=1 vs M=5 with simple crowding
+simulate_search <- function(M, n_steps = 30) {
+  positions <- matrix(sample(0:1, M * N_ma, replace = TRUE), nrow = M)
+  fitness_history <- matrix(NA, nrow = n_steps + 1, ncol = M)
+
+  for (m in 1:M) {
+    fitness_history[1, m] <- mean(saomnk_calc_fit(N_ma, NK_land_ma, E_ma,
+                                                   positions[m,], PK_ma))
+  }
+
+  for (step in 1:n_steps) {
+    for (m in sample(1:M)) {
+      x <- positions[m,]
+      current_fit <- mean(saomnk_calc_fit(N_ma, NK_land_ma, E_ma, x, PK_ma))
+
+      # Add crowding penalty: reduce fitness for popular components
+      if (M > 1) {
+        overlap_penalty <- sum(colSums(positions[-m, , drop = FALSE]) * x) * 0.01
+        current_fit <- current_fit - overlap_penalty
+      }
+
+      best_flip <- NA; best_fit <- current_fit
+      for (d in 1:N_ma) {
+        x_new <- x; x_new[d] <- 1 - x_new[d]
+        f_new <- mean(saomnk_calc_fit(N_ma, NK_land_ma, E_ma, x_new, PK_ma))
+        if (M > 1) {
+          pen <- sum(colSums(positions[-m, , drop = FALSE]) * x_new) * 0.01
+          f_new <- f_new - pen
+        }
+        if (f_new > best_fit) { best_fit <- f_new; best_flip <- d }
+      }
+
+      if (!is.na(best_flip)) positions[m, best_flip] <- 1 - positions[m, best_flip]
+    }
+    for (m in 1:M) {
+      fitness_history[step + 1, m] <- mean(saomnk_calc_fit(N_ma, NK_land_ma, E_ma,
+                                                            positions[m,], PK_ma))
+    }
+  }
+  fitness_history
+}
+
+# Run comparisons
+par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+
+# M = 1 (this IS NK)
+traj_1 <- simulate_search(1)
+plot(0:30, traj_1[,1], type = "l", lwd = 2, col = "steelblue",
+     xlab = "Step", ylab = "Fitness", main = "M = 1 (Standard NK)",
+     ylim = c(0.3, 0.8))
+
+# M = 3
+traj_3 <- simulate_search(3)
+matplot(0:30, traj_3, type = "l", lwd = 2, lty = 1,
+        col = c("steelblue", "coral", "seagreen"),
+        xlab = "Step", ylab = "Fitness", main = "M = 3 (Competition)",
+        ylim = c(0.3, 0.8))
+legend("bottomright", paste("Actor", 1:3), col = c("steelblue", "coral", "seagreen"),
+       lwd = 2, bty = "n", cex = 0.8)
+
+# M = 5
+traj_5 <- simulate_search(5)
+matplot(0:30, traj_5, type = "l", lwd = 2, lty = 1,
+        col = rainbow(5),
+        xlab = "Step", ylab = "Fitness", main = "M = 5 (Crowded)",
+        ylim = c(0.3, 0.8))
+
+# Final fitness comparison
+finals <- data.frame(
+  M = factor(rep(c("M=1", "M=3", "M=5"), c(1, 3, 5))),
+  Fitness = c(tail(traj_1, 1), tail(traj_3, 1), tail(traj_5, 1))
+)
+boxplot(Fitness ~ M, data = finals, col = c("steelblue", "coral", "seagreen"),
+        main = "Final Fitness by # Actors", ylab = "Final Fitness")
+```
+
+As $M$ increases, competitive crowding pushes actors away from the global optimum.
+Trajectories become more volatile and final fitness drops. **None of this is possible in standard NK.**
+
+---
+
+# Summary: The Three Theorems at a Glance
+
+```{r summary-table, echo=FALSE}
+summary <- data.frame(
+  Theorem = c("1. Reduction", "2. Generalization", "3. Approximation"),
+  Statement = c(
+    "Set M=1, theta=0, beta=Inf, E=A, constant rate => SaoMNK = NK exactly",
+    "M>1 gives multi-actor search; theta!=0 gives landscape co-evolution; finite beta gives bounded rationality",
+    "Any NK(N,K) landscape can be reconstructed in SaoMNK via dummy covariates, actor heterogeneity, or mixed logit"
+  ),
+  Proof.Type = c(
+    "Algebraic + computational verification",
+    "Constructive examples + impossibility argument",
+    "Existence (constructive) + universal approximation (McFadden-Train 2000)"
+  ),
+  Implication = c(
+    "All existing NK results carry over as special cases",
+    "SaoMNK can model phenomena NK cannot (competition, crowding, noisy search)",
+    "SaoMNK is at least as expressive as NK in every dimension"
+  )
+)
+kable(summary, col.names = c("Theorem", "Statement", "Proof Method", "Implication"),
+      caption = "The three theorems establishing SaoMNK as a strict generalization of NK") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = TRUE) %>%
+  column_spec(1, bold = TRUE, width = "12em") %>%
+  column_spec(2, width = "20em") %>%
+  column_spec(3, width = "18em") %>%
+  column_spec(4, width = "18em")
+```
+
+---
+
+# Why This Matters for Strategy Research
+
+| NK Limitation | SaoMNK Solution |
+|---|---|
+| One searcher in isolation | $M$ firms competing on the same landscape |
+| Fixed landscape | Landscape co-evolves as firms act |
+| Only greedy (perfectly rational) search | Bounded rationality via $\beta$ parameter |
+| Uninterpretable random payoff tables | Payoffs from observable covariates |
+| No estimation from data | Full MLE via RSiena |
+| Simulation only | Simulation *and* empirical estimation |
+| $N \times 2^{K+1}$ ad hoc parameters | Parsimonious: scope, popularity, clustering |
+
+The proof establishes that SaoMNK is not merely *inspired by* NK --- it formally
+*contains* NK as a degenerate special case. Every theoretical insight from the NK
+literature (landscape ruggedness, local optima traps, modularity advantages,
+exploration-exploitation tradeoffs) remains valid within the SaoMNK framework.
+But SaoMNK adds the capacity to bring these insights to empirical data and to
+model the competitive dynamics that are central to strategy research.
+
+---
+
+# References {.unnumbered}
+
+- Blume, L. E. (1993). The statistical mechanics of strategic interaction. *Games and Economic Behavior*, 5(3), 387--424.
+- Kauffman, S. A. (1993). *The Origins of Order*. Oxford University Press.
+- Levinthal, D. A. (1997). Adaptation on rugged landscapes. *Management Science*, 43(7), 934--950.
+- McFadden, D. (1974). Conditional logit analysis of qualitative choice behavior. In *Frontiers in Econometrics*.
+- McFadden, D. & Train, K. (2000). Mixed MNL models for discrete response. *Journal of Applied Econometrics*, 15(5), 447--470.
+- Rivkin, J. W. (2000). Imitation of complex strategies. *Management Science*, 46(6), 824--844.
+- Siggelkow, N. & Levinthal, D. A. (2003). Temporarily divide to conquer. *Organization Science*, 14(6), 650--669.
+- Siggelkow, N. & Rivkin, J. W. (2005). Speed and search. *Organization Science*, 16(2), 101--122.
+- Snijders, T. A. B. (2001). The statistical evaluation of social network dynamics. *Sociological Methodology*, 31(1), 361--395.
+- Snijders, T. A. B., van de Bunt, G. G., & Steglich, C. E. G. (2010). Introduction to stochastic actor-based models. *Social Networks*, 32(1), 44--60.

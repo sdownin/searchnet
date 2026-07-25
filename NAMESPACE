@@ -1,0 +1,269 @@
+# NAMESPACE for searchnet
+# Manually maintained until roxygen2 is fully configured.
+
+# ---------------------------------------------------------------------------
+# Core imports (no conflicts)
+# ---------------------------------------------------------------------------
+import(R6)
+import(RSiena)
+import(ggplot2)
+import(Matrix)
+import(grid)
+import(reshape2)
+
+# ---------------------------------------------------------------------------
+# Selective imports (avoid conflicts between igraph/network, dplyr/plyr, etc.)
+# ---------------------------------------------------------------------------
+# igraph — use selectively to avoid conflicts with network::
+importFrom(igraph, graph_from_biadjacency_matrix, graph_from_adjacency_matrix,
+           bipartite_projection, V, E, "V<-", "E<-", degree, is_igraph,
+           vcount, ecount, get.edgelist, as_adjacency_matrix,
+           graph_from_edgelist, make_bipartite_graph, layout_as_bipartite,
+           layout_with_fr, set_vertex_attr, vertex_attr, edge_attr,
+           components, clusters, is_bipartite, simplify, delete_vertices,
+           eigen_centrality)
+
+# network — use selectively to avoid conflicts with igraph::
+importFrom(network, network, as.network, set.vertex.attribute,
+           get.vertex.attribute, as.sociomatrix)
+
+# dplyr — use selectively to avoid conflicts with plyr::
+importFrom(dplyr, filter, select, mutate, group_by, summarize, summarise,
+           arrange, desc, bind_rows, left_join, inner_join, ungroup,
+           pull, n, case_when, if_else, across, everything, rename,
+           distinct, slice, row_number, lag, lead, count, tally, "%>%")
+
+# plyr — use selectively to avoid conflicts with dplyr::
+importFrom(plyr, ldply, llply, dlply, ddply, rbind.fill)
+
+# tidyr — use selectively to avoid conflicts with texreg::extract
+importFrom(tidyr, pivot_longer, pivot_wider, crossing, gather, spread,
+           separate, unite, nest, unnest, fill, drop_na, replace_na)
+
+# texreg — use selectively to avoid conflicts with tidyr::extract
+importFrom(texreg, screenreg, texreg, htmlreg, extract)
+
+# gridExtra — use selectively to avoid conflicts with dplyr::combine
+importFrom(gridExtra, grid.arrange, arrangeGrob)
+
+# cowplot — use selectively to avoid conflicts with ggpubr::get_legend
+importFrom(cowplot, plot_grid, theme_cowplot)
+
+# ggpubr — use selectively
+importFrom(ggpubr, ggarrange, ggboxplot, get_legend, stat_compare_means)
+
+# ggraph
+importFrom(ggraph, ggraph, geom_edge_link, geom_node_point, geom_node_text,
+           create_layout, theme_graph)
+
+# Other selective imports
+importFrom(uuid, UUIDgenerate)
+importFrom(scales, rescale, percent_format, hue_pal, comma)
+importFrom(RColorBrewer, brewer.pal)
+importFrom(knitr, kable)
+importFrom(visNetwork, visNetwork, visNodes, visEdges, visOptions,
+           visLayout, visIgraph)
+importFrom(stats, qnorm, aggregate, setNames, pnorm, median, coef,
+           sd, var, quantile, cor, lm, predict, residuals, fitted,
+           dnorm, runif, rnorm, rbinom, na.omit, loess, uniroot, optim)
+importFrom(utils, txtProgressBar, setTxtProgressBar, packageVersion,
+           write.csv, read.csv, str)
+importFrom(grDevices, hcl, rgb, col2rgb, colorRampPalette)
+
+# ---------------------------------------------------------------------------
+# R6 class generators
+# ---------------------------------------------------------------------------
+export(SaomNkRSienaBiEnv_base)
+export(SaomNkRSienaBiEnv)
+export(SaoMNKexperiments)
+
+# ---------------------------------------------------------------------------
+# User-friendly API wrappers (saomnk-api.R)
+# ---------------------------------------------------------------------------
+export(saomnk_env)
+export(saomnk_model)
+export(saomnk_shock)
+export(saomnk_run)
+export(saomnk_plot_k4)
+export(saomnk_plot_snapshots)
+export(saomnk_plot_utility)
+export(saomnk_summary)
+export(saomnk_get_degrees)
+export(saomnk_get_bipartite)
+export(saomnk_block_diagonal)
+S3method(print, saomnk_model)
+
+# ---------------------------------------------------------------------------
+# Standalone utility functions (utils.R)
+# ---------------------------------------------------------------------------
+export(get_jaccard_index)
+export(saomnk_toggle)
+export(saomnk_toggle_bipartite)
+export(saomnk_exists)
+export(create_block_diag)
+export(saomnk_empirical_epistasis)
+export(searchnet_proof)
+
+# ---------------------------------------------------------------------------
+# Plot functions -- plot-utility.R
+# ---------------------------------------------------------------------------
+export(saomnk_plot_actor_utility)
+export(saomnk_plot_strategy_utility)
+export(saomnk_plot_utility_contributions_basic)
+export(saomnk_plot_utility_contributions)
+
+# ---------------------------------------------------------------------------
+# Plot functions -- plot-degrees.R
+# ---------------------------------------------------------------------------
+export(saomnk_plot_degree_4panel)
+export(saomnk_plot_component_degrees)
+export(saomnk_plot_actor_degrees)
+
+# ---------------------------------------------------------------------------
+# Plot functions -- plot-exploration.R
+# ---------------------------------------------------------------------------
+export(saomnk_plot_exploration_exploitation_consistent)
+export(saomnk_plot_exploration_exploitation)
+export(saomnk_plot_exploration_exploitation_phase)
+export(saomnk_plot_exploration_exploitation_improved)
+export(saomnk_plot_exploration_exploitation_faceted)
+export(saomnk_plot_exploration_exploitation_by_strategy)
+export(saomnk_plot_strategy_exploration_exploitation)
+export(saomnk_plot_subsidized_risk_taking)
+export(saomnk_plot_did_exploration)
+export(saomnk_plot_exploration_exploitation_subsidies)
+export(saomnk_plot_exploration_risk_multiperiod)
+export(saomnk_plot_exploration_risk_did)
+export(saomnk_plot_exploration_event_study)
+export(saomnk_plot_exploration_did_combined)
+
+# ---------------------------------------------------------------------------
+# Plot functions -- plot-markets.R
+# ---------------------------------------------------------------------------
+export(saomnk_plot_bipartite_ring_markets)
+export(saomnk_plot_bipartite_ring_markets_animation)
+export(saomnk_plot_market_entry_survival)
+export(saomnk_plot_market_entry_survival_strategy)
+export(saomnk_plot_market_entry_survival_v0)
+
+# ---------------------------------------------------------------------------
+# Entry/exit tracking -- track-entries.R
+# ---------------------------------------------------------------------------
+export(track_entry_decisions)
+export(compute_forbearance_metrics)
+export(compute_forbearance_trajectory)
+
+# ---------------------------------------------------------------------------
+# Plot functions -- plot-forbearance.R
+# ---------------------------------------------------------------------------
+export(saomnk_plot_forbearance)
+export(saomnk_plot_forbearance_spectrum)
+export(saomnk_plot_entry_rivalry)
+
+# ---------------------------------------------------------------------------
+# Plot functions -- plot-shocks.R
+# ---------------------------------------------------------------------------
+export(saomnk_plot_shocks)
+export(saomnk_plot_K_attribute_shocks)
+export(saomnk_plot_K_AC_NEW_shocks)
+
+# ---------------------------------------------------------------------------
+# Plot functions -- plot-snapshots.R
+# ---------------------------------------------------------------------------
+# saomnk_plot_snapshots already exported above in API wrappers
+export(saomnk_plot_degree_progress_from_sims)
+export(saomnk_plot_degree_progress)
+export(saomnk_plot_bipartite_system_from_mat)
+
+# ---------------------------------------------------------------------------
+# Plot functions -- plot-multiwave.R
+# ---------------------------------------------------------------------------
+export(saomnk_search_rsiena_multiwave_plot)
+export(saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy)
+export(saomnk_search_rsiena_multiwave_plot_K_4panel)
+export(saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary)
+export(saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary)
+export(saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary)
+export(saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary)
+export(saomnk_search_rsiena_multiwave_plot_actor_utility_strategy_summary)
+export(saomnk_search_rsiena_multiwave_plot_actor_utility_by_strategy)
+export(saomnk_search_rsiena_multiwave_plot_actor_utility_density_by_strategy)
+
+# ---------------------------------------------------------------------------
+# Plot functions -- plot-phase-space.R
+# ---------------------------------------------------------------------------
+export(saomnk_plot_phase_space_3d)
+export(saomnk_plot_phase_heatmap)
+export(saomnk_plot_phase_evolution)
+export(saomnk_plot_phase_comparison)
+export(searchnet_export_phase_space)
+
+# ---------------------------------------------------------------------------
+# Export functions -- searchnet-export.R (dashboard manim format)
+# ---------------------------------------------------------------------------
+export(searchnet_export_for_manim)
+
+# ---------------------------------------------------------------------------
+# Causal inference wrappers -- searchnet-causal.R
+# ---------------------------------------------------------------------------
+export(searchnet_causal_panel)
+export(searchnet_did)
+export(searchnet_synth)
+export(searchnet_rd)
+export(searchnet_causal_plot)
+
+# ---------------------------------------------------------------------------
+# Teaching module -- searchnet-teaching.R
+# ---------------------------------------------------------------------------
+export(searchnet_classroom_init)
+export(searchnet_classroom_submit)
+export(searchnet_classroom_advance)
+export(searchnet_classroom_leaderboard)
+export(searchnet_classroom_debrief)
+export(searchnet_classroom_status)
+S3method(print, searchnet_classroom)
+
+# ---------------------------------------------------------------------------
+# Strategy Game mode -- searchnet-game.R
+# ---------------------------------------------------------------------------
+export(searchnet_game_init)
+export(searchnet_game_step)
+export(searchnet_game_scoreboard)
+export(searchnet_game_available_moves)
+export(searchnet_game_summary)
+
+# ---------------------------------------------------------------------------
+# Replicator Dynamics / EGT -- searchnet-replicator.R
+# ---------------------------------------------------------------------------
+export(saomnk_replicator_dynamics)
+export(saomnk_ess)
+export(saomnk_elo_tournament)
+export(saomnk_plot_replicator)
+export(saomnk_plot_simplex)
+export(saomnk_plot_elo)
+
+# ---------------------------------------------------------------------------
+# Basin Geometry / Depth-Width Tradeoff -- searchnet-basins.R
+# ---------------------------------------------------------------------------
+export(saomnk_basin_geometry)
+export(saomnk_depth_width_tradeoff)
+export(saomnk_cross_partial)
+export(saomnk_plot_tradeoff_frontier)
+export(saomnk_plot_basin_comparison)
+export(saomnk_plot_erosion_simulation)
+export(saomnk_imitation_penalty)
+
+# ---------------------------------------------------------------------------
+# Brock-Durlauf Mean-Field Reduction (Theorem 5) -- searchnet-brock-durlauf.R
+# ---------------------------------------------------------------------------
+export(bd_self_consistency)
+export(saomnk_inpop_self_consistency)
+export(bd_equilibrium_count)
+export(saomnk_social_multiplier)
+export(bd_landau_steepness)
+export(verify_brock_durlauf_reduction)
+
+# ---------------------------------------------------------------------------
+# Mean-field equilibrium solver (Theorem 4) -- mean_field_solver.R
+# ---------------------------------------------------------------------------
+export(solve_mean_field)

@@ -1,0 +1,352 @@
+---
+title: "searchnet Quick Reference"
+output:
+  html_document:
+    theme: flatly
+    css: null
+---
+
+```{css, echo=FALSE}
+/* ── Print & Layout ─────────────────────────────────────────── */
+@media print {
+  body { font-size: 9pt; }
+  .page-break { page-break-before: always; }
+}
+
+body {
+
+  font-family: "Fira Sans", "Helvetica Neue", Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.35;
+  max-width: 1100px;
+  margin: auto;
+  padding: 0 10px;
+}
+
+h1.title {
+  font-size: 22px;
+  margin-bottom: 2px;
+  border-bottom: 3px solid #2c3e50;
+  padding-bottom: 4px;
+}
+
+/* Two-column grid */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+/* Section headers */
+.two-col h2 {
+  font-size: 15px;
+  color: #2c3e50;
+  border-bottom: 2px solid #18bc9c;
+  margin: 8px 0 4px 0;
+  padding-bottom: 2px;
+}
+
+.two-col h3 {
+  font-size: 13px;
+  color: #18bc9c;
+  margin: 6px 0 2px 0;
+}
+
+/* Compact tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin: 4px 0 8px 0;
+}
+th {
+  background: #2c3e50;
+  color: white;
+  padding: 3px 6px;
+  text-align: left;
+  font-size: 11px;
+}
+td {
+  padding: 2px 6px;
+  border-bottom: 1px solid #ddd;
+}
+tr:nth-child(even) { background: #f8f9fa; }
+
+/* Code blocks */
+pre {
+  background: #f4f6f7;
+  border: 1px solid #dce1e4;
+  border-radius: 3px;
+  padding: 6px 8px;
+  font-size: 11.5px;
+  line-height: 1.3;
+  overflow-x: auto;
+  margin: 4px 0 8px 0;
+}
+code { font-family: "Fira Code", "Consolas", monospace; font-size: 11.5px; }
+
+/* Math blocks */
+.math-box {
+  background: #f0f7f4;
+  border-left: 3px solid #18bc9c;
+  padding: 5px 8px;
+  margin: 4px 0 8px 0;
+  font-size: 12px;
+}
+
+/* Inline code in text */
+p code, li code {
+  background: #eef1f3;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  font-size: 10px;
+  color: #7f8c8d;
+  border-top: 1px solid #ddd;
+  padding-top: 4px;
+  margin-top: 12px;
+}
+
+/* Lists */
+ul, ol { margin: 2px 0 6px 0; padding-left: 18px; }
+li { margin-bottom: 1px; }
+
+/* Page label */
+.page-label {
+  font-size: 10px;
+  color: #95a5a6;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+```
+
+<div class="page-label">FRONT &mdash; The Simulation World &amp; Code Quick-Start</div>
+
+<div class="two-col">
+
+<div>
+
+## The Cast
+
+| Symbol | Meaning |
+|--------|---------|
+| **M** | Number of actors (firms, investors, agents) |
+| **N** | Number of components (resources, markets, technologies) |
+| **b~ij~** | Tie from actor *i* to component *j* (0 or 1) |
+
+## The {K} Framework
+
+| Parameter | Formula | Interpretation |
+|-----------|---------|----------------|
+| **K~AC~** | Actors &rarr; Components | How many components each actor touches |
+| **K~CA~** | Components &rarr; Actors | How many actors compete on each component |
+| **K~AA~** | Actors &rarr; Actors | Interdependence between actors' strategies |
+| **K~CC~** | Components &rarr; Components | Complementarity between components |
+
+### The Choice Function
+
+<div class="math-box">
+P(flip *j*) = exp(&beta; &middot; &Delta;U) / (1 + &Sigma; exp(&beta; &middot; &Delta;U))
+</div>
+
+Each actor evaluates flipping each tie. The probability of choosing option *j* follows a multinomial logit over all possible changes plus "do nothing."
+
+### The Rate Function
+
+<div class="math-box">
+&lambda;~i~ = base rate &times; (opportunities per unit time)
+</div>
+
+Controls how often actor *i* gets a chance to act.
+
+### The Utility Function
+
+<div class="math-box">
+U~i~ = &beta;~density~ &middot; scope + &beta;~pop~ &middot; popularity + &beta;~XWX~ &middot; synergy + ...
+</div>
+
+Weighted sum of effects. Each &beta; controls the strength and sign of a strategic mechanism.
+
+</div>
+
+<div>
+
+## Code Quick-Start
+
+### 1. Create World
+
+```r
+env <- saomnk_env(M = 6, N = 8,
+                   density = 0.3, seed = 42)
+```
+
+### 2. Define Rules
+
+```r
+model <- saomnk_model(
+  density     = -0.5,
+  popularity  =  0.2,
+  epistasis_matrix = saomnk_block_diagonal(8, 2),
+  epistasis_weight = 0.3
+)
+```
+
+### 3. Run Simulation
+
+```r
+saomnk_run(env, model,
+           steps_per_actor = 30, seed = 100)
+```
+
+### 4. Visualize
+
+```r
+# {K} framework summary
+saomnk_plot_k4(env)
+
+# Network evolution over time
+env$plot_snapshots(c(1, 50, 100, 150))
+
+# Utility decomposition
+env$plot_utility_contributions()
+
+# Numeric summary
+saomnk_summary(env)
+```
+
+### Key Objects
+
+| Object | What it holds |
+|--------|--------------|
+| `env` | Network state, history, actor/component attributes |
+| `model` | Effect weights (&beta;), epistasis structure, rate function |
+| `env$history` | Full trace of every tie change |
+
+</div>
+
+</div>
+
+<div class="footer">
+searchnet v0.1.0 &nbsp;|&nbsp; github.com/sdownin/searchnet &nbsp;|&nbsp; Stephen Downing, University of Missouri
+</div>
+
+---
+
+<div class="page-break"></div>
+
+<div class="page-label">BACK &mdash; Effect Dictionary &amp; Advanced Features</div>
+
+<div class="two-col">
+
+<div>
+
+## RSiena Effect &rarr; Strategy Concept
+
+| Effect | Strategy Concept | Sign Intuition |
+|--------|-----------------|----------------|
+| `density` | Scope cost | &minus; = costly to add ties |
+| `outAct` | Diminishing returns | &minus; = less value per extra tie |
+| `inPop` | Bandwagon / legitimacy | + = popular components attract more |
+| `XWX` | Complementarity | + = synergy between co-held components |
+| `egoX` | Strategy type | Actor-level covariate &rarr; search propensity |
+| `altX` | Component value | Component-level covariate &rarr; attractiveness |
+
+### Bounded Rationality Spectrum
+
+| &beta; | Behavior | Analogy |
+|----|----------|---------|
+| 0 | Pure random | Coin flip |
+| 1 | Mild preference | Satisficing |
+| 2 | Moderate | Bounded rationality |
+| 5 | Strong optimization | Near-rational |
+| &infin; | Deterministic best | Perfect rationality |
+
+Higher &beta; means actors are more sensitive to utility differences. Set via `saomnk_run(..., beta = 2)`.
+
+### Epistasis Structures
+
+| Structure | Code | Meaning |
+|-----------|------|---------|
+| None | `diag(N)` | Independent components |
+| Block | `saomnk_block_diagonal(N, k)` | *k*-size complementary clusters |
+| Full | `matrix(1, N, N)` | Everything interacts |
+| Custom | User-defined matrix | Domain-specific synergies |
+
+</div>
+
+<div>
+
+## Advanced Features
+
+### Shocks (Regime Changes)
+
+```r
+saomnk_shock("density",
+             step = 15, new_value = -2)
+```
+
+Alter any parameter mid-simulation to model regulatory shifts, technology disruptions, or market shocks.
+
+### Heterogeneous Strategies
+
+```r
+strategies <- list(
+  egoX = c(-1, 0, 1, -1, 0, 1)
+)
+```
+
+Assign actor-level covariates so different firms follow different strategic logics.
+
+### Causal Inference Pipeline
+
+```r
+# Build panel from simulation history
+panel <- searchnet_causal_panel()
+
+# Difference-in-differences
+searchnet_did()
+```
+
+### Export & Reporting
+
+```r
+# Export all results to a directory
+searchnet_export_all(env, dir = "output")
+```
+
+### Formal Utilities & Proofs
+
+```r
+# Exact utility computation
+env$compute_formal_utility()
+
+# Choice probabilities at given beta
+env$compute_choice_probabilities(beta = 2)
+
+# Mathematical proofs
+searchnet_proof()
+```
+
+### Workflow Checklist
+
+1. **Design** &mdash; Set M, N, {K}, effects
+2. **Calibrate** &mdash; Choose &beta;, rates, seeds
+3. **Simulate** &mdash; Run with `saomnk_run()`
+4. **Diagnose** &mdash; Check convergence, plot traces
+5. **Analyze** &mdash; Decompose utility, compare strategies
+6. **Shock** &mdash; Introduce regime change, re-run
+7. **Infer** &mdash; Build panel, run DID
+8. **Export** &mdash; Save plots, tables, network data
+
+</div>
+
+</div>
+
+<div class="footer">
+searchnet v0.1.0 &nbsp;|&nbsp; github.com/sdownin/searchnet &nbsp;|&nbsp; Stephen Downing, University of Missouri
+</div>

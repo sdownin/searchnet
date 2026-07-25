@@ -1,0 +1,1070 @@
+\documentclass[12pt]{article}
+
+% ---------- packages ----------
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{bbm}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{natbib}
+\usepackage{hyperref}
+\usepackage{setspace}
+\usepackage{cleveref}
+
+\onehalfspacing
+
+% ---------- theorem environments ----------
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+
+% ---------- operators and shortcuts ----------
+\DeclareMathOperator*{\argmax}{arg\,max}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\bone}{\mathbbm{1}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\be}{\mathbf{e}}
+\newcommand{\bB}{\mathbf{B}}
+\newcommand{\bA}{\mathbf{A}}
+\newcommand{\bE}{\mathbf{E}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+
+% ---------- title ----------
+\title{%
+  \textbf{Online Appendix: Formal Proofs of the Relationship\\
+  Between the SaoMNK Model and the NK Landscape}\\[6pt]
+  \large Reduction, Generalization, and Approximation Results}
+
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent
+This online appendix provides formal mathematical proofs establishing the
+relationship between the Stochastic Actor-Oriented Model on NK Landscapes
+(SaoMNK) and the standard NK model from complexity theory
+\citep{kauffman1993origins, levinthal1997adaptation}. We prove three main
+results. First, the \emph{Reduction Theorem} shows that the standard NK model is
+a degenerate special case of SaoMNK, recoverable by restricting the model to a
+single actor with deterministic greedy search. Second, the
+\emph{Generalization Theorem} demonstrates that SaoMNK strictly extends NK along
+three independent dimensions: multi-actor endogenous interaction, endogenous
+landscape co-evolution, and bounded rationality with tunable search precision.
+Third, the \emph{Approximation Theorem} establishes, via three distinct proof
+strategies, that any NK payoff structure can be reproduced to arbitrary precision
+within the SaoMNK framework. Together, these results position SaoMNK as a
+micro-founded, empirically estimable generalization of the NK model for
+organizational and strategic analysis.
+\end{abstract}
+
+\bigskip
+
+% ============================================================
+\section{Notation and Preliminaries}
+\label{sec:notation}
+% ============================================================
+
+We begin by collecting the notation used throughout. \Cref{tab:notation}
+summarizes all symbols.
+
+\begin{table}[h!]
+\centering
+\caption{Notation summary.}
+\label{tab:notation}
+\small
+\begin{tabular}{@{}lp{10.5cm}@{}}
+\toprule
+\textbf{Symbol} & \textbf{Description} \\
+\midrule
+$N$           & Number of binary components (decisions, policy choices) \\
+$K$           & Epistasis parameter in the NK model; each component depends on $K$ others \\
+$M$           & Number of actors (agents) in SaoMNK \\
+$\bx \in \{0,1\}^N$ & Binary decision string (state) in the NK model \\
+$\bB \in \{0,1\}^{M \times N}$ & Bipartite adjacency matrix in SaoMNK; row $\bb_i$ is actor $i$'s configuration \\
+$\bA \in \{0,1\}^{N \times N}$ & Epistasis (interaction) matrix in the NK model \\
+$\bE \in \{0,1\}^{N \times N}$ & Epistasis (interaction) matrix in SaoMNK \\
+$\mathcal{N}(d)$ & Epistatic neighborhood of component $d$: $\mathcal{N}(d) = \{j : A_{dj} = 1\}$, $|\mathcal{N}(d)| = K+1$ \\
+$f_d : \{0,1\}^{|\mathcal{N}(d)|} \to [0,1]$ & Component payoff function drawn i.i.d.\ $\mathrm{Uniform}(0,1)$ \\
+$W(\bx)$      & NK fitness: $W(\bx) = \frac{1}{N}\sum_{d=1}^{N} f_d(\bx_{\mathcal{N}(d)})$ \\
+$\mathrm{PK}(N)$ & Power key: $\mathrm{PK}(N) = (2^{N-1}, 2^{N-2}, \ldots, 2^0)$ \\
+$\beta$       & Logit precision parameter (inverse temperature) \\
+$\btheta$     & Vector of SAOM effect parameters \\
+$s_k(\bb_i, \bB)$ & SAOM statistic $k$ for actor $i$ given full state $\bB$ \\
+$u_i(\bb_i; \bB_{-i})$ & Actor $i$'s utility in SaoMNK \\
+$\odot$       & Element-wise (Hadamard) product \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+\subsection{The NK Model}
+\label{sec:nk_model}
+% ============================================================
+
+We state the NK model following \citet{kauffman1993origins} and
+\citet{levinthal1997adaptation}, with notation consolidated from
+\citet{altenberg1997nk}.
+
+\begin{definition}[NK Landscape]
+\label{def:nk}
+An \emph{NK landscape} is a tuple $(N, K, \bA, \{f_d\}_{d=1}^N)$ where:
+\begin{enumerate}[label=(\roman*)]
+  \item $N \in \N$ is the number of binary components.
+  \item $K \in \{0, 1, \ldots, N-1\}$ is the epistasis parameter.
+  \item $\bA \in \{0,1\}^{N \times N}$ is the epistasis matrix with
+        $A_{dd} = 1$ for all $d$ (each component depends on itself) and
+        $\sum_{j} A_{dj} = K+1$ for all $d$.
+  \item $f_d : \{0,1\}^{K+1} \to [0,1]$ is the component payoff function,
+        with values drawn i.i.d.\ from $\mathrm{Uniform}(0,1)$.
+\end{enumerate}
+The fitness of a configuration $\bx \in \{0,1\}^N$ is
+\begin{equation}
+\label{eq:nk_fitness}
+  W(\bx) = \frac{1}{N} \sum_{d=1}^{N} f_d\!\left(\bx_{\mathcal{N}(d)}\right),
+\end{equation}
+where $\bx_{\mathcal{N}(d)} = (x_j)_{j \in \mathcal{N}(d)}$ is the sub-vector of
+$\bx$ restricted to the epistatic neighborhood $\mathcal{N}(d) = \{j : A_{dj}=1\}$.
+\end{definition}
+
+\begin{definition}[NK Adaptive Walk]
+\label{def:nk_walk}
+An \emph{adaptive walk} on an NK landscape is a sequence
+$\bx^{(0)}, \bx^{(1)}, \ldots$ defined by:
+\begin{enumerate}[label=(\roman*)]
+  \item $\bx^{(0)}$ is drawn uniformly from $\{0,1\}^N$.
+  \item At each step $t$, a component $d_t$ is selected (uniformly at random or
+        sequentially), and the single-bit-flip
+        $\bx^{(t)} \oplus \be_{d_t}$ is evaluated. If
+        $W(\bx^{(t)} \oplus \be_{d_t}) > W(\bx^{(t)})$, then
+        $\bx^{(t+1)} = \bx^{(t)} \oplus \be_{d_t}$; otherwise,
+        $\bx^{(t+1)} = \bx^{(t)}$.
+  \item The walk terminates at a local optimum where no single-bit flip
+        improves fitness.
+\end{enumerate}
+A variant is the \emph{greedy adaptive walk}, where at each step the bit
+flip yielding the largest fitness improvement is selected:
+\begin{equation}
+\label{eq:nk_greedy}
+  d_t^* = \argmax_{d \in \{1,\ldots,N\}}
+    \left[W\!\left(\bx^{(t)} \oplus \be_d\right) - W\!\left(\bx^{(t)}\right)\right].
+\end{equation}
+\end{definition}
+
+% ============================================================
+\subsection{The SaoMNK Model}
+\label{sec:saomnk_model}
+% ============================================================
+
+\begin{definition}[SaoMNK Model]
+\label{def:saomnk}
+A \emph{Stochastic Actor-Oriented Model on NK Landscapes} (SaoMNK) is a tuple
+$(M, N, \bE, \{f_d\}_{d=1}^N, \btheta, \beta)$ where:
+\begin{enumerate}[label=(\roman*)]
+  \item $M \in \N$ is the number of actors.
+  \item $N \in \N$ is the number of binary components.
+  \item $\bE \in \{0,1\}^{N \times N}$ is the epistasis matrix (with
+        $E_{dd}=1$ for all $d$).
+  \item $\{f_d\}_{d=1}^N$ is a set of component payoff functions, as in the NK
+        model.
+  \item $\btheta \in \R^p$ is the vector of SAOM effect parameters.
+  \item $\beta > 0$ is the logit precision parameter.
+\end{enumerate}
+The state space is $\mathcal{S} = \{0,1\}^{M \times N}$, with generic element
+$\bB$. The $i$-th row $\bb_i \in \{0,1\}^N$ represents actor $i$'s
+configuration.
+\end{definition}
+
+\begin{definition}[SaoMNK Utility]
+\label{def:saomnk_utility}
+Actor $i$'s utility from configuration $\bb_i$, given the configurations of all
+other actors $\bB_{-i}$ and epistasis matrix $\bE$, is
+\begin{equation}
+\label{eq:saomnk_utility}
+  u_i(\bb_i; \bB_{-i}, \bE)
+  = \underbrace{\sum_{d=1}^{N} b_{id} \cdot
+    f_d\!\left(\bb_i \odot \bE_{d\cdot}\right)}_{\text{NK component}}
+  + \underbrace{\sum_{k=1}^{p} \theta_k \, s_k(\bb_i, \bB)}_{\text{SAOM network statistics}},
+\end{equation}
+where $\bE_{d\cdot}$ is the $d$-th row of $\bE$, the operation
+$\bb_i \odot \bE_{d\cdot}$ denotes element-wise multiplication (masking
+$\bb_i$ by the epistatic neighborhood of $d$), and $f_d$ is evaluated by
+converting the masked binary sub-vector to an integer index via the power key
+$\mathrm{PK}(N)$:
+\begin{equation}
+\label{eq:powerkey_index}
+  f_d\!\left(\bb_i \odot \bE_{d\cdot}\right)
+  \;=\; \mathrm{NK\_land}\!\left[\,
+    \sum_{j=1}^{N} b_{ij}\, E_{dj}\, \mathrm{PK}(N)_j \;+\; 1,\; d\right].
+\end{equation}
+The SAOM statistics $s_k$ include network-structural effects defined on the
+bipartite matrix $\bB$:
+\begin{align}
+  s_{\mathrm{density}}(\bb_i) &= \sum_{j=1}^N b_{ij}, \label{eq:density}\\
+  s_{\mathrm{outAct}}(\bb_i) &= \left(\sum_{j=1}^N b_{ij}\right)^{\!2}, \label{eq:outact}\\
+  s_{\mathrm{inPop}}(\bb_i, \bB) &= \sum_{j=1}^N b_{ij}\left(\sum_{m=1}^M b_{mj} + 1\right), \label{eq:inpop}\\
+  s_{\mathrm{cycle4}}(\bb_i, \bB) &= \tfrac{1}{2}\,\bigl[\mathrm{diag}(\bB\bB^\top)^2 \cdot \bB\bB^\top\bigr]_{ii}. \label{eq:cycle4}
+\end{align}
+\end{definition}
+
+\begin{definition}[SaoMNK Dynamics]
+\label{def:saomnk_dynamics}
+The SaoMNK model evolves as a continuous-time Markov chain of \emph{ministeps}.
+At each ministep:
+\begin{enumerate}[label=(\roman*)]
+  \item An actor $i$ is selected according to a rate function $\lambda_i > 0$.
+  \item Actor $i$ evaluates all possible single-tie changes
+        $\bb_i \oplus \be_j$ for $j \in \{1,\ldots,N\}$, as well as maintaining
+        the status quo $\bb_i$.
+  \item The choice follows a multinomial logit:
+        \begin{equation}
+        \label{eq:logit_choice}
+          P(\text{actor } i \text{ changes tie to } j)
+          = \frac{\exp\!\bigl(\beta\, \Delta u_{ij}\bigr)}
+                 {\displaystyle 1 + \sum_{k=1}^{N}
+                  \exp\!\bigl(\beta\, \Delta u_{ik}\bigr)},
+        \end{equation}
+        where $\Delta u_{ij} = u_i(\bb_i \oplus \be_j; \bB_{-i}, \bE) -
+        u_i(\bb_i; \bB_{-i}, \bE)$ is the change in utility from flipping
+        component $j$.
+\end{enumerate}
+\end{definition}
+
+% ============================================================
+\section{Theorem 1: Reduction}
+\label{sec:reduction}
+% ============================================================
+
+\begin{theorem}[Reduction Theorem]
+\label{thm:reduction}
+The standard NK model \emph{(}\Cref{def:nk,def:nk_walk}\emph{)} is a degenerate
+special case of the SaoMNK model \emph{(}\Cref{def:saomnk,def:saomnk_utility,%
+def:saomnk_dynamics}\emph{)}. Specifically, the NK landscape and its adaptive
+walk are recovered exactly from SaoMNK under the following restriction:
+\begin{enumerate}[label=(R\arabic*)]
+  \item\label{R1} $M = 1$ (single actor);
+  \item\label{R2} $\bE = \bA$ (SaoMNK epistasis matrix equals the NK interaction
+        matrix, with $K+1$ ones per row);
+  \item\label{R3} $\btheta = \mathbf{0}$ (all SAOM network-statistic parameters
+        set to zero);
+  \item\label{R4} $\beta \to \infty$ (logit precision diverges, recovering
+        deterministic greedy choice);
+  \item\label{R5} $\lambda_i$ constant across components (uniform selection
+        probability).
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+We establish the result in two parts: payoff equivalence
+(\Cref{lem:payoff_equiv}) and dynamic equivalence
+(\Cref{lem:dynamic_equiv}).
+
+\begin{lemma}[Payoff Equivalence]
+\label{lem:payoff_equiv}
+Under restrictions \ref{R1}--\ref{R3}, the SaoMNK utility function reduces to
+the NK fitness function (up to a constant scaling factor of $N$).
+\end{lemma}
+
+\begin{proof}[Proof of \Cref{lem:payoff_equiv}]
+Under \ref{R1}, there is a single actor ($M=1$), so the bipartite matrix
+$\bB$ reduces to a single row vector $\bb_1 \equiv \bx \in \{0,1\}^N$. The
+full state space collapses from $\{0,1\}^{M \times N}$ to $\{0,1\}^N$.
+
+Under \ref{R3}, all SAOM network-statistic parameters are zero
+($\btheta = \mathbf{0}$), so the network component in
+\eqref{eq:saomnk_utility} vanishes:
+\begin{equation*}
+  \sum_{k=1}^{p} \theta_k \, s_k(\bb_1, \bB) = 0.
+\end{equation*}
+Moreover, with $M = 1$ and $\btheta = \mathbf{0}$, the statistics
+$s_{\mathrm{inPop}}$ and $s_{\mathrm{cycle4}}$---which depend on
+$\bB_{-i}$---become irrelevant.
+
+The SaoMNK utility \eqref{eq:saomnk_utility} therefore simplifies to
+\begin{equation}
+\label{eq:reduced_utility}
+  u(\bx; \bE) = \sum_{d=1}^{N} x_d \cdot f_d\!\left(\bx \odot \bE_{d\cdot}\right).
+\end{equation}
+
+Under \ref{R2}, $\bE = \bA$, so $\bE_{d\cdot} = \bA_{d\cdot}$ and the
+mask $\bx \odot \bE_{d\cdot}$ selects exactly the entries of $\bx$ in the
+epistatic neighborhood $\mathcal{N}(d) = \{j : A_{dj} = 1\}$.
+
+Now consider any configuration $\bx$ that the single actor would adopt. Since
+the actor occupies exactly the components where $x_d = 1$, and the payoff
+$f_d$ is only relevant for occupied components, we examine the index computation
+\eqref{eq:powerkey_index}:
+\begin{equation*}
+  f_d\!\left(\bx \odot \bA_{d\cdot}\right)
+  = \mathrm{NK\_land}\!\left[\sum_{j=1}^{N} x_j \, A_{dj} \, \mathrm{PK}(N)_j + 1,\; d\right].
+\end{equation*}
+
+In the standard NK model, $f_d(\bx_{\mathcal{N}(d)})$ uses the same indexing:
+the sub-vector $\bx_{\mathcal{N}(d)}$ is converted to an integer via a power key
+over the $K+1$ relevant bits. The SaoMNK formulation embeds this into the full
+$N$-bit power key by zeroing out non-epistatic components via the mask
+$A_{dj}$. Since $x_j \cdot A_{dj} = 0$ whenever $j \notin \mathcal{N}(d)$,
+only the bits in $\mathcal{N}(d)$ contribute to the index sum, yielding the
+identical table lookup.
+
+Consider the case where $\bx = \mathbf{1}$ (all components set to 1, i.e., the
+actor occupies all $N$ components). Then $x_d = 1$ for all $d$, and
+\begin{equation*}
+  u(\mathbf{1}; \bA) = \sum_{d=1}^{N} 1 \cdot f_d(\mathbf{1} \odot \bA_{d\cdot})
+  = \sum_{d=1}^{N} f_d(\bx_{\mathcal{N}(d)}) = N \cdot W(\bx).
+\end{equation*}
+
+More generally, for the standard NK model to be fully embedded, we require
+that the single actor always occupies all $N$ components (i.e.,
+$\bx = \mathbf{1}$ as a constraint on the ``occupied'' set, with the
+\emph{values} of the components---0 or 1---encoding the decision). In the NK
+model, the state $\bx \in \{0,1\}^N$ represents the \emph{value} assigned to
+each of $N$ components. In the SaoMNK bipartite representation, $b_{1d} = 1$
+means actor~1 is connected to component $d$.
+
+The equivalence is achieved by the following interpretation: each component $d$
+in the NK model corresponds to a tie $b_{1d}$ in SaoMNK. The NK state
+$x_d \in \{0,1\}$ maps directly to $b_{1d} \in \{0,1\}$. Thus, the NK
+fitness at configuration $\bx$ equals:
+\begin{equation}
+\label{eq:payoff_equiv}
+  W(\bx) = \frac{1}{N}\sum_{d=1}^{N} f_d(\bx_{\mathcal{N}(d)})
+  = \frac{1}{N}\, u(\bx; \bA),
+\end{equation}
+since every term in \eqref{eq:reduced_utility} contributes (with $x_d$
+serving as both the component value and the tie indicator). The factor
+$\frac{1}{N}$ is a normalization constant that does not affect ordinal rankings
+of configurations.
+
+This completes the payoff equivalence: the SaoMNK utility under
+\ref{R1}--\ref{R3} is an affine transformation of the NK fitness function, and
+all ordinal comparisons---which drive adaptive search---are preserved.
+\end{proof}
+
+\begin{lemma}[Dynamic Equivalence]
+\label{lem:dynamic_equiv}
+Under restrictions \ref{R1}--\ref{R5}, the SaoMNK ministep dynamics produce the
+same sequence of states as the NK greedy adaptive walk.
+\end{lemma}
+
+\begin{proof}[Proof of \Cref{lem:dynamic_equiv}]
+Under \ref{R1}, there is only one actor, so the rate function is trivial: the
+single actor is always selected. Under \ref{R5}, each component is equally
+likely to be the focal tie for evaluation.
+
+At each ministep, the actor evaluates all $N$ possible single-tie changes.
+The change in utility from flipping component $j$ is
+\begin{equation*}
+  \Delta u_j = u(\bx \oplus \be_j; \bA) - u(\bx; \bA).
+\end{equation*}
+By \Cref{lem:payoff_equiv}, this is proportional to the change in NK fitness:
+$\Delta u_j = N \cdot [W(\bx \oplus \be_j) - W(\bx)]$.
+
+The SaoMNK logit choice probability \eqref{eq:logit_choice} is
+\begin{equation*}
+  P(\text{flip } j) = \frac{\exp(\beta \, \Delta u_j)}{1 + \sum_{k=1}^{N} \exp(\beta \, \Delta u_k)}.
+\end{equation*}
+
+Now take the limit $\beta \to \infty$ (\ref{R4}). Let
+$j^* = \argmax_{j} \Delta u_j$ and assume the maximum is unique (which holds
+with probability 1 under i.i.d.\ uniform payoffs). Then:
+\begin{equation*}
+  \lim_{\beta \to \infty} P(\text{flip } j)
+  = \begin{cases}
+    1 & \text{if } j = j^* \text{ and } \Delta u_{j^*} > 0, \\
+    0 & \text{otherwise}.
+  \end{cases}
+\end{equation*}
+
+If $\Delta u_{j^*} > 0$, the actor deterministically selects the utility-maximizing
+flip. If $\Delta u_j \leq 0$ for all $j$, then the status quo probability
+$1/(1 + \sum_k \exp(\beta \Delta u_k))$ converges to 1, and the process remains
+at $\bx$---a local optimum.
+
+This is exactly the NK greedy adaptive walk (\Cref{def:nk_walk}, equation
+\eqref{eq:nk_greedy}): at each step, the bit flip yielding the largest fitness
+improvement is selected, and the walk terminates at a local optimum.
+
+Under \ref{R5} with uniform component selection (the ``random'' variant of the
+adaptive walk), the reduction yields the random-order adaptive walk rather than
+the greedy walk, but both are standard NK dynamics.
+\end{proof}
+
+Combining \Cref{lem:payoff_equiv} and \Cref{lem:dynamic_equiv}, we conclude
+that the NK model---both its fitness landscape and its adaptive walk
+dynamics---is recovered exactly from SaoMNK under restrictions
+\ref{R1}--\ref{R5}. Therefore, the standard NK model is a degenerate special
+case of SaoMNK: $\mathrm{NK} \subset \mathrm{SaoMNK}$. \qedhere
+\end{proof}
+
+\begin{remark}[Computational Implementation]
+\label{rem:implementation}
+The payoff equivalence can be verified directly in the SaoMNK codebase.
+The function \texttt{calc\_fit()} computes fitness via the expression
+\begin{center}
+\texttt{NK\_land[sum(Current\_position * inter\_m[d, ] * Power\_key) + 1, d]}
+\end{center}
+which implements \eqref{eq:powerkey_index}. Setting \texttt{inter\_m} $= \bA$
+and \texttt{Current\_position} $= \bx$, this is exactly the NK payoff lookup
+$f_d(\bx_{\mathcal{N}(d)})$.
+\end{remark}
+
+% ============================================================
+\section{Theorem 2: Strict Generalization}
+\label{sec:generalization}
+% ============================================================
+
+\begin{theorem}[Generalization Theorem]
+\label{thm:generalization}
+SaoMNK strictly generalizes the NK model along three independent dimensions:
+\begin{enumerate}[label=(\alph*)]
+  \item \emph{Multi-actor endogenous interaction}: $M > 1$ actors jointly
+        navigate a shared landscape.
+  \item \emph{Endogenous landscape co-evolution}: each actor's effective
+        landscape depends on the current configurations of other actors
+        through SAOM network statistics.
+  \item \emph{Bounded rationality with tunable search precision}: the logit
+        parameter $\beta \in (0,\infty)$ interpolates continuously between
+        random and deterministic search.
+\end{enumerate}
+Each dimension independently produces behavior that cannot be represented in
+any standard NK model, regardless of the choice of $N$ or $K$.
+\end{theorem}
+
+\begin{proof}
+We establish each dimension in turn.
+
+\medskip
+\noindent\textbf{Dimension (a): Multi-actor state space.}
+
+The NK model operates on a single binary string $\bx \in \{0,1\}^N$, yielding
+a state space of cardinality $|\mathcal{S}_{\mathrm{NK}}| = 2^N$. The SaoMNK
+model, with $M$ actors, operates on $\bB \in \{0,1\}^{M \times N}$, yielding
+$|\mathcal{S}_{\mathrm{SaoMNK}}| = 2^{MN}$.
+
+For $M \geq 2$, the state space grows exponentially:
+$2^{MN} = (2^N)^M$. But the significance extends beyond cardinality. In SaoMNK,
+the $M$ actors share the same $N$ components and payoff table $\{f_d\}$, but
+each actor independently controls a row of $\bB$. This creates a \emph{game}
+among actors over the landscape, where interactions arise endogenously through
+the shared component space.
+
+In contrast, the standard NK model is inherently a single-agent optimization
+problem. Even when multiple agents are introduced \emph{ad hoc} (as in
+\citealt{siggelkow2005speed}), they operate on \emph{disjoint} subsets of
+components with exogenously specified cross-agent coupling. SaoMNK provides
+a principled micro-foundation for multi-agent search via the SAOM
+framework \citep{snijders2010introduction}.
+
+\medskip
+\noindent\textbf{Dimension (b): Endogenous landscape co-evolution.}
+
+This is the most consequential departure from the NK model. In the standard
+NK model (and its multi-agent extensions), the fitness landscape $W(\bx)$
+is fixed and exogenous: it depends only on the payoff table $\{f_d\}$ and
+the epistasis matrix $\bA$. Other agents' configurations do not enter the
+payoff function.
+
+In SaoMNK, the SAOM network statistics in \eqref{eq:saomnk_utility}
+create dependencies between actors. Consider the \emph{inPop} statistic
+\eqref{eq:inpop}:
+\begin{equation*}
+  s_{\mathrm{inPop}}(\bb_i, \bB) = \sum_{j=1}^{N} b_{ij}
+    \left(\sum_{m=1}^{M} b_{mj} + 1\right).
+\end{equation*}
+Actor $i$'s utility from connecting to component $j$ depends on
+$\sum_{m} b_{mj}$, the number of \emph{other} actors also connected to $j$.
+If $\theta_{\mathrm{inPop}} > 0$, actors prefer popular components
+(agglomeration); if $\theta_{\mathrm{inPop}} < 0$, actors avoid
+crowded components (differentiation).
+
+\begin{lemma}[Landscape Endogeneity]
+\label{lem:landscape_endogeneity}
+When $M \geq 2$ and $\theta_{\mathrm{inPop}} \neq 0$, actor $i$'s effective
+fitness landscape $\tilde{W}_i(\bb_i) \triangleq u_i(\bb_i; \bB_{-i}, \bE)$
+depends on $\bB_{-i}$. Hence, any change in actor $j$'s configuration
+($j \neq i$) generically alters actor $i$'s landscape: for all $j \neq i$,
+there exist configurations $\bb_j, \bb_j'$ such that
+\begin{equation*}
+  \tilde{W}_i(\bb_i \mid \bb_j) \neq \tilde{W}_i(\bb_i \mid \bb_j')
+  \quad\text{for some } \bb_i.
+\end{equation*}
+\end{lemma}
+
+\begin{proof}[Proof of \Cref{lem:landscape_endogeneity}]
+Fix actor $i$ with configuration $\bb_i$ where $b_{id} = 1$ for some
+component $d$. Consider actor $j \neq i$ with two configurations
+$\bb_j$ and $\bb_j'$ that differ only in component $d$: $b_{jd} = 0$ in
+$\bb_j$ and $b_{jd}' = 1$ in $\bb_j'$. Then:
+\begin{equation*}
+  s_{\mathrm{inPop}}(\bb_i, \bB') - s_{\mathrm{inPop}}(\bb_i, \bB)
+  = b_{id} \cdot 1 = 1 \neq 0,
+\end{equation*}
+so $u_i(\bb_i; \bB_{-i}', \bE) - u_i(\bb_i; \bB_{-i}, \bE) =
+\theta_{\mathrm{inPop}} \neq 0$.
+\end{proof}
+
+This endogenous landscape co-evolution is fundamentally different from
+``coupled landscapes'' \citep{siggelkow2005speed, rivkin2007balancing},
+where inter-agent coupling is specified exogenously via a fixed matrix. In
+SaoMNK, the coupling arises endogenously through the \emph{evolving}
+network structure $\bB$.
+
+The \emph{cycle4} statistic \eqref{eq:cycle4} creates even richer
+dependencies: it captures four-cycle structures in the bipartite graph,
+meaning that actor $i$'s utility depends on higher-order patterns of
+co-selection among multiple actors and components.
+
+\medskip
+\noindent\textbf{Dimension (c): Bounded rationality.}
+
+In the NK model, search is deterministic: the adaptive walk always selects the
+best-improving single-bit flip (greedy) or any improving flip (random). There
+is no mechanism for sub-optimal choices, exploration, or error.
+
+SaoMNK uses the logit choice model \eqref{eq:logit_choice}, parameterized by
+$\beta > 0$. This yields a continuous spectrum of search behaviors:
+\begin{itemize}
+  \item $\beta \to 0$: Each alternative is chosen with equal probability
+        (random search). The actor ignores payoff differences entirely.
+  \item $\beta \in (0, \infty)$: Noisy best-response. The actor tends toward
+        utility-maximizing choices but makes errors with probability
+        decreasing in $\beta$ and in the utility gap. This corresponds to
+        bounded rationality in the sense of \citet{blume1993statistical}
+        and the conditional logit of \citet{mcfadden1974conditional}.
+  \item $\beta \to \infty$: Deterministic greedy choice (the NK limit, as
+        shown in \Cref{lem:dynamic_equiv}).
+\end{itemize}
+
+\begin{lemma}[Search Precision Spectrum]
+\label{lem:search_precision}
+For any $\beta \in (0, \infty)$ and any configuration $\bx$ that is not a
+global optimum, the SaoMNK dynamics with $M=1$ and $\btheta = \mathbf{0}$
+assign positive probability to \emph{every} single-bit flip, including
+fitness-decreasing ones. In contrast, the NK adaptive walk assigns zero
+probability to fitness-decreasing flips.
+\end{lemma}
+
+\begin{proof}[Proof of \Cref{lem:search_precision}]
+For any $\beta \in (0, \infty)$ and any $j \in \{1, \ldots, N\}$:
+\begin{equation*}
+  P(\text{flip } j) = \frac{\exp(\beta \, \Delta u_j)}{1 + \sum_{k=1}^{N} \exp(\beta \, \Delta u_k)} > 0,
+\end{equation*}
+since $\exp(\beta \, \Delta u_j) > 0$ for all finite $\beta$ and all
+$\Delta u_j \in \R$, and the denominator is finite. In particular, even if
+$\Delta u_j < 0$ (fitness-decreasing flip), the probability is strictly
+positive. The NK adaptive walk, by contrast, assigns probability 0 to any
+flip with $\Delta u_j \leq 0$.
+\end{proof}
+
+This has important substantive implications. With finite $\beta$, actors can
+escape local optima---a behavior impossible in standard NK. The parameter
+$\beta$ therefore controls the exploration--exploitation tradeoff, a central
+concern in organizational learning theory.
+
+\medskip
+\noindent\textbf{Strict generalization.}
+
+Each dimension produces behavior outside the NK model family independently:
+
+\begin{example}[Dimension (a) alone]
+With $M = 2$, $\btheta = \mathbf{0}$, and $\beta \to \infty$, SaoMNK
+reduces to two independent NK adaptive walks on the same landscape. While
+trivial, this already lies outside the single-agent NK framework.
+\end{example}
+
+\begin{example}[Dimension (b) alone]
+With $M = 2$, $\theta_{\mathrm{inPop}} = 1$, and $\beta \to \infty$, actor
+1's landscape changes whenever actor 2 changes a tie. Specifically, if actor
+2 connects to component $d$, then actor 1's utility from connecting to $d$
+increases by $\theta_{\mathrm{inPop}} = 1$. This dynamic landscape
+reshaping cannot be captured by \emph{any} single-actor NK model with any
+$N$ or $K$, because NK fitness $W(\bx)$ depends only on $\bx$ and the fixed
+payoff table---it has no mechanism for another agent's state to enter the
+payoff function.
+\end{example}
+
+\begin{example}[Dimension (c) alone]
+With $M = 1$, $\btheta = \mathbf{0}$, and $\beta = 1$, SaoMNK on the same
+landscape as an NK model produces a stochastic search trajectory that
+assigns positive probability to fitness-decreasing moves
+(\Cref{lem:search_precision}). No parameterization of the NK adaptive walk
+can reproduce this: NK search is deterministic.
+\end{example}
+
+Since each dimension independently generates behavior impossible in any NK
+model, and \Cref{thm:reduction} shows that NK is a special case of SaoMNK,
+the generalization is strict: $\mathrm{NK} \subsetneq \mathrm{SaoMNK}$.
+\end{proof}
+
+% ============================================================
+\section{Theorem 3: Approximation}
+\label{sec:approximation}
+% ============================================================
+
+\begin{theorem}[Approximation Theorem]
+\label{thm:approximation}
+For any NK landscape $(N, K, \bA, \{f_d\}_{d=1}^N)$, there exists a
+parameterization of the SaoMNK model that reproduces the NK payoff structure to
+arbitrary precision.
+\end{theorem}
+
+We establish this result via three independent proof strategies, each
+illuminating a different aspect of the approximation.
+
+% ---------- 3a ----------
+\begin{proposition}[Constructive Existence via Dummy Covariates]
+\label{prop:constructive}
+For any NK landscape $(N, K, \bA, \{f_d\}_{d=1}^N)$, there exists a set of
+$N \cdot 2^{K+1}$ dyadic covariates and corresponding SaoMNK parameters that
+\emph{exactly} reproduce the NK fitness function.
+\end{proposition}
+
+\begin{proof}
+Fix a component $d$ and its epistatic neighborhood $\mathcal{N}(d)$ with
+$|\mathcal{N}(d)| = K + 1$. There are $2^{K+1}$ possible configurations of
+the bits in $\mathcal{N}(d)$. Enumerate these configurations as
+$\mathbf{c}_1^{(d)}, \mathbf{c}_2^{(d)}, \ldots, \mathbf{c}_{2^{K+1}}^{(d)}$.
+
+For each component $d$ and each configuration $\mathbf{c}_\ell^{(d)}$, define
+a dummy-coded dyadic covariate:
+\begin{equation}
+\label{eq:dummy_covariate}
+  w_{d\ell}(\bx) =
+  \begin{cases}
+    1 & \text{if } \bx_{\mathcal{N}(d)} = \mathbf{c}_\ell^{(d)}, \\
+    0 & \text{otherwise}.
+  \end{cases}
+\end{equation}
+This is a \emph{dyadic covariate} in the SAOM sense: it depends on the
+actor's tie to component $d$ and on the configuration of related
+components.
+
+Set the corresponding SaoMNK parameter equal to the NK payoff value:
+$\alpha_{d\ell} = f_d(\mathbf{c}_\ell^{(d)})$.
+
+Then the NK component payoff is recovered exactly:
+\begin{equation*}
+  f_d(\bx_{\mathcal{N}(d)}) = \sum_{\ell=1}^{2^{K+1}} \alpha_{d\ell} \, w_{d\ell}(\bx),
+\end{equation*}
+since exactly one dummy is active ($w_{d\ell} = 1$) for each configuration,
+and it selects the correct payoff value.
+
+Summing over all $N$ components:
+\begin{equation*}
+  \sum_{d=1}^{N} f_d(\bx_{\mathcal{N}(d)})
+  = \sum_{d=1}^{N} \sum_{\ell=1}^{2^{K+1}} \alpha_{d\ell} \, w_{d\ell}(\bx)
+  = N \cdot W(\bx).
+\end{equation*}
+
+This construction uses $N \cdot 2^{K+1}$ covariates and parameters, which
+grows exponentially in $K$. The construction is therefore impractical for
+large $K$ but serves as an \emph{existence proof}: the SaoMNK parameter
+space is rich enough to exactly encode any NK landscape.
+\end{proof}
+
+\begin{remark}
+The exponential scaling in \Cref{prop:constructive} mirrors the fundamental
+dimensionality of the NK model itself: the payoff table $\{f_d\}$ contains
+$N \cdot 2^{K+1}$ independent entries. No representation can be more compact
+without imposing structure on the payoffs.
+\end{remark}
+
+% ---------- 3b ----------
+\begin{proposition}[Actor Heterogeneity Substitution]
+\label{prop:heterogeneity}
+With $M$ heterogeneous actors and $Q$ continuous dyadic covariates interacted
+with the epistasis structure, the SaoMNK model has $Q \cdot M \cdot N$
+effective parameters. A sufficient condition for matching the NK payoff
+dimensionality is $Q \cdot M \geq 2^{K+1}$.
+\end{proposition}
+
+\begin{proof}
+In the SaoMNK model, let $\{z_q^{(i,d)}\}_{q=1}^Q$ denote $Q$ continuous
+dyadic covariates for actor $i$ and component $d$. These covariates enter the
+utility function through SAOM effects of the form \texttt{X}, \texttt{egoX},
+\texttt{altX}, and \texttt{XWX}:
+\begin{equation}
+\label{eq:covariate_utility}
+  u_i^{\mathrm{cov}}(\bb_i) = \sum_{d=1}^{N} b_{id} \sum_{q=1}^{Q}
+    \gamma_q \, z_q^{(i,d)},
+\end{equation}
+where $\gamma_q$ are the covariate effect parameters.
+
+Since the covariates can vary across both actors $i \in \{1, \ldots, M\}$
+and components $d \in \{1, \ldots, N\}$, the total number of free covariate
+values is $Q \cdot M \cdot N$.
+
+The NK payoff table has $N \cdot 2^{K+1}$ independent entries (each of the
+$N$ components has a payoff function over $2^{K+1}$ configurations). For the
+SaoMNK model to have at least as many degrees of freedom, we require:
+\begin{equation}
+\label{eq:heterogeneity_condition}
+  Q \cdot M \geq 2^{K+1}.
+\end{equation}
+
+This condition is practically achievable. Consider the following examples:
+\begin{itemize}
+  \item $M = 10$, $K = 3$: Need $Q \cdot 10 \geq 16$, so $Q = 2$ suffices.
+  \item $M = 10$, $K = 5$: Need $Q \cdot 10 \geq 64$, so $Q = 7$ suffices.
+  \item $M = 20$, $K = 7$: Need $Q \cdot 20 \geq 256$, so $Q = 13$ suffices.
+  \item $M = 50$, $K = 10$: Need $Q \cdot 50 \geq 2048$, so $Q = 41$ suffices.
+\end{itemize}
+
+The key insight is that \emph{actor heterogeneity provides a natural,
+empirically grounded source of landscape complexity} that substitutes for
+the purely random payoffs of the NK model. Rather than drawing $2^{K+1}$
+random numbers per component, the SaoMNK model generates effective landscape
+ruggedness through the interaction of actor-specific attributes with the
+epistatic structure.
+
+To make the dimension count precise: fix component $d$. In the NK model,
+$f_d$ maps $2^{K+1}$ configurations to $[0,1]$, requiring $2^{K+1}$ parameters.
+In SaoMNK, for component $d$, there are $Q$ covariates $\times$ $M$ actors
+$= Q \cdot M$ actor-specific payoff modifiers. When $Q \cdot M \geq 2^{K+1}$,
+the linear span of these modifiers has sufficient dimension to approximate
+any function on $\{0,1\}^{K+1}$ (by the argument in \Cref{prop:constructive},
+replacing dummy covariates with continuous ones whose span covers the same
+space).
+
+This result suggests that models with moderate numbers of actors and covariates
+can capture landscapes of substantial complexity---and can do so with
+\emph{empirically estimable} parameters rather than arbitrary random draws.
+\end{proof}
+
+% ---------- 3c ----------
+\begin{proposition}[Universal Approximation via Mixed Logit]
+\label{prop:mixed_logit}
+The SaoMNK model with random effects (mixed logit specification) can
+approximate any NK payoff function to arbitrary precision.
+\end{proposition}
+
+\begin{proof}
+This result follows from the universal approximation theorem for mixed logit
+models established by \citet{mcfadden2000mixed}.
+
+\medskip
+\noindent\emph{Step 1: The SAOM is a conditional logit.}
+
+The SaoMNK choice probability \eqref{eq:logit_choice} has the form
+\begin{equation*}
+  P(j \mid \bb_i, \bB_{-i}) = \frac{\exp(V_{ij})}{\sum_k \exp(V_{ik})},
+\end{equation*}
+where $V_{ij} = \beta \, \Delta u_{ij}$ is a deterministic function of
+observable attributes of the alternatives (components) and the chooser
+(actor). This is precisely the conditional logit model of
+\citet{mcfadden1974conditional}.
+
+\medskip
+\noindent\emph{Step 2: The mixed logit extension.}
+
+A \emph{mixed logit} (or random-parameters logit) generalizes the conditional
+logit by allowing the parameters $\btheta$ to vary across decision-makers
+according to a mixing distribution $G$:
+\begin{equation}
+\label{eq:mixed_logit}
+  P(j \mid \bb_i, \bB_{-i}) = \int
+    \frac{\exp(V_{ij}(\btheta))}{\sum_k \exp(V_{ik}(\btheta))}
+    \, dG(\btheta).
+\end{equation}
+
+In the SaoMNK framework, this corresponds to allowing the effect parameters
+$\btheta$ (and/or $\beta$) to be drawn from a distribution across actors
+or across time periods, rather than being fixed.
+
+\medskip
+\noindent\emph{Step 3: The McFadden--Train theorem.}
+
+\citet{mcfadden2000mixed} prove the following (Theorem~1 in their paper):
+
+\begin{quote}
+\emph{Any Random Utility Model (RUM) can be approximated to any degree of
+accuracy by a mixed logit model with an appropriate choice of mixing
+distribution and variables.}
+\end{quote}
+
+Formally, let $\mathcal{P}^*$ denote any choice probability system consistent
+with a random utility model. For any $\varepsilon > 0$, there exists a
+mixed logit specification---i.e., a set of alternative-specific variables
+and a mixing distribution $G$ over parameters---such that
+\begin{equation*}
+  \sup_j \left|P(j) - P^*(j)\right| < \varepsilon.
+\end{equation*}
+
+\medskip
+\noindent\emph{Step 4: Application to NK payoffs.}
+
+The NK fitness function $W(\bx)$ defines a preference ordering over
+configurations $\bx \in \{0,1\}^N$. This preference ordering can be
+rationalized by a random utility model: set $U(\bx) = W(\bx) + \eta$
+where $\eta$ is a noise term.
+
+By the McFadden--Train theorem, the choice probabilities implied by this
+RUM can be approximated to arbitrary precision by a mixed logit. Since the
+SAOM is a conditional logit, its mixed version (with random effects on
+$\btheta$) is a mixed logit. Therefore, the mixed SaoMNK model can
+approximate the choice behavior induced by any NK fitness function to
+arbitrary precision.
+
+Moreover, since the approximation holds for choice probabilities, and
+the choice probabilities under the logit model are monotone transformations
+of utility differences, the underlying \emph{payoff structure} is also
+approximated: for any two configurations $\bx, \bx'$ with
+$W(\bx) > W(\bx')$, the mixed SaoMNK model can be parameterized so that
+$u(\bx) > u(\bx')$ with probability arbitrarily close to 1.
+\end{proof}
+
+\begin{remark}
+\Cref{prop:mixed_logit} is the strongest theoretical result: it provides
+a \emph{universal} approximation guarantee without requiring exponentially
+many covariates (\Cref{prop:constructive}) or large numbers of actors
+(\Cref{prop:heterogeneity}). The cost is that the mixing distribution
+$G$ may be complex, but it can in principle be estimated from data using
+Bayesian methods or simulated maximum likelihood
+\citep{mcfadden2000mixed}.
+\end{remark}
+
+\begin{corollary}
+\label{cor:approximation_hierarchy}
+The three approximation strategies form a hierarchy of increasing
+generality:
+\begin{enumerate}[label=(\roman*)]
+  \item \Cref{prop:constructive} provides exact reconstruction but
+        requires $O(N \cdot 2^K)$ parameters.
+  \item \Cref{prop:heterogeneity} provides exact reconstruction using
+        $O(Q \cdot M \cdot N)$ empirically meaningful parameters, where
+        $Q \cdot M \geq 2^{K+1}$.
+  \item \Cref{prop:mixed_logit} provides $\varepsilon$-approximation for
+        any $\varepsilon > 0$ with a flexible nonparametric mixing
+        distribution, and requires no explosion in the number of observed
+        covariates.
+\end{enumerate}
+\end{corollary}
+
+% ============================================================
+\section{Discussion}
+\label{sec:discussion}
+% ============================================================
+
+The three theorems established above---Reduction, Generalization, and
+Approximation---collectively position the SaoMNK model as a principled
+generalization of the NK landscape framework that has shaped complexity-theoretic
+research in strategic management for three decades
+\citep{kauffman1993origins, levinthal1997adaptation, rivkin2007balancing,
+siggelkow2005speed}. We discuss the implications for theory, methodology,
+and future research.
+
+\subsection{Theoretical Implications}
+
+\paragraph{From landscapes to games.}
+The Reduction Theorem (\Cref{thm:reduction}) shows that the NK model is a
+single-actor, deterministic-search, fixed-landscape special case of SaoMNK.
+This reframing is consequential: it reveals that the NK model implicitly
+assumes away three features---multi-actor interaction, landscape endogeneity,
+and bounded rationality---that are central to organizational and strategic
+phenomena.
+
+The Generalization Theorem (\Cref{thm:generalization}) demonstrates that
+relaxing any one of these assumptions produces behavior outside the NK family.
+Dimension (b)---endogenous landscape co-evolution---is particularly important.
+Prior multi-agent extensions of NK \citep{siggelkow2005speed, rivkin2007balancing}
+couple agents' landscapes exogenously, specifying in advance which of agent
+$j$'s decisions affect agent $i$'s fitness. In SaoMNK, this coupling emerges
+endogenously from the evolving network structure: when actor $j$ connects to
+(or disconnects from) a component, it changes the popularity, crowding, and
+structural statistics that enter actor $i$'s utility function. The landscape
+is not merely ``coupled''---it \emph{co-evolves} with the actors' search
+trajectories.
+
+\paragraph{Bounded rationality as a first-class citizen.}
+The logit choice model (\Cref{lem:search_precision}) provides a natural,
+axiomatically grounded model of bounded rationality that the NK framework
+lacks. The precision parameter $\beta$ has a clear behavioral interpretation:
+it governs the probability that an actor deviates from the payoff-maximizing
+choice. When $\beta$ is small, actors explore broadly (high error rates);
+when $\beta$ is large, they exploit locally (low error rates). This connects
+the complexity-theoretic tradition to the behavioral theory of the firm and
+to evolutionary game theory \citep{blume1993statistical}, where logit dynamics
+are a standard model of noisy best-response.
+
+The ability to escape local optima under finite $\beta$ is substantively
+important. A large literature has documented the ``competency trap'' and
+related phenomena in which organizations become locked into suboptimal
+configurations. The NK model can represent such lock-in (local optima on
+rugged landscapes) but has no mechanism for escape. SaoMNK, with finite
+$\beta$, naturally generates both lock-in \emph{and} escape, with the
+relative prevalence governed by a single estimable parameter.
+
+\subsection{Methodological Implications}
+
+\paragraph{From simulation to estimation.}
+Perhaps the most significant practical advantage of SaoMNK over NK is
+\emph{empirical estimability}. The NK model's payoff tables are drawn from
+arbitrary random distributions and have no empirical counterpart: there is
+no procedure for estimating $f_d$ from data. The model is therefore
+restricted to computational experiments (simulation).
+
+SaoMNK, by contrast, inherits the full statistical infrastructure of the
+Stochastic Actor-Oriented Model \citep{snijders2010introduction}. The
+parameters $\btheta$ and $\beta$ can be estimated from longitudinal
+network data using the method of moments or maximum likelihood, as
+implemented in the RSiena package. This opens the door to
+\emph{empirical complexity theory}: researchers can estimate the
+parameters governing search, interaction, and landscape structure from
+real organizational data, rather than assuming them.
+
+The Approximation Theorem (\Cref{thm:approximation}) provides the
+theoretical foundation for this program. \Cref{prop:heterogeneity} shows
+that actor heterogeneity---a feature naturally present in empirical
+settings---substitutes for the arbitrary randomness of NK payoffs.
+\Cref{prop:mixed_logit} guarantees that, with sufficient flexibility in
+the mixing distribution, any NK-like payoff structure can be captured.
+
+\paragraph{Parameter economy and interpretability.}
+\Cref{prop:heterogeneity} highlights an important practical advantage:
+with $M = 10$ actors and $Q = 2$ continuous covariates, SaoMNK can match
+the complexity of an $N$-component, $K = 3$ NK landscape. The SaoMNK
+parameters ($\theta_{\mathrm{density}}$, $\theta_{\mathrm{inPop}}$,
+$\theta_{\mathrm{cycle4}}$, and covariate effects) have clear substantive
+interpretations---they describe preferences for scope, popularity,
+clustering, and covariate-driven matching. The NK payoff table, by
+contrast, has $N \cdot 2^{K+1}$ uninterpretable random numbers.
+
+\subsection{Connections to the Broader Literature}
+
+The relationship between SaoMNK and NK connects several previously
+disparate literatures:
+\begin{itemize}
+  \item \emph{Complexity theory in management}
+        \citep{kauffman1993origins, levinthal1997adaptation}: SaoMNK
+        preserves the core insight---that epistatic interactions among
+        components create rugged fitness landscapes with multiple local
+        optima---while adding micro-founded behavioral and social structure.
+
+  \item \emph{Network dynamics}
+        \citep{snijders2010introduction}: SaoMNK applies the SAOM
+        framework, originally developed for social networks, to the
+        domain of organizational search. The bipartite network of actors
+        and components provides a natural representation of resource
+        allocation, technology adoption, and market entry decisions.
+
+  \item \emph{Discrete choice theory}
+        \citep{mcfadden1974conditional, mcfadden2000mixed}: The logit
+        choice model in SaoMNK connects organizational search to the
+        econometric tradition of random utility maximization, enabling
+        welfare analysis and counterfactual prediction.
+
+  \item \emph{Evolutionary game theory}
+        \citep{blume1993statistical}: The logit dynamics governing SaoMNK
+        search are a form of stochastic best-response dynamics, linking
+        the model to equilibrium selection in games.
+\end{itemize}
+
+\subsection{Limitations and Boundary Conditions}
+
+Three limitations merit discussion. First, the Approximation Theorem
+(\Cref{thm:approximation}) is an existence result: it guarantees that a
+parameterization exists but does not provide an efficient algorithm for
+finding it. In practice, estimation via RSiena's method of moments is
+computationally feasible for moderate $M$ and $N$ but may become
+challenging for very large systems.
+
+Second, the Generalization Theorem (\Cref{thm:generalization}) shows that
+SaoMNK is \emph{strictly} more expressive than NK, but greater
+expressiveness carries the risk of overfitting. Empirical applications
+should employ standard model selection techniques (BIC, cross-validation)
+to identify the most parsimonious specification.
+
+Third, the relationship established here is between SaoMNK and the
+\emph{standard} NK model. Several extensions of NK---including NKC
+\citep{kauffman1993origins}, NK with changing landscapes, and NK with
+imperfect information---address some of the same limitations that SaoMNK
+addresses. The formal relationship between SaoMNK and these extended NK
+models remains an open question for future work.
+
+\subsection{Conclusion}
+
+The standard NK model has been a productive tool for generating
+theoretical insights about the structure of complex adaptive systems. By
+proving that it is a degenerate special case of SaoMNK---recoverable by
+setting $M = 1$, $\btheta = \mathbf{0}$, and $\beta \to \infty$---we
+provide a precise characterization of the assumptions implicit in NK-based
+research. The Generalization Theorem identifies exactly how SaoMNK extends
+beyond NK, and the Approximation Theorem establishes that this extension
+does not sacrifice any of NK's representational power. Together, these
+results provide a formal foundation for moving from simulation-only
+complexity models to empirically estimable models of organizational search
+on rugged landscapes.
+
+% ============================================================
+% REFERENCES
+% ============================================================
+
+\bibliographystyle{apalike}
+
+\begin{thebibliography}{99}
+
+\bibitem[Altenberg, 1997]{altenberg1997nk}
+Altenberg, L. (1997).
+\newblock {NK} fitness landscapes.
+\newblock In B\"ack, T., Fogel, D., and Michalewicz, Z., editors,
+  \emph{Handbook of Evolutionary Computation}, section B2.7.2.
+  Oxford University Press.
+
+\bibitem[Blume, 1993]{blume1993statistical}
+Blume, L.~E. (1993).
+\newblock The statistical mechanics of strategic interaction.
+\newblock \emph{Games and Economic Behavior}, 5(3):387--424.
+
+\bibitem[Kauffman, 1993]{kauffman1993origins}
+Kauffman, S.~A. (1993).
+\newblock \emph{The Origins of Order: Self-Organization and Selection in
+  Evolution}.
+\newblock Oxford University Press, New York.
+
+\bibitem[Levinthal, 1997]{levinthal1997adaptation}
+Levinthal, D.~A. (1997).
+\newblock Adaptation on rugged landscapes.
+\newblock \emph{Management Science}, 43(7):934--950.
+
+\bibitem[McFadden, 1974]{mcfadden1974conditional}
+McFadden, D. (1974).
+\newblock Conditional logit analysis of qualitative choice behavior.
+\newblock In Zarembka, P., editor, \emph{Frontiers in Econometrics},
+  pages 105--142. Academic Press, New York.
+
+\bibitem[McFadden and Train, 2000]{mcfadden2000mixed}
+McFadden, D. and Train, K. (2000).
+\newblock Mixed {MNL} models for discrete response.
+\newblock \emph{Journal of Applied Econometrics}, 15(5):447--470.
+
+\bibitem[Rivkin and Siggelkow, 2007]{rivkin2007balancing}
+Rivkin, J.~W. and Siggelkow, N. (2007).
+\newblock Patterned interactions in complex systems: Implications for
+  exploration.
+\newblock \emph{Management Science}, 53(7):1068--1085.
+
+\bibitem[Siggelkow and Rivkin, 2005]{siggelkow2005speed}
+Siggelkow, N. and Rivkin, J.~W. (2005).
+\newblock Speed and search: Designing organizations for turbulence and
+  complexity.
+\newblock \emph{Organization Science}, 16(2):101--122.
+
+\bibitem[Snijders et~al., 2010]{snijders2010introduction}
+Snijders, T.~A.~B., van~de Bunt, G.~G., and Steglich, C.~E.~G. (2010).
+\newblock Introduction to stochastic actor-based models for network dynamics.
+\newblock \emph{Social Networks}, 32(1):44--60.
+
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,518 @@
+---
+title: "Theoretical Foundations: From NK to SaoMNK"
+author: "Stephen Downing"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Theoretical Foundations: From NK to SaoMNK}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+# From NK to SaoMNK
+
+## The NK Model
+
+The NK model (Kauffman & Levin, 1987; Kauffman & Weinberger, 1989)
+characterizes fitness landscapes with two parameters:
+
+- $N$: the number of components (loci, decisions, design choices)
+- $K$: the degree of epistatic interdependence among components
+
+Higher $K$ increases the ruggedness of the fitness landscape, creating
+more local optima and making search more difficult. The NK model has become
+a workhorse in strategy and organization theory (Levinthal, 1997; Rivkin, 2000)
+for studying adaptation, complexity, and search.
+
+## Limitations of Classical NK
+
+The classical NK model has several limitations that `searchnet` addresses:
+
+1. **Single-agent**: NK models typically feature a single searcher navigating
+   the landscape. Multi-agent extensions exist but treat agents independently.
+2. **Exogenous landscape**: The fitness landscape is fixed---it does not
+   respond to agents' positions or to the structure of affiliation.
+3. **No network structure**: There is no explicit representation of the
+   *social* ties among actors or the *epistatic* ties among components as
+   emergent network processes.
+4. **No endogeneity**: The conventional $K$ is set exogenously. In reality,
+   epistatic coupling emerges from actors' overlapping affiliations.
+
+## The SaoMNK Generalization
+
+`searchnet` endogenizes the NK landscape by reformulating it as a **bipartite
+network** of $M$ actors affiliating with $N$ components.
+
+### The $\{K\}$ Interpretive Framework
+
+The four statistics that compose the $\{K\}$ framework are individually
+well-known: $K_{AC}$ and $K_{CA}$ are standard bipartite (two-mode) degree
+measures, while $K_{AA}$ and $K_{CC}$ are standard one-mode projection
+degree measures. None of these is new to network science (see, e.g.,
+Latapy, Magnien, & Del Vecchio, 2008; Borgatti & Everett, 1997).
+
+The contribution of the $\{K\}$ framework is not statistical but
+**interpretive**: it provides a *theoretical bridge* between the NK
+landscape tradition in strategy and the bipartite network tradition in
+sociology. Specifically, the framework offers a structured lens for reading
+established network degree measures as dimensions of an interdependence
+landscape:
+
+| Degree | Symbol | Interpretation | Network | Standard Network Measure |
+|--------|--------|----------------|---------|--------------------------|
+| Actor Scope | $K_{AC}$ | How many components each actor affiliates with | Bipartite (2-mode) | Row degree of incidence matrix |
+| Component Popularity | $K_{CA}$ | How many actors affiliate with each component | Bipartite (2-mode) | Column degree of incidence matrix |
+| Actor Sociality | $K_{AA}$ | How many other actors share components with each actor | Projection (1-mode) | Degree of actor co-membership projection |
+| Component Epistasis | $K_{CC}$ | How many other components share actors with each component | Projection (1-mode) | Degree of component co-occurrence projection |
+
+Formally, given the bipartite incidence matrix
+$\mathbf{B} \in \{0,1\}^{M \times N}$, the four $\{K\}$ projections are:
+
+$$K_{AC} = \text{rowSums}(\mathbf{B}), \quad K_{CA} = \text{colSums}(\mathbf{B})$$
+
+$$K_{AA} = \text{deg}(\mathbf{B}\mathbf{B}^T), \quad K_{CC} = \text{deg}(\mathbf{B}^T\mathbf{B})$$
+
+where $\text{deg}(\cdot)$ denotes the degree vector of the (binary)
+one-mode projection, with the diagonal zeroed. $K_{AA}$ captures
+actor--actor co-affiliation (sociality) and $K_{CC}$ captures
+component--component co-occurrence (epistasis). A change to any single
+cell $b_{ij}$ of $\mathbf{B}$ propagates to all four projections
+simultaneously.
+
+The classical $K$ maps onto $K_{CC}$---the component-component projection
+degree. But `searchnet` shows that $K_{CC}$ is endogenously determined by the
+bipartite network, and it co-evolves with $K_{AC}$, $K_{CA}$, and $K_{AA}$.
+
+### Why Group These Four Measures?
+
+Individually, each $K$ measure is a standard degree statistic that could be
+analyzed in isolation. The analytical leverage of the $\{K\}$ framework
+comes from treating them as a **coupled system**. Because all four measures
+derive from the same bipartite incidence matrix, they are structurally
+linked: a change in actor scope ($K_{AC}$) mechanically alters component
+popularity ($K_{CA}$), which in turn reshapes both the actor co-membership
+network ($K_{AA}$) and the component co-occurrence network ($K_{CC}$).
+Analyzing any single measure in isolation obscures these cross-domain
+dependencies. Grouping them makes visible the transmission mechanism
+through which micro-level affiliation decisions propagate into macro-level
+landscape ruggedness---a mechanism that is invisible when $K$ is treated as
+a scalar parameter or when bipartite and projection degree are examined in
+separate analyses.
+
+### Coupling and Endogenization as the Core Novelty
+
+The novelty of `searchnet` therefore lies not in the individual statistics but
+in two analytical moves. First, **coupling**: by tracking all four degree
+processes simultaneously, the framework exposes the structural constraints
+that link actor behavior to landscape topology. Second,
+**endogenization**: embedding these coupled degrees within a stochastic
+actor-oriented model (SAOM) allows the interdependence structure to emerge
+from actors' forward-looking affiliation decisions rather than being imposed
+exogenously by the modeler. Together, coupling and endogenization transform
+$K$ from a fixed model parameter into a dynamic, emergent property of the
+system.
+
+### Why SAOM over ERGM?
+
+A natural question is why `searchnet` adopts Snijders' stochastic
+actor-oriented model (SAOM; Snijders, 1996; Snijders, van de Bunt, &
+Steglich, 2010) rather than the exponential random graph model (ERGM;
+Lusher, Koskinen, & Robins, 2013) as its network engine. The choice follows
+directly from the theoretical premise.
+
+The NK tradition models **agents making strategic decisions**: an actor
+evaluates alternative configurations and selects the one that maximizes a
+fitness criterion. The SAOM's rate-function architecture is the natural
+formalization of this process. At each micro-step, a single actor is
+selected (rate function), evaluates the marginal utility of each possible
+tie change (objective function), and chooses probabilistically according to
+a multinomial logit rule. This actor-centric, sequential-decision structure
+maps directly onto the local search process in NK models.
+
+ERGMs, by contrast, characterize the equilibrium distribution of network
+configurations without specifying a generative decision process. An ERGM
+answers the question "what network structures are over-represented relative
+to chance?" but does not model *who* makes *which* decision *when*. For a
+framework whose purpose is to endogenize landscape ruggedness through
+actors' strategic choices, this equilibrium focus omits precisely the
+mechanism of interest.
+
+In short, the SAOM is chosen because it models the same object that NK
+theory models---an agent's adaptive search---and extends it to a setting
+where the landscape co-evolves with the searcher's network position.
+
+## Formal Framework
+
+The following definitions and theorems establish SaoMNK as a strict
+generalization of the NK model within a stochastic actor-oriented
+architecture.
+
+### Definition 1: NK Landscape
+
+A standard NK landscape assigns fitness to a binary string
+$\mathbf{x} \in \{0,1\}^N$ as the average of $N$ component contributions,
+each depending on $K$ epistatic neighbors:
+
+$$W(\mathbf{x}) = \frac{1}{N} \sum_{d=1}^{N} f_d(\mathbf{x}_{N(d)})$$
+
+where $N(d) \subseteq \{1,\ldots,N\}$ with $|N(d)| = K+1$ is the
+neighborhood of component $d$ (including itself), and each
+$f_d: \{0,1\}^{K+1} \to [0,1]$ is drawn i.i.d.\ from $\text{Uniform}(0,1)$
+(Kauffman, 1993).
+
+### Definition 2: SaoMNK Utility
+
+For actor $i$ with affiliation vector $\mathbf{b}_i \in \{0,1\}^N$
+in the context of all other actors' affiliations $\mathbf{B}_{-i}$ and
+epistasis matrix $E \in \{0,1\}^{N \times N}$, the SaoMNK utility function
+is:
+
+$$u_i(\mathbf{b}_i; \mathbf{B}_{-i}, E) = \underbrace{\sum_{d=1}^{N} b_{id} \cdot f_d(\mathbf{b}_i \odot E_{d\cdot})}_{\text{NK component}} + \underbrace{\sum_{k=1}^{p} \theta_k \cdot s_k(\mathbf{b}_i, \mathbf{B})}_{\text{SAOM statistics}}$$
+
+The first term is the epistatic fitness contribution, where $\odot$
+denotes element-wise masking by the $d$-th row of the epistasis matrix.
+The second term captures endogenous network effects (density, popularity,
+scope, etc.) weighted by structural parameters $\theta_k$.
+
+### Definition 3: Choice Probability (McFadden Conditional Logit)
+
+At each ministep, actor $i$ evaluates the marginal utility
+$\Delta u_{ij} = u_i(\mathbf{b}_i^{+j}) - u_i(\mathbf{b}_i)$ of flipping
+each tie $j$ and chooses according to the conditional logit:
+
+$$P(\text{flip } j \mid i) = \frac{\exp(\beta \cdot \Delta u_{ij})}{1 + \sum_{k=1}^{N} \exp(\beta \cdot \Delta u_{ik})}$$
+
+where $\beta > 0$ is the rationality parameter governing the precision of
+choice. The $1$ in the denominator represents the option of making no change.
+
+### Theorem 1: Reduction (NK as Special Case)
+
+*Under restrictions R1--R5, SaoMNK reduces exactly to the NK adaptive walk.*
+
+The restrictions are: (R1) $M=1$ actor, (R2) epistasis matrix
+$E = A$ fixed exogenously, (R3) all structural parameters $\theta_k = 0$,
+(R4) rationality $\beta \to \infty$ (greedy deterministic choice), and
+(R5) constant ministep rate. Under these conditions the choice rule
+selects the fitness-maximizing single-bit flip at each step, which is
+precisely the NK adaptive walk (Kauffman, 1993).
+
+### Theorem 2: Generalization
+
+*SaoMNK strictly extends NK along three independent dimensions:*
+
+(a) **Multi-actor interaction** ($M > 1$): Multiple actors search
+simultaneously on overlapping landscapes, introducing competitive and
+cooperative externalities absent from single-agent NK.
+
+(b) **Endogenous landscape co-evolution** ($\theta \neq \mathbf{0}$):
+Structural parameters allow the landscape topology to change as actors
+modify their affiliations, coupling search dynamics to network evolution.
+
+(c) **Bounded rationality** ($\beta < \infty$): Finite $\beta$ introduces
+stochastic choice, spanning the continuum from random search ($\beta = 0$)
+to deterministic greedy search ($\beta \to \infty$).
+
+### Theorem 3: Approximation (Mixed Logit Universality)
+
+*For any NK landscape, there exists a SaoMNK parameterization that
+reproduces its fitness function to arbitrary precision.*
+
+This follows from the McFadden and Train (2000) universality result: any
+random utility model (specifically, any discrete choice model in the
+McFadden, 1974 conditional-logit family, including the social-interaction
+extension of Brock and Durlauf, 2001) can be approximated arbitrarily well
+by a mixed logit specification. Since the SaoMNK objective function admits
+mixed logit form, it inherits this approximation guarantee.
+
+### Theorem 4: SAOM--QRE Equivalence
+
+*The stationary distribution of the SaoMNK ministep process is a
+Quantal Response Equilibrium (QRE).*
+
+The logit choice rule (Definition 3) applied to a finite strategic game
+defines a logit QRE (McKelvey & Palfrey, 1995). Under standard regularity
+conditions (finite action space, continuous payoffs, positive ministep
+rates), the SaoMNK Markov chain is ergodic and its stationary distribution
+corresponds to a logit QRE of the underlying network game (Blume, 1993).
+This connects the stochastic dynamics to a well-characterized equilibrium
+concept.
+
+### Theorem 5: Brock--Durlauf Recovery (Economic Foundation)
+
+*The Brock and Durlauf (2001) binary discrete-choice-with-social-interactions
+model is recovered as a degenerate special case of SaoMNK in the
+$M \to \infty$, congestion-only, mean-field limit.*
+
+Theorem 5 is the *complementary* reduction to Theorem 1 (NK Reduction),
+which takes the single-actor / greedy / no-network limit. Together,
+Theorems 1 and 5 establish that SaoMNK contains both Kauffman (1993)
+NK landscape search and Brock & Durlauf (2001) discrete choice with
+social interactions as special cases of a single CTMC. The five
+restrictions Rb1--Rb5 (many-actor mean-field; component independence;
+mean-field rescaling of the social-interaction coefficient; explicit
+$\{0,1\} \leftrightarrow \{-1,+1\}$ spin recoding with the factor-of-4
+correction; finite logit precision $\beta$) and the formal proof are
+detailed in PROOF_TABLE.md Part L (rows L1--L15). Computational
+verification is provided by `verify_brock_durlauf_reduction()`. See
+`vignette("saomnk-brock-durlauf")` for the full tutorial walkthrough,
+including the bifurcation diagram showing the $\beta J > 1$ multiplicity
+threshold (Corollary 2, L11) and the social-multiplier formula
+(Corollary 3, L12). The reflection-problem identification result of
+Manski (1993) is resolved in SaoMNK via the logit nonlinearity (Remark
+L13).
+
+### Equilibrium-Concept Typology
+
+Theorem 4 places SaoMNK within a broader landscape of equilibrium
+concepts. Equilibrium solutions to strategic games can be organized along
+two dimensions: the rationality assumption (full vs. bounded) and the
+temporal structure (static vs. dynamic). The following typology clarifies
+where the SAOM--QRE connection sits relative to classical alternatives:
+
+|                        | **Static**                        | **Dynamic**                             |
+|:-----------------------|:----------------------------------|:----------------------------------------|
+| **Full rationality**   | Nash equilibrium                  | MPE (Ericson & Pakes, 1995; Wibbens et al., 2025) |
+| **Bounded rationality**| Static QRE (McKelvey & Palfrey, 1995) | Dynamic QRE / Logit MPE (SaoMNK)   |
+
+In the top-left cell, Nash equilibrium assumes perfectly rational
+players in a one-shot or stage game. The top-right cell houses the
+Markov perfect equilibrium (MPE), which retains full rationality but
+embeds it in a dynamic state-transition framework (Ericson & Pakes,
+1995; Wibbens, 2023; Wibbens et al., 2025). Repeated-game refinements such as
+Bernheim and Whinston (1990) also inhabit the full-rationality row.
+
+The bottom row relaxes perfect rationality. In the bottom-left cell,
+McKelvey and Palfrey's (1995) static QRE replaces best response with
+logit probabilistic response but retains a one-shot structure. SaoMNK
+occupies the bottom-right cell: it combines bounded rationality (the
+logit choice rule from Definition 3) with dynamic, sequential
+decision-making over an evolving network landscape. Doraszelski and
+Satterthwaite (2010) formalize a closely related object---the logit
+Markov perfect equilibrium---as an intra-cell refinement.
+Eibelsh\"auser and Poensgen (2019) prove that logit Markov QRE
+converges to MPE as the precision parameter $\lambda \to \infty$ for
+all finite dynamic stochastic games, establishing a formal homotopy
+between the bottom-right and top-right cells with $\beta$ as the
+bridging parameter. SaoMNK thus nests both bounded (finite $\beta$)
+and full ($\beta \to \infty$) rationality within a single framework.
+
+For strategic search on rugged NK landscapes, bounded rationality is
+not merely a tractability device but a foundational modeling premise.
+Agents cannot survey the full landscape; they evaluate local
+alternatives and choose probabilistically. This makes the bottom-right
+cell the natural equilibrium home for SaoMNK, with Blume's (1993)
+convergence result providing the bridge from the SAOM ministep process
+to the logit QRE stationary distribution.
+
+### Bounded Rationality Spectrum
+
+The rationality parameter $\beta$ governs search precision and connects
+SaoMNK to classical NK behavior at the limit:
+
+| $\beta$ | Behavior | NK Equivalent | Equilibrium Concept |
+|---------|----------|---------------|---------------------|
+| $0$ | Random search (uniform over actions) | --- | Uniform distribution |
+| $(0, \infty)$ | Noisy best response (logit QRE) | --- | Markov QRE (Eibelsh\"auser \& Poensgen, 2019) |
+| $\to \infty$ | Greedy deterministic choice | NK adaptive walk | MPE (Ericson \& Pakes, 1995) |
+
+The intermediate regime $\beta \in (0, \infty)$ has no NK analogue---it
+is a genuinely new behavioral domain enabled by the SaoMNK generalization.
+
+Crucially, the interaction of landscape ruggedness $K$ and rationality
+$\beta$ jointly determines equilibrium selection. When $K$ is high
+(rugged landscape with many local peaks) and $\beta$ is also high, agents
+lock into the nearest peak rapidly---an exploitation trap. When $K$ is
+high but $\beta$ is moderate, agents maintain positive probability of
+crossing fitness valleys, enabling cross-basin exploration and preserving
+strategic optionality (Trigeorgis \& Reuer, 2017). When $K$ is low
+(smooth landscape), a single global peak dominates regardless of $\beta$.
+This $K \times \beta$ interaction is absent from both the NK literature
+(which assumes $\beta = \infty$) and the static QRE literature (which
+lacks landscape structure).
+
+```{r load-saomnk, include=FALSE}
+if (requireNamespace("searchnet", quietly = TRUE)) {
+  library(searchnet)
+} else {
+  dir_r <- file.path(getwd(), "R")
+  if (!file.exists(file.path(dir_r, "utils.R")))
+    dir_r <- "D:/Search_networks/SaoMNK/R"
+  .saomnk_dir <- dir_r
+  .saomnk_dir <- dir_r; source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
+}
+
+library(Matrix)
+
+DV_NAME <- "self$bipartite_rsienaDV"
+```
+
+# Illustration: NK vs SaoMNK
+
+## Case 1: No Endogenous Effects (Pure Epistasis)
+
+When all structural effects are zero, actors search purely based on the
+exogenous epistasis matrix---mimicking the classical NK model:
+
+```{r case1-no-endogeneity}
+environ_params <- list(
+  M = 12, N = 12,
+  BI_PROB = 0,
+  rand_seed = 1234,
+  name = "_nk_comparison_"
+)
+
+env_exog <- SaomNkRSienaBiEnv$new(environ_params)
+
+component_int_mat <- create_block_diag(environ_params$N,
+                                        round(environ_params$N / 3))
+
+structure_model_exog <- list(
+  dv_bipartite = list(
+    name = DV_NAME,
+    effects = list(
+      list(effect = "density", parameter = 0, dv_name = DV_NAME, fix = TRUE),
+      list(effect = "inPop",   parameter = 0, dv_name = DV_NAME, fix = TRUE),
+      list(effect = "outAct",  parameter = 0, dv_name = DV_NAME, fix = TRUE)
+    ),
+    coDyadCovars = list(
+      list(
+        effect = "XWX", parameter = 0.1, dv_name = DV_NAME, fix = TRUE,
+        nodeSet = c("COMPONENTS", "COMPONENTS"),
+        interaction1 = "self$component_1_coDyadCovar",
+        x = component_int_mat
+      )
+    )
+  )
+)
+
+env_exog$search_rsiena(
+  structure_model_exog,
+  iterations_per_actor = 30,
+  run_seed = 12345
+)
+```
+
+```{r case1-plots, fig.height=6, fig.width=6.5}
+env_exog$plot_actor_degrees(loess_span = 0.35)
+env_exog$plot_component_degrees(loess_span = 0.35)
+```
+
+## Case 2: Endogenous Network Effects
+
+Now we activate structural effects. Negative `density` creates sparsity
+pressure; positive `inPop` creates preferential attachment to popular
+components; positive `outAct` creates scope expansion:
+
+```{r case2-endogenous}
+structure_model_endog <- list(
+  dv_bipartite = list(
+    name = DV_NAME,
+    effects = list(
+      list(effect = "density", parameter = -0.3, dv_name = DV_NAME, fix = TRUE),
+      list(effect = "inPop",   parameter = 0.2,  dv_name = DV_NAME, fix = TRUE),
+      list(effect = "outAct",  parameter = 0.1,  dv_name = DV_NAME, fix = TRUE)
+    ),
+    coDyadCovars = list(
+      list(
+        effect = "XWX", parameter = 0.02, dv_name = DV_NAME, fix = TRUE,
+        nodeSet = c("COMPONENTS", "COMPONENTS"),
+        interaction1 = "self$component_1_coDyadCovar",
+        x = component_int_mat
+      )
+    )
+  )
+)
+
+env_endog <- SaomNkRSienaBiEnv$new(environ_params)
+env_endog$search_rsiena(
+  structure_model_endog,
+  iterations_per_actor = 30,
+  run_seed = 12345
+)
+```
+
+```{r case2-plots, fig.height=10, fig.width=10}
+env_endog$plot_degree_4panel(loess_span = 0.3)
+```
+
+## Comparing the Two Cases
+
+The exogenous case shows uncoupled degree evolution---each dimension changes
+independently. The endogenous case shows **coupled** evolution: density pressure
+constrains actor scope ($K_{AC}$), while preferential attachment creates
+heterogeneous component popularity ($K_{CA}$). The resulting $K_{CC}$
+(traditional epistasis) emerges endogenously from the combination of these
+forces rather than being set by the modeler.
+
+# The SAOM Objective Function
+
+The SAOM objective function in `searchnet` takes the general form:
+
+$$
+f_i(\mathbf{x}) = \sum_k \theta_k s_{ik}(\mathbf{x})
+$$
+
+where $s_{ik}(\mathbf{x})$ are network statistics computed from the bipartite
+network $\mathbf{x}$, and $\theta_k$ are the corresponding parameters. The
+key statistics include:
+
+| Statistic | RSiena Name | Formula | Interpretation |
+|-----------|-------------|---------|----------------|
+| Density | `density` | $\sum_j x_{ij}$ | Baseline affiliation rate |
+| Component popularity | `inPop` | $\sum_j x_{ij} \sqrt{\sum_{h \neq i} x_{hj}}$ | Preference for popular components |
+| Actor scope | `outAct` | $\sum_j x_{ij} \sqrt{\sum_{k \neq j} x_{ik}}$ | Scope expansion tendency |
+| Epistasis (XWX) | `XWX` | $\sum_j x_{ij} \sum_{k} w_{jk} x_{ik}$ | Exogenous component interdependence |
+
+# References
+
+- Blume, L. E. (1993). The statistical mechanics of strategic interaction.
+  *Games and Economic Behavior*, 5(3), 387--424.
+- Borgatti, S. P., & Everett, M. G. (1997). Network analysis of 2-mode
+  data. *Social Networks*, 19(3), 243--269.
+- Kauffman, S. A. (1993). *The Origins of Order: Self-Organization and
+  Selection in Evolution*. Oxford University Press.
+- Kauffman, S. A., & Levin, S. (1987). Towards a general theory of adaptive
+  walks on rugged landscapes. *Journal of Theoretical Biology*, 128(1), 11--45.
+- Kauffman, S. A., & Weinberger, E. D. (1989). The NK model of rugged fitness
+  landscapes and its application to maturation of the immune response.
+  *Journal of Theoretical Biology*, 141(2), 211--245.
+- Latapy, M., Magnien, C., & Del Vecchio, N. (2008). Basic notions for
+  the analysis of large two-mode networks. *Social Networks*, 30(1), 31--48.
+- Levinthal, D. A. (1997). Adaptation on rugged landscapes.
+  *Management Science*, 43(7), 934--950.
+- Lusher, D., Koskinen, J., & Robins, G. (Eds.). (2013). *Exponential
+  Random Graph Models for Social Networks*. Cambridge University Press.
+- McFadden, D. (1974). Conditional logit analysis of qualitative choice
+  behavior. In P. Zarembka (Ed.), *Frontiers in Econometrics* (pp. 105--142).
+  Academic Press.
+- McFadden, D., & Train, K. (2000). Mixed MNL models for discrete response.
+  *Journal of Applied Econometrics*, 15(5), 447--470.
+- McKelvey, R. D., & Palfrey, T. R. (1995). Quantal response equilibria
+  for normal form games. *Games and Economic Behavior*, 10(1), 6--38.
+- Rivkin, J. W. (2000). Imitation of complex strategies.
+  *Management Science*, 46(6), 824--844.
+- Snijders, T. A. B. (1996). Stochastic actor-oriented models for network
+  change. *Journal of Mathematical Sociology*, 21(1--2), 149--172.
+- Snijders, T. A. B. (2001). The statistical evaluation of social network
+  dynamics. *Sociological Methodology*, 31(1), 361--395.
+- Snijders, T. A. B., van de Bunt, G. G., & Steglich, C. E. G. (2010).
+  Introduction to stochastic actor-based models for network dynamics.
+  *Social Networks*, 32(1), 44--60.
+
+```{r session-info}
+sessionInfo()
+```

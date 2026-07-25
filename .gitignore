@@ -1,0 +1,165 @@
+R/*.html
+docs/*.html
+
+*.RData
+*.Rhistory
+R/*.RData
+R/*.Rhistory
+
+*.pdf
+R/*.pdf
+
+*.log
+*.log.txt
+R/*.log
+R/*.log.txt
+
+#
+R/_test_tutorial_nb*.txt
+
+
+# Ignore all compressed file types
+*.zip
+*.tar.gz
+*.7z
+*.rar
+*.tar
+*.tgz
+*.bz2
+*.xz
+
+# Ignore large file types
+*.iso
+*.bin
+*.exe
+*.dll
+*.deb
+*.dmg
+
+# Ignore audio and video files
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.mp3
+*.wav
+*.flac
+
+# Ignore image files (large or unnecessary ones)
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+*.bmp
+*.gif
+
+# Ignore backup and temporary files
+*.bak
+*.tmp
+*.swp
+*.swo
+*.old
+
+# Ignore logs
+*.log
+
+# Ignore output folders for large files
+/output/
+build/
+dist/
+node_modules/
+vendor/
+.Rproj.user/
+_test_txt/
+
+# Ignore large data files
+*.csv
+*.tsv
+*.json
+*.parquet
+*.feather
+*.h5
+
+# Ignore machine learning model artifacts
+*.hdf5
+*.pth
+*.ckpt
+*.onnx
+*.joblib
+*.pickle
+*.pkl
+
+# Ignore Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore compiled code artifacts
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.class
+*.pyc
+*.pyo
+*.jar
+
+# Ignore IDE-specific files
+.vscode/
+.idea/
+# R/RStudio artifacts
+*.Rhistory
+*.RData
+.Rproj.user/
+
+# Test artifacts
+tests/testthat/sink_*.txt
+tests/testthat/_rsiena_effects_doc_.html
+tests/testthat/testthat-problems.rds
+tests/testthat/_problems/
+
+# Manim render artifacts
+inst/manim/media/
+inst/manim/__pycache__/
+
+# Debug scripts
+_debug_install.R
+
+# Dev files
+R/_dev/
+doc/
+_*.R
+_*.txt
+
+# Generated vignette output (rebuilt during R CMD build)
+inst/doc/
+
+# --- public-release exclusions (2026-07: pre-package working files) ---
+# Legacy illustration/tutorial Rmds (pre-package; superseded by vignettes/)
+R/*.Rmd
+# R console sink logs
+R/sink_*.txt
+# Legacy DEV/gridsearch scripts with hardcoded local paths (superseded by package API)
+inst/scripts/
+# Exploratory Python notebooks (never part of the R package)
+Python/
+# Private release-prep notes
+_public_release_steps.md
+
+# stray RSiena log
+/.txt
+
+# --- generated outputs / local helpers (public-release triage 2026-07) ---
+sink_*.txt
+classroom_airline_*.txt
+/paper/.txt
+/vignettes/.txt
+/fixgrid6
+_build_check.sh
+_cleanup.py
+_cleanup_R_dir.sh
+simulation_cache/
+simulations/
+*-cache/
+docs/animation_gallery_files/
+vignettes/*.html

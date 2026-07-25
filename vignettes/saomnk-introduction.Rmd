@@ -1,0 +1,215 @@
+---
+title: "Introduction to searchnet: Stochastic Actor-Oriented MNK Search Simulation"
+author: "Stephen Downing"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Introduction to searchnet}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+# Overview
+
+The `searchnet` package implements a Stochastic Actor-Oriented MNK model for
+simulating strategic search in complex environments. It endogenizes the NK
+fitness landscape (Kauffman & Levin, 1987; Kauffman & Weinberger, 1989;
+Levinthal, 1997) by representing the search environment as a bipartite network
+of $M$ actors affiliating with $N$ components. The resulting network data
+generation process---using the bipartite network as the dependent variable---
+enables dynamic network analysis of the search system as a Stochastic
+Actor-Oriented Model (SAOM; Snijders, 1996).
+
+The SaoMNK framework reveals that the conventional $K$ term (complexity,
+or degree of epistatic interdependence) is just one part of a coupled process
+of four network **degree** terms:
+
+**2-mode** (Bipartite, direct ties):
+
+1. $K_{AC}$ = Actor **scope** (Actor-Component degree)
+2. $K_{CA}$ = Component **popularity** (Component-Actor degree)
+
+**1-mode** (Unipartite Projection, indirect ties):
+
+3. $K_{AA}$ = Actor **sociality** (Actor-[Component]-Actor degree)
+4. $K_{CC}$ = Component **epistasis** (Component-[Actor]-Component degree),
+   the traditional $K$
+
+## Installation
+
+```{r load-saomnk}
+if (requireNamespace("searchnet", quietly = TRUE)) {
+  library(searchnet)
+} else {
+  dir_r <- file.path(getwd(), "R")
+  if (!file.exists(file.path(dir_r, "utils.R")))
+    dir_r <- "D:/Search_networks/SaoMNK/R"
+  .saomnk_dir <- dir_r
+  .saomnk_dir <- dir_r; source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
+}
+
+library(Matrix)
+```
+
+# 1. Hello World: A Minimal SaoMNK Simulation
+
+## 1.1 Environment Configuration
+
+The environment is configured by specifying:
+
+- `M`: number of actors (firms, agents)
+- `N`: number of components (resources, technologies, markets)
+- `BI_PROB`: initial density of the bipartite network (0 = empty start)
+- `rand_seed`: for reproducibility
+
+```{r env-config}
+environment_parameters <- list(
+  M = 3,
+  N = 6,
+  BI_PROB = 0,
+  rand_seed = 1234,
+  name = "_hello_world_"
+)
+
+env <- SaomNkRSienaBiEnv$new(environment_parameters)
+cat("Environment created:", env$M, "actors x", env$N, "components\n")
+```
+
+## 1.2 Structure Model
+
+The structure model defines the SAOM objective function---the stochastic
+actor's utility function for strategic search. Effects are specified as a
+nested list:
+
+```{r structure-model}
+DV_NAME <- "self$bipartite_rsienaDV"
+
+## Define a modular epistasis matrix (2 blocks of 3 components)
+component_int_mat <- create_block_diag(environment_parameters$N, 2)
+
+structure_model <- list(
+  dv_bipartite = list(
+    name = DV_NAME,
+    effects = list(
+      list(effect = "density", parameter = 0, dv_name = DV_NAME, fix = TRUE)
+    ),
+    coDyadCovars = list(
+      list(
+        effect = "XWX", parameter = 1, dv_name = DV_NAME, fix = TRUE,
+        nodeSet = c("COMPONENTS", "COMPONENTS"),
+        interaction1 = "self$component_1_coDyadCovar",
+        x = component_int_mat
+      )
+    )
+  )
+)
+```
+
+## 1.3 Run the Simulation
+
+RSiena is the R interface to SIENA (Simulation Investigation for Empirical
+Network Analysis). SaoMNK is formalized as a SAOM with one bipartite network
+as the dependent variable:
+
+```{r run-sim}
+steps_per_actor <- 5
+
+env$search_rsiena(
+  structure_model = structure_model,
+  iterations_per_actor = steps_per_actor,
+  run_seed = 12345,
+  verbose = TRUE
+)
+```
+
+## 1.4 Model Summary
+
+```{r model-summary}
+env$search_rsiena_model_summary()
+```
+
+# 2. Visualizing the Search System
+
+## 2.1 Network Snapshots
+
+Snapshots of the bipartite network (DGP) and the social and component epistasis
+projections show the evolving multidimensional coupled search environment:
+
+```{r snapshots, fig.height=5, fig.width=11}
+snapshot_ids <- seq(1, env$M * steps_per_actor)
+env$plot_snapshots(snapshot_ids)
+```
+
+## 2.2 K-4 Panel: Degree Trajectories
+
+The K-4 panel shows the four coupled degree processes over simulated
+decision-chain steps:
+
+```{r k4-panel, fig.height=10, fig.width=10}
+env$plot_degree_4panel(loess_span = 0.25)
+```
+
+## 2.3 Utility Contributions
+
+Decompose actor utility into contributions from each network statistic:
+
+```{r utility-contributions, fig.height=10, fig.width=9}
+env$plot_utility_contributions(loess_span = 0.35, use_thetas = FALSE)
+```
+
+With $\theta$ weights applied:
+
+```{r utility-contributions-theta, fig.height=10, fig.width=9}
+env$plot_utility_contributions(loess_span = 0.35, use_thetas = TRUE)
+```
+
+# 3. A Longer Simulation
+
+Increase `iterations_per_actor` for richer dynamics:
+
+```{r longer-sim, fig.height=5, fig.width=11}
+env2 <- SaomNkRSienaBiEnv$new(environment_parameters)
+
+env2$search_rsiena(
+  structure_model,
+  iterations_per_actor = 100,
+  run_seed = 12345
+)
+
+env2$plot_snapshots(c(1:5, env2$get_step()))
+```
+
+```{r longer-sim-plots, fig.height=10, fig.width=10}
+env2$plot_degree_4panel(loess_span = 0.3)
+env2$plot_utility_contributions(loess_span = 0.35)
+```
+
+# References
+
+- Kauffman, S. A., & Levin, S. (1987). Towards a general theory of adaptive
+  walks on rugged landscapes. *Journal of Theoretical Biology*, 128(1), 11--45.
+- Kauffman, S. A., & Weinberger, E. D. (1989). The NK model of rugged fitness
+  landscapes and its application to maturation of the immune response.
+  *Journal of Theoretical Biology*, 141(2), 211--245.
+- Levinthal, D. A. (1997). Adaptation on rugged landscapes.
+  *Management Science*, 43(7), 934--950.
+- Snijders, T. A. B. (1996). Stochastic actor-oriented models for network
+  change. *Journal of Mathematical Sociology*, 21(1--2), 149--172.
+
+```{r session-info}
+sessionInfo()
+```

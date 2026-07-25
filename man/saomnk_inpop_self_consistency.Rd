@@ -1,0 +1,71 @@
+% Generated manually for R CMD check compliance
+\name{saomnk_inpop_self_consistency}
+\alias{saomnk_inpop_self_consistency}
+\title{Solve the SaoMNK-inPop Self-Consistency Equation (Operational Fixed Point)}
+\description{
+Solves the adoption-form fixed-point equation that the live RSiena
+bipartite SAOM with only \code{density} and \code{inPop} effects
+active actually obeys at stationarity. This is \emph{not} the canonical
+Brock & Durlauf (2001) fixed point: B&D assumes a linear peer-mean
+coupling \eqn{J m}, while RSiena's \code{inPop} statistic uses the
+sqrt-transformed column-degree \eqn{\sqrt{n_j + 1}} as a variance
+stabiliser. The two coincide only in the local linearisation around
+\eqn{m = 1/2} (PROOF\_TABLE.md row L16); elsewhere the saomnk-inPop
+fixed point differs from B&D's, and this function gives the former.
+
+The fixed-point equation is:
+\deqn{m = \sigma\bigl(\beta(h_b + \theta_{\mathrm{inPop}} \sqrt{M m + 1})\bigr)}
+where \eqn{\sigma(x) = 1/(1 + e^{-x})} is the logistic function, and
+the social-interaction coefficient appears non-linearly through the
+sqrt term.
+
+This function is the \strong{Option B} reference for
+\code{\link{verify_brock_durlauf_reduction}}: it gives the
+theoretical equilibrium that the \emph{live RSiena simulation}
+should converge to (matching the simulation's own functional form),
+as opposed to \code{\link{bd_self_consistency}} which gives the
+B&D limit that holds only in the local-linearisation regime.
+}
+\usage{
+saomnk_inpop_self_consistency(beta, theta_inPop, h_b, M,
+                              x0 = 0.5, tol = 1e-10, max_iter = 1000L)
+}
+\arguments{
+  \item{beta}{Numeric inverse-temperature.}
+  \item{theta_inPop}{Numeric SAOM \code{inPop} coefficient (the
+    coefficient passed as \code{popularity} in
+    \code{\link{saomnk_model}}).}
+  \item{h_b}{Numeric SAOM \code{density} coefficient (private-utility
+    bias in adoption form).}
+  \item{M}{Integer actor count.}
+  \item{x0}{Numeric initial guess in \eqn{[0, 1]}; default 0.5.}
+  \item{tol}{Numeric convergence tolerance; default \code{1e-10}.}
+  \item{max_iter}{Integer maximum iterations; default \code{1000}.}
+}
+\value{
+Adoption-form fixed point \eqn{m^* \in [0, 1]}.  When the equation has
+multiple solutions (rare for inPop given the sqrt non-linearity damps
+positive feedback), the iteration starting from \code{x0} converges to
+one of them.
+}
+\references{
+See PROOF\_TABLE.md row L16 for the linearisation that connects this
+fixed-point equation to the canonical Brock & Durlauf (2001) form.
+}
+\seealso{
+\code{\link{bd_self_consistency}} for the B&D linear-coupling fixed
+point; \code{\link{verify_brock_durlauf_reduction}} for the harness
+that uses both as comparison targets;
+\code{vignette("saomnk-brock-durlauf")} for the full discussion of the
+B/C tradeoff.
+}
+\examples{
+## Sub-critical regime around m = 0.5 (Option C regime where B&D
+## linearisation is locally accurate)
+theta <- 0.5 / sqrt(2 * 100)        # B&D-rescaled inPop coef
+saomnk_inpop_self_consistency(beta = 1, theta_inPop = theta,
+                               h_b = -0.25, M = 100)
+## Compare to B&D linear form
+bd_self_consistency(beta = 1, J = 0.5, h = -0.25, all_roots = FALSE)
+}
+\keyword{utilities}

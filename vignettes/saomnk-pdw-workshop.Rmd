@@ -1,0 +1,783 @@
+---
+title: "searchnet Workshop: Building Your First Search Simulation"
+subtitle: "A Professional Development Workshop for Strategy & Organization Scholars"
+author: "Stephen Downing, University of Missouri"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    code_folding: show
+    fig_width: 10
+    fig_height: 7
+vignette: >
+  %\VignetteIndexEntry{PDW Workshop: Building Your First Search Simulation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 7
+)
+```
+
+```{r load-saomnk, include=FALSE}
+if (requireNamespace("searchnet", quietly = TRUE)) {
+  library(searchnet)
+} else {
+  dir_r <- file.path(getwd(), "R")
+  if (!file.exists(file.path(dir_r, "utils.R")))
+    dir_r <- "D:/Search_networks/SaoMNK/R"
+  .saomnk_dir <- dir_r
+  source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
+}
+
+library(Matrix)
+```
+
+# PART 1: THE SIMULATION WORLD --- What Are We Building? {.tabset}
+
+## The Big Picture: A Factory for "What If?" Questions
+
+Imagine you are building a **miniature economy in a bottle**. Inside that
+bottle, firms make choices---entering markets, adopting technologies,
+forming alliances---and those choices reshape the competitive landscape
+for everyone else. The `searchnet` package lets you build that bottle,
+set the rules, shake it up, and watch what happens.
+
+**Why simulate?** Because theory alone gives us propositions, and data
+alone gives us correlations, but simulation gives us a *laboratory*
+where we can run controlled experiments on complex systems. Each
+simulation run is an **alternate reality** with different rules. Change
+one parameter---say, how costly diversification is---and compare the
+outcomes. That is causal inference by construction.
+
+The simulation multiverse works like this:
+
+1. **Design** a world (firms, activities, initial conditions)
+2. **Set the rules** (what drives firm behavior?)
+3. **Run** the simulation (let firms make choices over time)
+4. **Observe** emergent patterns (who ends up where, and why?)
+5. **Compare** across worlds (change one rule, see what shifts)
+
+> **For the skeptical theorist:** Every parameter in `searchnet` maps to
+> a testable mechanism. The simulation does not *replace* formal theory;
+> it *extends* it into territory where closed-form solutions do not
+> exist.
+
+## The Cast of Characters
+
+Every `searchnet` simulation has three building blocks: **actors**,
+**components**, and the **ties** between them. Together, they form a
+bipartite network---the dependent variable of the entire system.
+
+### Actors (Firms / People / Agents)
+
+Think of $M$ firms competing in an industry. Each firm decides which
+activities to pursue and which to abandon. In network language, actors
+are the *row nodes* of a bipartite graph.
+
+- **Conceptual:** $M$ strategic decision-makers
+- **Technical:** $M$ rows of a binary matrix
+  $\mathbf{B} \in \{0,1\}^{M \times N}$
+- **Example:** $M = 6$ airlines deciding which routes to fly
+
+### Components (Activities / Resources / Technologies)
+
+Think of $N$ possible activities, products, or technologies. These are
+the choices available to every firm. In network language, components are
+the *column nodes*.
+
+- **Conceptual:** $N$ discrete strategic options
+- **Technical:** $N$ columns of the bipartite matrix
+- **Example:** $N = 10$ possible route markets
+
+### Ties (Affiliations / Choices)
+
+A $1$ means the firm does that activity; a $0$ means it does not. This
+is the **bipartite adjacency matrix**---the state of the world at any
+point in time.
+
+- **Conceptual:** "Airline $i$ flies route $j$" means $b_{ij} = 1$
+- **Technical:** $b_{ij} \in \{0,1\}$ for all $i \in \{1,...,M\}$,
+  $j \in \{1,...,N\}$
+
+Let us build our first world:
+
+```{r first-world}
+# Step 1: Create a world with 6 actors and 10 components
+# density = 0.3 means ~30% of possible ties exist at the start
+env <- saomnk_env(M = 6, N = 10, density = 0.3, seed = 42)
+
+# Look at the initial bipartite matrix
+B <- env$bipartite_matrix
+cat("Our world: ", env$M, "actors x", env$N, "components\n")
+cat("Initial density:", round(sum(B) / (env$M * env$N), 2), "\n\n")
+print(B)
+```
+
+> **Plain English:** Each row is a firm. Each column is an activity. A 1
+> means "this firm does this activity." We just created a small industry
+> with 6 firms and 10 possible activities, where about 30% of
+> firm-activity pairs are active.
+
+## The Four Hidden Networks (The {K} Framework)
+
+Here is the key insight that motivates `searchnet`: from **one**
+bipartite matrix, **four** networks emerge automatically. You do not
+have to construct them---they are mathematically implied by the pattern
+of ties. Together, these four *degree* measures form the $\{K\}$
+framework.
+
+### K_AC --- Actor Scope ("How much is each firm doing?")
+
+Count the activities per firm. Broad firms have high $K_{AC}$;
+specialists have low $K_{AC}$.
+
+- **Technical:** $K_{AC_i} = \sum_j b_{ij} = \text{rowSums}(\mathbf{B})$
+- **In strategy terms:** This is *diversification* or *scope*
+
+```{r k-ac}
+cat("K_AC (actor scope):", rowSums(B), "\n")
+cat("  -> Actor 1 does", rowSums(B)[1], "activities\n")
+cat("  -> Actor", which.max(rowSums(B)), "is the most diversified\n")
+```
+
+### K_CA --- Component Popularity ("How crowded is each activity?")
+
+Count the firms doing each activity. Popular activities are crowded;
+niche activities are uncrowded.
+
+- **Technical:**
+  $K_{CA_j} = \sum_i b_{ij} = \text{colSums}(\mathbf{B})$
+- **In strategy terms:** This is *competitive density* or *crowding*
+
+```{r k-ca}
+cat("K_CA (component popularity):", colSums(B), "\n")
+cat("  -> Activity", which.max(colSums(B)), "is the most popular\n")
+cat("  -> Activity", which.min(colSums(B)), "is the most niche\n")
+```
+
+### K_AA --- Actor Sociality ("Who overlaps with whom?")
+
+Two firms overlap if they do the same activities. The actor projection
+$\mathbf{S} = \mathbf{B}\mathbf{B}^T$ reveals "who competes with whom."
+
+- **Technical:**
+  $K_{AA_i} = \sum_{j \neq i} \mathbf{1}[S_{ij} > 0]$ where
+  $\mathbf{S} = \mathbf{B}\mathbf{B}^T$
+- **In strategy terms:** This is *strategic group overlap*
+
+```{r k-aa}
+S <- (B > 0) %*% t(B > 0)
+diag(S) <- 0
+cat("K_AA (actor sociality):", rowSums(S > 0), "\n")
+cat("  -> Actor", which.max(rowSums(S > 0)), "overlaps with the most rivals\n")
+```
+
+### K_CC --- Component Epistasis ("Which activities go together?")
+
+Two activities "go together" if the same firms tend to do both. The
+component projection
+$\mathbf{E} = \mathbf{B}^T\mathbf{B}$ reveals "natural bundles."
+
+- **Technical:**
+  $K_{CC_j} = \sum_{k \neq j} \mathbf{1}[E_{jk} > 0]$ where
+  $\mathbf{E} = \mathbf{B}^T\mathbf{B}$
+- **In strategy terms:** This is *complementarity* or *epistasis*---the
+  $K$ from the classical NK model
+
+```{r k-cc}
+E <- t(B > 0) %*% (B > 0)
+diag(E) <- 0
+cat("K_CC (component epistasis):", rowSums(E > 0), "\n")
+cat("  -> This is the 'K' from classical NK models!\n")
+```
+
+### Seeing All Four Together
+
+```{r k-four-summary}
+cat("============================================\n")
+cat("  THE {K} FRAMEWORK: Four Coupled Degrees\n")
+cat("============================================\n\n")
+cat("K_AC (scope):      ", rowSums(B), "\n")
+cat("K_CA (popularity): ", colSums(B), "\n")
+cat("K_AA (sociality):  ", rowSums(S > 0), "\n")
+cat("K_CC (epistasis):  ", rowSums(E > 0), "\n")
+```
+
+> **KEY INSIGHT:** These four numbers are **coupled**. Change one, and
+> you change them all. When a firm enters a new market ($K_{AC}$ rises),
+> that market becomes more crowded ($K_{CA}$ rises for that component),
+> the firm overlaps with more rivals ($K_{AA}$ rises), and the
+> components become more epistatically linked ($K_{CC}$ shifts). This is
+> why we track all four simultaneously---and why `searchnet` exists.
+
+## The Rules of the World
+
+### Time: The Ministep Clock
+
+Time in `searchnet` does not flow smoothly. Instead, **one actor at a
+time** gets a chance to act. Think of it as a board game where players
+take turns, but the turn order is random.
+
+- **Technical:** Continuous-time Markov chain. At each *ministep*, one
+  actor is selected stochastically
+- **Analogy:** Like a board game where players take turns in random
+  order
+
+The total number of ministeps is `M * steps_per_actor`. With $M = 6$
+actors and `steps_per_actor = 20`, that gives 120 individual decision
+opportunities.
+
+### The Rate Function: Who Acts Next?
+
+Some actors may be more active than others. The rate function controls
+how often each actor gets a turn.
+
+- **Simple version:** Equal rates---each actor is equally likely to be
+  selected at each ministep (the default)
+- **Technical:** Actor $i$ is selected with probability
+  $\lambda_i / \sum_j \lambda_j$
+- **Advanced:** Rates can depend on the current state (e.g., larger
+  firms act more frequently)
+
+```{r rate-explanation}
+cat("With M =", env$M, "actors and equal rates:\n")
+cat("  Each actor gets selected with probability",
+    round(1/env$M, 3), "per ministep\n")
+cat("  With steps_per_actor = 20, total ministeps =",
+    env$M * 20, "\n")
+cat("  Each actor gets ~20 decision opportunities\n")
+```
+
+### The Choice Function: What Do They Do?
+
+When it is your turn, you look at all possible moves and pick one.
+Better moves are more likely, but you can make mistakes. This is the
+McFadden conditional logit (multinomial choice model).
+
+**The choice set** for actor $i$:
+
+- **Add** activity $j$ (for any $j$ not currently held)
+- **Drop** activity $j$ (for any $j$ currently held)
+- **Do nothing** (status quo / pass)
+
+**The probability** of each choice:
+
+$$P(\text{flip } j) = \frac{\exp(\beta \cdot \Delta U_{ij})}{1 + \sum_{k=1}^{N} \exp(\beta \cdot \Delta U_{ik})}$$
+
+where $\Delta U_{ij}$ is the *change in utility* from flipping activity
+$j$ (adding it if absent, dropping it if present). The $1$ in the
+denominator represents the option of doing nothing.
+
+> **Plain English:** The actor mentally tries every possible move,
+> calculates "how much better (or worse) would I be?", and picks moves
+> in proportion to how much they improve things. The $\beta$ parameter
+> controls how precise this choice is---more on that below.
+
+## The Objective Function: What Makes a "Good" Move?
+
+Each actor has a **scorecard**. Adding or dropping an activity changes
+the score. The actor picks moves that improve the score---usually.
+
+The utility function $U_i$ has multiple components. In a typical
+simulation, you select which components to activate and set their
+weights:
+
+| Component | Plain English | RSiena Effect | Parameter |
+|:----------|:-------------|:-------------|:----------|
+| **Density** | "Doing stuff is costly" (negative = sparse) | `density` | $\theta_{\text{dens}}$ |
+| **Popularity** | "Popular activities attract" | `inPop` | $\theta_{\text{pop}}$ |
+| **Scope** | "Doing more begets doing more" | `outAct` | $\theta_{\text{scope}}$ |
+| **Epistasis** | "Some activities complement each other" | `XWX` | $\theta_{\text{epist}}$ |
+| **Strategy** | "Actor-level heterogeneity" | `egoX` | $\theta_{\text{ego}}$ |
+
+> **Plain English:** Density is the "cost of doing business" baseline.
+> Popularity captures herding (firms flock to crowded markets). Scope
+> captures diversification tendency. Epistasis captures synergies
+> between related activities. Strategy lets different firms have
+> different behavioral tendencies.
+
+## The Bounded Rationality Dial ($\beta$ parameter)
+
+The $\beta$ parameter is your **rationality thermostat**:
+
+| $\beta$ Value | Behavior | Analogy |
+|:-------------|:---------|:--------|
+| $\beta = 0$ | Pure random search (coin flip) | Blindfolded dart-throwing |
+| $\beta \approx 1$ | Noisy optimization (realistic) | Informed but imperfect |
+| $\beta \to \infty$ | Perfect optimization (greedy) | Classical NK adaptive walk |
+
+> **Plain English:** In real life, firms are not perfectly rational---they
+> experiment, make mistakes, and sometimes stumble into good strategies.
+> The $\beta$ dial lets you tune how "smart" your actors are. Most
+> realistic simulations live in the middle range.
+
+# PART 2: RUNNING YOUR FIRST SIMULATION {.tabset}
+
+## Three Steps to a Simulation
+
+Every `searchnet` simulation follows the same three-step recipe:
+
+```{r three-steps}
+# ---- STEP 1: Create the world ----
+env1 <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 42)
+cat("Step 1 complete: World created with",
+    env1$M, "actors and", env1$N, "components\n")
+
+# ---- STEP 2: Define the rules ----
+model1 <- saomnk_model(
+  density  = -0.5,       # scope is costly (negative = pressure to drop ties)
+  popularity = 0.2,      # popular activities attract firms
+  epistasis_matrix = saomnk_block_diagonal(8, 2),  # 2 clusters of 4
+  epistasis_weight = 0.3 # synergy within clusters matters
+)
+cat("Step 2 complete: Model defined\n")
+print(model1)
+
+# ---- STEP 3: Run! ----
+saomnk_run(env1, model1, steps_per_actor = 20, seed = 100)
+cat("Step 3 complete: Simulation finished with",
+    env1$get_step(), "total ministeps\n")
+```
+
+Let us unpack each step.
+
+**Step 1** creates the world. `M = 6` actors, `N = 8` components,
+initial density of 0.3 (about 30% of ties exist at the start). The
+`seed` ensures reproducibility.
+
+**Step 2** defines the rules:
+
+- `density = -0.5` means "each additional activity carries a cost"---this
+  keeps the network from becoming fully connected
+- `popularity = 0.2` means "firms are somewhat attracted to activities
+  that other firms already do" (herding / legitimacy)
+- `epistasis_matrix` defines which components have synergies with each
+  other. The block-diagonal structure creates 2 clusters of 4
+  components---activities within a cluster complement each other
+- `epistasis_weight = 0.3` sets the strength of those synergies
+
+**Step 3** runs the simulation for 20 ministeps per actor
+($6 \times 20 = 120$ total ministeps).
+
+## Inspecting the State After Simulation
+
+```{r inspect-after}
+# What does the bipartite matrix look like now?
+cat("Bipartite matrix BEFORE simulation:\n")
+print(saomnk_get_bipartite(env1, step = 1))
+
+cat("\nBipartite matrix AFTER simulation:\n")
+print(env1$bipartite_matrix)
+
+# How have the four K dimensions changed?
+B_final <- env1$bipartite_matrix
+S_final <- (B_final > 0) %*% t(B_final > 0); diag(S_final) <- 0
+E_final <- t(B_final > 0) %*% (B_final > 0); diag(E_final) <- 0
+
+cat("\nFinal K_AC (scope):     ", rowSums(B_final), "\n")
+cat("Final K_CA (popularity):", colSums(B_final), "\n")
+cat("Final K_AA (sociality): ", rowSums(S_final > 0), "\n")
+cat("Final K_CC (epistasis): ", rowSums(E_final > 0), "\n")
+```
+
+## Visualizing What Happened
+
+### The K-4 Panel: Your Dashboard
+
+The K-4 panel shows **all four coupled degree processes** over time.
+This is the single most important diagnostic plot in `searchnet`.
+
+```{r k4-panel, fig.height=10, fig.width=10}
+saomnk_plot_k4(env1, smooth = 0.3)
+```
+
+### Network Snapshots: Watch the World Evolve
+
+Snapshots show the bipartite network at selected time points, along
+with the actor-actor and component-component projections.
+
+```{r snapshots, fig.height=5, fig.width=11}
+saomnk_plot_snapshots(env1)
+```
+
+### Utility Contributions: Who Is Winning, and Why?
+
+Decompose each actor's utility into contributions from each network
+effect. This reveals *which mechanism* drives behavior.
+
+```{r utility-plot, fig.height=10, fig.width=9}
+saomnk_plot_utility(env1, smooth = 0.35)
+```
+
+## Reading the K-4 Panel (Interpretation Guide)
+
+The K-4 panel is your **dashboard**. Here is how to read each quadrant:
+
+| Quadrant | If Rising... | If Falling... |
+|:---------|:------------|:-------------|
+| $K_{AC}$ (scope) | Firms are expanding, diversifying | Firms are specializing, shedding activities |
+| $K_{CA}$ (popularity) | Activities are becoming crowded | Activities are being abandoned |
+| $K_{AA}$ (sociality) | Firms are converging (imitation) | Firms are differentiating |
+| $K_{CC}$ (epistasis) | Activities are bundling into clusters | Activity bundles are fragmenting |
+
+> **The key question:** When one quadrant moves, do the others move
+> *with* it or *against* it? The coupling pattern tells you about the
+> fundamental dynamics of the industry.
+
+## Model Summary
+
+The model summary provides a regression-style table of all effects and
+their parameter values:
+
+```{r model-summary}
+saomnk_summary(env1)
+```
+
+## Adding Actor Heterogeneity (Strategies)
+
+Not all firms are alike. Some are aggressive diversifiers; others are
+cautious specialists. The `strategies` argument lets you give each
+actor a different behavioral tendency.
+
+```{r strategies}
+# Create a fresh environment
+env_strat <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 42)
+
+# Define a model with actor heterogeneity
+model_strat <- saomnk_model(
+  density = -0.5,
+  popularity = 0.2,
+  epistasis_matrix = saomnk_block_diagonal(8, 2),
+  epistasis_weight = 0.3,
+  strategies = list(
+    egoX = c(-1, -1, 0, 0, 1, 1)  # 3 types: cautious, neutral, aggressive
+  )
+)
+
+cat("Strategy types assigned:\n")
+cat("  Actors 1-2: cautious (egoX = -1) -- less likely to add ties\n")
+cat("  Actors 3-4: neutral  (egoX =  0) -- baseline behavior\n")
+cat("  Actors 5-6: aggressive (egoX = 1) -- more likely to add ties\n\n")
+
+saomnk_run(env_strat, model_strat, steps_per_actor = 20, seed = 200)
+cat("Simulation complete.\n")
+
+# Compare scope across strategy types
+B_strat <- env_strat$bipartite_matrix
+cat("\nFinal scope (K_AC) by strategy type:\n")
+cat("  Cautious (actors 1-2): ", rowSums(B_strat)[1:2], "\n")
+cat("  Neutral  (actors 3-4): ", rowSums(B_strat)[3:4], "\n")
+cat("  Aggressive (actors 5-6):", rowSums(B_strat)[5:6], "\n")
+```
+
+```{r strategies-k4, fig.height=10, fig.width=10}
+saomnk_plot_k4(env_strat, smooth = 0.3)
+```
+
+# PART 3: EXPERIMENTS AND SHOCKS {.tabset}
+
+## The Simulation Factory
+
+One simulation is one alternate reality. The power of simulation comes
+from **systematic comparison**:
+
+- Change **one** parameter = controlled experiment
+- Compare outcomes = causal inference by construction
+- Repeat with different seeds = statistical power
+
+```{r factory-baseline}
+# Baseline world: moderate scope cost, moderate epistasis
+env_base <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 42)
+model_base <- saomnk_model(
+  density = -0.5,
+  popularity = 0.2,
+  epistasis_matrix = saomnk_block_diagonal(8, 2),
+  epistasis_weight = 0.3
+)
+saomnk_run(env_base, model_base, steps_per_actor = 20, seed = 100)
+
+# Counterfactual: HIGH scope cost
+env_high <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 42)
+model_high <- saomnk_model(
+  density = -2.0,        # <-- much higher cost!
+  popularity = 0.2,
+  epistasis_matrix = saomnk_block_diagonal(8, 2),
+  epistasis_weight = 0.3
+)
+saomnk_run(env_high, model_high, steps_per_actor = 20, seed = 100)
+
+# Compare final scope
+cat("Average K_AC (scope):\n")
+cat("  Baseline (density = -0.5):", round(mean(rowSums(env_base$bipartite_matrix)), 2), "\n")
+cat("  High cost (density = -2.0):", round(mean(rowSums(env_high$bipartite_matrix)), 2), "\n")
+cat("\nHigher scope costs lead to more specialization,\n")
+cat("which in turn reshapes all four K dimensions.\n")
+```
+
+## Exogenous Shocks (The "What If?" Machine)
+
+Shocks let you change the rules *mid-simulation*. The timeline is split
+into proportional segments, each with its own parameter regime.
+
+```{r shocks}
+# Create a world and define a two-phase shock:
+#   Phase 1 (first half): density = -0.5 (normal)
+#   Phase 2 (second half): density = -2.0 (austerity shock!)
+env_shock <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 42)
+
+model_shock <- saomnk_model(
+  density = -0.5,
+  popularity = 0.2,
+  epistasis_matrix = saomnk_block_diagonal(8, 2),
+  epistasis_weight = 0.3
+)
+
+shock_baseline <- saomnk_shock("density", parameter = -0.5, portion = 1)
+shock_austerity <- saomnk_shock("density", parameter = -2.0, portion = 1)
+
+saomnk_run(env_shock, model_shock, steps_per_actor = 30, seed = 100,
+           shocks = list(shock_baseline, shock_austerity))
+
+cat("Shock simulation complete.\n")
+cat("Total ministeps:", env_shock$get_step(), "\n")
+cat("  Phase 1 (normal):    first half of the simulation\n")
+cat("  Phase 2 (austerity): second half -- density jumps to -2.0\n")
+```
+
+```{r shocks-k4, fig.height=10, fig.width=10}
+saomnk_plot_k4(env_shock, smooth = 0.3)
+```
+
+> **What to look for:** The K-4 panel should show a *regime change*
+> around the midpoint. Before the shock, firms expand normally. After
+> the shock, the higher scope cost forces them to shed activities. Watch
+> how this propagates across all four K dimensions---that coupling is
+> the signature of an endogenous landscape.
+
+## Multiple Shocks: Richer Scenarios
+
+You can chain multiple shocks together to create multi-phase scenarios:
+
+```{r multi-shock}
+env_multi <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 42)
+
+model_multi <- saomnk_model(
+  density = -0.5,
+  popularity = 0.2,
+  epistasis_matrix = saomnk_block_diagonal(8, 2),
+  epistasis_weight = 0.3
+)
+
+# Three phases: normal -> crisis -> recovery
+s1 <- saomnk_shock("density", parameter = -0.5, portion = 2)  # normal (2 parts)
+s2 <- saomnk_shock("density", parameter = -3.0, portion = 1)  # crisis (1 part)
+s3 <- saomnk_shock("density", parameter = -0.3, portion = 1)  # recovery (1 part)
+
+saomnk_run(env_multi, model_multi, steps_per_actor = 30, seed = 100,
+           shocks = list(s1, s2, s3))
+
+cat("Three-phase shock simulation complete.\n")
+cat("  Phase 1 (normal):   2/4 of timeline, density = -0.5\n")
+cat("  Phase 2 (crisis):   1/4 of timeline, density = -3.0\n")
+cat("  Phase 3 (recovery): 1/4 of timeline, density = -0.3\n")
+```
+
+```{r multi-shock-k4, fig.height=10, fig.width=10}
+saomnk_plot_k4(env_multi, smooth = 0.3)
+```
+
+## From Simulation to Causal Inference
+
+The shock machinery in `searchnet` is designed to feed directly into
+causal inference pipelines. Because you control the exact moment the
+shock occurs and the exact parameter that changes, you can apply:
+
+- **Difference-in-Differences (DID):** Compare treated vs. untreated
+  actors before and after the shock
+- **Synthetic Control:** Construct counterfactual trajectories from
+  unsimulated baselines
+- **Regression Discontinuity:** Exploit the sharp boundary at the shock
+  point
+
+These methods are covered in depth in the causal inference vignette
+(`vignette("saomnk-causal-inference")`).
+
+# PART 4: CONNECTING TO YOUR RESEARCH {.tabset}
+
+## The Translation Table
+
+The hardest part of simulation-based research is *translation*: mapping
+your substantive question onto the simulation primitives. This table
+provides a starting point.
+
+| Your Research Context | searchnet Element | API Parameter |
+|:---------------------|:-----------------|:-------------|
+| Firms in an industry | Actors ($M$) | `saomnk_env(M = ...)` |
+| Products / technologies / capabilities | Components ($N$) | `saomnk_env(N = ...)` |
+| "Firm X does activity Y" | Tie $b_{ij} = 1$ | `density` in `saomnk_env()` |
+| Cost of diversification | Density effect (negative) | `saomnk_model(density = ...)` |
+| Competitive pressure / herding | Popularity effect | `saomnk_model(popularity = ...)` |
+| Diversification tendency | Scope effect | `saomnk_model(scope = ...)` |
+| Complementarities / synergies | Epistasis (XWX) | `saomnk_model(epistasis_matrix = ...)` |
+| Strategic groups | $K_{AA}$ (sociality) | `saomnk_get_degrees(env)$K_AA` |
+| Landscape ruggedness | $K_{CC}$ (epistasis) | `saomnk_get_degrees(env)$K_CC` |
+| Environmental shock | Parameter regime change | `saomnk_shock(...)` |
+| Firm strategy type | Actor covariate | `saomnk_model(strategies = ...)` |
+
+## Exercise: Design Your Own Simulation
+
+Take five minutes to think about a research question you are working
+on. Then fill in this template:
+
+```
+My research question:
+____________________________________________________________
+
+Actors (M) represent:
+____________________________________________________________
+
+Components (N) represent:
+____________________________________________________________
+
+A tie (b_ij = 1) means:
+____________________________________________________________
+
+The key mechanism I want to study maps to:
+  [ ] density (scope cost)
+  [ ] popularity (herding / competitive pressure)
+  [ ] scope (diversification tendency)
+  [ ] epistasis (complementarities)
+  [ ] shocks (environmental change)
+  [ ] strategy heterogeneity (different firm types)
+
+My "what if?" comparison:
+  Baseline:  ________________________________________________
+  Counterfactual: ___________________________________________
+```
+
+Here is a worked example to get you started:
+
+```{r exercise-example}
+cat("=== WORKED EXAMPLE: Technology Adoption in Biotech ===\n\n")
+cat("Research question: How do complementarities between\n")
+cat("  technologies affect industry-level specialization?\n\n")
+cat("  M = 5 biotech firms\n")
+cat("  N = 8 drug development platforms\n")
+cat("  b_ij = 1 means 'firm i uses platform j'\n")
+cat("  Key mechanism: epistasis (complementary platforms)\n\n")
+cat("  Baseline: weak complementarities (epistasis_weight = 0.1)\n")
+cat("  Counterfactual: strong complementarities (epistasis_weight = 0.5)\n\n")
+
+# Baseline
+env_ex_base <- saomnk_env(M = 5, N = 8, density = 0.2, seed = 99)
+mod_ex_base <- saomnk_model(
+  density = -0.5,
+  epistasis_matrix = saomnk_block_diagonal(8, 2),
+  epistasis_weight = 0.1   # weak complementarities
+)
+saomnk_run(env_ex_base, mod_ex_base, steps_per_actor = 20, seed = 100)
+
+# Counterfactual
+env_ex_cf <- saomnk_env(M = 5, N = 8, density = 0.2, seed = 99)
+mod_ex_cf <- saomnk_model(
+  density = -0.5,
+  epistasis_matrix = saomnk_block_diagonal(8, 2),
+  epistasis_weight = 0.5   # strong complementarities
+)
+saomnk_run(env_ex_cf, mod_ex_cf, steps_per_actor = 20, seed = 100)
+
+cat("Results:\n")
+cat("  Avg scope (weak compl.): ",
+    round(mean(rowSums(env_ex_base$bipartite_matrix)), 2), "\n")
+cat("  Avg scope (strong compl.):",
+    round(mean(rowSums(env_ex_cf$bipartite_matrix)), 2), "\n")
+cat("\n  Strong complementarities lead to broader scope\n")
+cat("  because adopting one platform increases the value\n")
+cat("  of adopting its complement.\n")
+```
+
+## Where to Go Next
+
+This workshop covered the fundamentals. Here is where to dive deeper:
+
+| Vignette | What You Will Learn |
+|:---------|:-------------------|
+| **Introduction** (`saomnk-introduction`) | Detailed API walkthrough with richer examples |
+| **Theory** (`saomnk-theory`) | Formal mathematical framework, theorems, and proofs |
+| **NK Validation** | Classical NK comparison and reduction proof |
+| **Causal Inference** | DID / Synthetic Control / RD pipeline on simulated data |
+
+```{r where-next}
+cat("To access other vignettes:\n")
+cat("  vignette('saomnk-introduction', package = 'searchnet')\n")
+cat("  vignette('saomnk-theory', package = 'searchnet')\n")
+```
+
+# Appendix: Quick Reference Card
+
+## API Functions at a Glance
+
+```{r quick-ref}
+cat("==================================================\n")
+cat("  searchnet Quick Reference\n")
+cat("==================================================\n\n")
+
+cat("SETUP:\n")
+cat("  env   <- saomnk_env(M, N, density, seed)\n")
+cat("  model <- saomnk_model(density, popularity, scope,\n")
+cat("             epistasis_matrix, epistasis_weight, strategies)\n\n")
+
+cat("RUN:\n")
+cat("  saomnk_run(env, model, steps_per_actor, seed, shocks)\n\n")
+
+cat("VISUALIZE:\n")
+cat("  saomnk_plot_k4(env)          # K-4 coupled degree panel\n")
+cat("  saomnk_plot_snapshots(env)   # network snapshots\n")
+cat("  saomnk_plot_utility(env)     # utility decomposition\n")
+cat("  saomnk_summary(env)          # model summary table\n\n")
+
+cat("EXTRACT:\n")
+cat("  saomnk_get_bipartite(env)    # current bipartite matrix\n")
+cat("  saomnk_get_bipartite(env, step = k)  # matrix at step k\n")
+cat("  saomnk_get_degrees(env)      # list of K_AC, K_CA, K_AA, K_CC\n\n")
+
+cat("SHOCKS:\n")
+cat("  shock <- saomnk_shock(effect, parameter, portion)\n")
+cat("  saomnk_run(env, model, shocks = list(s1, s2, ...))\n\n")
+
+cat("HELPERS:\n")
+cat("  saomnk_block_diagonal(N, blocks)  # modular epistasis matrix\n")
+```
+
+## The {K} Framework at a Glance
+
+```{r k-summary-card}
+cat("+----------+------------------+------------------+\n")
+cat("|          |   ACTOR (row)    | COMPONENT (col)  |\n")
+cat("+----------+------------------+------------------+\n")
+cat("| 2-mode   | K_AC = scope     | K_CA = popularity|\n")
+cat("| (direct) | rowSums(B)       | colSums(B)       |\n")
+cat("+----------+------------------+------------------+\n")
+cat("| 1-mode   | K_AA = sociality | K_CC = epistasis |\n")
+cat("| (proj.)  | deg(BB')         | deg(B'B)         |\n")
+cat("+----------+------------------+------------------+\n")
+cat("\n  All four derive from the SAME bipartite matrix B.\n")
+cat("  Change one cell of B --> all four shift.\n")
+```
+
+```{r session-info}
+sessionInfo()
+```
