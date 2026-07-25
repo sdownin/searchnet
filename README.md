@@ -8,6 +8,18 @@
 
 **Network-Embedded Search Simulation Engine**
 
+> [!WARNING]
+> **Development status: experimental pre-release (v0.2.x).**
+> This is an early research release of a new package: the API is still
+> evolving, breaking changes may occur between 0.x versions, and bugs are
+> to be expected. The companion methods paper is a working draft and has
+> not yet been peer-reviewed; results should be treated accordingly.
+> For reproducibility, install a pinned tag rather than the moving branch:
+> `devtools::install_github("sdownin/searchnet@v0.2.0")`.
+> A stable API will be declared at v1.0.0. Bug reports with reproducible
+> examples are very welcome via
+> [GitHub Issues](https://github.com/sdownin/searchnet/issues).
+
 ## Overview
 
 **searchnet** (formerly SaoMNK) is an R package that endogenizes the NK fitness landscape by reformulating it as a bipartite network data generation process. It bridges two research traditions that have developed independently: NK fitness landscape models from evolutionary theory and computational organization theory (Kauffman & Levin, 1987; Levinthal, 1997) and Stochastic Actor-Oriented Models (SAOMs) from social network analysis (Snijders, 1996; Ripley et al., 2022).
