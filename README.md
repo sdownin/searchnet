@@ -295,6 +295,14 @@ The engine includes `verify_nk_equivalence()` for computational verification of 
 | `saomnk-brock-durlauf` | Theorem 5: Brock & Durlauf (2001) recovery, mean-field self-consistency, social multiplier, bifurcation diagram |
 | `saomnk-causal-inference` | DID, Synthetic Control, and RD via theta_shocks |
 
+## Documentation & Paper
+
+| Resource | Link |
+|----------|------|
+| **Software paper (online edition)** — full manuscript, browsable with TOC | [sdownin.github.io/searchnet/paper](https://sdownin.github.io/searchnet/paper/) |
+| Program site — the research program behind the package | [sdownin.github.io/saomnk](https://sdownin.github.io/saomnk/) |
+| Manuscript source (Rmd, JSS format) | [`paper/searchnet-jss.Rmd`](paper/searchnet-jss.Rmd) |
+
 ## Citation
 
 ```bibtex
