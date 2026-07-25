@@ -163,3 +163,6 @@ simulations/
 *-cache/
 docs/animation_gallery_files/
 vignettes/*.html
+
+# web-paper build intermediate
+paper/_searchnet-jss-web.Rmd
