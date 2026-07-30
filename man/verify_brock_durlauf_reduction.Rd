@@ -11,7 +11,7 @@ compared to \emph{two} analytical references:
 
 \enumerate{
   \item \strong{Option C reference (B&D, primary):} the canonical
-    \citet{BrockDurlauf2001} fixed point
+    Brock and Durlauf (2001) fixed point
     \eqn{m = \sigma(\beta(h + J m))} computed via
     \code{\link{bd_self_consistency}}.  This is what Theorem 5 predicts
     in the regime where the sqrt linearisation of inPop is locally
