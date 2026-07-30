@@ -373,7 +373,184 @@ searchnet_rd <- function(panel, ...) {
   list(
     rd        = rd_out,
     agg_data  = agg,
-    shock_step = shock_step
+    shock_step = shock_step,
+    design    = "time"
+  )
+}
+
+
+# ============================================================================
+#  searchnet_rd_cross
+# ============================================================================
+
+#' Cross-sectional regression discontinuity at an eligibility threshold
+#'
+#' Sharp RD in an \emph{actor characteristic} rather than in time.  Where
+#' \code{\link{searchnet_rd}} treats the shock step as a cutoff in the running
+#' variable "simulation step" (an interrupted-time-series design), this
+#' function compares actors just above versus just below a threshold on a
+#' running variable such as scope (\eqn{K_{AC}}), degree, or any actor
+#' covariate.  This is the design used for eligibility rules: subsidy
+#' thresholds, grant paylines, size-based regulation, index inclusion.
+#'
+#' Assignment near the cutoff is as-good-as-random when actors cannot
+#' precisely manipulate the running variable, so the discontinuity in
+#' outcomes at the threshold identifies a local average treatment effect.
+#'
+#' @details
+#' The design requires a shock that applies \emph{only} to actors on one side
+#' of the cutoff.  Construct it by running the simulation with
+#' \code{treated_actors} set to those actors, or by supplying a pre-shock
+#' running variable and a post-shock outcome.
+#'
+#' Two forms are supported:
+#' \describe{
+#'   \item{Sharp}{Treatment is a deterministic function of the running
+#'     variable (all actors above the cutoff are treated). The default.}
+#'   \item{Fuzzy}{Treatment probability jumps at the cutoff but is not
+#'     deterministic; supply \code{treatment} and the estimator uses
+#'     \code{rdrobust}'s fuzzy option, returning a local IV estimate.}
+#' }
+#'
+#' @param panel A \code{data.frame} from \code{\link{searchnet_causal_panel}},
+#'   or any actor-level data with one row per actor.
+#' @param running Character or numeric vector. The running (forcing) variable.
+#'   If character, the name of a column in \code{panel}; if numeric, the values
+#'   themselves (length must equal the number of actors).
+#' @param cutoff Numeric. The eligibility threshold.
+#' @param outcome Character. Name of the outcome column. Default
+#'   \code{"outcome"}.
+#' @param post_step Integer or \code{NULL}. If the panel is actor-by-step,
+#'   the step at which to measure the outcome (defaults to the last step).
+#'   Ignored if the panel already has one row per actor.
+#' @param treatment Character or \code{NULL}. Name of a 0/1 treatment column.
+#'   Supplying it triggers a fuzzy RD.
+#' @param \dots Additional arguments passed to \code{rdrobust::rdrobust()},
+#'   e.g. \code{p} (polynomial order), \code{kernel}, \code{bwselect}.
+#'
+#' @return A list with
+#'   \describe{
+#'     \item{\code{rd}}{The \code{rdrobust} object.}
+#'     \item{\code{data}}{The actor-level frame used, with columns
+#'       \code{actor_id}, \code{running}, \code{outcome}, and (if fuzzy)
+#'       \code{treatment}.}
+#'     \item{\code{cutoff}}{The threshold used.}
+#'     \item{\code{design}}{\code{"cross-section"}.}
+#'     \item{\code{fuzzy}}{Logical.}
+#'   }
+#'
+#' @references
+#' Calonico, S., Cattaneo, M. D., & Titiunik, R. (2014). Robust nonparametric
+#' confidence intervals for regression-discontinuity designs.
+#' \emph{Econometrica}, \bold{82}(6), 2295--2326.
+#'
+#' Lee, D. S., & Lemieux, T. (2010). Regression discontinuity designs in
+#' economics. \emph{Journal of Economic Literature}, \bold{48}(2), 281--355.
+#'
+#' @seealso \code{\link{searchnet_rd}} for the time-based (interrupted
+#'   time series) design.
+#'
+#' @examples
+#' \dontrun{
+#' # Subsidy available only to actors with scope >= 5
+#' env <- saomnk_env(M = 40, N = 12, seed = 1)
+#' mod <- saomnk_model(density = -0.5, epistasis_matrix = saomnk_block_diagonal(12, 3))
+#' saomnk_run(env, mod, steps_per_actor = 30, seed = 42)
+#'
+#' scope   <- saomnk_get_degrees(env)$K_AC          # running variable
+#' treated <- which(scope >= 5)
+#' panel   <- searchnet_causal_panel(env, shock_step = 15, treated_actors = treated)
+#'
+#' rd <- searchnet_rd_cross(panel, running = scope, cutoff = 5)
+#' summary(rd$rd)
+#' }
+#'
+#' @export
+searchnet_rd_cross <- function(panel, running, cutoff,
+                               outcome = "outcome",
+                               post_step = NULL,
+                               treatment = NULL, ...) {
+  if (!requireNamespace("rdrobust", quietly = TRUE))
+    stop("Package 'rdrobust' is required for RD analysis.\n",
+         "Install with: install.packages('rdrobust')")
+
+  if (!is.data.frame(panel))
+    stop("`panel` must be a data.frame.")
+  if (!outcome %in% names(panel))
+    stop("Outcome column '", outcome, "' not found in `panel`.")
+
+  # ---- collapse actor x step panel to one row per actor -------------------
+  df <- panel
+  if ("step" %in% names(df) && "actor_id" %in% names(df)) {
+    target_step <- if (is.null(post_step)) max(df$step, na.rm = TRUE) else post_step
+    if (!target_step %in% df$step)
+      stop("post_step = ", target_step, " not present in panel$step.")
+    df <- df[df$step == target_step, , drop = FALSE]
+  }
+  if (anyDuplicated(df$actor_id))
+    stop("Panel has multiple rows per actor after collapsing; ",
+         "supply `post_step` to select a single step.")
+
+  n_actors <- nrow(df)
+
+  # ---- resolve the running variable ---------------------------------------
+  if (is.character(running) && length(running) == 1L) {
+    if (!running %in% names(df))
+      stop("Running variable column '", running, "' not found in `panel`.")
+    run_vals <- df[[running]]
+    run_name <- running
+  } else if (is.numeric(running)) {
+    if (length(running) != n_actors)
+      stop("`running` has length ", length(running), " but there are ",
+           n_actors, " actors.")
+    run_vals <- running
+    run_name <- "running"
+  } else {
+    stop("`running` must be a column name or a numeric vector.")
+  }
+
+  if (cutoff <= min(run_vals, na.rm = TRUE) ||
+      cutoff >= max(run_vals, na.rm = TRUE))
+    stop("`cutoff` (", cutoff, ") lies outside the range of the running ",
+         "variable [", min(run_vals, na.rm = TRUE), ", ",
+         max(run_vals, na.rm = TRUE), "]; no discontinuity can be estimated.")
+
+  n_below <- sum(run_vals < cutoff, na.rm = TRUE)
+  n_above <- sum(run_vals >= cutoff, na.rm = TRUE)
+  if (n_below < 5L || n_above < 5L)
+    warning("Sparse support around the cutoff (", n_below, " below, ",
+            n_above, " above). RD estimates will be unstable.")
+
+  y <- df[[outcome]]
+  out_df <- data.frame(
+    actor_id = df$actor_id,
+    running  = run_vals,
+    outcome  = y,
+    stringsAsFactors = FALSE
+  )
+
+  # ---- sharp or fuzzy ------------------------------------------------------
+  fuzzy <- !is.null(treatment)
+  if (fuzzy) {
+    if (!treatment %in% names(df))
+      stop("Treatment column '", treatment, "' not found in `panel`.")
+    tvals <- df[[treatment]]
+    out_df$treatment <- tvals
+    rd_out <- rdrobust::rdrobust(y = y, x = run_vals, c = cutoff,
+                                 fuzzy = tvals, ...)
+  } else {
+    rd_out <- rdrobust::rdrobust(y = y, x = run_vals, c = cutoff, ...)
+  }
+
+  list(
+    rd            = rd_out,
+    data          = out_df,
+    cutoff        = cutoff,
+    running_name  = run_name,
+    design        = "cross-section",
+    fuzzy         = fuzzy,
+    n_below       = n_below,
+    n_above       = n_above
   )
 }
 

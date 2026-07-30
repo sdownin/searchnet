@@ -9,13 +9,13 @@
 **Network-Embedded Search Simulation Engine**
 
 > [!WARNING]
-> **Development status: experimental pre-release (v0.2.x).**
+> **Development status: experimental pre-release (v0.3.x).**
 > This is an early research release of a new package: the API is still
 > evolving, breaking changes may occur between 0.x versions, and bugs are
 > to be expected. The companion methods paper is a working draft and has
 > not yet been peer-reviewed; results should be treated accordingly.
 > For reproducibility, install a pinned tag rather than the moving branch:
-> `devtools::install_github("sdownin/searchnet@v0.2.0")`.
+> `devtools::install_github("sdownin/searchnet@v0.3.0")`.
 > A stable API will be declared at v1.0.0. Bug reports with reproducible
 > examples are very welcome via
 > [GitHub Issues](https://github.com/sdownin/searchnet/issues).
@@ -147,6 +147,21 @@ These four dimensions are structurally coupled: changes in any one propagate thr
 - **Market dynamics**: Entry/survival visualization, bipartite ring markets
 - **Shock analysis**: K-attribute shocks, pre/post comparison
 - **Multi-wave summaries**: Ridge density plots, strategy-level K summaries
+
+### Classic NK Landscapes
+Conventional Kauffman NK models, self-contained and independent of RSiena — usable on their own, and as an external reference for the SaoMNK reduction:
+- `nk_landscape(N, K, model)` — exhaustive landscape over all 2^N configurations; `"adjacent"` (ring), `"random"`, or `"block"` (near-decomposable) epistasis
+- `nk_walk()` — adaptive walks: `"steepest"`, `"greedy"`, `"random"`
+- `nk_local_optima()` — exhaustive peak enumeration (the 2^N/(K+1) scaling)
+- `nk_sweep_K()` — canonical ruggedness sweep across K
+- `nk_to_saomnk()` / `nk_verify_reduction()` — bridge to the SAOM engine; the constructive form of Theorem 1 (NK is the M = 1, beta -> infinity case of SaoMNK)
+
+```r
+nk <- nk_landscape(N = 10, K = 3, seed = 42)
+nrow(nk_local_optima(nk))          # ruggedness rises with K
+nk_walk(nk, start = 0)             # classic adaptive walk
+nk_verify_reduction(N = 10, K = 3) # independent check of the reduction
+```
 
 ### Diagnostics
 - **SAI** (Specification Agreement Index): Robustness across model specifications
@@ -322,7 +337,7 @@ The engine includes `verify_nk_equivalence()` for computational verification of 
   title  = {searchnet: Network-Embedded Search Simulation Engine},
   author = {Stephen Downing},
   year   = {2026},
-  note   = {R package version 0.2.0},
+  note   = {R package version 0.3.0},
   url    = {https://github.com/sdownin/searchnet}
 }
 ```
