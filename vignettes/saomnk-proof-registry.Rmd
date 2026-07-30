@@ -32,7 +32,7 @@ if (requireNamespace("searchnet", quietly = TRUE)) {
   if (!file.exists(file.path(dir_r, "utils.R")))
     dir_r <- "D:/Search_networks/SaoMNK/R"
   .saomnk_dir <- dir_r
-  source(file.path(dir_r, "saomnk-loader.R"))
+  source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
 }
 
 library(Matrix)

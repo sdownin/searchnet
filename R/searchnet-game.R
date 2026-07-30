@@ -170,6 +170,17 @@ searchnet_game_step <- function(game, action, activity_id) {
   }
 
   ## --- 2. AI firms take their turns ------------------------------------ ##
+  ## compute_choice_probabilities() evaluates ALL M actors in one pass, so it is
+  ## hoisted out of the actor loop below. Calling it per-actor did M times the
+  ## necessary work and discarded all but one element each time (~M^2*N scaling).
+  ##
+  ## This also fixes the move semantics: every AI now responds to the same
+  ## round-start state (after the player's move), i.e. simultaneous moves within
+  ## a round, matching searchnet_classroom_advance(). Previously each AI saw the
+  ## partially-updated board left by lower-indexed AIs, which made outcomes
+  ## depend on actor ordering.
+  all_probs <- env$compute_choice_probabilities(beta = game$beta)
+
   ai_moves <- vector("list", M)
   for (i in seq_len(M)) {
     if (i == pid) {
@@ -178,8 +189,8 @@ searchnet_game_step <- function(game, action, activity_id) {
       next
     }
 
-    ## Compute choice probabilities for this AI firm
-    probs_data <- env$compute_choice_probabilities(beta = game$beta)[[i]]
+    ## Choice probabilities for this AI firm (precomputed above)
+    probs_data <- all_probs[[i]]
     prob_vec   <- probs_data$probabilities  # length N+1 (flip_1..flip_N, pass)
 
     ## Sample one action according to the logit distribution

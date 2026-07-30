@@ -15,7 +15,7 @@
 > to be expected. The companion methods paper is a working draft and has
 > not yet been peer-reviewed; results should be treated accordingly.
 > For reproducibility, install a pinned tag rather than the moving branch:
-> `devtools::install_github("sdownin/searchnet@v0.3.0")`.
+> `devtools::install_github("sdownin/searchnet@v0.3.1")`.
 > A stable API will be declared at v1.0.0. Bug reports with reproducible
 > examples are very welcome via
 > [GitHub Issues](https://github.com/sdownin/searchnet/issues).
@@ -36,7 +36,7 @@ devtools::install_github("sdownin/searchnet")
 
 # Or source directly for development
 .saomnk_dir <- "path/to/searchnet/R"
-source(file.path(.saomnk_dir, "saomnk-loader.R"))
+source(file.path(dirname(.saomnk_dir), "inst", "saomnk-loader.R"))
 ```
 
 ### Requirements
@@ -190,7 +190,6 @@ searchnet/
 │   ├── saomnk-experiments.R    # SaoMNKexperiments batch simulation class
 │   ├── searchnet-causal.R      # DID / Synth / RD causal inference wrappers
 │   ├── searchnet-export.R      # R-to-CSV export pipeline
-│   ├── saomnk-loader.R         # Dependency-ordered source loader (development)
 │   ├── saomnk-package.R        # Package-level documentation
 │   ├── utils.R                 # Standalone helpers (Jaccard, toggle, existence)
 │   ├── plot-utility.R          # Utility decomposition plots
@@ -337,7 +336,7 @@ The engine includes `verify_nk_equivalence()` for computational verification of 
   title  = {searchnet: Network-Embedded Search Simulation Engine},
   author = {Stephen Downing},
   year   = {2026},
-  note   = {R package version 0.3.0},
+  note   = {R package version 0.3.1},
   url    = {https://github.com/sdownin/searchnet}
 }
 ```
