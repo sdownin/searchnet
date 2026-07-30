@@ -152,7 +152,7 @@ These four dimensions are structurally coupled: changes in any one propagate thr
 - **SAI** (Specification Agreement Index): Robustness across model specifications
 - **CFC** (Cross-Framework Concordance): SAOM vs. TERGM estimate agreement
 - **DGF** (Density-GOF Frontier): Density thresholds for model degradation
-- Adapted from the companion [netcheck](https://github.com/sdownin/netcheck) package
+- Self-contained in **searchnet** (no external dependency); adapted from the author's `netcheck` diagnostics framework, not yet released
 
 ### Export Pipeline
 - R-to-CSV export functions for K-4 trajectories, bipartite snapshots, and actor utilities
