@@ -1,3 +1,50 @@
+# searchnet 0.3.3
+
+## Bug fixes
+
+* **`inst/saomnk-loader.R` now sources every `.R` file in `R/` (28/28), not 11.**
+  The loader previously sourced only `utils.R`, `saomnk-base.R`, `saomnk-class.R`,
+  seven `plot-*.R` files and `saomnk-experiments.R`. Seventeen files were never
+  loaded, so in any sourced (non-installed) session the following were simply
+  absent: the classic NK layer (`nk_landscape()`, `nk_walk()`, `nk_local_optima()`,
+  `nk_verify_reduction()`, `nk_to_saomnk()`), the clean functional API
+  (`saomnk_env()`, `saomnk_model()`, `saomnk_run()`, `saomnk_shock()`), game and
+  teaching modes, the causal-inference wrappers, basins, replicator, Brock–Durlauf,
+  the mean-field solver, diagnostics, export, bridge, and three further plot modules.
+  This is why 16 tests in `test-nk-classic.R` and `test-regression-guards.R` errored
+  with "could not find function". Files are now discovered by glob, with the R6
+  hierarchy (`utils` → `saomnk-base` → `saomnk-class`) loaded first and the rest
+  alphabetically for determinism.
+
+* **Loader self-location no longer silently fails.** `dirname(sys.frame(1)$ofile)`
+  is `NULL` under `Rscript`, and the old fallback to `getwd()` produced
+  `cannot open file '.../utils.R'`. Resolution now tries the caller's hint, every
+  calling `source()` frame's `ofile`, `--file=`, and the working directory —
+  expanding each candidate to `<d>`, `<d>/R`, `<d>/../R` — and validates by
+  checking for `saomnk-base.R` before use. If nothing resolves it raises an
+  actionable error instead of a confusing missing-file message.
+
+* Loader dependencies are now split into hard (load must succeed) and soft
+  (`cowplot`, `ggraph`, `ggpubr`, `grid`, `gridExtra`, `texreg`, `uuid`). A missing
+  optional package degrades specific plot/report functions instead of aborting the
+  whole load, and is named in the startup message.
+
+* A file that fails to source no longer aborts the load silently: failures are
+  collected in `.saomnk_failed` and surfaced as warnings.
+  `options(saomnk.loader.strict = TRUE)` restores fail-fast behaviour;
+  `options(saomnk.loader.quiet = TRUE)` suppresses the summary line.
+
+## Notes
+
+* Test suite with the fixed loader: **804 passing** (was 739), errors 16 → 1.
+  The three remaining failures are pre-existing and unrelated to loading:
+  `test-fitness.R:97` passes an `info=` argument that `expect_gte()` does not
+  accept (a test bug); `test-multi-w-matrix.R:45` asserts `XWX == rowSums(B)^2`
+  and gets `3 5 8 1` vs `4 9 25 1` (a real question about the XWX statistic, worth
+  a separate look); and `test-regression-guards.R:19` checks
+  `asNamespace("searchnet")`, which resolves to the **installed** build — currently
+  **0.1.0**, long predating these functions. Reinstall the package to clear it.
+
 # searchnet 0.3.2
 
 ## Bug fixes
