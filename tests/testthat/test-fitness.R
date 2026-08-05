@@ -94,8 +94,10 @@ test_that("fitness landscape contains local peaks", {
   ## (the global optimum is always a peak)
   for (i in 1:dim(fl)[1]) {
     n_peaks <- sum(fl[i, , peak_col])
+    ## `expect_gte()` takes `label`, not `info` -- passing `info` raises
+    ## "unused argument" and the expectation errors rather than running.
     expect_gte(n_peaks, 1,
-               info = paste("Landscape", i, "should have at least 1 peak"))
+               label = paste("peak count for landscape", i))
   }
 })
 

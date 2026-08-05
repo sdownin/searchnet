@@ -1,3 +1,25 @@
+# searchnet 0.3.4
+
+## Testing
+
+* **Two shipped tests were themselves wrong; both are fixed and the suite is now
+  fully green (820 passing, 0 failures, 0 errors).**
+
+* `test-multi-w-matrix.R` asserted `rowSums(B %*% W %*% t(B)) == rowSums(B)^2`
+  for an identity `W`. That identity is false for `M > 1`:
+  `rowSums(B B')_i = sum_j (B_i . B_j) = B_i . colSums(B)`, which equals
+  `|B_i|^2` only when every actor holds the same bundle. On the seeded fixture
+  it produced `3 5 8 1` against an expectation of `4 9 25 1`. Replaced with the
+  three identities that actually hold: an identity `W` is a no-op
+  (`B W B' == B B'`), the diagonal of `B B'` is actor scope, and its row sums
+  are `B %*% colSums(B)`. **The engine was never implicated** — that block is
+  pure matrix algebra and called no package code, so the `XWX` statistic was
+  never in question.
+
+* `test-fitness.R` passed `info =` to `expect_gte()`, which takes `label` and
+  not `info`, so the expectation raised "unused argument" and errored instead
+  of running. The landscape-peak check had therefore never actually executed.
+
 # searchnet 0.3.3
 
 ## Bug fixes
