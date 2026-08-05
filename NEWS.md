@@ -59,13 +59,13 @@
 ## Notes
 
 * Test suite with the fixed loader: **804 passing** (was 739), errors 16 → 1.
-  The three remaining failures are pre-existing and unrelated to loading:
-  `test-fitness.R:97` passes an `info=` argument that `expect_gte()` does not
-  accept (a test bug); `test-multi-w-matrix.R:45` asserts `XWX == rowSums(B)^2`
-  and gets `3 5 8 1` vs `4 9 25 1` (a real question about the XWX statistic, worth
-  a separate look); and `test-regression-guards.R:19` checks
-  `asNamespace("searchnet")`, which resolves to the **installed** build — currently
-  **0.1.0**, long predating these functions. Reinstall the package to clear it.
+  The three remaining failures were pre-existing and unrelated to loading, and
+  all three are now resolved: `test-fitness.R:97` and `test-multi-w-matrix.R:45`
+  were both faulty tests, fixed in 0.3.4 — note that the XWX one was a false
+  assertion in the test, **not** a question about the statistic, contrary to the
+  first version of this note; and `test-regression-guards.R:19` checks
+  `asNamespace("searchnet")`, which was resolving to a stale installed build
+  (0.1.0). Reinstalling cleared it.
 
 # searchnet 0.3.2
 
