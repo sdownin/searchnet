@@ -65,7 +65,7 @@ NULL
 #' \dontrun{
 #' env <- saomnk_env(M = 6, N = 8, seed = 42)
 #' mod <- saomnk_model(density = -0.5,
-#'                     epistasis_matrix = saomnk_block_diagonal(8, 2))
+#'                     influence_matrix = saomnk_block_diagonal(8, 2))
 #' s1 <- saomnk_shock("density", parameter = -0.5, portion = 1)
 #' s2 <- saomnk_shock("density", parameter = -2.0, portion = 1)
 #' saomnk_run(env, mod, steps_per_actor = 20, seed = 123,
@@ -454,7 +454,7 @@ searchnet_rd <- function(panel, ...) {
 #' \dontrun{
 #' # Subsidy available only to actors with scope >= 5
 #' env <- saomnk_env(M = 40, N = 12, seed = 1)
-#' mod <- saomnk_model(density = -0.5, epistasis_matrix = saomnk_block_diagonal(12, 3))
+#' mod <- saomnk_model(density = -0.5, influence_matrix = saomnk_block_diagonal(12, 3))
 #' saomnk_run(env, mod, steps_per_actor = 30, seed = 42)
 #'
 #' scope   <- saomnk_get_degrees(env)$K_AC          # running variable

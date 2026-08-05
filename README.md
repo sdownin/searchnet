@@ -9,13 +9,13 @@
 **Network-Embedded Search Simulation Engine**
 
 > [!WARNING]
-> **Development status: experimental pre-release (v0.3.x).**
+> **Development status: experimental pre-release (v0.4.x).**
 > This is an early research release of a new package: the API is still
 > evolving, breaking changes may occur between 0.x versions, and bugs are
 > to be expected. The companion methods paper is a working draft and has
 > not yet been peer-reviewed; results should be treated accordingly.
 > For reproducibility, install a pinned tag rather than the moving branch:
-> `devtools::install_github("sdownin/searchnet@v0.3.1")`.
+> `devtools::install_github("sdownin/searchnet@v0.4.0")`.
 > A stable API will be declared at v1.0.0. Bug reports with reproducible
 > examples are very welcome via
 > [GitHub Issues](https://github.com/sdownin/searchnet/issues).
@@ -54,12 +54,12 @@ library(searchnet)
 # 1. Create a search environment: 6 actors, 8 components
 env <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 42)
 
-# 2. Define a structure model with epistasis
+# 2. Define a structure model with an influence matrix
 model <- saomnk_model(
   density = -0.5,
   popularity = 0.2,
-  epistasis_matrix = saomnk_block_diagonal(8, 2),
-  epistasis_weight = 0.3
+  influence_matrix = saomnk_block_diagonal(8, 2),
+  influence_weight = 0.3
 )
 
 # 3. Run simulation
@@ -81,7 +81,7 @@ model <- saomnk_model(
   density = -0.3,
   popularity = 0.2,
   scope = 0.1,
-  epistasis_matrix = saomnk_block_diagonal(12, 4),
+  influence_matrix = saomnk_block_diagonal(12, 4),
   strategies = list(
     egoX   = c(-1, 0, 1, -1, 0, 1),
     inPopX = c( 1, 0, -1, 1, 0, -1)
@@ -123,6 +123,17 @@ The scalar NK complexity parameter *K* decomposes into four coupled degree measu
 
 These four dimensions are structurally coupled: changes in any one propagate through the bipartite structure to the others. The {K} framework provides a lens for analyzing how search, adaptation, and rivalry co-evolve.
 
+### Terminology: influence matrix vs. epistasis
+
+These are distinct objects, and conflating them is a common source of confusion:
+
+| | What it is | In searchnet |
+|---|---|---|
+| **Influence matrix (W)** | The **input**. An N x N matrix stating *which* components interact and *with what sign*. Rivkin & Siggelkow (2007) call this the influence matrix; it is also called the interaction matrix. | `influence_matrix` argument to `saomnk_model()`; `saomnk_block_diagonal()` builds modular ones |
+| **Epistasis** | The **consequence**. The fitness contribution of one component depending on the state of others -- what W *produces*, entering fitness as `X'WX`. | Realised epistasis of a simulated system is measured as `K_CC`, from `saomnk_get_degrees()` |
+
+In short: **you specify an influence matrix; you observe epistasis.** Before v0.4.0 the API called the input `epistasis_matrix`, which blurred this distinction. The old argument names still work but are deprecated.
+
 ## Features
 
 ### Simulation Engine
@@ -134,14 +145,14 @@ These four dimensions are structurally coupled: changes in any one propagate thr
 ### Structure Model Specification
 - **Structural effects**: density, popularity (`inPop`), scope (`outAct`)
 - **Actor covariates** (`coCovars`): Strategy heterogeneity via `egoX`, `inPopX`, `altX`
-- **Dyadic covariates** (`coDyadCovars`): Exogenous epistasis matrices via `XWX`, actor-component payoffs via `X`
+- **Dyadic covariates** (`coDyadCovars`): Exogenous influence matrices via `XWX`, actor-component payoffs via `X`
 - **Time-varying covariates**: Dynamic strategy programs
 - **Effect interactions**: Strategy-epistasis interaction terms
-- `saomnk_block_diagonal()` -- Convenient modular epistasis matrix construction
+- `saomnk_block_diagonal()` -- Convenient modular influence matrix construction
 
 ### Visualization (43 plot functions)
 - **K-4 degree panel**: Four coupled degree trajectories (`saomnk_plot_k4`, `saomnk_plot_degree_4panel`)
-- **Network snapshots**: Bipartite, social, and epistasis projections (`saomnk_plot_snapshots`)
+- **Network snapshots**: Bipartite, social, and component-coupling projections (`saomnk_plot_snapshots`)
 - **Utility decomposition**: Per-actor, per-strategy, contribution breakdown (`saomnk_plot_actor_utility`, `saomnk_plot_utility_contributions`)
 - **Exploration/exploitation analysis**: Phase plots, DID designs, event studies
 - **Market dynamics**: Entry/survival visualization, bipartite ring markets
@@ -233,7 +244,7 @@ searchnet includes a Python/manim pipeline for producing publication-quality ani
 ```r
 # 1. Run simulation in R
 env <- saomnk_env(M = 6, N = 12, density = 0.3, seed = 42)
-model <- saomnk_model(density = -0.5, epistasis_matrix = saomnk_block_diagonal(12, 4))
+model <- saomnk_model(density = -0.5, influence_matrix = saomnk_block_diagonal(12, 4))
 saomnk_run(env, model, steps_per_actor = 30, seed = 100)
 
 # 2. Export to CSV (uses searchnet-export.R functions)
@@ -265,8 +276,8 @@ searchnet integrates with standard causal inference packages for analyzing simul
 # Run a simulation with an exogenous shock
 env <- saomnk_env(M = 6, N = 8, seed = 42)
 model <- saomnk_model(density = -0.3, popularity = 0.2,
-                       epistasis_matrix = saomnk_block_diagonal(8, 2),
-                       epistasis_weight = 0.3)
+                       influence_matrix = saomnk_block_diagonal(8, 2),
+                       influence_weight = 0.3)
 saomnk_run(env, model, steps_per_actor = 30, seed = 100,
            shocks = list(saomnk_shock("density", step = 15, new_value = -1.0)))
 
@@ -336,7 +347,7 @@ The engine includes `verify_nk_equivalence()` for computational verification of 
   title  = {searchnet: Network-Embedded Search Simulation Engine},
   author = {Stephen Downing},
   year   = {2026},
-  note   = {R package version 0.3.1},
+  note   = {R package version 0.4.0},
   url    = {https://github.com/sdownin/searchnet}
 }
 ```

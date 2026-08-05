@@ -110,8 +110,8 @@ test_that("game API surface is well-formed end to end", {
 test_that("saomnk_get_degrees returns the K4 panel with stable column names", {
   env <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 5)
   mod <- saomnk_model(density = -0.5, popularity = 0.1, scope = -0.05,
-                      epistasis_matrix = saomnk_block_diagonal(8, 2),
-                      epistasis_weight = 0.1)
+                      influence_matrix = saomnk_block_diagonal(8, 2),
+                      influence_weight = 0.1)
   saomnk_run(env, mod, steps_per_actor = 3, seed = 5, verbose = FALSE)
 
   d <- saomnk_get_degrees(env)

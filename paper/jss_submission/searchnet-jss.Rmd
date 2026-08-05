@@ -319,7 +319,7 @@ Throughout this paper we adopt the notation of \citet{downing2026architecture},
 where the formal SAOM-NK proofs are developed in full.  The bipartite incidence
 matrix is $\mathbf{B} \in \{0,1\}^{M \times N}$ with entries $b_{ij}$; the
 NK configuration vector for a single agent is $\mathbf{x} \in \{0,1\}^N$; the
-epistasis matrix is $\mathbf{E}$ (implemented in \pkg{RSiena} as the weight
+influence matrix is $\mathbf{E}$ (implemented in \pkg{RSiena} as the weight
 matrix $\mathbf{W}$ of the \code{XWX} effect); component payoff functions are
 $f_d$; and the logit precision parameter is $\beta > 0$.
 
@@ -544,7 +544,7 @@ in the package; access via \code{searchnet\_proof()}).
 \item[Theorem 1 (Reduction).] The standard NK model is a degenerate special case
 of the SAOM-NK model.  Specifically, the NK landscape and its adaptive walk are
 recovered exactly under five restrictions: (R1)~$M = 1$ (single actor);
-(R2)~$\mathbf{E} = \mathbf{A}$ (SAOM-NK epistasis matrix equals the NK
+(R2)~$\mathbf{E} = \mathbf{A}$ (SAOM-NK influence matrix equals the NK
 interaction matrix); (R3)~$\boldsymbol{\theta} = \mathbf{0}$ (all SAOM
 parameters zero); (R4)~$\beta \to \infty$ (deterministic greedy choice);
 (R5)~uniform component selection probability.
@@ -692,7 +692,7 @@ The \code{saomnk\_model()} function builds the SAOM objective function
 specification using intuitive parameter names:
 
 ```{r api-model}
-## Define a modular epistasis matrix: 4 blocks of 3 components
+## Define a modular influence matrix: 4 blocks of 3 components
 K_matrix <- saomnk_block_diagonal(12, 4)
 
 ## Specify the model
@@ -700,8 +700,8 @@ mod <- saomnk_model(
   density    = -0.5,     # sparsity pressure
   popularity =  0.2,     # preferential attachment
   scope      =  0.1,     # scope expansion
-  epistasis_matrix = K_matrix,
-  epistasis_weight = 0.05
+  influence_matrix = K_matrix,
+  influence_weight = 0.05
 )
 mod
 ```
@@ -718,8 +718,8 @@ mod_strat <- saomnk_model(
   density    = -0.3,
   popularity =  0.2,
   scope      =  0.1,
-  epistasis_matrix = K_matrix,
-  epistasis_weight = 0.05,
+  influence_matrix = K_matrix,
+  influence_weight = 0.05,
   strategies = list(
     egoX   = rep(c(-1, 0, 1, 0), length.out = 8),
     inPopX = rep(c( 1, 0,-1, 0), length.out = 8)
@@ -912,7 +912,7 @@ theoretical claims summarized in Section~\ref{sec:formal-properties}.
 The first illustration establishes that \pkg{searchnet} can reproduce the
 core dynamics of the classical NK model under appropriate parameter settings.
 We configure a single-agent environment with no endogenous network effects,
-leaving only the exogenous epistasis matrix active.  This setting strips away
+leaving only the exogenous influence matrix active.  This setting strips away
 all SAOM-specific mechanisms, reducing the model to a single searcher navigating
 a landscape whose ruggedness is determined solely by the exogenous coupling
 matrix---the functional equivalent of the classical NK search process.
@@ -929,8 +929,8 @@ mod_nk <- saomnk_model(
   density    = -0.3,
   popularity = 0,
   scope      = 0,
-  epistasis_matrix = K_levinthal,
-  epistasis_weight = 0.15
+  influence_matrix = K_levinthal,
+  influence_weight = 0.15
 )
 
 saomnk_run(env_nk, mod_nk, steps_per_actor = 100, seed = 42)
@@ -978,8 +978,8 @@ mod_endog <- saomnk_model(
   density    = -0.3,
   popularity =  0.2,
   scope      =  0.1,
-  epistasis_matrix = K_modular,
-  epistasis_weight = 0.02,
+  influence_matrix = K_modular,
+  influence_weight = 0.02,
   strategies = list(
     egoX   = rep(c(-1, 0, 1), length.out = 12),
     inPopX = rep(c( 1, 0,-1), length.out = 12)
@@ -1005,7 +1005,7 @@ contributing less to landscape ruggedness.
 The resulting $K_{CC}$ distribution---the classical complexity parameter $K$---is
 not a single number but a heterogeneous vector that emerges from the
 interaction of actor strategies, component popularity dynamics, and the
-exogenous epistasis matrix.  This is the endogenization that the $\K$ framework
+exogenous influence matrix.  This is the endogenization that the $\K$ framework
 makes visible.
 
 ```{r endogenous-utility, fig.height=5, fig.width=8, fig.cap="Utility decomposition for the heterogeneous strategy simulation.  Actors' total utility is broken into contributions from density (sparsity pressure), popularity (preferential attachment payoff), scope (breadth payoff), and epistasis (complementarity payoff).  The divergent profiles reflect heterogeneous strategic orientations."}
@@ -1027,8 +1027,8 @@ env_shock <- saomnk_env(M = 6, N = 8, density = 0, seed = 42)
 K_small <- saomnk_block_diagonal(8, 2)
 mod_base <- saomnk_model(
   density = -0.5,
-  epistasis_matrix = K_small,
-  epistasis_weight = 0.5
+  influence_matrix = K_small,
+  influence_weight = 0.5
 )
 
 ## Baseline: no shocks
@@ -1164,7 +1164,7 @@ time_searchnet <- system.time({
   e_bench <- saomnk_env(M = 4, N = 6, seed = 1)
   m_bench <- saomnk_model(
     density = -0.5,
-    epistasis_matrix = saomnk_block_diagonal(6, 2)
+    influence_matrix = saomnk_block_diagonal(6, 2)
   )
   saomnk_run(e_bench, m_bench, steps_per_actor = 30, seed = 1)
 })
@@ -1220,7 +1220,7 @@ Table~\ref{tab:scalability} reports median wall-clock times for
 \begin{table}[t]
 \centering
 \caption{Median wall-clock time (seconds) for \code{saomnk\_run()} with
-\code{steps\_per\_actor = 30}, based on 10 replications.  Epistasis matrix is
+\code{steps\_per\_actor = 30}, based on 10 replications.  Influence matrix is
 block-diagonal with $\lfloor N/3 \rfloor$ blocks.}
 \label{tab:scalability}
 \begin{tabular}{rrr}
@@ -1270,8 +1270,8 @@ for (n in landscape_sizes) {
   e_land <- saomnk_env(M = 4, N = n, density = 0.3, seed = 42)
   m_land <- saomnk_model(
     density = -0.5,
-    epistasis_matrix = saomnk_block_diagonal(n, max(2, n %/% 3)),
-    epistasis_weight = 0.05
+    influence_matrix = saomnk_block_diagonal(n, max(2, n %/% 3)),
+    influence_weight = 0.05
   )
   saomnk_run(e_land, m_land, steps_per_actor = 10, seed = 1)
 
@@ -1321,7 +1321,7 @@ Feature & \pkg{searchnet} & \pkg{nkmodel} & \pkg{RSiena} & NetLogo \\
 NK landscape generation           & $\checkmark$              & $\checkmark$  & ---           & (ext.)    \\
 Multi-actor search                & $\checkmark$ (endogenous) & ---           & $\checkmark$ (networks) & $\checkmark$ (ABM) \\
 Bipartite networks                & $\checkmark$              & ---           & $\checkmark$  & (ext.)    \\
-Epistasis matrix ($\mathbf{B}'\mathbf{W}\mathbf{B}$) & $\checkmark$ & (implicit via $K$) & --- & (manual) \\
+Influence matrix ($\mathbf{B}'\mathbf{W}\mathbf{B}$) & $\checkmark$ & (implicit via $K$) & --- & (manual) \\
 Statistical estimation            & $\checkmark$ (via RSiena) & ---           & $\checkmark$  & ---       \\
 Formal proofs (NK $\subsetneq$ SAOM-NK) & $\checkmark$              & ---           & ---           & ---       \\
 Causal inference pipeline         & $\checkmark$ (DID/Synth)  & ---           & ---           & ---       \\
@@ -1339,10 +1339,10 @@ supports hill-climbing search.  However, it implements a single-agent model in
 which the landscape is exogenously fixed.  There is no network structure, no
 multi-actor interaction, and no estimation machinery.  The epistasis structure
 is controlled implicitly through the scalar $K$ parameter rather than through
-an explicit epistasis matrix, precluding modular or block-diagonal
+an explicit influence matrix, precluding modular or block-diagonal
 specifications.  \pkg{searchnet} subsumes the \pkg{nkmodel} use case as a
 special case: setting $M = 1$ and disabling all endogenous network effects
-recovers the classical NK model, while the explicit epistasis matrix
+recovers the classical NK model, while the explicit influence matrix
 $\mathbf{W}$ (Section~\ref{sec:bipartite}) provides finer-grained control over
 interdependence structure.
 

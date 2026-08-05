@@ -362,7 +362,7 @@ NK model and the SaoMNK framework:
 | NK Concept | NK Parameter | SaoMNK Parameter | Notes |
 |:-----------------|:-----------------|:-----------------|:-----------------|
 | Components | $N$ | `N` | Dimension of the binary string / component space |
-| Epistasis | $K$ | `epistasis_matrix` + `XWX` | Block-diagonal matrix specifies which components interact; `XWX` parameter scales the strength |
+| Epistasis | $K$ | `influence_matrix` + `XWX` | Block-diagonal matrix specifies which components interact; `XWX` parameter scales the strength |
 | Landscape ruggedness | $K/N$ ratio | `density` parameter | Negative density increases ruggedness (cost of exploration); more negative = more local optima |
 | Fitness | Random table lookup | SAOM objective function | Fitness is the actor's total utility from network statistics |
 | Search rule | Local (1-mutant) | SAOM ministep | Each ministep toggles one tie (add or drop one component) |

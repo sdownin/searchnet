@@ -116,23 +116,34 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #' @param scope Numeric. Weight on the out-degree activity effect
 #'   (\code{outAct} in RSiena). Controls actors' tendency to expand scope
 #'   (default \code{0}).
-#' @param epistasis_matrix An \eqn{N \times N}{N x N} numeric matrix encoding
-#'   pairwise component interactions, or \code{NULL} (default) to omit the
-#'   epistasis (XWX) effect.  Use \code{\link{saomnk_block_diagonal}} for
-#'   convenient modular structures.
-#' @param epistasis_weight Numeric. Weight on the epistasis (XWX) effect
-#'   (default \code{0.1}).  Ignored when \code{epistasis_matrix} is
-#'   \code{NULL}.
-#' @param epistasis_matrices Named list of \eqn{N \times N}{N x N} numeric
-#'   matrices encoding multiple pairwise component interaction structures.
-#'   For example, \code{list(W_mod = modular_matrix, W_hier = hier_matrix)}.
-#'   Each matrix generates a separate \code{coDyadCovar} entry with an XWX
-#'   effect.
-#'   When provided, \code{epistasis_matrix} is ignored.
-#' @param epistasis_weights Named numeric vector of weights for each matrix
-#'   in \code{epistasis_matrices}.  Names must match those in
-#'   \code{epistasis_matrices}.  If \code{NULL} (default), all matrices use
-#'   \code{epistasis_weight}.
+#' @param influence_matrix An \eqn{N \times N}{N x N} numeric matrix \eqn{W}
+#'   encoding pairwise component interactions -- which components affect one
+#'   another, and with what sign -- or \code{NULL} (default) to omit the XWX
+#'   effect.  Use \code{\link{saomnk_block_diagonal}} for convenient modular
+#'   structures.
+#'
+#'   This is the \emph{input} to the model: the influence matrix in the sense
+#'   of Rivkin and Siggelkow (2007).  It is distinct from epistasis, which is
+#'   the \emph{consequence} -- a portfolio's fitness running through \eqn{W}
+#'   as \eqn{X'WX}.  The realised epistasis of a simulated system is reported
+#'   separately as \eqn{K_{CC}}; see \code{\link{saomnk_get_degrees}}.
+#' @param influence_weight Numeric. Weight on the XWX effect (default
+#'   \code{0.1}).  Ignored when \code{influence_matrix} is \code{NULL}.
+#' @param influence_matrices Named list of \eqn{N \times N}{N x N} numeric
+#'   matrices encoding multiple pairwise component interaction structures,
+#'   e.g. \code{list(W_mod = modular_matrix, W_hier = hier_matrix)}.  Each
+#'   matrix generates a separate \code{coDyadCovar} entry with an XWX effect.
+#'   When provided, \code{influence_matrix} is ignored.
+#' @param influence_weights Named numeric vector of weights for each matrix in
+#'   \code{influence_matrices}.  Names must match those in
+#'   \code{influence_matrices}.  If \code{NULL} (default), all matrices use
+#'   \code{influence_weight}.
+#' @param epistasis_matrix,epistasis_weight,epistasis_matrices,epistasis_weights
+#'   \strong{Deprecated} in 0.4.0; renamed to the four \code{influence_*}
+#'   arguments above.  The old names still work and are passed through
+#'   unchanged, but emit a warning.  The rename corrects a semantic
+#'   conflation: \eqn{W} is an influence (interaction) matrix; epistasis is
+#'   what it produces.
 #' @param dyad_covariates Named list of \eqn{M \times N}{M x N} actor-by-
 #'   component covariate matrices.  Each entry may optionally carry a
 #'   \code{"weight"} attribute (numeric; default \code{0.1}) and an
@@ -196,8 +207,12 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 saomnk_model <- function(density            = -0.5,
                           popularity         = 0,
                           scope              = 0,
+                          influence_matrix   = NULL,
+                          influence_weight   = 0.1,
+                          influence_matrices = NULL,
+                          influence_weights  = NULL,
                           epistasis_matrix   = NULL,
-                          epistasis_weight   = 0.1,
+                          epistasis_weight   = NULL,
                           epistasis_matrices = NULL,
                           epistasis_weights  = NULL,
                           dyad_covariates    = NULL,
@@ -207,6 +222,27 @@ saomnk_model <- function(density            = -0.5,
                           dyad_covariate_effect = "egoXaltX",
                           dyad_covariate_weight = 0.1,
                           ...) {
+
+  ## -- 0. Deprecated arguments (renamed in 0.4.0) ------------------------- ##
+  ## `epistasis_*` -> `influence_*`.  W is the influence / interaction matrix
+  ## (the INPUT); epistasis is the fitness coupling it produces (the EFFECT),
+  ## reported as K_CC.  Old names keep working, with a warning.
+  .dep <- function(old_val, old_nm, new_nm, new_val, default = NULL) {
+    if (is.null(old_val)) return(new_val)
+    warning("`", old_nm, "` is deprecated as of searchnet 0.4.0; use `",
+            new_nm, "` instead. W is the influence (interaction) matrix, ",
+            "the model INPUT; epistasis is the resulting fitness coupling, ",
+            "reported as K_CC.", call. = FALSE)
+    if (identical(new_val, default)) old_val else new_val
+  }
+  influence_matrix   <- .dep(epistasis_matrix,   "epistasis_matrix",
+                             "influence_matrix",   influence_matrix,   NULL)
+  influence_weight   <- .dep(epistasis_weight,   "epistasis_weight",
+                             "influence_weight",   influence_weight,   0.1)
+  influence_matrices <- .dep(epistasis_matrices, "epistasis_matrices",
+                             "influence_matrices", influence_matrices, NULL)
+  influence_weights  <- .dep(epistasis_weights,  "epistasis_weights",
+                             "influence_weights",  influence_weights,  NULL)
 
   ## -- 1. Core effects ---------------------------------------------------- ##
 
@@ -287,18 +323,18 @@ saomnk_model <- function(density            = -0.5,
 
   coDyadCovars_list <- list()
 
-  if (!is.null(epistasis_matrices)) {
-    ## Multiple W-matrices: epistasis_matrices is a named list
-    stopifnot(is.list(epistasis_matrices), !is.null(names(epistasis_matrices)))
-    for (nm in names(epistasis_matrices)) {
-      w_mat <- epistasis_matrices[[nm]]
+  if (!is.null(influence_matrices)) {
+    ## Multiple W-matrices: influence_matrices is a named list
+    stopifnot(is.list(influence_matrices), !is.null(names(influence_matrices)))
+    for (nm in names(influence_matrices)) {
+      w_mat <- influence_matrices[[nm]]
       stopifnot(is.matrix(w_mat) || inherits(w_mat, "Matrix"))
       w_mat <- as.matrix(w_mat)
-      ## Per-matrix weight: look up in epistasis_weights, fall back to epistasis_weight
-      w_weight <- if (!is.null(epistasis_weights) && nm %in% names(epistasis_weights)) {
-        epistasis_weights[[nm]]
+      ## Per-matrix weight: look up in influence_weights, fall back to influence_weight
+      w_weight <- if (!is.null(influence_weights) && nm %in% names(influence_weights)) {
+        influence_weights[[nm]]
       } else {
-        epistasis_weight
+        influence_weight
       }
       slot <- length(coDyadCovars_list) + 1L
       coDyadCovars_list[[slot]] <-
@@ -312,19 +348,19 @@ saomnk_model <- function(density            = -0.5,
           x            = w_mat
         )
     }
-  } else if (!is.null(epistasis_matrix)) {
+  } else if (!is.null(influence_matrix)) {
     ## Single W-matrix (backward compatible)
-    stopifnot(is.matrix(epistasis_matrix) || inherits(epistasis_matrix, "Matrix"))
-    epistasis_matrix <- as.matrix(epistasis_matrix)
+    stopifnot(is.matrix(influence_matrix) || inherits(influence_matrix, "Matrix"))
+    influence_matrix <- as.matrix(influence_matrix)
     coDyadCovars_list[[length(coDyadCovars_list) + 1]] <-
       list(
         effect       = "XWX",
-        parameter    = epistasis_weight,
+        parameter    = influence_weight,
         dv_name      = .DV_NAME,
         fix          = TRUE,
         nodeSet      = c("COMPONENTS", "COMPONENTS"),
         interaction1 = "self$component_1_coDyadCovar",
-        x            = epistasis_matrix
+        x            = influence_matrix
       )
   }
 
@@ -471,7 +507,7 @@ saomnk_shock <- function(effect, parameter, portion = 1L) {
 #' @examples
 #' env <- saomnk_env(M = 3, N = 6, seed = 1234)
 #' mod <- saomnk_model(density = -0.5,
-#'                     epistasis_matrix = saomnk_block_diagonal(6, 2))
+#'                     influence_matrix = saomnk_block_diagonal(6, 2))
 #' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
 saomnk_run <- function(env, model, steps_per_actor = 30,
                         seed = NULL, shocks = NULL, verbose = FALSE) {
@@ -534,7 +570,7 @@ saomnk_run <- function(env, model, steps_per_actor = 30,
 #' \dontrun{
 #' env <- saomnk_env(M = 6, N = 12, seed = 42)
 #' mod <- saomnk_model(density = -0.5,
-#'                     epistasis_matrix = saomnk_block_diagonal(12, 4))
+#'                     influence_matrix = saomnk_block_diagonal(12, 4))
 #' saomnk_monte_carlo(env, mod, replications = 20, parallel = TRUE, workers = 4)
 #' }
 saomnk_monte_carlo <- function(env, model, replications = 10, waves = 2,

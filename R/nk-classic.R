@@ -126,7 +126,7 @@ nk_dependencies <- function(N, K, model = c("adjacent", "random", "block")) {
 #'     \item{\code{configs}}{Matrix \eqn{2^N \times N} of configuration bits,
 #'       rows in code order.}
 #'     \item{\code{dependencies}}{List of epistatic neighbourhoods.}
-#'     \item{\code{epistasis_matrix}}{\eqn{N \times N} binary matrix;
+#'     \item{\code{influence_matrix}}{\eqn{N \times N} binary matrix;
 #'       \code{[i, j] = 1} iff locus \code{j} influences contribution
 #'       \code{f_i}. Diagonal is 1.}
 #'   }
@@ -191,7 +191,7 @@ nk_landscape <- function(N, K,
     contributions = contributions,
     configs = configs,
     dependencies = deps,
-    epistasis_matrix = E
+    influence_matrix = E
   ), class = "nk_landscape")
 }
 
@@ -498,7 +498,7 @@ nk_sweep_K <- function(N = 12, K_values = 0:(N - 1),
 #'
 #' @return A list with components \code{env_params} (arguments for
 #'   \code{\link{saomnk_env}}), \code{model_params} (arguments for
-#'   \code{\link{saomnk_model}}), \code{epistasis_matrix}, and
+#'   \code{\link{saomnk_model}}), \code{influence_matrix}, and
 #'   \code{landscape} (the source object).
 #'
 #' @examples
@@ -519,10 +519,10 @@ nk_to_saomnk <- function(landscape, M = 1L) {
     ),
     model_params = list(
       density = 0,
-      epistasis_matrix = landscape$epistasis_matrix,
-      epistasis_weight = 1
+      influence_matrix = landscape$influence_matrix,
+      influence_weight = 1
     ),
-    epistasis_matrix = landscape$epistasis_matrix,
+    influence_matrix = landscape$influence_matrix,
     landscape = landscape
   )
 }

@@ -11,7 +11,7 @@
 
 context("Multiple W-matrix (epistasis) support")
 
-test_that("saomnk_model accepts epistasis_matrices list", {
+test_that("saomnk_model accepts influence_matrices list", {
   # This tests that the API layer correctly generates multiple coDyadCovar entries
   skip_if_not(exists("saomnk_model", mode = "function"), "saomnk_model not available")
 
@@ -23,8 +23,8 @@ test_that("saomnk_model accepts epistasis_matrices list", {
 
   model <- saomnk_model(
     density = -1,
-    epistasis_matrices = list(block1 = W1, block2 = W2),
-    epistasis_weights = c(block1 = 0.3, block2 = 0.5)
+    influence_matrices = list(block1 = W1, block2 = W2),
+    influence_weights = c(block1 = 0.3, block2 = 0.5)
   )
 
   expect_true(!is.null(model))

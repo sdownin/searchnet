@@ -340,8 +340,8 @@ cat("Step 1 complete: World created with",
 model1 <- saomnk_model(
   density  = -0.5,       # scope is costly (negative = pressure to drop ties)
   popularity = 0.2,      # popular activities attract firms
-  epistasis_matrix = saomnk_block_diagonal(8, 2),  # 2 clusters of 4
-  epistasis_weight = 0.3 # synergy within clusters matters
+  influence_matrix = saomnk_block_diagonal(8, 2),  # 2 clusters of 4
+  influence_weight = 0.3 # synergy within clusters matters
 )
 cat("Step 2 complete: Model defined\n")
 print(model1)
@@ -364,10 +364,10 @@ initial density of 0.3 (about 30% of ties exist at the start). The
   keeps the network from becoming fully connected
 - `popularity = 0.2` means "firms are somewhat attracted to activities
   that other firms already do" (herding / legitimacy)
-- `epistasis_matrix` defines which components have synergies with each
+- `influence_matrix` defines which components have synergies with each
   other. The block-diagonal structure creates 2 clusters of 4
   components---activities within a cluster complement each other
-- `epistasis_weight = 0.3` sets the strength of those synergies
+- `influence_weight = 0.3` sets the strength of those synergies
 
 **Step 3** runs the simulation for 20 ministeps per actor
 ($6 \times 20 = 120$ total ministeps).
@@ -460,8 +460,8 @@ env_strat <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 42)
 model_strat <- saomnk_model(
   density = -0.5,
   popularity = 0.2,
-  epistasis_matrix = saomnk_block_diagonal(8, 2),
-  epistasis_weight = 0.3,
+  influence_matrix = saomnk_block_diagonal(8, 2),
+  influence_weight = 0.3,
   strategies = list(
     egoX = c(-1, -1, 0, 0, 1, 1)  # 3 types: cautious, neutral, aggressive
   )
@@ -504,8 +504,8 @@ env_base <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 42)
 model_base <- saomnk_model(
   density = -0.5,
   popularity = 0.2,
-  epistasis_matrix = saomnk_block_diagonal(8, 2),
-  epistasis_weight = 0.3
+  influence_matrix = saomnk_block_diagonal(8, 2),
+  influence_weight = 0.3
 )
 saomnk_run(env_base, model_base, steps_per_actor = 20, seed = 100)
 
@@ -514,8 +514,8 @@ env_high <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 42)
 model_high <- saomnk_model(
   density = -2.0,        # <-- much higher cost!
   popularity = 0.2,
-  epistasis_matrix = saomnk_block_diagonal(8, 2),
-  epistasis_weight = 0.3
+  influence_matrix = saomnk_block_diagonal(8, 2),
+  influence_weight = 0.3
 )
 saomnk_run(env_high, model_high, steps_per_actor = 20, seed = 100)
 
@@ -541,8 +541,8 @@ env_shock <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 42)
 model_shock <- saomnk_model(
   density = -0.5,
   popularity = 0.2,
-  epistasis_matrix = saomnk_block_diagonal(8, 2),
-  epistasis_weight = 0.3
+  influence_matrix = saomnk_block_diagonal(8, 2),
+  influence_weight = 0.3
 )
 
 shock_baseline <- saomnk_shock("density", parameter = -0.5, portion = 1)
@@ -577,8 +577,8 @@ env_multi <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 42)
 model_multi <- saomnk_model(
   density = -0.5,
   popularity = 0.2,
-  epistasis_matrix = saomnk_block_diagonal(8, 2),
-  epistasis_weight = 0.3
+  influence_matrix = saomnk_block_diagonal(8, 2),
+  influence_weight = 0.3
 )
 
 # Three phases: normal -> crisis -> recovery
@@ -631,7 +631,7 @@ provides a starting point.
 | Cost of diversification | Density effect (negative) | `saomnk_model(density = ...)` |
 | Competitive pressure / herding | Popularity effect | `saomnk_model(popularity = ...)` |
 | Diversification tendency | Scope effect | `saomnk_model(scope = ...)` |
-| Complementarities / synergies | Epistasis (XWX) | `saomnk_model(epistasis_matrix = ...)` |
+| Complementarities / synergies | Epistasis (XWX) | `saomnk_model(influence_matrix = ...)` |
 | Strategic groups | $K_{AA}$ (sociality) | `saomnk_get_degrees(env)$K_AA` |
 | Landscape ruggedness | $K_{CC}$ (epistasis) | `saomnk_get_degrees(env)$K_CC` |
 | Environmental shock | Parameter regime change | `saomnk_shock(...)` |
@@ -678,15 +678,15 @@ cat("  M = 5 biotech firms\n")
 cat("  N = 8 drug development platforms\n")
 cat("  b_ij = 1 means 'firm i uses platform j'\n")
 cat("  Key mechanism: epistasis (complementary platforms)\n\n")
-cat("  Baseline: weak complementarities (epistasis_weight = 0.1)\n")
-cat("  Counterfactual: strong complementarities (epistasis_weight = 0.5)\n\n")
+cat("  Baseline: weak complementarities (influence_weight = 0.1)\n")
+cat("  Counterfactual: strong complementarities (influence_weight = 0.5)\n\n")
 
 # Baseline
 env_ex_base <- saomnk_env(M = 5, N = 8, density = 0.2, seed = 99)
 mod_ex_base <- saomnk_model(
   density = -0.5,
-  epistasis_matrix = saomnk_block_diagonal(8, 2),
-  epistasis_weight = 0.1   # weak complementarities
+  influence_matrix = saomnk_block_diagonal(8, 2),
+  influence_weight = 0.1   # weak complementarities
 )
 saomnk_run(env_ex_base, mod_ex_base, steps_per_actor = 20, seed = 100)
 
@@ -694,8 +694,8 @@ saomnk_run(env_ex_base, mod_ex_base, steps_per_actor = 20, seed = 100)
 env_ex_cf <- saomnk_env(M = 5, N = 8, density = 0.2, seed = 99)
 mod_ex_cf <- saomnk_model(
   density = -0.5,
-  epistasis_matrix = saomnk_block_diagonal(8, 2),
-  epistasis_weight = 0.5   # strong complementarities
+  influence_matrix = saomnk_block_diagonal(8, 2),
+  influence_weight = 0.5   # strong complementarities
 )
 saomnk_run(env_ex_cf, mod_ex_cf, steps_per_actor = 20, seed = 100)
 
@@ -738,7 +738,7 @@ cat("==================================================\n\n")
 cat("SETUP:\n")
 cat("  env   <- saomnk_env(M, N, density, seed)\n")
 cat("  model <- saomnk_model(density, popularity, scope,\n")
-cat("             epistasis_matrix, epistasis_weight, strategies)\n\n")
+cat("             influence_matrix, influence_weight, strategies)\n\n")
 
 cat("RUN:\n")
 cat("  saomnk_run(env, model, steps_per_actor, seed, shocks)\n\n")
