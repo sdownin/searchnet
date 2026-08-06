@@ -38,9 +38,9 @@ test_that("local optima increase with K", {
 test_that("epistasis matrix has K+1 dependencies per locus", {
   for (k in c(0, 2, 5)) {
     nk <- nk_landscape(N = 9, K = k, model = "adjacent", seed = 3)
-    expect_true(all(rowSums(nk$epistasis_matrix) == k + 1),
+    expect_true(all(rowSums(nk$influence_matrix) == k + 1),
                 info = paste("K =", k))
-    expect_true(all(diag(nk$epistasis_matrix) == 1))
+    expect_true(all(diag(nk$influence_matrix) == 1))
   }
 })
 
@@ -97,8 +97,8 @@ test_that("nk_to_saomnk emits a usable specification", {
   spec <- nk_to_saomnk(nk)
   expect_equal(spec$env_params$M, 1)
   expect_equal(spec$env_params$N, 8)
-  expect_equal(dim(spec$epistasis_matrix), c(8, 8))
-  expect_true(all(rowSums(spec$epistasis_matrix) == 3))
+  expect_equal(dim(spec$influence_matrix), c(8, 8))
+  expect_true(all(rowSums(spec$influence_matrix) == 3))
 })
 
 test_that("invalid parameters are rejected", {

@@ -11,7 +11,7 @@
 
 context("Multiple W-matrix (epistasis) support")
 
-test_that("saomnk_model accepts epistasis_matrices list", {
+test_that("saomnk_model accepts influence_matrices list", {
   # This tests that the API layer correctly generates multiple coDyadCovar entries
   skip_if_not(exists("saomnk_model", mode = "function"), "saomnk_model not available")
 
@@ -23,8 +23,8 @@ test_that("saomnk_model accepts epistasis_matrices list", {
 
   model <- saomnk_model(
     density = -1,
-    epistasis_matrices = list(block1 = W1, block2 = W2),
-    epistasis_weights = c(block1 = 0.3, block2 = 0.5)
+    influence_matrices = list(block1 = W1, block2 = W2),
+    influence_weights = c(block1 = 0.3, block2 = 0.5)
   )
 
   expect_true(!is.null(model))
@@ -39,10 +39,22 @@ test_that("XWX statistic computed correctly for each W-matrix", {
   B <- matrix(sample(0:1, M*N, replace=TRUE, prob=c(0.5, 0.5)), M, N)
 
   W <- diag(N)  # identity = no epistasis
-  xwx <- rowSums(B %*% W %*% t(B))
 
-  # With identity W, XWX should equal rowSums of social projection diagonal
-  expect_equal(xwx, rowSums(B)^2)  # Because B %*% I %*% t(B) = B %*% t(B)
+  # An identity W is a no-op: B W B' collapses to the social projection B B'.
+  expect_equal(B %*% W %*% t(B), B %*% t(B))
+
+  # Its DIAGONAL is each actor's scope |B_i| -- the number of components held.
+  expect_equal(diag(B %*% t(B)), rowSums(B))
+
+  # Its ROW SUMS are B %*% colSums(B): actor i's total component-sharing with
+  # the whole population, itself included.
+  #
+  # NOTE: this previously asserted rowSums(B W B') == rowSums(B)^2, which is
+  # false for M > 1. rowSums(B B')_i = sum_j (B_i . B_j) = B_i . colSums(B),
+  # and equals |B_i|^2 only when every actor holds the same bundle. On the
+  # seeded fixture it gave 3 5 8 1 against an expectation of 4 9 25 1. The
+  # engine was never implicated -- this block is pure matrix algebra.
+  expect_equal(rowSums(B %*% W %*% t(B)), as.vector(B %*% colSums(B)))
 })
 
 test_that("XWX changes when W encodes block structure", {

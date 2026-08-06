@@ -103,10 +103,10 @@ test_that("saomnk_model() with strategy weight attribute overrides default", {
   expect_equal(mod$dv_bipartite$coCovars[[1]]$parameter, 0.75)
 })
 
-test_that("saomnk_model() with epistasis_matrix creates coDyadCovars", {
+test_that("saomnk_model() with influence_matrix creates coDyadCovars", {
   epi_mat <- saomnk_block_diagonal(6, 2)
-  mod <- saomnk_model(density = -1, epistasis_matrix = epi_mat,
-                       epistasis_weight = 0.15)
+  mod <- saomnk_model(density = -1, influence_matrix = epi_mat,
+                       influence_weight = 0.15)
 
   dcovs <- mod$dv_bipartite$coDyadCovars
   expect_length(dcovs, 1)
@@ -193,7 +193,7 @@ test_that("print.saomnk_model() shows effects", {
 
 test_that("print.saomnk_model() shows epistasis when present", {
   epi <- saomnk_block_diagonal(6, 2)
-  mod <- saomnk_model(density = -1, epistasis_matrix = epi)
+  mod <- saomnk_model(density = -1, influence_matrix = epi)
   output <- capture.output(print(mod))
   expect_true(any(grepl("epistasis|XWX|Dyad", output, ignore.case = TRUE)))
 })
@@ -358,4 +358,45 @@ test_that("saomnk_shock() passes through unknown effect names unchanged", {
 test_that("saomnk_shock() rejects invalid inputs", {
   expect_error(saomnk_shock(123, parameter = 1))  # non-character
   expect_error(saomnk_shock("density", parameter = "abc"))  # non-numeric
+})
+
+# --- 0.4.0 rename: epistasis_* -> influence_* --------------------------------
+
+test_that("influence_* arguments work without warning", {
+  W <- saomnk_block_diagonal(8, 2)
+  expect_silent(saomnk_model(density = -0.5, influence_matrix = W,
+                             influence_weight = 0.3))
+})
+
+test_that("deprecated epistasis_* arguments warn but still work", {
+  W <- saomnk_block_diagonal(8, 2)
+  expect_warning(saomnk_model(density = -0.5, epistasis_matrix = W),
+                 "deprecated")
+  expect_warning(saomnk_model(density = -0.5, influence_matrix = W,
+                              epistasis_weight = 0.3),
+                 "influence_weight")
+  expect_warning(saomnk_model(density = -0.5, epistasis_matrices = list(A = W)),
+                 "influence_matrices")
+  expect_warning(saomnk_model(density = -0.5, influence_matrices = list(A = W),
+                              epistasis_weights = c(A = 0.2)),
+                 "influence_weights")
+})
+
+test_that("old and new argument names produce identical models", {
+  W <- saomnk_block_diagonal(8, 2)
+  new <- saomnk_model(density = -0.5, influence_matrix = W,
+                      influence_weight = 0.3)
+  old <- suppressWarnings(
+    saomnk_model(density = -0.5, epistasis_matrix = W,
+                 epistasis_weight = 0.3))
+  expect_identical(new, old)
+})
+
+test_that("new argument takes precedence when both are supplied", {
+  W1 <- saomnk_block_diagonal(8, 2)
+  W2 <- saomnk_block_diagonal(8, 4)
+  both <- suppressWarnings(
+    saomnk_model(density = -0.5, influence_matrix = W2, epistasis_matrix = W1))
+  only_new <- saomnk_model(density = -0.5, influence_matrix = W2)
+  expect_identical(both, only_new)
 })

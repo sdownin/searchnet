@@ -95,7 +95,7 @@ NULL
 #' @param seed Integer or NULL. Random seed for reproducibility.
 #' @param custom_params Named list of custom parameters when
 #'   \code{industry = "custom"}. Must include at minimum: \code{N},
-#'   \code{activity_names}, \code{density}, \code{epistasis_weight}.
+#'   \code{activity_names}, \code{density}, \code{influence_weight}.
 #' @return A list of class \code{"searchnet_classroom"} containing the
 #'   environment, model, student roster, AI configuration, round tracker,
 #'   decision log, and leaderboard history.
@@ -170,8 +170,8 @@ searchnet_classroom_init <- function(n_students, n_rounds = 10, N = 12,
   model <- saomnk_model(
     density          = preset$density_param %||% -0.5,
     popularity       = preset$popularity %||% 0.3,
-    epistasis_matrix = W,
-    epistasis_weight = preset$epistasis_weight %||% 0.4
+    influence_matrix = W,
+    influence_weight = preset$influence_weight %||% 0.4
   )
 
   # ---- Student roster ----
@@ -481,7 +481,7 @@ searchnet_classroom_advance <- function(classroom, force = FALSE) {
     util <- length(held) * 0.5  # base scope value
     if (length(held) > 0) {
       # Epistasis bonus from block structure
-      W <- classroom$model$epistasis_matrix %||% diag(ncol(B_now))
+      W <- classroom$model$influence_matrix %||% diag(ncol(B_now))
       if (!is.null(W) && nrow(W) == ncol(B_now)) {
         epist_bonus <- sum(W[held, held]) - length(held)  # exclude diagonal
         # Safely get XWX weight from model

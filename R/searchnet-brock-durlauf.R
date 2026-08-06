@@ -584,7 +584,7 @@ bd_landau_steepness <- function(beta, J, m_star, tau = 1, delta_m = 0.05) {
 #'   \code{sienaDependent} rejects degenerate \eqn{N \le 2} arrays.
 #'   Under restriction Rb2(b) (PROOF\_TABLE.md L4) the \eqn{N} components
 #'   become independent B&D problems when \code{scope = 0} and
-#'   \code{epistasis_weight = 0}, providing \eqn{N} statistical replicates
+#'   \code{influence_weight = 0}, providing \eqn{N} statistical replicates
 #'   per simulated environment for free.
 #' @param n_steps Integer ministeps \emph{per actor} per replicate
 #'   (default \code{50}). The CTMC mixing time is approximately
@@ -725,9 +725,9 @@ verify_brock_durlauf_reduction <- function(M_seq        = c(50, 100, 200, 500),
         ##    so when `sqrt_correction = TRUE` we rescale the coefficient
         ##    by 1/sqrt(M/2) to recover the linear mean-field form
         ##    (one-step linearisation per L16).
-        ##  * `epistasis_matrix = NULL` causes RSiena to drop the
+        ##  * `influence_matrix = NULL` causes RSiena to drop the
         ##    density effect ("Effect not found"); we therefore pass a
-        ##    minimal real matrix with `epistasis_weight = 0`.
+        ##    minimal real matrix with `influence_weight = 0`.
         ## Sign convention: positive J_b = coordination (peer alignment) =
         ## positive `popularity` coefficient on inPop. Negative J_b =
         ## anti-coordination (congestion).
@@ -745,8 +745,8 @@ verify_brock_durlauf_reduction <- function(M_seq        = c(50, 100, 200, 500),
         model <- saomnk_model(density    = h_b,
                               popularity = pop_coef,
                               scope      = 0,
-                              epistasis_matrix = epi_mat,
-                              epistasis_weight = 0)
+                              influence_matrix = epi_mat,
+                              influence_weight = 0)
         ## n_steps is interpreted as steps_per_actor (so mixing time is
         ## independent of M).  Each actor revises n_steps times,
         ## giving total CTMC ministeps = M * n_steps.  For meaningful

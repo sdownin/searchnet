@@ -122,7 +122,7 @@ create_block_diag <- function(N, B) {
 #' @param threshold Minimum similarity to retain (set to 0 below threshold)
 #' @param diagonal Value for diagonal entries (default 0, matching block_diag convention)
 #' @return An N x N symmetric epistasis matrix suitable for use as
-#'   \code{epistasis_matrix} in \code{\link{saomnk_model}}
+#'   \code{influence_matrix} in \code{\link{saomnk_model}}
 #' @export
 #' @examples
 #' # From a simulated environment
@@ -130,7 +130,7 @@ create_block_diag <- function(N, B) {
 #' W <- saomnk_empirical_epistasis(env$bipartite_matrix)
 #'
 #' # Use in a model
-#' model <- saomnk_model(density = -0.5, epistasis_matrix = W, epistasis_weight = 0.3)
+#' model <- saomnk_model(density = -0.5, influence_matrix = W, influence_weight = 0.3)
 saomnk_empirical_epistasis <- function(B, method = "jaccard", threshold = 0, diagonal = 0) {
   # If B is an env object, extract the matrix
   if (is.environment(B) || inherits(B, "R6")) {

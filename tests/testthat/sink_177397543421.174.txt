@@ -1,8 +1,0 @@
-If you use this algorithm object, siena07 will create/use an output file Siena.txt .
-
-Start phase 0 
-theta: 0 0 
-
-Start phase 3 
-
- 100.00%

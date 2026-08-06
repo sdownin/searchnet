@@ -150,8 +150,8 @@ test_that("XWX with block-diagonal W concentrates within-block ties", {
   ## Create 2 blocks of 3 components each
   W <- saomnk_block_diagonal(N, 2)
 
-  mod <- saomnk_model(density = -0.5, epistasis_matrix = W,
-                       epistasis_weight = 0.5)
+  mod <- saomnk_model(density = -0.5, influence_matrix = W,
+                       influence_weight = 0.5)
 
   env <- tryCatch(
     run_dgp_sim(mod, M = M, N = N, density = 0.3, seed = 401,

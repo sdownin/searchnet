@@ -78,8 +78,8 @@ searchnet_game_init <- function(M = 6, N = 8, player_id = 1,
     density          = -0.5,
     popularity       = 0.15,
     scope            = -0.1,
-    epistasis_matrix = K_mat,
-    epistasis_weight = 0.2
+    influence_matrix = K_mat,
+    influence_weight = 0.2
   )
 
   ## --- AI rationality parameter ---------------------------------------- ##

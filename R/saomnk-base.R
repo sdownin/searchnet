@@ -500,8 +500,43 @@ SaomNkRSienaBiEnv_base <- R6Class(
                                               name = eff$dv_name,  # interaction1 = eff$interaction1,
                                               fix = fix, 
                                               type='rate', verbose = verbose)
-        self$rsiena_effects <- setEffect(self$rsiena_effects,  Rate, 
+        self$rsiena_effects <- setEffect(self$rsiena_effects,  Rate,
                                          name = eff$dv_name, parameter = eff$parameter,  fix = fix, type='rate', verbose = verbose)
+      }
+      ## HETEROGENEOUS / STRUCTURAL RATE EFFECTS
+      ## RateX  : rate depends on an actor covariate  (RSiena group `covarBipartiteRate`)
+      ## outRate*/inRate* : rate depends on the actor's own degree (`bipartiteRate`)
+      ## These make the FREQUENCY of change actor-specific, as distinct from the evaluation
+      ## function, which governs WHICH change is preferred. Required for modelling
+      ## heterogeneous adjustment / repositioning costs.
+      else if (eff$effect %in% c('RateX', 'outRate', 'outRateInv', 'outRateLog',
+                                 'inRateInv', 'inRateLog'))
+      {
+        .needs_cov <- identical(eff$effect, 'RateX')
+        if (.needs_cov && (is.null(eff$interaction1) || !nzchar(as.character(eff$interaction1)))) {
+          warning("'RateX' effect skipped: no interaction1 (actor covariate) specified. Declare a covariate first.")
+        } else {
+          tryCatch({
+            .args_inc <- list(self$rsiena_effects, eff$effect, character = TRUE,
+                              name = eff$dv_name, type = 'rate',
+                              fix = fix, verbose = verbose)
+            if (.needs_cov) .args_inc$interaction1 <- eff$interaction1
+            self$rsiena_effects <- do.call(includeEffects, .args_inc)
+
+            ## `parameter=` populates the `parm` column that get_theta_matrix() reads.
+            .args_set <- list(self$rsiena_effects, shortName = eff$effect, character = TRUE,
+                              name = eff$dv_name, type = 'rate',
+                              parameter = eff$parameter,
+                              fix = fix, verbose = verbose)
+            if (!is.null(eff$initialValue)) .args_set$initialValue <- eff$initialValue
+            if (.needs_cov) .args_set$interaction1 <- eff$interaction1
+            self$rsiena_effects <- do.call(setEffect, .args_set)
+          }, error = function(e) {
+            warning(sprintf("'%s' rate effect failed: %s (is covariate '%s' registered?)",
+                            eff$effect, e$message,
+                            if (is.null(eff$interaction1)) '<none>' else eff$interaction1))
+          })
+        }
       }
       else if (eff$effect == 'density')
       {
@@ -638,18 +673,30 @@ SaomNkRSienaBiEnv_base <- R6Class(
           warning(sprintf("'%s' effect skipped: no interaction1 (covariate) specified. Declare a covariate first.", eff$effect))
         } else {
           tryCatch({
-            eff_sym <- as.symbol(eff$effect)
+            ## NOTE: `shortName` is NOT a formal of includeEffects(); passing it there puts
+            ## it in `...`, where RSiena deparses the unevaluated expression and looks for an
+            ## effect literally named "eff$effect". Pass the name as the first `...` argument
+            ## with character=TRUE instead. setEffect() DOES take shortName, but likewise
+            ## deparses it unless character=TRUE.
+            ## NOTE 2: the theta values that drive the simulation are read from the `parm`
+            ## column (`get_theta_matrix()`: `theta_in <- effs$parm`), populated by
+            ## setEffect(parameter=). Writing `initialValue=` instead registers the effect
+            ## but leaves its coefficient out of the theta matrix, so the effect is INERT.
+            ## `parameter` and `initialValue` are different things -- pass both when supplied.
             self$rsiena_effects <- includeEffects(self$rsiena_effects,
+                                                  eff$effect,
+                                                  character = TRUE,
                                                   name = eff$dv_name,
                                                   interaction1 = eff$interaction1,
-                                                  fix = fix, verbose = verbose,
-                                                  shortName = eff$effect)
-            self$rsiena_effects <- setEffect(self$rsiena_effects,
-                                             interaction1 = eff$interaction1,
-                                             name = eff$dv_name,
-                                             initialValue = eff$initialValue %||% eff$parameter,
-                                             fix = fix, verbose = verbose,
-                                             shortName = eff$effect)
+                                                  fix = fix, verbose = verbose)
+            .args_set <- list(self$rsiena_effects,
+                              shortName = eff$effect, character = TRUE,
+                              interaction1 = eff$interaction1,
+                              name = eff$dv_name,
+                              parameter = eff$parameter,
+                              fix = fix, verbose = verbose)
+            if (!is.null(eff$initialValue)) .args_set$initialValue <- eff$initialValue
+            self$rsiena_effects <- do.call(setEffect, .args_set)
           }, error = function(e) {
             warning(sprintf("'%s' effect failed: %s (is covariate '%s' registered?)",
                             eff$effect, e$message, eff$interaction1))
@@ -721,18 +768,29 @@ SaomNkRSienaBiEnv_base <- R6Class(
       else
       {
         ## Generic fallback: try to include the effect by shortName directly
-        ## This handles effects not in the explicit if/else chain above
+        ## This handles effects not in the explicit if/else chain above.
+        ## See the covariate branch above for why `character = TRUE` is required on both
+        ## calls: includeEffects() has no `shortName` formal, and setEffect() deparses
+        ## `shortName` unless told the value is a character string.
         tryCatch({
-          self$rsiena_effects <- includeEffects(self$rsiena_effects,
-            name = eff$dv_name,
-            fix = fix, verbose = verbose,
-            shortName = eff$effect)
-          if (!is.null(eff$initialValue)) {
-            self$rsiena_effects <- setEffect(self$rsiena_effects,
-              name = eff$dv_name,
-              initialValue = eff$initialValue,
-              fix = fix, verbose = verbose,
-              shortName = eff$effect)
+          .type <- if (grepl('rate', eff$effect, ignore.case = TRUE)) 'rate' else 'eval'
+          .args_inc <- list(self$rsiena_effects, eff$effect, character = TRUE,
+                            name = eff$dv_name, type = .type,
+                            fix = fix, verbose = verbose)
+          if (!is.null(eff$interaction1) && nzchar(as.character(eff$interaction1)))
+            .args_inc$interaction1 <- eff$interaction1
+          self$rsiena_effects <- do.call(includeEffects, .args_inc)
+          if (!is.null(eff$parameter) || !is.null(eff$initialValue)) {
+            ## `parameter=` populates the `parm` column that get_theta_matrix() reads;
+            ## `initialValue=` is RSiena's estimation start value. They are not the same.
+            .args_set <- list(self$rsiena_effects, shortName = eff$effect, character = TRUE,
+                              name = eff$dv_name, type = .type,
+                              fix = fix, verbose = verbose)
+            if (!is.null(eff$parameter))    .args_set$parameter    <- eff$parameter
+            if (!is.null(eff$initialValue)) .args_set$initialValue <- eff$initialValue
+            if (!is.null(eff$interaction1) && nzchar(as.character(eff$interaction1)))
+              .args_set$interaction1 <- eff$interaction1
+            self$rsiena_effects <- do.call(setEffect, .args_set)
           }
           if (verbose) cat(sprintf("  [generic] Included effect '%s'\n", eff$effect))
         }, error = function(e2) {
@@ -1198,8 +1256,19 @@ SaomNkRSienaBiEnv_base <- R6Class(
         }
       }
       ##
-      if (no_rates)
-        theta_df <- theta_df %>% filter( ! grepl('rate', theta_df$shortName, ignore.case = T) )
+      ## Drop ONLY the basic rate parameter(s), which RSiena handles separately and which
+      ## are therefore absent from the theta / thetaValues vector. Non-basic rate effects
+      ## (RateX, outRate, outRateInv, outRateLog, inRateInv, inRateLog) DO occupy theta
+      ## columns, so a blanket /rate/i filter under-counts the columns and RSiena rejects
+      ## the thetaValues matrix ("should have N columns").
+      ## Backward-compatible: for a model whose only rate effect is the basic `Rate`, this
+      ## removes exactly the same row the old regex did.
+      if (no_rates) {
+        .is_basic_rate <- theta_df$shortName == 'Rate'
+        if ('type' %in% names(theta_df))
+          .is_basic_rate <- .is_basic_rate & theta_df$type == 'rate'
+        theta_df <- theta_df[ ! .is_basic_rate , , drop = FALSE ]
+      }
       #
       return(theta_df)
     },
