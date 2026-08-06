@@ -166,3 +166,6 @@ vignettes/*.html
 
 # web-paper build intermediate
 paper/_searchnet-jss-web.Rmd
+
+# testthat auto-generated problem artifacts
+tests/testthat/_problems/

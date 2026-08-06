@@ -2,7 +2,13 @@
 # saomnk-diagnostics.R
 # Network model diagnostics for searchnet
 #
-# Adapted from the 'netcheck' package (Downing, 2025).
+# EXPERIMENTAL / INTERNAL (not exported).
+#
+# Specification-robustness diagnostics: SAI, CFC, DGF. These are retained
+# as work in progress and are deliberately NOT exported: CFC lacks a
+# formal definition and DGF's risk thresholds are heuristic. They are not
+# described in the software paper. Do not export without first defining
+# CFC and justifying the DGF cut-points.
 # Functions provide specification curve analysis (SAI), cross-framework
 # concordance (CFC), density-GOF frontier diagnostics (DGF), SAOM/TERGM
 # estimate extraction, and effect crosswalk mapping.
@@ -88,7 +94,8 @@
 #' plot(result, type = "curve")
 #'
 #' @importFrom stats setNames pnorm qnorm median
-#' @export
+#' @keywords internal
+#' @noRd
 saomnk_sai <- function(estimates, reference = NULL, weights = NULL, alpha = 0.05,
                         effects = NULL) {
 
@@ -272,7 +279,8 @@ saomnk_sai <- function(estimates, reference = NULL, weights = NULL, alpha = 0.05
 #' @param x An object of class \code{"saomnk_sai"}.
 #' @param ... Additional arguments (ignored).
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 print.saomnk_sai <- function(x, ...) {
   cat("Specification Agreement Index (SAI)\n")
   cat("====================================\n")
@@ -326,7 +334,8 @@ print.saomnk_sai <- function(x, ...) {
 #' @importFrom ggplot2 ggplot aes geom_hline geom_segment geom_point
 #'   scale_color_manual facet_wrap labs theme_minimal theme element_text
 #'   geom_tile geom_text scale_fill_gradient2 geom_vline geom_errorbarh
-#' @export
+#' @keywords internal
+#' @noRd
 plot.saomnk_sai <- function(x, type = c("curve", "tile", "forest"),
                              effects = NULL, ...) {
 
@@ -471,7 +480,8 @@ plot.saomnk_sai <- function(x, type = c("curve", "tile", "forest"),
 #'     \item{crosswalk}{The crosswalk used.}
 #'   }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 saomnk_cfc <- function(saom_estimates, tergm_estimates,
                         crosswalk = saomnk_default_crosswalk(),
                         alpha = 0.05, ...) {
@@ -495,7 +505,8 @@ saomnk_cfc <- function(saom_estimates, tergm_estimates,
 #' @param x An object of class \code{"saomnk_cfc"}.
 #' @param ... Additional arguments (ignored).
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 print.saomnk_cfc <- function(x, ...) {
   cat("Cross-Framework Concordance (CFC)\n")
   cat("===================================\n")
@@ -509,7 +520,8 @@ print.saomnk_cfc <- function(x, ...) {
 #' @param x An object of class \code{"saomnk_cfc"}.
 #' @param ... Additional arguments (ignored).
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 plot.saomnk_cfc <- function(x, ...) {
   stop("plot.saomnk_cfc() is not yet implemented.", call. = FALSE)
 }
@@ -550,7 +562,8 @@ plot.saomnk_cfc <- function(x, ...) {
 #' \eqn{n(n-1)(n-2) d^3}. When this count is large relative to the number of
 #' edges, GWESP and triangle-based statistics become near-degenerate.
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 saomnk_dgf <- function(n_nodes, density, model_terms, directed = TRUE) {
 
   if (n_nodes < 3) stop("Need at least 3 nodes.", call. = FALSE)
@@ -621,7 +634,8 @@ saomnk_dgf <- function(n_nodes, density, model_terms, directed = TRUE) {
 #'
 #' @return A list (stub).
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 saomnk_darp <- function(...) {
   stop("saomnk_darp() is not yet implemented. Coming in a future release.",
        call. = FALSE)
@@ -648,7 +662,8 @@ saomnk_darp <- function(...) {
 #'     \item{notes}{Character. Implementation notes.}
 #'   }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 saomnk_default_crosswalk <- function() {
   data.frame(
     saom_effect = c(
@@ -782,7 +797,8 @@ saomnk_default_crosswalk <- function() {
 #' @return A data.frame of matched pairs with columns: saom_effect, tergm_term,
 #'   category, sign_convention.
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 saomnk_map_effects <- function(saom_effects, tergm_effects,
                                 crosswalk = saomnk_default_crosswalk()) {
 
@@ -823,7 +839,8 @@ saomnk_map_effects <- function(saom_effects, tergm_effects,
 #' @return A data.frame with columns: effect, specification, estimate,
 #'   std_error, convergence_t.
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 saomnk_extract_estimates_saom <- function(fit, specification = "saom",
                                            include_rate = FALSE) {
   if (!requireNamespace("RSiena", quietly = TRUE)) {
@@ -878,7 +895,8 @@ saomnk_extract_estimates_saom <- function(fit, specification = "saom",
 #'   std_error.
 #'
 #' @importFrom stats coef
-#' @export
+#' @keywords internal
+#' @noRd
 saomnk_extract_estimates_tergm <- function(fit, specification = "tergm") {
 
   # Try to extract coefficients generically
@@ -931,7 +949,8 @@ saomnk_extract_estimates_tergm <- function(fit, specification = "tergm") {
 #'
 #' @return A data.frame formatted for publication.
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 saomnk_format_sai_table <- function(sai_obj, digits = 3, stars = TRUE) {
 
   tbl <- sai_obj$table

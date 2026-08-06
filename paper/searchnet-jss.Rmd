@@ -24,8 +24,8 @@ abstract: >
   simulation engine built on \pkg{RSiena}, a clean functional API
   (\code{saomnk\_env}, \code{saomnk\_model}, \code{saomnk\_run}), coupled
   degree visualization through the $\{K\}$-4 panel, utility decomposition
-  diagnostics, exogenous shock infrastructure, and specification robustness
-  tools (SAI, CFC, DGF).  Three worked illustrations demonstrate
+  diagnostics, exogenous shock infrastructure, and validation against the
+  classical NK model.  Three worked illustrations demonstrate
   reproduction of classical NK search dynamics, endogenous landscape
   formation with heterogeneous strategies, and quasi-experimental shock
   analysis.  Benchmarks against \pkg{nkmodel} and raw \pkg{RSiena} quantify
@@ -474,7 +474,7 @@ covariates (\code{egoX}, \code{altX}) introduce heterogeneity, and
 network.  By selecting which effects to include and setting their parameter
 values, the researcher controls which strategic mechanisms are active in a given
 simulation---a design choice whose consequences can be audited with the
-diagnostic tools described in Section~\ref{sec:diagnostics}.
+diagnostic tools described in Section~\ref{sec:validation}.
 
 
 ### Formal properties {#sec:formal-properties}
@@ -591,8 +591,9 @@ Supporting modules provide separation of concerns:
 \begin{itemize}
 \item \code{saomnk-api.R}: User-facing functional API (\code{saomnk\_env},
   \code{saomnk\_model}, \code{saomnk\_run}) that wraps the R6 internals.
-\item \code{saomnk-diagnostics.R}: Specification robustness tools (SAI, CFC,
-  DGF) adapted from the companion \pkg{netcheck} framework.
+\item \code{nk-classic.R}: A self-contained implementation of the classical
+  NK model, used as an external reference for the reduction check of
+  Section~\ref{sec:validation}.
 \item \code{saomnk-experiments.R}: \code{SaoMNKexperiments} R6 class for batch
   Monte Carlo simulation management.
 \item \code{plot-*.R}: Eight modular plotting files (\code{plot-utility.R},
@@ -749,43 +750,69 @@ behavioral strategy, and performance co-evolve.  Supporting functions include
 runs, and \code{searchnet\_export\_phase\_space()} for Manim-compatible data
 export.
 
-## Diagnostics {#sec:diagnostics}
+## Validation against the classical NK model {#sec:validation}
 
-\pkg{searchnet} includes three specification robustness diagnostics, adapted
-from the \pkg{netcheck} framework \citep{Downing2025netcheck} and fully
-implemented within the package.
+A software paper should demonstrate that its engine reproduces the model it
+generalises.  \pkg{searchnet} ships a self-contained implementation of the
+classical Kauffman NK model, independent of \pkg{RSiena} and of the SaoMNK
+engine, and uses it as an external reference.
 
-### Specification Agreement Index (SAI)
+### A conventional NK implementation
 
-The Specification Agreement Index quantifies how robust a network model
-estimate is across a multiverse of defensible specifications.  For each
-effect $k$, the SAI computes:
+`nk_landscape()` constructs a Kauffman landscape by exhaustive enumeration of
+all $2^N$ configurations.  Each locus $i$ contributes $f_i(b_i,
+b_{\Omega(i)})$, drawn i.i.d.\ $U(0,1)$ for every distinct pattern of its
+epistatic neighbourhood $\Omega(i)$; total fitness is the mean of the $N$
+contributions.  Three neighbourhood topologies are supported: `"adjacent"`
+(Kauffman's ring model), `"random"`, and `"block"` (near-decomposable).  Companion functions provide adaptive walks (`nk_walk()`, with
+steepest-ascent, random-ascent, and random-improving rules), exhaustive local
+optimum enumeration (`nk_local_optima()`), and the canonical ruggedness sweep
+(`nk_sweep_K()`).
 
-\begin{align}
-\text{SAI}_{\text{sign}}(k) &= \frac{|\sum_s w_s \cdot \text{sgn}(\hat{\theta}_{ks})|}{\sum_s w_s}, \\
-\text{SAI}_{\text{sig}}(k) &= \frac{\sum_s w_s \cdot \mathbf{1}(p_{ks} < \alpha)}{\sum_s w_s}, \\
-\text{SAI}_{\text{composite}}(k) &= \text{SAI}_{\text{sign}}(k) \times \text{SAI}_{\text{sig}}(k),
-\end{align}
+These functions are useful in their own right, but their role here is to
+supply a reference implementation that shares no code with the SAOM engine.
 
-\noindent where $s$ indexes specifications, $w_s$ are optional
-goodness-of-fit-based weights, and $\text{sgn}$ returns the sign of the
-estimate.  $\text{SAI}_{\text{sign}}$ ranges from 0 (half positive, half
-negative across specifications) to 1 (unanimous sign).
-$\text{SAI}_{\text{sig}}$ ranges from 0 (never significant) to 1 (always
-significant).  The composite provides a single summary measure of robustness.
+### Verifying the reduction
 
-### Cross-Framework Concordance (CFC)
+Theorem 1 states that the classical NK model is the $M = 1$,
+$\beta \rightarrow \infty$ special case of SaoMNK.  `nk_to_saomnk()` emits the
+environment and structure-model settings that place a single-actor SaoMNK
+environment on a supplied NK landscape, making the reduction constructive
+rather than merely asserted.
 
-CFC assesses agreement between SAOM and TERGM estimates for the same
-network process, providing a check on whether substantive conclusions are
-framework-dependent.  For each effect, CFC reports the proportion of
-specification pairs where the two frameworks agree in sign and significance.
+`nk_verify_reduction()` then checks the construction.  It exploits the
+defining property of the NK model: contribution $f_i$ depends only on the loci
+in $\Omega(i)$, so any two configurations sharing the same neighbourhood
+pattern must carry identical $f_i$.  Rebuilding each locus's payoff table keyed
+by that pattern and recomputing fitness must return the original values
+exactly.  A non-zero difference would indicate an indexing or bit-ordering
+error in landscape construction.
 
-### Density-GOF Frontier (DGF)
+```{r nk-verify, eval = FALSE}
+nk <- nk_landscape(N = 10, K = 3, seed = 42)
+nk_verify_reduction(N = 10, K = 3, seed = 42)
+#> NK reduction check: N=10, K=3, model="adjacent"
+#>   configurations   : 1,024
+#>   max |difference| : 0.00e+00
+#>   result           : PASS
+```
 
-The DGF diagnostic identifies the network density thresholds at which model
-goodness-of-fit degrades, helping researchers assess whether their network's
-density falls within the well-estimated region for a given SAOM specification.
+The check passes at machine precision (maximum absolute difference
+$0.00 \times 10^{0}$) across the $(N, K)$ combinations exercised in the test
+suite.  Configuration encoding is most-significant-bit-first throughout and is
+covered by exhaustive round-trip tests for $N = 1, \ldots, 12$; this guards a
+class of bit-ordering error that is easy to introduce and silent when it
+occurs.
+
+### Recovering classical results
+
+The implementation reproduces the standard qualitative findings of the NK
+literature.  With $K = 0$ the landscape is single-peaked, and a steepest-ascent
+walk from any starting configuration reaches the global optimum.  As $K$ rises
+the number of local optima grows, approaching the familiar $2^N / (K+1)$
+scaling, adaptive walks terminate sooner, and terminal fitness falls
+\citep{Kauffman1987, KauffmanWeinberger1989, Levinthal1997}.  `nk_sweep_K()` reproduces this
+experiment directly.
 
 ## Manim animation pipeline {#sec:manim}
 
@@ -1510,7 +1537,7 @@ user-written extensions, NetLogo does not provide native NK support, bipartite
 network primitives, or statistical estimation.  Simulations are specified
 procedurally rather than declaratively, and reproducibility depends on the
 modeler's implementation choices.  \pkg{searchnet}'s declarative specification
-(\code{saomnk\_model()}) and built-in diagnostics (SAI, CFC, DGF) provide
+(\code{saomnk\_model()}) and validation against the classical NK model provide
 stronger guardrails for computational experiments.
 
 In summary, \pkg{nkmodel} provides NK landscapes without networks,
