@@ -2893,11 +2893,11 @@ modeler. The package provides an <strong>R6</strong>-based simulation
 engine built on <strong>RSiena</strong>, a clean functional API
 (<code>saomnk_env</code>, <code>saomnk_model</code>,
 <code>saomnk_run</code>), coupled degree visualization through the <span class="math inline">\(\{K\}\)</span>-4 panel, utility decomposition
-diagnostics, exogenous shock infrastructure, and specification
-robustness tools (SAI, CFC, DGF). Three worked illustrations demonstrate
-reproduction of classical NK search dynamics, endogenous landscape
-formation with heterogeneous strategies, and quasi-experimental shock
-analysis. Benchmarks against <strong>nkmodel</strong> and raw
+diagnostics, exogenous shock infrastructure, and validation against the
+classical NK model. Three worked illustrations demonstrate reproduction
+of classical NK search dynamics, endogenous landscape formation with
+heterogeneous strategies, and quasi-experimental shock analysis.
+Benchmarks against <strong>nkmodel</strong> and raw
 <strong>RSiena</strong> quantify computational overhead and scalability.
 <strong>searchnet</strong> targets researchers in strategic management,
 organizational theory, innovation economics, and computational social
@@ -3100,11 +3100,26 @@ framework</h1>
 the formal SAOM-NK proofs are developed in full. The bipartite incidence
 matrix is <span class="math inline">\(\mathbf{B} \in \{0,1\}^{M \times
 N}\)</span> with entries <span class="math inline">\(b_{ij}\)</span>;
-the NK configuration vector for a single agent is <span class="math inline">\(\mathbf{x} \in \{0,1\}^N\)</span>; the epistasis
+the NK configuration vector for a single agent is <span class="math inline">\(\mathbf{x} \in \{0,1\}^N\)</span>; the influence
 matrix is <span class="math inline">\(\mathbf{E}\)</span> (implemented
 in <strong>RSiena</strong> as the weight matrix <span class="math inline">\(\mathbf{W}\)</span> of the <code>XWX</code>
 effect); component payoff functions are <span class="math inline">\(f_d\)</span>; and the logit precision parameter is
 <span class="math inline">\(\beta &gt; 0\)</span>.</p>
+<p>A terminological note is warranted here, because the two ideas are
+routinely conflated. The matrix <span class="math inline">\(\mathbf{E}\)</span> is an <em>influence
+matrix</em> in the sense of Rivkin &amp; Siggelkow (2007): it states
+which components interact and with what sign, and it is an
+<em>input</em> supplied by the analyst. <em>Epistasis</em> is the
+<em>consequence</em> – the dependence of one component’s fitness
+contribution on the states of others, which arises when a portfolio is
+evaluated through <span class="math inline">\(\mathbf{E}\)</span> as
+<span class="math inline">\(\mathbf{x}^{\top}\mathbf{E}\mathbf{x}\)</span>.
+The distinction matters in <strong>searchnet</strong> because the
+realised epistasis of a simulated system is measured separately, as the
+component-component degree <span class="math inline">\(K_{CC}\)</span>,
+and generally differs from the influence structure that generated it.
+Accordingly the package argument is named <code>influence_matrix</code>;
+<code>epistasis_matrix</code> is retained as a deprecated alias.</p>
 <div id="sec:bipartite" class="section level2" number="3.1">
 <h2><span class="header-section-number">3.1</span> Bipartite network
 formulation</h2>
@@ -3268,7 +3283,8 @@ structurally similar actors, actor and component covariates
 the bipartite network. By selecting which effects to include and setting
 their parameter values, the researcher controls which strategic
 mechanisms are active in a given simulation—a design choice whose
-consequences can be audited with the diagnostic tools described in <a href="#sec:diagnostics">the “Diagnostics” section</a>.</p>
+consequences can be audited with the diagnostic tools described in <a href="#sec:validation">the “Validation against the classical NK model”
+section</a>.</p>
 <div id="sec:formal-properties" class="section level3" number="3.4.1">
 <h3><span class="header-section-number">3.4.1</span> Formal
 properties</h3>
@@ -3364,7 +3380,7 @@ the initial network draw.</p>
 structure model</h3>
 <p>The <code>saomnk_model()</code> function builds the SAOM objective
 function specification using intuitive parameter names:</p>
-<pre class="r"><code>## Define a modular epistasis matrix: 4 blocks of 3 components
+<pre class="r"><code>## Define a modular influence matrix: 4 blocks of 3 components
 K_matrix &lt;- saomnk_block_diagonal(12, 4)
 
 ## Specify the model
@@ -3372,8 +3388,8 @@ mod &lt;- saomnk_model(
   density    = -0.5,     # sparsity pressure
   popularity =  0.2,     # preferential attachment
   scope      =  0.1,     # scope expansion
-  epistasis_matrix = K_matrix,
-  epistasis_weight = 0.05
+  influence_matrix = K_matrix,
+  influence_weight = 0.05
 )
 mod</code></pre>
 <p>Users never need to write internal references such as
@@ -3387,8 +3403,8 @@ mod_strat &lt;- saomnk_model(
   density    = -0.3,
   popularity =  0.2,
   scope      =  0.1,
-  epistasis_matrix = K_matrix,
-  epistasis_weight = 0.05,
+  influence_matrix = K_matrix,
+  influence_weight = 0.05,
   strategies = list(
     egoX   = rep(c(-1, 0, 1, 0), length.out = 8),
     inPopX = rep(c( 1, 0,-1, 0), length.out = 8)
@@ -3461,51 +3477,76 @@ or NK fitness). The resulting
 for Manim-compatible data export.</p>
 </div>
 </div>
-<div id="sec:diagnostics" class="section level2" number="4.4">
-<h2><span class="header-section-number">4.4</span> Diagnostics</h2>
-<p><strong>searchnet</strong> includes three specification robustness
-diagnostics, adapted from the <strong>netcheck</strong> framework
-(Downing, 2025) and fully implemented within the package.</p>
-<div id="specification-agreement-index-sai" class="section level3" number="4.4.1">
-<h3><span class="header-section-number">4.4.1</span> Specification
-Agreement Index (SAI)</h3>
-<p>The Specification Agreement Index quantifies how robust a network
-model estimate is across a multiverse of defensible specifications. For
-each effect <span class="math inline">\(k\)</span>, the SAI
-computes:</p>
-<p><span class="math display">\[\begin{align}
-\text{SAI}_{\text{sign}}(k) &amp;= \frac{|\sum_s w_s \cdot
-\text{sgn}(\hat{\theta}_{ks})|}{\sum_s w_s}, \\
-\text{SAI}_{\text{sig}}(k) &amp;= \frac{\sum_s w_s \cdot
-\mathbf{1}(p_{ks} &lt; \alpha)}{\sum_s w_s}, \\
-\text{SAI}_{\text{composite}}(k) &amp;= \text{SAI}_{\text{sign}}(k)
-\times \text{SAI}_{\text{sig}}(k),
-\end{align}\]</span></p>
-<p>where <span class="math inline">\(s\)</span> indexes specifications,
-<span class="math inline">\(w_s\)</span> are optional
-goodness-of-fit-based weights, and <span class="math inline">\(\text{sgn}\)</span> returns the sign of the
-estimate. <span class="math inline">\(\text{SAI}_{\text{sign}}\)</span>
-ranges from 0 (half positive, half negative across specifications) to 1
-(unanimous sign). <span class="math inline">\(\text{SAI}_{\text{sig}}\)</span> ranges from 0
-(never significant) to 1 (always significant). The composite provides a
-single summary measure of robustness.</p>
+<div id="sec:validation" class="section level2" number="4.4">
+<h2><span class="header-section-number">4.4</span> Validation against
+the classical NK model</h2>
+<p>A software paper should demonstrate that its engine reproduces the
+model it generalises. <strong>searchnet</strong> ships a self-contained
+implementation of the classical Kauffman NK model, independent of
+<strong>RSiena</strong> and of the SaoMNK engine, and uses it as an
+external reference.</p>
+<div id="a-conventional-nk-implementation" class="section level3" number="4.4.1">
+<h3><span class="header-section-number">4.4.1</span> A conventional NK
+implementation</h3>
+<p><code>nk_landscape()</code> constructs a Kauffman landscape by
+exhaustive enumeration of all <span class="math inline">\(2^N\)</span>
+configurations. Each locus <span class="math inline">\(i\)</span>
+contributes <span class="math inline">\(f_i(b_i,
+b_{\Omega(i)})\)</span>, drawn i.i.d. <span class="math inline">\(U(0,1)\)</span> for every distinct pattern of its
+epistatic neighbourhood <span class="math inline">\(\Omega(i)\)</span>;
+total fitness is the mean of the <span class="math inline">\(N\)</span>
+contributions. Three neighbourhood topologies are supported:
+<code>&quot;adjacent&quot;</code> (Kauffman’s ring model), <code>&quot;random&quot;</code>,
+and <code>&quot;block&quot;</code> (near-decomposable). Companion functions
+provide adaptive walks (<code>nk_walk()</code>, with steepest-ascent,
+random-ascent, and random-improving rules), exhaustive local optimum
+enumeration (<code>nk_local_optima()</code>), and the canonical
+ruggedness sweep (<code>nk_sweep_K()</code>).</p>
+<p>These functions are useful in their own right, but their role here is
+to supply a reference implementation that shares no code with the SAOM
+engine.</p>
 </div>
-<div id="cross-framework-concordance-cfc" class="section level3" number="4.4.2">
-<h3><span class="header-section-number">4.4.2</span> Cross-Framework
-Concordance (CFC)</h3>
-<p>CFC assesses agreement between SAOM and TERGM estimates for the same
-network process, providing a check on whether substantive conclusions
-are framework-dependent. For each effect, CFC reports the proportion of
-specification pairs where the two frameworks agree in sign and
-significance.</p>
+<div id="verifying-the-reduction" class="section level3" number="4.4.2">
+<h3><span class="header-section-number">4.4.2</span> Verifying the
+reduction</h3>
+<p>Theorem 1 states that the classical NK model is the <span class="math inline">\(M = 1\)</span>, <span class="math inline">\(\beta
+\rightarrow \infty\)</span> special case of SaoMNK.
+<code>nk_to_saomnk()</code> emits the environment and structure-model
+settings that place a single-actor SaoMNK environment on a supplied NK
+landscape, making the reduction constructive rather than merely
+asserted.</p>
+<p><code>nk_verify_reduction()</code> then checks the construction. It
+exploits the defining property of the NK model: contribution <span class="math inline">\(f_i\)</span> depends only on the loci in <span class="math inline">\(\Omega(i)\)</span>, so any two configurations
+sharing the same neighbourhood pattern must carry identical <span class="math inline">\(f_i\)</span>. Rebuilding each locus’s payoff table
+keyed by that pattern and recomputing fitness must return the original
+values exactly. A non-zero difference would indicate an indexing or
+bit-ordering error in landscape construction.</p>
+<pre class="r"><code>nk &lt;- nk_landscape(N = 10, K = 3, seed = 42)
+nk_verify_reduction(N = 10, K = 3, seed = 42)
+#&gt; NK reduction check: N=10, K=3, model=&quot;adjacent&quot;
+#&gt;   configurations   : 1,024
+#&gt;   max |difference| : 0.00e+00
+#&gt;   result           : PASS</code></pre>
+<p>The check passes at machine precision (maximum absolute difference
+<span class="math inline">\(0.00 \times 10^{0}\)</span>) across the
+<span class="math inline">\((N, K)\)</span> combinations exercised in
+the test suite. Configuration encoding is most-significant-bit-first
+throughout and is covered by exhaustive round-trip tests for <span class="math inline">\(N = 1, \ldots, 12\)</span>; this guards a class of
+bit-ordering error that is easy to introduce and silent when it
+occurs.</p>
 </div>
-<div id="density-gof-frontier-dgf" class="section level3" number="4.4.3">
-<h3><span class="header-section-number">4.4.3</span> Density-GOF
-Frontier (DGF)</h3>
-<p>The DGF diagnostic identifies the network density thresholds at which
-model goodness-of-fit degrades, helping researchers assess whether their
-network’s density falls within the well-estimated region for a given
-SAOM specification.</p>
+<div id="recovering-classical-results" class="section level3" number="4.4.3">
+<h3><span class="header-section-number">4.4.3</span> Recovering
+classical results</h3>
+<p>The implementation reproduces the standard qualitative findings of
+the NK literature. With <span class="math inline">\(K = 0\)</span> the
+landscape is single-peaked, and a steepest-ascent walk from any starting
+configuration reaches the global optimum. As <span class="math inline">\(K\)</span> rises the number of local optima grows,
+approaching the familiar <span class="math inline">\(2^N /
+(K+1)\)</span> scaling, adaptive walks terminate sooner, and terminal
+fitness falls (Kauffman &amp; Levin, 1987; Kauffman &amp; Weinberger,
+1989; Levinthal, 1997). <code>nk_sweep_K()</code> reproduces this
+experiment directly.</p>
 </div>
 </div>
 <div id="sec:manim" class="section level2" number="4.5">
@@ -3592,7 +3633,7 @@ verifiable logical scaffold for the theoretical claims summarized in <a href="#s
 <p>The first illustration establishes that <strong>searchnet</strong>
 can reproduce the core dynamics of the classical NK model under
 appropriate parameter settings. We configure a single-agent environment
-with no endogenous network effects, leaving only the exogenous epistasis
+with no endogenous network effects, leaving only the exogenous influence
 matrix active. This setting strips away all SAOM-specific mechanisms,
 reducing the model to a single searcher navigating a landscape whose
 ruggedness is determined solely by the exogenous coupling matrix—the
@@ -3608,8 +3649,8 @@ mod_nk &lt;- saomnk_model(
   density    = -0.3,
   popularity = 0,
   scope      = 0,
-  epistasis_matrix = K_levinthal,
-  epistasis_weight = 0.15
+  influence_matrix = K_levinthal,
+  influence_weight = 0.15
 )
 
 saomnk_run(env_nk, mod_nk, steps_per_actor = 100, seed = 42)</code></pre>
@@ -3653,8 +3694,8 @@ mod_endog &lt;- saomnk_model(
   density    = -0.3,
   popularity =  0.2,
   scope      =  0.1,
-  epistasis_matrix = K_modular,
-  epistasis_weight = 0.02,
+  influence_matrix = K_modular,
+  influence_weight = 0.02,
   strategies = list(
     egoX   = rep(c(-1, 0, 1), length.out = 12),
     inPopX = rep(c( 1, 0,-1), length.out = 12)
@@ -3675,7 +3716,7 @@ landscape ruggedness.</p>
 <p>The resulting <span class="math inline">\(K_{CC}\)</span>
 distribution—the classical complexity parameter <span class="math inline">\(K\)</span>—is not a single number but a
 heterogeneous vector that emerges from the interaction of actor
-strategies, component popularity dynamics, and the exogenous epistasis
+strategies, component popularity dynamics, and the exogenous influence
 matrix. This is the endogenization that the <span class="math inline">\(\{K\}\)</span> framework makes visible.</p>
 <pre class="r"><code>saomnk_plot_utility(env_endog, smooth = 0.35)</code></pre>
 </div>
@@ -3693,8 +3734,8 @@ env_shock &lt;- saomnk_env(M = 6, N = 8, density = 0, seed = 42)
 K_small &lt;- saomnk_block_diagonal(8, 2)
 mod_base &lt;- saomnk_model(
   density = -0.5,
-  epistasis_matrix = K_small,
-  epistasis_weight = 0.5
+  influence_matrix = K_small,
+  influence_weight = 0.5
 )
 
 ## Baseline: no shocks
@@ -3969,7 +4010,7 @@ time_searchnet &lt;- system.time({
   e_bench &lt;- saomnk_env(M = 4, N = 6, seed = 1)
   m_bench &lt;- saomnk_model(
     density = -0.5,
-    epistasis_matrix = saomnk_block_diagonal(6, 2)
+    influence_matrix = saomnk_block_diagonal(6, 2)
   )
   saomnk_run(e_bench, m_bench, steps_per_actor = 30, seed = 1)
 })
@@ -4056,8 +4097,8 @@ for (n in landscape_sizes) {
   e_land &lt;- saomnk_env(M = 4, N = n, density = 0.3, seed = 42)
   m_land &lt;- saomnk_model(
     density = -0.5,
-    epistasis_matrix = saomnk_block_diagonal(n, max(2, n %/% 3)),
-    epistasis_weight = 0.05
+    influence_matrix = saomnk_block_diagonal(n, max(2, n %/% 3)),
+    influence_weight = 0.05
   )
   saomnk_run(e_land, m_land, steps_per_actor = 10, seed = 1)
 
@@ -4102,11 +4143,11 @@ However, it implements a single-agent model in which the landscape is
 exogenously fixed. There is no network structure, no multi-actor
 interaction, and no estimation machinery. The epistasis structure is
 controlled implicitly through the scalar <span class="math inline">\(K\)</span> parameter rather than through an
-explicit epistasis matrix, precluding modular or block-diagonal
+explicit influence matrix, precluding modular or block-diagonal
 specifications. <strong>searchnet</strong> subsumes the
 <strong>nkmodel</strong> use case as a special case: setting <span class="math inline">\(M = 1\)</span> and disabling all endogenous
 network effects recovers the classical NK model, while the explicit
-epistasis matrix <span class="math inline">\(\mathbf{W}\)</span> (<a href="#sec:bipartite">the “Bipartite network formulation” section</a>)
+influence matrix <span class="math inline">\(\mathbf{W}\)</span> (<a href="#sec:bipartite">the “Bipartite network formulation” section</a>)
 provides finer-grained control over interdependence structure.</p>
 <p>****RSiena<strong>.</strong> The <strong>RSiena</strong> package
 (Ripley et al., 2022) is the reference implementation for stochastic
@@ -4128,8 +4169,8 @@ native NK support, bipartite network primitives, or statistical
 estimation. Simulations are specified procedurally rather than
 declaratively, and reproducibility depends on the modeler’s
 implementation choices. <strong>searchnet</strong>’s declarative
-specification (<code>saomnk_model()</code>) and built-in diagnostics
-(SAI, CFC, DGF) provide stronger guardrails for computational
+specification (<code>saomnk_model()</code>) and validation against the
+classical NK model provide stronger guardrails for computational
 experiments.</p>
 <p>In summary, <strong>nkmodel</strong> provides NK landscapes without
 networks, <strong>RSiena</strong> provides networks without landscapes,

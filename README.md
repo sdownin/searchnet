@@ -15,7 +15,7 @@
 > to be expected. The companion methods paper is a working draft and has
 > not yet been peer-reviewed; results should be treated accordingly.
 > For reproducibility, install a pinned tag rather than the moving branch:
-> `devtools::install_github("sdownin/searchnet@v0.4.0")`.
+> `devtools::install_github("sdownin/searchnet@v0.4.1")`.
 > A stable API will be declared at v1.0.0. Bug reports with reproducible
 > examples are very welcome via
 > [GitHub Issues](https://github.com/sdownin/searchnet/issues).
@@ -174,11 +174,8 @@ nk_walk(nk, start = 0)             # classic adaptive walk
 nk_verify_reduction(N = 10, K = 3) # independent check of the reduction
 ```
 
-### Diagnostics
-- **SAI** (Specification Agreement Index): Robustness across model specifications
-- **CFC** (Cross-Framework Concordance): SAOM vs. TERGM estimate agreement
-- **DGF** (Density-GOF Frontier): Density thresholds for model degradation
-- Self-contained in **searchnet** (no external dependency); adapted from the author's `netcheck` diagnostics framework, not yet released
+### Diagnostics (experimental, not exported)
+Specification-robustness tools (SAI, CFC, DGF) exist in `R/saomnk-diagnostics.R` but are **not exported** and are not part of the supported API: CFC lacks a formal definition and DGF's risk thresholds are heuristic. They are retained as work in progress pending a separate methods paper.
 
 ### Export Pipeline
 - R-to-CSV export functions for K-4 trajectories, bipartite snapshots, and actor utilities
@@ -197,7 +194,7 @@ searchnet/
 │   ├── saomnk-api.R            # User-friendly wrapper functions
 │   ├── saomnk-base.R           # R6 base class (bipartite management, projections)
 │   ├── saomnk-class.R          # R6 simulation engine (search, chains, K-4, fitness)
-│   ├── saomnk-diagnostics.R    # SAI / CFC / DGF diagnostic tools
+│   ├── saomnk-diagnostics.R    # Experimental diagnostics (not exported)
 │   ├── saomnk-experiments.R    # SaoMNKexperiments batch simulation class
 │   ├── searchnet-causal.R      # DID / Synth / RD causal inference wrappers
 │   ├── searchnet-export.R      # R-to-CSV export pipeline
@@ -347,7 +344,7 @@ The engine includes `verify_nk_equivalence()` for computational verification of 
   title  = {searchnet: Network-Embedded Search Simulation Engine},
   author = {Stephen Downing},
   year   = {2026},
-  note   = {R package version 0.4.0},
+  note   = {R package version 0.4.1},
   url    = {https://github.com/sdownin/searchnet}
 }
 ```
