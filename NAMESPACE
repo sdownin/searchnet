@@ -280,3 +280,7 @@ export(nk_verify_reduction)
 export(searchnet_rd_cross)
 S3method(print,nk_landscape)
 S3method(print,nk_walk)
+
+# K_CA imitation statistic (0.5.0)
+export(saomnk_sim_ego_indist2)
+export(saomnk_env_imitation)

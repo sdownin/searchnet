@@ -1,3 +1,38 @@
+# searchnet 0.5.0
+
+## New features
+
+* **`saomnk_sim_ego_indist2()` and `saomnk_env_imitation()`: the K_CA imitation
+  channel is now measurable on bipartite states.** For actor `i` and component
+  `j`, the statistic is the centered performance similarity between `i` and the
+  mean performance of `j`'s other holders, summed over the components `i` holds.
+  It matches the definition used by the CD4 procedural engines, so the two are
+  directly comparable.
+
+  Components with no co-holders contribute nothing and are excluded from the
+  centering mean. They are invisible rather than unattractive, which is what
+  separates imitation from popularity; counting them as zeros would drag the
+  center down and make held-but-unpopular components look repellent.
+
+  Degenerate performance (zero range) yields similarity 1 everywhere, which
+  centers to zero. That is the right answer on this channel: when all actors
+  perform identically no component is more attractive than any other.
+
+## Scope of the above, stated plainly
+
+* **This is a STATISTIC, not yet an EFFECT.** RSiena's effect set for a
+  bipartite dependent variable has 34 short names and none is a similarity
+  effect; the nearest, `inPop_ego` and `outAct_ego`, are degree-based, and
+  `simEgoInDist2` exists for one-mode networks only. searchnet's simulation path
+  delegates to `siena07()`, so an effect RSiena cannot express cannot enter the
+  evaluation function through it.
+
+  K_CA is therefore now measurable in searchnet, where it was previously absent
+  altogether, but it is still not simulable through `saomnk_run()`. Closing that
+  gap needs either a C-level RSiena effect or a searchnet-native simulation
+  loop. Callers must not read the presence of this statistic as evidence that
+  imitation is driving a simulated trajectory.
+
 # searchnet 0.3.4
 
 ## Testing
