@@ -152,6 +152,9 @@ export(saomnk_plot_market_entry_survival_v0)
 export(track_entry_decisions)
 export(compute_forbearance_metrics)
 export(compute_forbearance_trajectory)
+export(expand_entry_rivals)
+export(compute_multimarket_contact)
+export(compute_dyadic_forbearance)
 
 # ---------------------------------------------------------------------------
 # Plot functions -- plot-forbearance.R
