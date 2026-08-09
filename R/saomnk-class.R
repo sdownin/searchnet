@@ -36,9 +36,44 @@ SaomNkRSienaBiEnv <- R6Class(
     },
 
 
+    ## ------------------------------------------------------------------------
+    ## set_behavior_rsienaDV()
+    ## ------------------------------------------------------------------------
+    ## Build self$behavior_rsienaDV from structure_model$dv_behavior, or clear it
+    ## when the structure model declares no behaviour DV. Clearing matters: an
+    ## environment reused across models must not silently carry a behaviour DV
+    ## from a previous run into a model that does not declare one.
+    ## No-op in effect for every structure model that has no dv_behavior block,
+    ## which is every structure model built before this feature existed.
+    set_behavior_rsienaDV = function(structure_model, verbose = FALSE) {
+      if (!.searchnet_has_behavior(structure_model)) {
+        self$behavior_rsienaDV <- NULL
+        self$behavior_values   <- NULL
+        return(invisible(NULL))
+      }
+      dvb <- structure_model$dv_behavior
+      self$behavior_rsienaDV <- .searchnet_build_behavior_dv(self, dvb)
+      self$behavior_values   <- dvb$values
+      if (verbose)
+        cat(sprintf("behaviour DV '%s' set: %d nodes x %d waves, values in [%d, %d]\n",
+                    dvb$name, nrow(self$behavior_values), ncol(self$behavior_values),
+                    min(self$behavior_values), max(self$behavior_values)))
+      invisible(self$behavior_rsienaDV)
+    },
+
     get_rsiena_data_from_structure_model = function(structure_model, verbose=FALSE) {
       ACTORS     <- sienaNodeSet(self$M, nodeSetName="ACTORS")
       COMPONENTS <- sienaNodeSet(self$N, nodeSetName="COMPONENTS")
+      ## Behaviour coevolution DV, added to input_varlist alongside the
+      ## bipartite DV in both construction branches below. NULL when the
+      ## structure model declares no dv_behavior block, in which case every
+      ## line touching it is inert.
+      .behavior_varlist <- list()
+      if (.searchnet_has_behavior(structure_model)) {
+        if (is.null(self$behavior_rsienaDV))
+          self$set_behavior_rsienaDV(structure_model, verbose = verbose)
+        .behavior_varlist[[ structure_model$dv_behavior$name ]] <- self$behavior_rsienaDV
+      }
       ## Check if any covariates are actually provided (not just empty lists)
       has_coCovars     <- 'coCovars' %in% names(structure_model$dv_bipartite) && length(structure_model$dv_bipartite$coCovars) > 0
       has_coDyadCovars <- 'coDyadCovars' %in% names(structure_model$dv_bipartite) && length(structure_model$dv_bipartite$coDyadCovars) > 0
@@ -50,7 +85,8 @@ SaomNkRSienaBiEnv <- R6Class(
         ## do.call to splat the named list into `...` so the DV is registered
         ## under "self$bipartite_rsienaDV", matching dv_name used downstream by
         ## includeEffects()/setEffect().
-        input_varlist <- list(`self$bipartite_rsienaDV` = self$bipartite_rsienaDV)
+        input_varlist <- c(list(`self$bipartite_rsienaDV` = self$bipartite_rsienaDV),
+                           .behavior_varlist)
         rsiena_data <- do.call(
           sienaDataCreate,
           c(input_varlist, list(nodeSets = list(ACTORS, COMPONENTS)))
@@ -106,7 +142,8 @@ SaomNkRSienaBiEnv <- R6Class(
       
       
       ## input list of variable for RSiena model
-      input_varlist <- list(`self$bipartite_rsienaDV`=self$bipartite_rsienaDV)
+      input_varlist <- c(list(`self$bipartite_rsienaDV`=self$bipartite_rsienaDV),
+                         .behavior_varlist)
       ##-------------------------------------------------------------
       ## COMPONENTS ##
       if (ncompo_coCovar) {
@@ -413,10 +450,17 @@ SaomNkRSienaBiEnv <- R6Class(
       if ('dv_bipartite' %in% structure_model_dvs) {
         self$bipartite_rsienaDV <- sienaDependent(array_bi_net, type='bipartite', nodeSet =c('ACTORS', 'COMPONENTS'), allowOnly = F)
       }
+      ## Behaviour co-evolution DV; no-op when structure_model has no dv_behavior.
+      self$set_behavior_rsienaDV(structure_model)
       ##---------------------------------------------
-      
+
       ##---------------------------------------------
-      ##**TODO** debug/redo for arbitrary DVs inputs
+      ## dv_bipartite remains required: the searchnet engine is built around a
+      ## bipartite actor-component DV, and the chain post-processing reads that
+      ## DV's ministeps to reconstruct the state trajectory. dv_behavior is an
+      ## ADDITIONAL DV that coevolves with it, handled by
+      ## get_rsiena_data_from_structure_model() above; dv_social and dv_search
+      ## are still not wired into sienaDataCreate().
       if ('dv_bipartite' %in% structure_model_dvs)
       {
         self$rsiena_data <- self$get_rsiena_data_from_structure_model(structure_model)
@@ -667,7 +711,7 @@ SaomNkRSienaBiEnv <- R6Class(
     },
     
     
-    preview_effects = function(structure_model, filter=TRUE) {
+    preview_effects = function(structure_model, filter=TRUE, verbose=FALSE) {
       self$config_structure_model <- structure_model
       
       ##--------- I. SET BIPARTITE NETWORK DV ARRAY IF NULL -----------------
@@ -677,11 +721,15 @@ SaomNkRSienaBiEnv <- R6Class(
       array_bi_net <- array(c(self$bipartite_matrix, self$bipartite_matrix), 
                             dim = c(self$M, self$N, 2))
 
-      self$bipartite_rsienaDV <- sienaDependent(array_bi_net, 
+      self$bipartite_rsienaDV <- sienaDependent(array_bi_net,
                                                 type='bipartite',
-                                                nodeSet =c('ACTORS', 'COMPONENTS'), 
+                                                nodeSet =c('ACTORS', 'COMPONENTS'),
                                                 allowOnly = F)
-      
+      ## Behaviour co-evolution DV (structure_model$dv_behavior). Also CLEARS a
+      ## behaviour DV left over from a previous model when none is declared, so
+      ## an environment reused across models cannot carry one over silently.
+      self$set_behavior_rsienaDV(structure_model, verbose = verbose)
+
       ##----------- II. SET RSIENA DATA AND EFFECTS ---------------------------
       ##  1. RSiena data object
       self$rsiena_data <- self$get_rsiena_data_from_structure_model(structure_model)
@@ -843,11 +891,37 @@ SaomNkRSienaBiEnv <- R6Class(
               interaction1 = paste(interaction1, collapse  = '|')
             )
       }
+      ## ---- Behaviour co-evolution DV -------------------------------------
+      ## get_theta_matrix() filters the RSiena effects table down to effects
+      ## whose shortName appears in THIS data frame. A behaviour DV's effects
+      ## are included in rsiena_effects but absent here, so without these rows
+      ## the theta matrix would be built too narrow and siena07() would reject
+      ## it ("thetaValues should have N columns"). Empty for every structure
+      ## model with no dv_behavior block.
+      behaviour_rows <- data.frame()
+      if (.searchnet_has_behavior(structure_model)) {
+        .beh_df <- function(lst) {
+          if (!length(lst)) return(data.frame())
+          do.call(rbind, lapply(lst, function(x) data.frame(
+            effect       = as.character(x$effect),
+            parameter    = as.numeric(if (is.null(x$parameter)) 0 else x$parameter),
+            dv_name      = as.character(if (is.null(x$dv_name)) structure_model$dv_behavior$name else x$dv_name),
+            fix          = as.logical(if (is.null(x$fix)) TRUE else x$fix),
+            interaction1 = as.character(if (is.null(x$interaction1)) '' else x$interaction1),
+            interaction2 = as.character(if (is.null(x$interaction2)) '' else x$interaction2),
+            stringsAsFactors = FALSE
+          )))
+        }
+        behaviour_rows <- bind_rows(.beh_df(structure_model$dv_behavior$rates),
+                                    .beh_df(structure_model$dv_behavior$effects))
+      }
+
       effects <- as.data.frame(rates %>%
         bind_rows(structeffs) %>%
         bind_rows(coCovars) %>%
         bind_rows(coDyadCovars) %>%
-        bind_rows(interactions), stringsAsFactors = FALSE)
+        bind_rows(interactions) %>%
+        bind_rows(behaviour_rows), stringsAsFactors = FALSE)
       effects$effect_key <-  sapply(1:nrow(effects), function(i){
         paste(c(effects$dv_name[i], ## DV name
                 effects$effect[i],  ## effect name
@@ -869,17 +943,52 @@ SaomNkRSienaBiEnv <- R6Class(
     },
     
     get_theta_matrix = function(input_effs, iterations, verbose=FALSE) {
-      effs <- self$get_rsiena_effects_theta_df(no_rates=TRUE) 
+      ## ---- Conditional vs unconditional estimation sets the theta WIDTH ----
+      ## RSiena estimates CONDITIONALLY when the data has exactly one dependent
+      ## variable and UNCONDITIONALLY when it has two or more (the `cond = NA`
+      ## rule in sienaAlgorithmCreate()). Under conditional estimation
+      ## initializeFRAN() DELETES the conditioning variable's basic rate from
+      ## the parameter vector, so theta is one column narrower than the
+      ## included-effects table -- which is why dropping basic rates has always
+      ## been correct here. Under unconditional estimation every basic rate IS
+      ## a theta column. siena07() rejects a thetaValues matrix of the wrong
+      ## width outright ("should have N columns"), so this must be derived, not
+      ## assumed.
+      .uncond <- self$get_n_rsiena_depvars() > 1L
+      effs <- self$get_rsiena_effects_theta_df(no_rates = !.uncond)
       ## add short name for convenience as effect name
       effs$effect <- sapply(1:nrow(effs), function(i) {
-        ifelse(effs$shortName[i]=='unspInt'|is.na(effs$shortName[i]), 
-               effs$manual_interaction[i], 
-               effs$shortName[i]) 
+        ifelse(effs$shortName[i]=='unspInt'|is.na(effs$shortName[i]),
+               effs$manual_interaction[i],
+               effs$shortName[i])
       })
       ## EXCLUDE RATES PARAMETERS NOT INCLUDED IN INPUT MODEL
-      effs <- effs[ effs$effect %in% input_effs$effect , ]
+      .keep <- effs$effect %in% input_effs$effect
+      if (.uncond) {
+        ## Basic rates are structural under unconditional estimation: RSiena
+        ## allocates a theta column for each one whether or not the structure
+        ## model bothered to declare it, so the column must exist here too.
+        .keep <- .keep | (effs$shortName == 'Rate' & effs$type == 'rate')
+      }
+      effs <- effs[ .keep , ]
       theta_in        <- effs$parm
       names(theta_in) <- effs$effect_level
+      if (.uncond) {
+        ## A basic rate of 0 freezes its dependent variable for the whole
+        ## simulation -- no ministeps, no change, ever. That is never what a
+        ## caller means; it is what an undeclared rate looks like, because
+        ## RSiena's `parm` column defaults to 0 for basic rates. Substitute 1
+        ## and say so, rather than silently simulating a frozen DV.
+        .basic <- (effs$shortName == 'Rate' & effs$type == 'rate' &
+                     (is.na(theta_in) | theta_in <= 0))
+        if (any(.basic)) {
+          message(sprintf(
+            "searchnet: basic rate for %s was %s; using 1.0. Declare a `rates` entry to control it.",
+            paste(effs$name[.basic], collapse = ', '),
+            paste(ifelse(is.na(theta_in[.basic]), 'NA', '0'), collapse = ', ')))
+          theta_in[.basic] <- 1
+        }
+      }
       nthetas <- length(theta_in)
       ## Number of decision chain steps to simulate
       theta_matrix <- matrix(NA, nrow = iterations, ncol = nthetas)
@@ -904,7 +1013,57 @@ SaomNkRSienaBiEnv <- R6Class(
         
       return(theta_matrix)
     },
-    
+
+    ## ------------------------------------------------------------------------
+    ## prepare_theta_scaffold()
+    ## ------------------------------------------------------------------------
+    ## Build the RSiena data + effects objects for `structure_model` and return
+    ## the DEFAULT theta matrix (iterations x n_parameters) that
+    ## `search_rsiena()` would build internally, WITHOUT running the simulation.
+    ##
+    ## This exists so that per-ministep parameter trajectories (ramps, drifts,
+    ## arbitrary user-supplied schedules) can be constructed against a matrix
+    ## that is guaranteed to have the right shape and the right column names
+    ## in RSiena's own parameter order. Hand-building that matrix is the one
+    ## thing a caller cannot reliably do, because the column order is decided
+    ## by RSiena's effects table, not by the structure model.
+    ##
+    ## Side effects: sets self$config_structure_model, self$bipartite_rsienaDV,
+    ## self$rsiena_data and self$rsiena_effects -- exactly the same fields
+    ## search_rsiena() sets in its steps I and II, and which search_rsiena()
+    ## unconditionally rebuilds on its next call. Calling this before
+    ## search_rsiena() is therefore safe.
+    prepare_theta_scaffold = function(structure_model, iterations, verbose = FALSE) {
+
+      if (self$M < 2)
+        stop("prepare_theta_scaffold() requires M >= 2 actors (RSiena's ",
+             "sienaDataCreate() does not support single-actor bipartite networks).")
+      if (!is.numeric(iterations) || length(iterations) != 1 || iterations < 1)
+        stop("`iterations` must be a single positive integer.")
+      iterations <- as.integer(iterations)
+
+      bi_mat <- if (!is.null(self$bipartite_matrix)) self$bipartite_matrix else self$bipartite_matrix_init
+      if (is.null(bi_mat))
+        stop("bipartite_matrix is not set on this environment.")
+
+      array_bi_net <- array(c(bi_mat, bi_mat), dim = c(self$M, self$N, 2))
+      self$bipartite_rsienaDV <- sienaDependent(array_bi_net,
+                                                type = 'bipartite',
+                                                nodeSet = c('ACTORS', 'COMPONENTS'),
+                                                allowOnly = FALSE)
+      ## Behaviour co-evolution DV, when the structure model declares one.
+      self$set_behavior_rsienaDV(structure_model, verbose = verbose)
+
+      self$config_structure_model <- structure_model
+      input_effs <- self$get_input_from_structure_model(structure_model)
+
+      self$rsiena_data    <- self$get_rsiena_data_from_structure_model(structure_model)
+      self$rsiena_effects <- getEffects(self$rsiena_data)
+      self$add_rsiena_effects(structure_model, verbose = verbose)
+
+      self$get_theta_matrix(input_effs, iterations, verbose = verbose)
+    },
+
     preprocess_theta_shocks = function(theta_shocks, iterations) {
       if (!length(theta_shocks))
         stop('theta_shocks list is empty. No shocks to process.')
@@ -1047,11 +1206,15 @@ SaomNkRSienaBiEnv <- R6Class(
         array_bi_net <- array(c(self$bipartite_matrix, self$bipartite_matrix), 
                               dim = c(self$M, self$N, 2))
       }
-      self$bipartite_rsienaDV <- sienaDependent(array_bi_net, 
+      self$bipartite_rsienaDV <- sienaDependent(array_bi_net,
                                                 type='bipartite',
-                                                nodeSet =c('ACTORS', 'COMPONENTS'), 
+                                                nodeSet =c('ACTORS', 'COMPONENTS'),
                                                 allowOnly = F)
-      
+      ## Behaviour co-evolution DV (structure_model$dv_behavior). Also CLEARS a
+      ## behaviour DV left over from a previous model when none is declared, so
+      ## an environment reused across models cannot carry one over silently.
+      self$set_behavior_rsienaDV(structure_model, verbose = verbose)
+
       ##----------- II. SET RSIENA DATA AND EFFECTS ---------------------------
       ##  1. RSiena data object
       self$rsiena_data <- self$get_rsiena_data_from_structure_model(structure_model)
@@ -1088,14 +1251,20 @@ SaomNkRSienaBiEnv <- R6Class(
       
       ##---------- IV. RUN SIMULATION  -----------------------------
       ##  4. RSiena Algorithm
-      self$rsiena_run_seed <- run_seed 
+      self$rsiena_run_seed <- run_seed
+      ## `cond` is left at RSiena's default (NA -> TRUE for one dependent
+      ## variable) for every single-DV model, i.e. every model that existed
+      ## before behaviour coevolution. With two DVs RSiena resolves NA to FALSE
+      ## anyway; stating it explicitly keeps the theta width computed in
+      ## get_theta_matrix() and the width siena07() demands provably in step.
+      .cond_arg <- if (self$get_n_rsiena_depvars() > 1L) list(cond = FALSE) else list()
       self$rsiena_algorithm <- if (verbose) {
-        sienaAlgorithmCreate(
+        do.call(sienaAlgorithmCreate, c(list(
           projname=file.path(self$DIR_OUTPUT, sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP)),
           simOnly = T,  # nsub = rsiena_phase2_nsub * 1,
           nsub = 0, # n2start = rsiena_n2start_scale * 2.52 * (7+sum(self$rsiena_effects$include)),
           n3 = nrow(theta_matrix), seed = run_seed
-        )
+        ), .cond_arg))
       } else {
         timestat <- as.numeric(Sys.time()) * 100
         ## Use DIR_OUTPUT for sink file (CWD may not be writable in async workers)
@@ -1106,12 +1275,12 @@ SaomNkRSienaBiEnv <- R6Class(
             while (sink.number() > 0) sink(NULL)
             sink(file = sink_file)
             on.exit(sink(), add = TRUE)
-            sienaAlgorithmCreate(
+            do.call(sienaAlgorithmCreate, c(list(
               projname=file.path(sink_dir, sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP)),
               simOnly = T,
               nsub = 0,
               n3 = nrow(theta_matrix), seed = run_seed
-            )
+            ), .cond_arg))
           })
         )
       }
@@ -4480,7 +4649,24 @@ SaomNkRSienaBiEnv <- R6Class(
       report_interval <- max(1L, floor(nchains / 20))
 
       ## paramters
-      theta_df_norates <- self$get_rsiena_effects_theta_df(no_rates=TRUE)
+      ## The columns of rsiena_model$thetaUsed correspond one-for-one with the
+      ## rows of the theta data frame built at the SAME width get_theta_matrix()
+      ## used -- which includes basic rates when RSiena is estimating
+      ## unconditionally (two or more dependent variables). Build at that width,
+      ## then keep only the BIPARTITE network's non-rate effects.
+      ##
+      ## The utility decomposition below attributes each ministep to per-actor
+      ## contributions of the bipartite evaluation function. A behaviour DV's
+      ## effects (`linear`, `quad`, `avInSimDist2`, ...) are not statistics of
+      ## the bipartite matrix and have no such decomposition here, so they are
+      ## dropped rather than fabricated. Behaviour trajectories are recovered
+      ## from the chain and the simulated behaviour arrays instead. For a
+      ## single-DV model this keeps every column it kept before.
+      .theta_df_all <- self$get_rsiena_effects_theta_df(
+        no_rates = !(self$get_n_rsiena_depvars() > 1L))
+      .net_cols <- which(.theta_df_all$name == 'self$bipartite_rsienaDV' &
+                           !(.theta_df_all$shortName == 'Rate' & .theta_df_all$type == 'rate'))
+      theta_df_norates <- self$get_bipartite_effects_theta_df()
       theta_names_norate <-  theta_df_norates$shortName
       theta_levels_norates <- theta_df_norates$effect_level
       if(is.null(self$rsiena_model$thetaUsed)){
@@ -4493,6 +4679,9 @@ SaomNkRSienaBiEnv <- R6Class(
         ## thetaUsed has n3 rows (one per simulation run) -- expand to nchains rows
         ## by mapping each ministep to its simulation run
         theta_used <- self$rsiena_model$thetaUsed
+        ## Keep only the bipartite non-rate columns (identity for single-DV models)
+        if (ncol(theta_used) == nrow(.theta_df_all))
+          theta_used <- theta_used[, .net_cols, drop = FALSE]
         if (nrow(theta_used) == nchains) {
           theta_mat <- theta_used
         } else {
@@ -4685,7 +4874,11 @@ SaomNkRSienaBiEnv <- R6Class(
         }
         ## update bipartite environment matrix for one step (toggle one dyad)
 
-        if ( ! mstep$stability ) {
+        ## Behaviour-DV ministeps change an actor attribute, not a tie: their
+        ## id_to is a behaviour value and must never be toggled as a component.
+        ## No-op for chains without a behaviour DV.
+        if ( ! mstep$stability &&
+             ! identical(as.character(mstep$dv_varname), .SEARCHNET_BEHAVIOR_DV_NAME) ) {
           actor_i <- mstep$id_from
           comp_j  <- mstep$id_to
           ## Record change for diff-based storage
@@ -5096,11 +5289,17 @@ SaomNkRSienaBiEnv <- R6Class(
         id_from <- x[4]
         id_to   <- x[5]
         if(dv_name == 'self$bipartite_rsienaDV') {
-          ## bipartite network after oneIndexing the node ids:  id_to==(N+1) means no tie 
+          ## bipartite network after oneIndexing the node ids:  id_to==(N+1) means no tie
           return(ifelse(id_to == (N+1), FALSE, TRUE))
         } else if (dv_name %in% c('self$social_rsienaDV','self$search_rsienaDV')) {
           ## bipartite network after oneIndexing the node ids:  id_to==id_from means no tie
           return(ifelse(id_from == id_to, FALSE, TRUE))
+        } else if (dv_name == .SEARCHNET_BEHAVIOR_DV_NAME) {
+          ## A behaviour ministep changes an actor's ATTRIBUTE, never a tie.
+          ## Its `id_to` column carries no node id at all, so the bipartite
+          ## rules above would misread it. tie_change is unambiguously FALSE;
+          ## the magnitude of the behaviour change lives in `beh_difference`.
+          return(FALSE)
         } else {
           stop(sprintf('dv_name %s not implemented in .getTieChange()', dv_name))
         }
@@ -5129,8 +5328,13 @@ SaomNkRSienaBiEnv <- R6Class(
       ## Reduces memory from O(M*N*nchains) to O(nchains + M*N).
       bi_env_changes <- matrix(NA_integer_, nrow = nchains, ncol = 3)
       colnames(bi_env_changes) <- c("step", "actor_i", "comp_j")
+      ## A behaviour ministep is not a tie toggle. Its `id_to` is a behaviour
+      ## value, not a component id, so toggling on it would corrupt the state
+      ## trajectory. Skip those rows. Identical to the previous behaviour for
+      ## every chain that contains only bipartite ministeps.
+      .is_beh_step <- chainDat$dv_varname == .SEARCHNET_BEHAVIOR_DV_NAME
       for (.i in 1:nchains) {
-        if (!chainDat$stability[.i]) {
+        if (!chainDat$stability[.i] && !.is_beh_step[.i]) {
           bi_env_changes[.i, ] <- c(.i, chainDat$id_from[.i], chainDat$id_to[.i])
           bi_env_mat <- self$toggleBiMat(bi_env_mat, chainDat$id_from[.i], chainDat$id_to[.i])
         } else {

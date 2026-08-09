@@ -500,6 +500,12 @@ saomnk_shock <- function(effect, parameter, portion = 1L) {
 #'   run.
 #' @param shocks A list of \code{\link{saomnk_shock}} objects defining
 #'   parameter regime changes, or \code{NULL} (default) for no shocks.
+#' @param theta_matrix Optional numeric matrix of per-ministep parameter values
+#'   (\code{iterations} rows x one column per simulated effect), as built by
+#'   \code{\link{saomnk_theta_ramp}} or \code{\link{saomnk_theta_drift}}. When
+#'   supplied it defines the parameter trajectory directly and its row count
+#'   overrides \code{steps_per_actor}. Default \code{NULL}, in which case the
+#'   engine builds a constant theta matrix from \code{model} exactly as before.
 #' @param verbose Logical. If \code{TRUE}, print RSiena diagnostic output
 #'   during the simulation (default \code{FALSE}).
 #' @return The \code{env} object (modified in place), returned invisibly.
@@ -510,7 +516,8 @@ saomnk_shock <- function(effect, parameter, portion = 1L) {
 #'                     influence_matrix = saomnk_block_diagonal(6, 2))
 #' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
 saomnk_run <- function(env, model, steps_per_actor = 30,
-                        seed = NULL, shocks = NULL, verbose = FALSE) {
+                        seed = NULL, shocks = NULL, theta_matrix = NULL,
+                        verbose = FALSE) {
 
   stopifnot(inherits(env, "SaomNkRSienaBiEnv"))
   stopifnot(is.list(model))
@@ -526,6 +533,23 @@ saomnk_run <- function(env, model, steps_per_actor = 30,
   }
 
   run_seed <- if (!is.null(seed)) as.integer(seed) else 123L
+
+  if (!is.null(theta_matrix)) {
+    if (!is.matrix(theta_matrix) || !is.numeric(theta_matrix))
+      stop("`theta_matrix` must be a numeric matrix (see saomnk_theta_ramp()).")
+    ## nrow(theta_matrix) is the ministep count, so iterations_per_actor must
+    ## not also be passed: search_rsiena() prefers theta_matrix, but passing
+    ## both invites a silent mismatch between what the caller asked for and
+    ## what ran.
+    env$search_rsiena(
+      structure_model = model,
+      theta_matrix    = theta_matrix,
+      run_seed        = run_seed,
+      theta_shocks    = theta_shocks,
+      verbose         = verbose
+    )
+    return(invisible(env))
+  }
 
   env$search_rsiena(
     structure_model      = model,

@@ -8,7 +8,7 @@ structure model.
 }
 \usage{
 saomnk_run(env, model, steps_per_actor = 30, seed = NULL,
-  shocks = NULL, verbose = FALSE)
+  shocks = NULL, theta_matrix = NULL, verbose = FALSE)
 }
 \arguments{
   \item{env}{A \code{SaomNkRSienaBiEnv} object.}
@@ -16,7 +16,15 @@ saomnk_run(env, model, steps_per_actor = 30, seed = NULL,
   \item{steps_per_actor}{Integer. Decision-chain micro-steps per actor.}
   \item{seed}{Integer or NULL. Random seed.}
   \item{shocks}{A list of \code{\link{saomnk_shock}} objects or NULL.}
+  \item{theta_matrix}{Optional numeric matrix of per-ministep parameter values,
+    as built by \code{\link{saomnk_theta_ramp}} or
+    \code{\link{saomnk_theta_drift}}. Its row count overrides
+    \code{steps_per_actor}. Default \code{NULL}.}
   \item{verbose}{Logical. Print diagnostic output.}
+}
+\seealso{
+\code{\link{saomnk_theta_ramp}}, \code{\link{saomnk_theta_drift}},
+\code{\link{saomnk_behavior}}
 }
 \value{
 The \code{env} object (modified in place), returned invisibly.

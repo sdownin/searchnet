@@ -287,3 +287,16 @@ S3method(print,nk_walk)
 # K_CA imitation statistic (0.5.0)
 export(saomnk_sim_ego_indist2)
 export(saomnk_env_imitation)
+
+# ---------------------------------------------------------------------------
+# Continuous rate-of-change operators -- searchnet-ramp.R (0.5.1)
+# ---------------------------------------------------------------------------
+export(saomnk_theta_ramp)
+export(saomnk_theta_drift)
+
+# ---------------------------------------------------------------------------
+# Network--behaviour coevolution -- searchnet-behavior.R (0.5.1)
+# ---------------------------------------------------------------------------
+export(saomnk_behavior)
+export(saomnk_behavior_effects)
+export(saomnk_get_behavior)

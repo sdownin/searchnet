@@ -1,3 +1,132 @@
+# searchnet 0.5.1 (development)
+
+## New features
+
+* **`saomnk_theta_ramp()` and `saomnk_theta_drift()`: the environment can now
+  change continuously, not only in steps.** Until now the only way to make a
+  parameter move over time was `saomnk_shock()`, which cuts the ministep chain
+  into contiguous blocks and holds a constant within each. That expresses "a
+  shock happened at time t" and nothing else. No number of steps is a ramp, so
+  "the environment erodes at rate r" was simply not sayable.
+
+  `saomnk_theta_ramp()` moves one or more effects from a starting value to an
+  ending value over a window of the chain, under `linear`, `sigmoid` or
+  `exponential` easing. Windows are given as fractions of the chain rather than
+  absolute ministep indices, so the same specification means the same thing at
+  any chain length. `saomnk_theta_drift()` is the separate, undirected operator:
+  a Gaussian random walk on one parameter, which is landscape *instability*
+  rather than landscape *direction*. The two compose --- `add = TRUE`
+  superimposes a walk on an existing ramp --- so a design can vary erosion and
+  volatility independently.
+
+  The engine already accepted a user-supplied `theta_matrix`; what was missing
+  was any way to build one correctly. Column order is decided by RSiena's
+  effects table, not by the structure model, so hand-building the matrix was not
+  something a caller could do reliably. Both functions delegate to a new
+  `env$prepare_theta_scaffold()`, which runs the same data-and-effects
+  construction `search_rsiena()` runs and returns the correctly shaped, correctly
+  named matrix.
+
+  The sigmoid is rescaled onto `[0, 1]`. The raw logistic
+  `1/(1 + exp(-6*(p - 0.5)))` starts at 0.047 and ends at 0.953, so an
+  unrescaled version would jump discontinuously by about 5% of the total change
+  at each end of the window. There is a regression test for this.
+
+* **`saomnk_run()` now forwards a `theta_matrix` argument.** Additive, default
+  `NULL`; existing calls behave exactly as before. When supplied, its row count
+  is the ministep count and `steps_per_actor` is not also passed, so the two
+  cannot silently disagree.
+
+* **`saomnk_behavior()`, `saomnk_behavior_effects()`, `saomnk_get_behavior()`:
+  network--behaviour coevolution.** A structure model may now carry a
+  `dv_behavior` block, making an actor-level attribute (performance,
+  aspiration, capability) a second dependent variable that evolves jointly with
+  the bipartite network instead of sitting fixed as a covariate. Both directions
+  are live: the network shapes the behaviour through influence effects, and the
+  behaviour shapes the network through selection effects declared on
+  `dv_bipartite` with `interaction1` pointing at the behaviour DV.
+
+## What RSiena can and cannot do here, stated plainly
+
+* **RSiena 1.5.0 does support bipartite + behaviour coevolution.** This was
+  verified against a live `getEffects()` object, not recalled. `sienaDataCreate()`
+  accepts both dependent variables and returns a populated effect set for the
+  behaviour. Unlike the K_CA case below, this is a real EFFECT capability and
+  not merely a statistic: the behaviour enters the simulated evaluation function
+  and moves.
+
+* **The one-mode influence effects `avAlt`, `totAlt`, `avSim` and `totSim` are
+  NOT available for a behaviour attached to a bipartite network, and no amount
+  of R-level work can add them.** In a bipartite network ego's direct alters are
+  *components*, and components have no behaviour to average. This is a property
+  of the model, not a gap in RSiena or in searchnet.
+
+  RSiena's substitutes are the distance-2 family, where two actors are
+  neighbours when they hold a component in common: `avInAltDist2`,
+  `totInAltDist2`, `avTInAltDist2`, `totAInAltDist2`, `avInSimDist2`,
+  `totInSimDist2`. **`avInSimDist2` is the bipartite counterpart of `avSim`**,
+  and is what a caller reaching for "imitation" or "social influence" wants.
+  Also available on the behaviour DV: `linear`, `quad`, `constant`,
+  `threshold1-4`, `simAllNear`, `simAllFar`, `avGroup`, `outdeg`, `outIsolate`,
+  `popAlt`, `effFrom`, `avXAlt`, `totXAlt`, and the covariate distance-2 family
+  (`avXInAltDist2`, `totXInAltDist2`, `avTXInAltDist2`, `totAXInAltDist2`).
+
+  In the selection direction RSiena offers `egoX`, `egoSqX`, `altInDist2`,
+  `totInDist2`, `simEgoInDist2`, `sameEgoInDist2`, `inPopX`, `sameXInPop`,
+  `diffXInPop`, `sameXCycle4`, `avGroupEgoX`, `degAbsDiffX`, `degPosDiffX`,
+  `degNegDiffX` and `sameWXClosure`.
+
+  `saomnk_behavior_effects()` regenerates all of this from a live `getEffects()`
+  call rather than from documentation, and the test suite asserts both the
+  presence of the distance-2 effects and the ABSENCE of `avSim`/`avAlt`. If a
+  future RSiena release changes either, those tests will say so.
+
+* **A behaviour DV changes RSiena's estimation mode, and therefore what a row of
+  the theta matrix means.** RSiena estimates *conditionally* with one dependent
+  variable and *unconditionally* with two or more. Under conditional estimation
+  the conditioning variable's basic rate is deleted from the parameter vector,
+  which is why searchnet has always been able to drop basic rates from the theta
+  matrix. Under unconditional estimation every basic rate *is* a theta column,
+  and `siena07()` rejects a matrix of the wrong width outright. `get_theta_matrix()`
+  now derives the width from the number of dependent variables rather than
+  assuming.
+
+  The consequence for callers: with one DV each theta row corresponds to exactly
+  one ministep. With two DVs the number of ministeps per row is drawn from the
+  rate parameters, so **the chain is longer than the theta matrix has rows** and
+  a "run" is no longer a ministep. `saomnk_get_behavior()` reports behaviour once
+  per run; per-ministep behaviour changes are in `env$chain_stats`, in the
+  `beh_difference` column of rows whose `dv_varname` is the behaviour DV.
+
+* **An undeclared basic rate defaults to 1.0, with a message.** RSiena's `parm`
+  column defaults to 0 for basic rates, and searchnet reads `parm` as theta. A
+  rate of exactly 0 freezes that dependent variable for the entire simulation.
+  That is never an intended specification, so it is substituted and announced
+  rather than silently simulated.
+
+* **The utility and K-4 decompositions cover the bipartite evaluation function
+  only.** `linear`, `quad`, `avInSimDist2` and the rest are statistics of the
+  behaviour, not of the bipartite matrix, and have no per-actor decomposition on
+  that path. They are excluded from `actor_stats_df` rather than fabricated.
+  Extending the decomposition to the behaviour evaluation function is a separate
+  piece of work.
+
+## Bug fixes / hardening
+
+* `search_rsiena_process_ministep_chain()` and `get_chain_stats_list()` now skip
+  behaviour ministeps when reconstructing the bipartite state trajectory. A
+  behaviour ministep's `id_to` column carries a behaviour value, not a component
+  id, so toggling on it would have silently corrupted every downstream network
+  statistic. There is a test asserting the bipartite matrix never changes on a
+  behaviour ministep.
+
+* The generic effect-inclusion fallback in
+  `include_rsiena_effect_from_eff_list()` now passes `interaction2` through to
+  `includeEffects()` / `setEffect()`. Two-slot effects such as `avXAlt` and the
+  covariate distance-2 family are identified by both a covariate and the network
+  through which it reaches ego, and could not be included without it. Inert for
+  every structure model that predates this release.
+
 # searchnet 0.5.0
 
 ## New features

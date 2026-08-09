@@ -63,6 +63,8 @@ SaomNkRSienaBiEnv_base <- R6Class(
     bipartite_rsienaDV = NULL,
     social_rsienaDV = NULL,
     search_rsienaDV = NULL,
+    behavior_rsienaDV = NULL,   ## behaviour / performance DV coevolving with the bipartite net
+    behavior_values = NULL,     ## the M x waves matrix the behaviour DV was built from
     #
     theta_shocks = NULL,
     theta_matrix = NULL,
@@ -779,6 +781,15 @@ SaomNkRSienaBiEnv_base <- R6Class(
                             fix = fix, verbose = verbose)
           if (!is.null(eff$interaction1) && nzchar(as.character(eff$interaction1)))
             .args_inc$interaction1 <- eff$interaction1
+          ## Two-slot effects. Behaviour effects such as `avXAlt` / `totXAlt`
+          ## and the covariate distance-2 family (`avXInAltDist2`, ...) are
+          ## identified by BOTH a covariate (interaction1) and the network
+          ## through which it reaches ego (interaction2); without
+          ## interaction2 RSiena cannot resolve them. No structure model
+          ## predating behaviour coevolution sets interaction2 on this path,
+          ## so this is inert for them.
+          if (!is.null(eff$interaction2) && nzchar(as.character(eff$interaction2)))
+            .args_inc$interaction2 <- eff$interaction2
           self$rsiena_effects <- do.call(includeEffects, .args_inc)
           if (!is.null(eff$parameter) || !is.null(eff$initialValue)) {
             ## `parameter=` populates the `parm` column that get_theta_matrix() reads;
@@ -790,6 +801,8 @@ SaomNkRSienaBiEnv_base <- R6Class(
             if (!is.null(eff$initialValue)) .args_set$initialValue <- eff$initialValue
             if (!is.null(eff$interaction1) && nzchar(as.character(eff$interaction1)))
               .args_set$interaction1 <- eff$interaction1
+            if (!is.null(eff$interaction2) && nzchar(as.character(eff$interaction2)))
+              .args_set$interaction2 <- eff$interaction2
             self$rsiena_effects <- do.call(setEffect, .args_set)
           }
           if (verbose) cat(sprintf("  [generic] Included effect '%s'\n", eff$effect))
@@ -1225,6 +1238,33 @@ SaomNkRSienaBiEnv_base <- R6Class(
       return(totInDist2_values)
     },
     
+    ## Number of dependent variables in the current RSiena data object.
+    ## RSiena estimates CONDITIONALLY with exactly one DV (which deletes the
+    ## conditioning DV's basic rate from theta) and UNCONDITIONALLY with two or
+    ## more (which keeps every basic rate in theta). The theta matrix width
+    ## follows from this, so several call sites need to ask.
+    get_n_rsiena_depvars = function() {
+      if (is.null(self$rsiena_data) || is.null(self$rsiena_data$depvars))
+        return(1L)
+      length(self$rsiena_data$depvars)
+    },
+
+    ## The subset of theta columns that belong to the BIPARTITE network's
+    ## evaluation function: the effects whose per-actor statistics the utility
+    ## and K-4 decompositions know how to compute. Excludes basic rates and,
+    ## when a behaviour DV coevolves, that DV's effects -- `linear`, `quad`,
+    ## `avInSimDist2` and the rest are statistics of the behaviour, not of the
+    ## bipartite matrix, and have no decomposition on this path.
+    ##
+    ## For a single-DV model this returns exactly what
+    ## get_rsiena_effects_theta_df(no_rates = TRUE) has always returned.
+    get_bipartite_effects_theta_df = function() {
+      df <- self$get_rsiena_effects_theta_df(
+        no_rates = !(self$get_n_rsiena_depvars() > 1L))
+      df[ df$name == 'self$bipartite_rsienaDV' &
+            !(df$shortName == 'Rate' & df$type == 'rate'), , drop = FALSE ]
+    },
+
     ##
     get_rsiena_effects_theta_df = function(no_rates=TRUE) {
       if (is.null(self$rsiena_effects))
@@ -1316,7 +1356,10 @@ SaomNkRSienaBiEnv_base <- R6Class(
     ##
     get_struct_mod_stats_mat_from_bi_mat = function(bi_env_mat, type='all', .cache=NULL) {
       #
-      theta_df_norates <- self$get_rsiena_effects_theta_df(no_rates=TRUE)
+      ## Bipartite-network effects only: this function computes statistics OF
+      ## bi_env_mat, and a coevolving behaviour DV's effects are not statistics
+      ## of it. Identical to the previous call for single-DV models.
+      theta_df_norates <- self$get_bipartite_effects_theta_df()
       theta_df_norates$effect <-  theta_df_norates$shortName
       #
       ## --- Intermediate result cache (Task 2 optimization) ---
