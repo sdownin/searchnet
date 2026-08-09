@@ -1,6 +1,6 @@
 Package: searchnet
 Title: Network-Embedded Search Simulation Engine
-Version: 0.5.0.9000
+Version: 0.6.0
 Authors@R: person("Stephen", "Downing", email = "sdowning@missouri.edu",
                   role = c("aut", "cre"))
 Description: R6-based simulation engine for strategic search and adaptation
@@ -22,7 +22,7 @@ Depends:
     R (>= 4.1.0)
 Imports:
     R6,
-    RSiena,
+    RSiena (>= 1.5.0),
     igraph,
     network,
     Matrix,
