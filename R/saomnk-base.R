@@ -817,8 +817,29 @@ SaomNkRSienaBiEnv_base <- R6Class(
                                        eff$dv_name, paste(avail, collapse = ", "))
             }
           }
-          warning(sprintf("Effect '%s' could not be included: %s (skipping).%s",
-                          eff$effect, e2$message, available_msg))
+          ## A skipped effect is a silently mis-specified model: the run
+          ## proceeds without the effect the user asked for, and nothing
+          ## downstream shows that it is missing. Effect names are also not
+          ## portable across dependent-variable types -- egoXaltX is a one-mode
+          ## effect and does not exist for a bipartite DV, where the
+          ## dyadic-covariate effect is X -- so this is easy to hit by
+          ## following one-mode examples.
+          ##
+          ## Default is therefore to STOP. Set
+          ##   options(saomnk.skip_missing_effects = TRUE)
+          ## to restore the old permissive behaviour for exploratory work.
+          msg <- sprintf("Effect '%s' could not be included: %s%s",
+                         eff$effect, e2$message, available_msg)
+          if (isTRUE(getOption("saomnk.skip_missing_effects", FALSE))) {
+            warning(paste(msg, "(skipping)"))
+          } else {
+            stop(paste0(msg,
+              "
+  The model would otherwise run WITHOUT this effect. ",
+              "Fix the effect name, or set ",
+              "options(saomnk.skip_missing_effects = TRUE) to skip it."),
+              call. = FALSE)
+          }
         })
       }
       

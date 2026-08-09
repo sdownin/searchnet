@@ -113,12 +113,28 @@ environment is locked and rejects new bindings.
 
 ## Two notes for anyone extending this
 
-**Effect names for bipartite dependents differ from one-mode.** The API
-reference documents `egoXaltX` as the default `dyad_covariate_effect`, but that
-effect does not exist for a bipartite DV. RSiena reports the valid list, in
-which the dyadic-covariate effect is `X`. A model specified with an invalid
-effect name is skipped with a warning and the simulation proceeds without it,
-which is easy to miss.
+**Effect names for bipartite dependents differ from one-mode.** `egoXaltX` is
+a one-mode effect and does not exist for a bipartite dependent variable, where
+the dyadic-covariate effect is `X`. It was the documented default for
+`dyad_covariate_effect`; that default is now `X`.
+
+Previously an invalid effect name was skipped with a warning and the simulation
+ran without it, so a mis-specified model produced clean-looking output with a
+silently missing term. **Invalid effect names now stop by default.** For
+exploratory work the old behaviour is available:
+
+```r
+options(saomnk.skip_missing_effects = TRUE)
+```
+
+**Known open bug: the dyadic-covariate path has no effect on the simulated
+network, even with the correct effect name.** Tested with
+`dyad_covariate_effect = "X"` at weights 0 and 3 on the same seeds, the
+resulting networks are identical (cor(actor attribute, degree) = -0.043 in
+both). No error and no warning is raised. This is why `searchnet-assent.R`
+applies screening to the output rather than through a covariate: until this is
+fixed, screening cannot be expressed inside the objective function at all. The
+same test is the right regression check once it is fixed.
 
 **Verify that a covariate actually bites.** The reliable test is behavioural,
 not structural: run the same seed at two very different weights and confirm the

@@ -166,7 +166,9 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #' @param dyad_covariate An \eqn{M \times N}{M x N} actor-by-component
 #'   covariate matrix, or \code{NULL} (default).
 #' @param dyad_covariate_effect Character. RSiena effect name for
-#'   \code{dyad_covariate} (default \code{"egoXaltX"}).
+#'   \code{dyad_covariate} (default \code{"X"}, the dyadic-covariate effect
+#'   for a bipartite dependent variable; \code{egoXaltX} is a one-mode
+#'   effect and is NOT valid here).
 #' @param dyad_covariate_weight Numeric. Weight for the dyad covariate effect
 #'   (default \code{0.1}).
 #' @param \dots Additional effects specified as named lists and appended to the
@@ -219,7 +221,7 @@ saomnk_model <- function(density            = -0.5,
                           strategies         = NULL,
                           component_covariates = NULL,
                           dyad_covariate     = NULL,
-                          dyad_covariate_effect = "egoXaltX",
+                          dyad_covariate_effect = "X",
                           dyad_covariate_weight = 0.1,
                           ...) {
 
