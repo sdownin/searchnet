@@ -1548,16 +1548,19 @@ alternatives offer.
 
 ## Applications {#sec:applications}
 
-The $\K$ formulation is currently exercised by six independent research
+The $\K$ formulation is currently exercised by eight independent research
 programs.  They differ in how much of \pkg{searchnet} they use, and the
 distinction matters for a software paper: a package can be used as a simulation
 engine, as a post-estimation layer over \pkg{RSiena}, or as a reference
 implementation to check an independent one against.  All three modes appear
-below, and we label each rather than presenting a uniform façade.  The
-inclusion criterion is that the application must actually run \pkg{searchnet},
-alone or in combination with \pkg{RSiena} or an independent implementation;
-projects that share the $\K$ vocabulary but do not call the package are not
-listed, however closely related their subject matter.
+below, and we label each rather than presenting a uniform façade.  Each vignette states a
+problematization, the specification that answers it, and a takeaway, so that a
+reader can find the closest case to their own problem quickly.  We separate two
+groups: applications that run \pkg{searchnet} today, and *refactor candidates*
+--- studies built on the same $\K$ formulation with bespoke code, for which we
+name the specific capability that would let the package absorb them.  The second
+group is included deliberately: the gap between a framework and a package is
+most visible where a user would currently have to write their own engine.
 
 | Application | Domain | Mode of use | $\K$ channels driven |
 |---|---|---|---|
@@ -1567,6 +1570,8 @@ listed, however closely related their subject matter.
 | Policy shocks | Subsidies and risk-taking | Simulation engine, shock schedule | $K_{AC}$, $K_{CC}$, covariate |
 | Firm vs.\ industry effects | Variance decomposition | Simulation engine | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
 | Market-access institutions | Cross-border expansion | Post-estimation layer | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
+| Evaluator discipline | Venture capital | Refactor candidate (time-varying $W$) | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
+| Basin geometry | Industrial policy | Refactor candidate (tournament driver) | $K_{AC}$, $K_{CC}$, $K_{AA}$ |
 
 Two channels deserve a warning that applies throughout.  First, $K_{CA}$ is
 driven by \code{inPop} (degree popularity), not by similarity-weighted
@@ -1651,6 +1656,11 @@ claimed for the core specification only, and the probe is what draws the line.
 
 
 
+**Takeaway.**  Convergence is produced by shared structure, not by copying: the
+channel whose removal *raises* overlap cannot be the channel generating it.  For
+package users, the transferable practice is the three-layer conformance split and
+the path-integral probe that marks where a formal guarantee stops.
+
 ### Architectural shocks and the rate--evaluation split {#sec:app-shocks}
 
 **Research question.**  When an innovation reshapes which activities complement
@@ -1730,6 +1740,12 @@ decomposition's benchmark determines what it can detect.
 
 ![Rate separation. With \code{RateX} active, quick-to-act actors make 51.0 tie changes against 6.7 for slow-to-act (ratio 7.6) while the control arm sits at 1.05, with evaluation functions held identical across arms.\label{fig:rateseparation}](figures/ishock_rate_separation.png){width=100%}
 
+**Takeaway.**  Separating the rate function from the evaluation function turns an
+unidentified question --- was the firm unwilling or unable? --- into two estimable
+quantities.  A decomposition's benchmark determines what it can detect: the same
+runs yield a significant wedge under one convention and a degenerate zero under
+another.
+
 ### Startup workforce formation {#sec:app-workforce}
 
 **Research question.**  Startups hire to build capability, but breadth carries a
@@ -1784,6 +1800,11 @@ legible in the fitted parameters.
 ![Workforce application. Left, the $\K$-4 panel for 50 startups over 250 steps, showing all four channels read out together. Right, breadth ($K_{AC}$) against utility; the relationship is monotone and concave, that is diminishing returns, not the inverted U the Penrose Effect predicts.\label{fig:workforce}](figures/bort_k4_panel.png){width=49%}
 ![](figures/bort_phase_space.png){width=49%}
 
+**Takeaway.**  Calibrating to fitted coefficients rather than to chosen ones makes
+a simulation falsifiable, and here it falsified the expected result: no inverted U
+appears because the fitted scope term is positive, so the model contains no
+coordination cost to bend the curve.
+
 ### Policy shocks and risk-taking {#sec:app-policy}
 
 **Research question.**  When a government subsidy arrives and later withdraws,
@@ -1831,6 +1852,10 @@ package is still the analyst's responsibility to read.
 
 ![Policy shock. Actor-level risk-taking trajectories for subsidised and control firms across the three-regime shock schedule, plotted by \pkg{searchnet} from the simulated chain; the vertical line marks the policy onset.\label{fig:policyshock}](figures/amr_risk_trajectories.png){width=100%}
 
+**Takeaway.**  A temporary intervention is naturally expressed as a three-regime
+shock schedule, and the package's plotting layer returns actor-level series ready
+for the contrast the analyst chooses.
+
 ### Firm and industry effects {#sec:app-variance}
 
 The variance-decomposition literature asks whether firm or industry effects
@@ -1862,6 +1887,11 @@ a software paper is the wrong place to launder an unfinished result, and because
 the pipeline above is genuinely the shortest path from a specification to a
 simulated bipartite panel.
 
+**Takeaway.**  The shortest path from specification to simulated panel is four
+calls.  The vignette also shows what a simulation cannot do for you: if the
+"true" effects are re-derived from the same realised outcome the estimator sees,
+recovered bias is zero by construction, whatever the coupling.
+
 ### Market-access institutions {#sec:app-international}
 
 **Research question.**  Do institutional distances between countries act as
@@ -1889,6 +1919,59 @@ operationalised as a country-constant row mean while coupling was firm-varying,
 which is not a fair contest.  The surviving claim is the weaker and better
 supported one, that the distance literature is incomplete rather than
 misspecified.
+
+**Takeaway.**  Entering each matrix twice, as a component main effect and as a
+coupling term, lets two rival mechanisms compete for the same variance in one
+model instead of being compared across models.
+
+### Refactor candidates {#sec:app-refactor}
+
+Two further studies are built on the $\K$ formulation but implement it in bespoke
+code.  We include them because the capability each would need is specific and
+short, and naming it is more useful to a prospective user than omitting the case.
+
+**Evaluator discipline under capital abundance.**  *Problematization:* when
+capital becomes abundant, which margins of organizational evaluation adjust, and
+what insulates the rest?  Investors are actors and technology categories are
+components, so an investor's portfolio is a bipartite row and complementarity
+between categories is exactly $K_{CC}$.  *Methods:* a bipartite SAOM on 368
+investors $\times$ 45 categories over six waves, with \code{outActSqrt},
+\code{inPopSqrt} and \code{cycle4}, plus complementarity entering as a
+*time-varying actor-by-component* covariate interacted with a policy-regime
+indicator.  The regime interaction is strongly negative, indicating that
+complementarity weighs less in commitment decisions when capital is cheap.
+*Takeaway:* the substantive finding is a $K_{CC}$ result, but it is not currently
+expressed as one.  *Capability required:* the study needs a **time-varying $W$**
+--- \code{varDyadCovar} rather than \code{coDyadCovar} --- so that epistasis can
+shift across waves.  \pkg{searchnet} presently accepts a fixed influence matrix;
+admitting a wave-indexed array would let this analysis be written as an
+\code{influence\_matrix} argument instead of hand-built covariate arrays, and
+would additionally support any application where the technology landscape itself
+evolves.
+
+**Basin geometry under policy regimes.**  *Problematization:* policy archetypes
+that produce indistinguishable average fitness may still leave firms in very
+differently shaped basins, and it is the shape, not the height, that determines
+what a shock does.  *Methods:* 20 firms and 16 activities across 27 conditions
+crossing epistatic density, interaction pattern and erosion, with a ten-term
+utility whose scope, synergy, herding and congestion terms are $\K$ channels
+written out longhand, and \pkg{RSiena} estimates supplying the coefficients.
+*Takeaway:* archetypes converge on fitness --- a spread of 0.18 percent across
+four archetypes --- while diverging by roughly an order of magnitude on
+hysteresis area.  Fitness parity conceals geometric divergence, which is an
+argument for reporting basin shape alongside performance.  *Capability required:*
+\pkg{searchnet} already computes fitness landscapes and basin statistics
+(Section~\ref{sec:basins}); what is missing is a **tournament driver** that runs
+heterogeneous strategy populations against one another and returns ranked
+outcomes.  With that, the ten-term utility collapses into a \code{saomnk\_model}
+call plus a scoring function.
+
+We flag one caution these two cases share.  Both were written before the package
+matured, and both re-implement channels the package now provides.  A reader
+adopting \pkg{searchnet} should expect the reverse migration to be the common
+case: the framework is easier to express in the package than to re-derive, and
+the value of doing so is that the $\K$ channels then carry their standard
+meanings rather than local ones.
 
 ### Failure modes inherited from \pkg{RSiena} {#sec:app-failures}
 
