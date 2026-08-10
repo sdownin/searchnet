@@ -1601,7 +1601,7 @@ saomnk_plot_did_exploration <- function(
   # Calculate summaries in two steps to avoid n() issues
   did_summary <- metrics_df %>%
     dplyr::mutate(
-      period = ifelse(chain_step_id < treatment_time, "Pre", "Post"),
+      period = factor(ifelse(chain_step_id < treatment_time, "Pre", "Post"), levels = c("Pre", "Post")),
       treatment = ifelse(strategy == "100", "Treated", "Control")
     ) %>%
     dplyr::group_by(period, treatment) %>%

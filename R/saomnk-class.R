@@ -2001,7 +2001,7 @@ SaomNkRSienaBiEnv <- R6Class(
       # Prepare data
       plot_data <- Kdf_new %>%
         mutate(
-          period = ifelse(chain_step_id < shock_times, "Pre-shock", "Post-shock"),
+          period = factor(ifelse(chain_step_id < shock_times, "Pre-shock", "Post-shock"), levels = c("Pre-shock", "Post-shock")),
           treatment = ifelse(strategy == "100", "Treated", "Control")
         ) %>%
         group_by(chain_step_id, treatment) %>%
@@ -11933,7 +11933,7 @@ SaomNkRSienaBiEnv <- R6Class(
     # Calculate summaries in two steps to avoid n() issues
     did_summary <- metrics_df %>%
       dplyr::mutate(
-        period = ifelse(chain_step_id < treatment_time, "Pre", "Post"),
+        period = factor(ifelse(chain_step_id < treatment_time, "Pre", "Post"), levels = c("Pre", "Post")),
         treatment = ifelse(strategy == "100", "Treated", "Control")
       ) %>%
       dplyr::group_by(period, treatment) %>%
@@ -12574,7 +12574,7 @@ SaomNkRSienaBiEnv <- R6Class(
     # Create summary statistics plot
     summary_stats <- analysis_data %>%
       dplyr::mutate(
-        period = ifelse(time_to_treat < 0, "Pre", "Post"),
+        period = factor(ifelse(time_to_treat < 0, "Pre", "Post"), levels = c("Pre", "Post")),
         treatment_group = ifelse(treated == 1, "Subsidized", "Control")
       ) %>%
       dplyr::group_by(period, treatment_group) %>%
@@ -12854,7 +12854,7 @@ SaomNkRSienaBiEnv <- R6Class(
     did_stats <- tryCatch({
       metrics %>%
         dplyr::mutate(
-          period = ifelse(chain_step_id < shock_time, "Pre", "Post"),
+          period = factor(ifelse(chain_step_id < shock_time, "Pre", "Post"), levels = c("Pre", "Post")),
           treatment = ifelse(strategy == "100", "Treated", "Control")
         ) %>%
         dplyr::group_by(period, treatment) %>%
@@ -13144,7 +13144,7 @@ SaomNkRSienaBiEnv <- R6Class(
     # Calculate DiD
     did_summary <- metrics %>%
       dplyr::mutate(
-        period = ifelse(chain_step_id < shock_time, "Pre", "Post"),
+        period = factor(ifelse(chain_step_id < shock_time, "Pre", "Post"), levels = c("Pre", "Post")),
         treatment = ifelse(strategy == "100", "Treated", "Control")
       ) %>%
       dplyr::group_by(period, treatment) %>%
@@ -13356,7 +13356,7 @@ SaomNkRSienaBiEnv <- R6Class(
     # Method 1: Manual DiD calculation (original approach but fixed)
     did_summary <- metrics %>%
       mutate(
-        period = ifelse(chain_step_id < shock_time, "Pre", "Post"),
+        period = factor(ifelse(chain_step_id < shock_time, "Pre", "Post"), levels = c("Pre", "Post")),
         treatment = ifelse(strategy == "100", "Treated", "Control")
       ) %>%
       group_by(period, treatment) %>%
