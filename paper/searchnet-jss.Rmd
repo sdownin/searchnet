@@ -1045,7 +1045,7 @@ with and without a parameter intervention---is the basis for difference-in-diffe
 \pkg{searchnet} supports natively through its shock infrastructure and
 multi-wave simulation capabilities.
 
-![Empirical shock analysis: COVID-19 impact on airline route competition. Competitive routes (high $K_{AA}$ overlap) survived at 100\% vs 69\% for monopoly routes, demonstrating that competitive overlap provides shock insurance (Downing 2026a).](figures/cd2026_covid_shock.png){width=80%}
+![Empirical shock analysis: COVID-19 impact on airline route competition. Pre-shock overlap does not predict recovery ($r = 0.18$, $p = 0.672$, n.s.). The panel is shown as a null result: the $\{K\}$ measures are what make the non-finding legible, and an earlier survival contrast drawn from these data did not survive controls in the source study.](figures/cd2026_covid_shock.png){width=80%}
 
 
 ## From shocks to causal inference {#sec:causal}
@@ -1546,15 +1546,385 @@ neither natively.  \pkg{searchnet} bridges both traditions, adding the $\K$
 interpretive framework and a causal inference pipeline that none of the
 alternatives offer.
 
-## Cross-domain applications {#sec:applications}
+## Applications {#sec:applications}
 
-The generality of the $\K$ framework is demonstrated by its application
-across four empirically distinct domains, each requiring only
-re-specification of the bipartite incidence matrix and the SAOM objective
-function.  Figure~\ref{fig:cross-domain} presents representative outputs.
+The $\K$ formulation is currently exercised by six independent research
+programs.  They differ in how much of \pkg{searchnet} they use, and the
+distinction matters for a software paper: a package can be used as a simulation
+engine, as a post-estimation layer over \pkg{RSiena}, or as a reference
+implementation to check an independent one against.  All three modes appear
+below, and we label each rather than presenting a uniform façade.  The
+inclusion criterion is that the application must actually run \pkg{searchnet},
+alone or in combination with \pkg{RSiena} or an independent implementation;
+projects that share the $\K$ vocabulary but do not call the package are not
+listed, however closely related their subject matter.
 
-![Cross-domain applications of \pkg{searchnet}: (a) Airline competitive dynamics with 8-layer empirical data (Downing 2026a); (b) Industrial policy basin geometry with 4 policy instruments; (c) Investor search discipline with epistasis trajectories; (d) Startup workforce formation.](figures/cd2026_information_funnel.png){width=45%}
-![](figures/me2_epistasis_trajectories.png){width=45%}
+| Application | Domain | Mode of use | $\K$ channels driven |
+|---|---|---|---|
+| Competitive convergence | U.S. airlines, 1993--2025 | Reference implementation, conformance-checked | $K_{AC}$, $K_{CC}$, $K_{CA}$, $K_{AA}$ |
+| Architectural shocks | Repositioning under innovation | Simulation engine | $K_{CC}$, $K_{AA}$, rate |
+| Workforce formation | Startup hiring | Simulation engine, calibrated | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
+| Policy shocks | Subsidies and risk-taking | Simulation engine, shock schedule | $K_{AC}$, $K_{CC}$, covariate |
+| Firm vs.\ industry effects | Variance decomposition | Simulation engine | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
+| Market-access institutions | Cross-border expansion | Post-estimation layer | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
+
+Two channels deserve a warning that applies throughout.  First, $K_{CA}$ is
+driven by \code{inPop} (degree popularity), not by similarity-weighted
+imitation.  \pkg{RSiena}'s effect set for a bipartite dependent variable
+contains no similarity effect: \code{simEgoInDist2} is defined for one-mode
+networks only.  \pkg{searchnet} supplies the statistic for post-hoc computation
+but cannot make it a simulable evaluation term, and no application below uses it
+as one.  Second, $K_{AA}$ is a *projection*, so it is frequently measured as an
+outcome rather than entered as an effect; the table records what is driven, not
+what is reported.
+
+### Competitive convergence in U.S.\ airlines {#sec:app-airlines}
+
+**Research question.**  Rival firms often come to resemble one another, and the
+resemblance is routinely read as evidence of imitation.  Does it license that
+inference?  Between 1993 and 2025 pairwise route overlap among U.S.\ carriers
+rose 4.8-fold (mean pairwise Jaccard $0.0076 \rightarrow 0.0364$) while
+concentration on contested routes *declined* --- a pattern imitation accounts
+do not predict.
+
+**Construct and channels.**  The claim under test is *architectural channeling*:
+that shared activity-system structure alone funnels independent, boundedly
+rational search into overlapping configurations, so convergence arises with no
+firm copying another.  This is a statement about $K_{CC}$ (the interaction
+matrix $W$) producing $K_{AA}$ (pairwise overlap) without $K_{CA}$ (imitation)
+doing any work, and it is testable only counterfactually --- by deleting
+channels one at a time and re-running the same seeds.
+
+**Design.**  $M = 30$ firms, $N = 256$ activities, 100 rounds; $W$
+parameterised by pattern (random, modular, hierarchical) crossed with epistatic
+density; the main sweep crosses 2 densities $\times$ 8 rivalry $\times$ 8
+imitation values, 10 replications each, for 1{,}280 runs.
+
+**Results.**  Deleting channels from the calibrated model separates them
+cleanly.  Terminal $\bar K_{AA}$ at round 100, ten replications per scenario:
+
+| Scenario | $\bar K_{AA}$ | 95\% interval | Fold |
+|---|---|---|---|
+| Baseline (calibrated) | 0.034 | 0.020--0.052 | 1.00 |
+| Imitation removed ($K_{CA} = 0$) | 0.108 | 0.086--0.128 | **3.2** |
+| Epistasis removed ($K_{CC} = 0$) | 0.010 | 0.007--0.017 | 0.29 |
+| All competition removed | 0.399 | 0.322--0.543 | 11.7 |
+
+Removing imitation *raises* convergence 3.2-fold, and removing epistasis
+collapses it by 71 percent.  Under similarity-weighted imitation firms chase
+whichever peers resemble them, which disperses them across the space; shared
+structure is what concentrates them.  A 54-cell robustness sweep finds the
+ordering holds in 27 of 27 hierarchical cells and 17 of 27 modular cells, which
+scopes the claim to architectural regime rather than asserting it universally.
+
+![Industry trajectory. Mean pairwise route overlap among U.S. carriers 1993--2025 with era shading and merger markers, the empirical series the simulation is calibrated against.\label{fig:kaatraj}](figures/cd2026_kaa_trajectory.png){width=100%}
+
+**Mode of use, stated plainly.**  This application predates the package.  Its
+simulation results come from an independent procedural implementation, and
+\pkg{searchnet} enters as a second implementation checked against it.  That
+arrangement is worth describing because it is how the package is validated in
+practice.  A conformance harness runs nine parameter cells $\times$ three seeds
+through both implementations and compares them on three layers: structural
+agreement, trajectory hashes, and *invariants* --- the NK reduction of
+Theorem~\ref{thm:reduction} and monotonicity of crowding in the rivalry
+parameter.  Its design note states the discipline that makes such a comparison
+meaningful:
+
+> \pkg{searchnet} is R6 over \pkg{RSiena} and the reference engine is
+> procedural, so bit-identical trajectories are *not* expected: the random
+> number stream is consumed in a different order.  Reporting a cross-paradigm
+> trajectory mismatch as a defect would be a category error.
+
+Structural and invariant layers must agree; trajectory hashes need not.  We
+recommend this three-layer split to anyone validating a simulation package
+against an existing implementation.
+
+A second discipline this application enforces is worth transferring.  The
+potential-game property of Section~\ref{sec:formal-properties} was tested *on
+the simulation code* rather than on a reduced model: add an activity, then drop
+it, and net utility must return to zero.  It does, to machine precision, for the
+core specification.  The same probe *locates* the boundary --- with
+similarity-weighted imitation active the path integral deviates by 2.68 at
+calibrated coefficients, because that term depends on rivals' performances,
+which move when the focal firm moves.  The formal guarantees are therefore
+claimed for the core specification only, and the probe is what draws the line.
+
+
+
+### Architectural shocks and the rate--evaluation split {#sec:app-shocks}
+
+**Research question.**  When an innovation reshapes which activities complement
+which, firms differ in how fast they can respond.  Can the *cost of effecting*
+a repositioning be separated from the *value of the destination* using
+observational data?  Archival panels record the option taken and never the
+options declined, so "did not reposition" is equally consistent with *could not
+afford to* and *did not want to*.
+
+**Construct and channels.**  This is the application that exploits the SAOM's
+distinctive factorisation.  The rate function $\lambda_i$ governs *how often*
+an actor gets to move; the evaluation function $f_i$ governs *where* it moves.
+Adjustment cost is a rate quantity and destination value is an evaluation
+quantity, so a model that separates them can identify what a single-equation
+model cannot.  The design manipulates \code{RateX} alone and holds the
+evaluation function *identical* across arms --- the covariate effect is declared
+with \code{parameter = 0} precisely so that it is inert.
+
+**Design.**  $M = 12$ actors, $N = 12$ components, 30 iterations per actor (360
+ministeps), 20 seed pairs.  $K_{CC}$ shifts mid-run: two \code{XWX} dyadic
+covariates carry $W_{\text{pre}}$ and $W_{\text{post}}$, and \code{theta\_shocks}
+flips their weights from $(1,0)$ to $(0,1)$ at the midpoint, so the firm's
+position carries across the switch and is re-scored under the new structure.
+
+![The $K_{CC}$ switch. Left, the pre-shock interaction matrix $W_{	ext{pre}}$; centre, the post-shock $W_{	ext{post}}$; right, their difference. The shock schedule flips the weights of two \code{XWX} covariates at the midpoint, so actors carry their positions across a change in which components complement which.\label{fig:wswitch}](figures/ishock_w_switch.png){width=100%}
+
+```r
+Wpre  <- create_block_diag(N, 2)
+Wpost <- create_block_diag(N, 3)
+
+mkm <- function(rateX) {
+  rts <- if (rateX == 0) list() else list(
+    list(effect = "RateX", parameter = rateX, dv_name = DV, fix = TRUE,
+         interaction1 = "self$strat_1_coCovar"))
+  list(dv_bipartite = list(name = DV, rates = rts,
+    effects = list(
+      list(effect = "density", parameter = -0.6, dv_name = DV, fix = TRUE),
+      list(effect = "inPop",   parameter = -0.4, dv_name = DV, fix = TRUE)),
+    coCovars = list(
+      list(effect = "egoX", parameter = 0, dv_name = DV, fix = TRUE,
+           interaction1 = "self$strat_1_coCovar", x = grp)),
+    coDyadCovars = list(
+      list(effect = "XWX", parameter = 1, dv_name = DV, fix = TRUE,
+           nodeSet = c("COMPONENTS", "COMPONENTS"),
+           interaction1 = "self$component_1_coDyadCovar", x = Wpre),
+      list(effect = "XWX", parameter = 0, dv_name = DV, fix = TRUE,
+           nodeSet = c("COMPONENTS", "COMPONENTS"),
+           interaction1 = "self$component_2_coDyadCovar", x = Wpost))))
+}
+
+shocks <- list(
+  list(effect_level = c("XWX_1", "XWX_2"), parameter = c(1, 0), portion = 1, shock_on = 0),
+  list(effect_level = c("XWX_1", "XWX_2"), parameter = c(0, 1), portion = 1, shock_on = 1))
+
+env <- SaomNkRSienaBiEnv$new(list(M = M, N = N, BI_PROB = 0.3, rand_seed = 7000 + s))
+env$search_rsiena(structure_model = mkm(rateX), iterations_per_actor = 30,
+                  run_seed = 7000 + s, theta_shocks = shocks)
+```
+
+**Results.**  The rate manipulation separates cleanly: with \code{RateX = 2},
+quick-to-act actors make 51.0 tie changes against 6.7 for slow-to-act, a ratio
+of 7.6, while the control arm sits at 1.05.  Every one of 40 runs shows a
+post-shock fitness valley.  Two results are reported as null and should be:
+neither valley depth ($p = 0.18$) nor time to trough ($p = 0.50$) differs
+between arms.
+
+The substantive finding is a selection wedge.  Comparing movers to
+non-movers in the same treated world gives $-0.054$; comparing each mover to its
+own matched counterfactual gives $-0.032$; the difference, $-0.022$
+($t = -2.46$, $p = 0.015$), is what the observational comparison attributes to
+repositioning that is in fact selection.  Notably, applying the *airline*
+project's decomposition to the same runs gives a mean wedge of $-0.002$ ---
+degenerate, exactly as that decomposition's algebraic identity requires.  Two
+conventions, one dataset, opposite informativeness: a reminder that a
+decomposition's benchmark determines what it can detect.
+
+
+![Rate separation. With \code{RateX} active, quick-to-act actors make 51.0 tie changes against 6.7 for slow-to-act (ratio 7.6) while the control arm sits at 1.05, with evaluation functions held identical across arms.\label{fig:rateseparation}](figures/ishock_rate_separation.png){width=100%}
+
+### Startup workforce formation {#sec:app-workforce}
+
+**Research question.**  Startups hire to build capability, but breadth carries a
+coordination cost.  When does successful co-construction foreclose its own
+continuation?  The Penrose Effect predicts an inverted-U between workforce
+breadth and performance.
+
+**Construct and channels.**  Actors are startups, components are skills.
+Workforce breadth is $K_{AC}$ (\code{outAct}); competition for the same scarce
+skills is $K_{CA}$ (\code{inPop}); skill complementarity within a team is
+$K_{CC}$, entered as an empirically estimated $W$.  Labour-market overlap
+between startups is $K_{AA}$ and is *measured but not driven* --- a good
+illustration of the projection channel used as an outcome.
+
+**Design and calibration.**  $M = 50$ startups, $N = 12$ skills, 20 steps per
+actor.  The parameters are not chosen; they are \pkg{RSiena} point estimates
+from a fitted bipartite SAOM on Crunchbase founding cohorts
+(\code{density} $= -1.756$, \code{inPop} $= 0.022$, \code{outAct} $= 0.089$),
+carried into simulation through the functional API:
+
+```r
+env <- saomnk_env(M = 50, N = 12, density = 0.3, seed = seed)
+
+mod <- saomnk_model(
+  density          = -1.756,   # fitted
+  popularity       =  0.022,   # fitted (K_CA)
+  scope            =  0.089,   # fitted (K_AC)
+  influence_matrix = W_emp,    # empirical epistasis (K_CC)
+  influence_weight = -0.062)
+
+saomnk_run(env, mod, steps_per_actor = 20L, seed = seed + 7L)
+degs <- saomnk_get_degrees(env)   # K_AC, K_CA, K_AA, K_CC read out together
+```
+
+![Utility decomposition for the workforce application, separating each actor's objective into its density, scope and epistasis contributions. The scope term is positive at the fitted parameters, which is why no inverted U appears.\label{fig:bortwaterfall}](figures/bort_utility_waterfall.png){width=85%}
+
+**Results, including a negative one.**  Under the calibrated specification the
+inverted-U *does not appear*: the quadratic coefficient is positive in all seven
+conditions.  The diagnosis is transparent rather than mysterious --- the fitted
+\code{outAct} is $+0.089$, so the estimated model contains no scope-cost term,
+and a curve with no cost cannot bend down.  Re-specifying with \code{scope} $< 0$
+recovers the inverted-U in 8 of 27 cells, and every one of those 8 sits at the
+empirical popularity value.  A further design lets the scope cost regenerate
+from the realised landscape each wave; the inverted-U appears, but the
+emergence ratio is $\approx 0.99$, meaning the curvature passes through from the
+imposed cost rather than being generated by feedback.  We report this because it
+is the kind of result a simulation package should make easy to obtain and hard
+to overstate: the mechanism was not found, and the reason it was not found is
+legible in the fitted parameters.
+
+
+![Workforce application. Left, the $\K$-4 panel for 50 startups over 250 steps, showing all four channels read out together. Right, breadth ($K_{AC}$) against utility; the relationship is monotone and concave, that is diminishing returns, not the inverted U the Penrose Effect predicts.\label{fig:workforce}](figures/bort_k4_panel.png){width=49%}
+![](figures/bort_phase_space.png){width=49%}
+
+### Policy shocks and risk-taking {#sec:app-policy}
+
+**Research question.**  When a government subsidy arrives and later withdraws,
+do treated firms shift toward exploratory activity, and does the shift persist
+once the support is removed?
+
+**Construct and channels.**  A subsidy is modelled as a timed change in an
+actor-covariate effect rather than as a change in the landscape: eligible firms
+receive a positive \code{egoX} weight, together with interactions on scope
+(\code{outAct|egoX}) that make the subsidy's effect depend on how broad the
+firm already is.  $K_{CC}$ carries the exploration structure through \code{XWX}
+with a component risk matrix.  The design exercises \pkg{searchnet}'s shock
+schedule in its three-regime form --- pre-policy, policy, post-policy --- which
+is the natural way to represent a temporary intervention:
+
+```r
+theta_shocks <- list(
+  list(effect_level = c("egoX", "outAct|egoX_1", "outActSqrt|egoX_2"),
+       parameter = c(0, 0, 0),             portion = pre_portion,    shock_on = 0),
+  list(effect_level = c("egoX", "outAct|egoX_1", "outActSqrt|egoX_2"),
+       parameter = c(1, h1_val, h2_val),   portion = policy_portion, shock_on = 1),
+  list(effect_level = c("egoX", "outAct|egoX_1", "outActSqrt|egoX_2"),
+       parameter = c(0, 0, 0),             portion = post_portion,   shock_on = 0))
+
+env <- SaoMNK$new(list(M = M, N = N, init_matrix = init_matrix))
+env$search_rsiena(structure_model = structure_model,
+                  theta_shocks    = theta_shocks,
+                  iterations_per_actor = n_iterations_per_actor * env$N,
+                  run_seed = run_seed)
+```
+
+**Design.**  $M = 18$ firms, $N = 16$ components, 64 iterations per actor; a
+$6 	imes 5 	imes 4 	imes 3$ parameter grid of 360 cells at five seeds each,
+for 1{,}800 simulations.
+
+**What the package supplies.**  The risk-taking trajectory and
+exploration--exploitation plots are produced by \pkg{searchnet}'s own plotting
+layer from the simulated chain, not by bespoke code, which is the intended
+division of labour: the package computes the actor-level series and the analyst
+supplies the contrast.  We show the trajectory panel rather than the
+difference-in-differences panel, because the latter's period axis is ordered
+lexically rather than temporally --- a reminder that a plot returned by a
+package is still the analyst's responsibility to read.
+
+
+![Policy shock. Actor-level risk-taking trajectories for subsidised and control firms across the three-regime shock schedule, plotted by \pkg{searchnet} from the simulated chain; the vertical line marks the policy onset.\label{fig:policyshock}](figures/amr_risk_trajectories.png){width=100%}
+
+### Firm and industry effects {#sec:app-variance}
+
+The variance-decomposition literature asks whether firm or industry effects
+explain more of the variance in profitability.  If firms are competitively
+coupled, the two are not separable in principle, and a simulation in which the
+data-generating process is known can show what a decomposition recovers.
+
+This application is the cleanest illustration of the minimal functional
+pipeline, and we present it as such:
+
+```r
+env <- saomnk_env(M = M, N = N, density = 0.2, seed = seed)
+K   <- make_epistasis_matrix(N, arch_type)      # modular | hierarchical | random
+
+mod <- saomnk_model(density = -0.5, popularity = coupling,
+                    scope = 0.05, influence_matrix = K, influence_weight = 0.1)
+
+saomnk_run(env, mod, steps_per_actor = 15L, seed = seed + 1L)
+bi_mat <- saomnk_get_bipartite(env)
+```
+
+Coupling strength enters through \code{popularity}, sweeping $\{0, 0.1, 0.3,
+0.5, 0.8\}$ across three architectures.  We report the pipeline, not a bias
+estimate: in the present implementation the "true" effects are re-derived from
+the same realised performance the estimator sees, so the recovered bias is zero
+by construction.  Establishing a bias requires taking the truth from the
+generating parameters instead, and that work is ongoing.  We state this because
+a software paper is the wrong place to launder an unfinished result, and because
+the pipeline above is genuinely the shortest path from a specification to a
+simulated bipartite panel.
+
+### Market-access institutions {#sec:app-international}
+
+**Research question.**  Do institutional distances between countries act as
+tolls on entry, or as topology that reshapes which markets are complementary?
+A toll shifts the cost of a market; topology changes what a market is worth
+*given what else the firm holds* --- and the two are separable, because the
+first is a main effect on the component and the second is $K_{CC}$.
+
+**Design.**  A bipartite firm-by-market panel: 534 firms $\times$ 63 markets
+$\times$ 4 waves, 8{,}023 ties, with nine coupling matrices built from CEPII
+gravity data and United Nations voting-similarity scores.  Each matrix enters
+*twice* --- once as a component main effect and once as \code{XWX} --- so the
+two mechanisms compete for the same variance in one model.
+
+![Post-estimation use. Left, a geographic network view produced by \code{saomnk\_plot\_geo\_network()}. Right, a specification curve built with \pkg{searchnet}'s estimate-extraction and scaled-autocorrelation helpers over \pkg{RSiena} fits; these functions existed but were unreachable without \code{:::} until the \code{NAMESPACE} was corrected in 0.6.0.\label{fig:intl}](figures/intl_geo_network.png){width=49%}
+![](figures/intl_spec_curve.png){width=49%}
+
+**Mode of use and result.**  Estimation runs through \pkg{RSiena} directly;
+\pkg{searchnet} is used for the specification curve and network visualisation.
+Both channels operate: a block Wald test gives $\chi^2 = 169.4$ for coupling
+against $143.9$ for the main effects, both on 10 degrees of freedom.  An
+earlier and stronger claim --- that institutions are topology *rather than*
+toll --- was withdrawn after review found the cost-shifting term had been
+operationalised as a country-constant row mean while coupling was firm-varying,
+which is not a fair contest.  The surviving claim is the weaker and better
+supported one, that the distance literature is incomplete rather than
+misspecified.
+
+### Failure modes inherited from \pkg{RSiena} {#sec:app-failures}
+
+Because \pkg{searchnet} delegates estimation to \code{siena07}, it inherits that
+estimator's failure modes, and users should know two of them.
+
+The first is provable.  Under method-of-moments estimation, no effect whose
+observed statistic lies exactly on the boundary of its attainable support can
+converge: the estimate diverges as $\theta \to \pm\infty$.  In a *balanced*
+bipartite panel every actor holds at least one component in every wave, so the
+isolate count is exactly zero and \code{outTrunc(1)} is exactly $M$ --- both
+saturated.  A demonstration on public data changes only the sampling rule: on a
+balanced construction \code{outIso} estimates $-18.65$ (SE $6.62$), a runaway;
+on an unbalanced construction of the same network, where 1{,}547 of 1{,}316
+actor-waves are isolates, it estimates $+3.29$ (SE $0.42$).  The screen is one
+line --- compute $(\text{observed} - \text{lo}) / (\text{hi} - \text{lo})$ and
+refuse exactly $0$ or $1$ --- and it costs nothing to run before estimating.  We
+note that a stronger version of this claim, covering *near*-boundary statistics,
+was tested and refuted: only exact saturation disqualifies.
+
+![Why an exactly saturated statistic cannot converge. In a balanced panel the observed isolate count sits on the boundary of its support, so method of moments can match it only as $	heta 	o -\infty$; the same network sampled to permit entry and exit puts the statistic in the interior and the effect estimates cleanly.\label{fig:boundary}](figures/remedies_boundary.png){width=100%}
+
+The second is a silent-failure pattern rather than a theorem, and it bit this
+package.  \code{RSiena::includeEffects} matches effect names by non-standard
+evaluation, so passing a name held in a variable silently selects nothing.  A
+version of \pkg{searchnet} passed \code{shortName = eff\$effect} into \code{...},
+where the unevaluated expression was deparsed and no effect matched; because the
+call was wrapped in \code{tryCatch(..., error = function(e) warning(...))}, the
+simulation continued with the covariate effect *absent*.  Every actor-covariate
+effect was affected, so results labelled "heterogeneous strategies" were in fact
+homogeneous-actor results.  The package now ships a regression test asserting
+that every effect declared in a \code{structure\_model} appears with
+\code{include == TRUE} in the fitted effects object.  The design lesson
+generalises beyond this package: \code{tryCatch}-to-warning is right for
+interactive exploration and wrong for a simulation engine whose output gets
+published.
 
 
 # Summary and future directions {#sec:conclusion}
