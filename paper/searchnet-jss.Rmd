@@ -33,13 +33,6 @@ abstract: >
   researchers in strategic management, organizational theory, innovation
   economics, and computational social science who study search, adaptation,
   and competitive dynamics on complex landscapes.
-keywords:
-  - NK fitness landscape
-  - stochastic actor-oriented model
-  - bipartite network
-  - strategic search
-  - coupled degree
-  - R
 output:
   rmarkdown::pdf_document:
     keep_tex: true
@@ -79,6 +72,8 @@ library(ggplot2)
 library(Matrix)
 ```
 
+
+**Keywords**: NK fitness landscape, stochastic actor-oriented model, bipartite network, strategic search, coupled degree, R.
 
 # Introduction
 
@@ -265,7 +260,7 @@ influence matrix is $\mathbf{E}$ (implemented in \pkg{RSiena} as the weight
 matrix $\mathbf{W}$ of the \code{XWX} effect); component payoff functions are
 $f_d$; and the logit precision parameter is $\beta > 0$.
 
-A terminological note is warranted here, because the two ideas are routinely conflated.  The matrix $\mathbf{E}$ is an *influence matrix* in the sense of \citet{RivkinSiggelkow2007}: it states which components interact and with what sign, and it is an *input* supplied by the analyst.  *Epistasis* is the *consequence* -- the dependence of one component's fitness contribution on the states of others, which arises when a portfolio is evaluated through $\mathbf{E}$ as $\mathbf{x}^{\top}\mathbf{E}\mathbf{x}$.  The distinction matters in \pkg{searchnet} because the realised epistasis of a simulated system is measured separately, as the component-component degree $K_{CC}$, and generally differs from the influence structure that generated it.  Accordingly the package argument is named \code{influence_matrix}; \code{epistasis_matrix} is retained as a deprecated alias.
+A terminological note is warranted here, because the two ideas are routinely conflated.  The matrix $\mathbf{E}$ is an *influence matrix* in the sense of \citet{RivkinSiggelkow2007}: it states which components interact and with what sign, and it is an *input* supplied by the analyst.  *Epistasis* is the *consequence* -- the dependence of one component's fitness contribution on the states of others, which arises when a portfolio is evaluated through $\mathbf{E}$ as $\mathbf{x}^{\top}\mathbf{E}\mathbf{x}$.  The distinction matters in \pkg{searchnet} because the realised epistasis of a simulated system is measured separately, as the component-component degree $K_{CC}$, and generally differs from the influence structure that generated it.  Accordingly the package argument is named \code{influence\_matrix}; \code{epistasis\_matrix} is retained as a deprecated alias.
 
 ## Bipartite network formulation {#sec:bipartite}
 
@@ -890,15 +885,26 @@ theoretical claims summarized in Section~\ref{sec:formal-properties}.
 
 The first illustration establishes that \pkg{searchnet} can reproduce the
 core dynamics of the classical NK model under appropriate parameter settings.
-We configure a single-agent environment with no endogenous network effects,
-leaving only the exogenous influence matrix active.  This setting strips away
-all SAOM-specific mechanisms, reducing the model to a single searcher navigating
-a landscape whose ruggedness is determined solely by the exogenous coupling
-matrix---the functional equivalent of the classical NK search process.
+We configure an environment with no endogenous network effects, leaving only
+the exogenous influence matrix active.  Setting both \code{popularity} and
+\code{scope} to zero removes every term through which one actor's state can
+enter another's objective function, so the actors search *independently*: the
+model reduces to parallel single-searcher processes on a landscape whose
+ruggedness is determined solely by the exogenous coupling matrix, which is the
+functional equivalent of the classical NK search process.  We use $M = 2$ rather
+than $M = 1$ because \code{search\_rsiena()} requires at least two actors ---
+\pkg{RSiena}'s \code{sienaDataCreate()} does not accept a single-actor
+bipartite network.  For genuinely single-actor work the landscape methods
+(\code{compute\_fitness\_landscape}, \code{verify\_nk\_equivalence}) accept
+$M = 1$ directly, and Section~
+ef{sec:validation} uses them for exactly that.
 
 ```{r levinthal-setup, cache=TRUE}
-## Single agent, 12 components, empty start
-env_nk <- saomnk_env(M = 1, N = 12, density = 0, seed = 1234)
+## Two INDEPENDENT searchers (popularity = scope = 0 removes all coupling),
+## 12 components, empty start.  M >= 2 is required by RSiena's bipartite
+## data constructor; with the interaction terms zeroed the actors do not
+## influence one another, so each is a classical NK searcher.
+env_nk <- saomnk_env(M = 2, N = 12, density = 0, seed = 1234)
 
 ## Block-diagonal epistasis: 3 modules of 4 components (K ~ 3)
 K_levinthal <- saomnk_block_diagonal(12, 3)
@@ -919,11 +925,12 @@ Under this parameterization, the agent's search trajectory exhibits the
 signature features of NK dynamics: rapid initial improvement as the agent
 discovers complementary component clusters, followed by convergence to a
 local optimum where no single-component change improves utility.  The K-4
-panel (not shown for $M = 1$) reduces to the $K_{AC}$ trajectory (actor
-scope) and the $K_{CC}$ trajectory (epistasis), with the latter reflecting
-the fixed block-diagonal structure.
+panel reduces to the $K_{AC}$ trajectory (actor scope) and the $K_{CC}$
+trajectory (epistasis), with the latter reflecting the fixed block-diagonal
+structure; the $K_{CA}$ and $K_{AA}$ channels are flat by construction, since
+nothing couples the two searchers.
 
-```{r levinthal-degrees, fig.height=3.5, fig.width=6, fig.cap="Actor scope ($K_{AC}$) trajectory for a single agent searching on a block-diagonal epistasis landscape.  The trajectory shows rapid scope expansion followed by stabilization---the SAOM equivalent of convergence to a local optimum on a rugged NK landscape."}
+```{r levinthal-degrees, fig.height=3.5, fig.width=6, fig.cap="Actor scope ($K_{AC}$) trajectory for independent agents searching on a block-diagonal epistasis landscape.  The trajectory shows rapid scope expansion followed by stabilization---the SAOM equivalent of convergence to a local optimum on a rugged NK landscape."}
 env_nk$plot_actor_degrees(loess_span = 0.5)
 ```
 
@@ -1182,12 +1189,12 @@ proliferate, deepen, and narrow.  This creates a fundamental tradeoff:
 \item Low $K$: shallow, wide basins---weak moats but high adaptability.
 \end{itemize}
 
-\noindent Figure~\ref{fig:depth-width} illustrates this tradeoff.  Each
+\noindent The following code plots the tradeoff once the basin statistics have been computed.  Each
 point represents a basin; size encodes population.  The diagonal separates
 exploitation-dominant positions (upper-left) from exploration-dominant
 positions (lower-right).
 
-```{r depth-width, eval=FALSE, fig.cap="Depth-width scatter for fitness landscape basins.  Each point is a basin; marker size is proportional to the number of configurations in the basin.  The diagonal separates exploitation-dominant (upper-left) from exploration-dominant (lower-right) positions.\\label{fig:depth-width}"}
+```{r depth-width, eval=FALSE, fig.cap="Depth-width scatter for fitness landscape basins.  Each point is a basin; marker size is proportional to the number of configurations in the basin.  The diagonal separates exploitation-dominant (upper-left) from exploration-dominant (lower-right) positions."}
 par(mar = c(5, 5, 3, 2))
 plot(basin_width, basin_depth,
      pch = 19, cex = sqrt(basin_pop),
@@ -1349,7 +1356,10 @@ time_rsiena <- system.time({
   net_end   <- matrix(0L, nrow = 4, ncol = 6)
   dep_var   <- RSiena::sienaDependent(
     array(c(net_start, net_end), dim = c(4, 6, 2)),
-    type = "bipartite", nodeSet = c("actors", "components")
+    type = "bipartite", nodeSet = c("actors", "components"),
+    ## Both waves are empty, so without allowOnly = FALSE RSiena infers that no
+    ## change is admissible and siena07 rejects the model as having no effects.
+    allowOnly = FALSE
   )
   actors_set <- RSiena::sienaNodeSet(4, nodeSetName = "actors")
   comp_set   <- RSiena::sienaNodeSet(6, nodeSetName = "components")
@@ -1357,6 +1367,8 @@ time_rsiena <- system.time({
     dep_var,
     nodeSets = list(actors_set, comp_set)
   )
+  ## getEffects() already includes the rate and density terms for a bipartite
+  ## dependent variable, which is the specification being timed.
   eff_raw <- RSiena::getEffects(dat_raw)
   alg_raw <- RSiena::sienaAlgorithmCreate(
     projname = "bench_raw",
@@ -1631,7 +1643,7 @@ arrangement is worth describing because it is how the package is validated in
 practice.  A conformance harness runs nine parameter cells $\times$ three seeds
 through both implementations and compares them on three layers: structural
 agreement, trajectory hashes, and *invariants* --- the NK reduction of
-Theorem~\ref{thm:reduction} and monotonicity of crowding in the rivalry
+Theorem 1 (Reduction) and monotonicity of crowding in the rivalry
 parameter.  Its design note states the discipline that makes such a comparison
 meaningful:
 
@@ -1685,7 +1697,7 @@ covariates carry $W_{\text{pre}}$ and $W_{\text{post}}$, and \code{theta\_shocks
 flips their weights from $(1,0)$ to $(0,1)$ at the midpoint, so the firm's
 position carries across the switch and is re-scored under the new structure.
 
-![The $K_{CC}$ switch. Left, the pre-shock interaction matrix $W_{	ext{pre}}$; centre, the post-shock $W_{	ext{post}}$; right, their difference. The shock schedule flips the weights of two \code{XWX} covariates at the midpoint, so actors carry their positions across a change in which components complement which.\label{fig:wswitch}](figures/ishock_w_switch.png){width=100%}
+![The $K_{CC}$ switch. Left, the pre-shock interaction matrix $W_{\text{pre}}$; centre, the post-shock $W_{\text{post}}$; right, their difference. The shock schedule flips the weights of two \code{XWX} covariates at the midpoint, so actors carry their positions across a change in which components complement which.\label{fig:wswitch}](figures/ishock_w_switch.png){width=100%}
 
 ```r
 Wpre  <- create_block_diag(N, 2)
@@ -1837,7 +1849,7 @@ env$search_rsiena(structure_model = structure_model,
 ```
 
 **Design.**  $M = 18$ firms, $N = 16$ components, 64 iterations per actor; a
-$6 	imes 5 	imes 4 	imes 3$ parameter grid of 360 cells at five seeds each,
+$6 \times 5 \times 4 \times 3$ parameter grid of 360 cells at five seeds each,
 for 1{,}800 simulations.
 
 **What the package supplies.**  The risk-taking trajectory and
@@ -1992,7 +2004,7 @@ refuse exactly $0$ or $1$ --- and it costs nothing to run before estimating.  We
 note that a stronger version of this claim, covering *near*-boundary statistics,
 was tested and refuted: only exact saturation disqualifies.
 
-![Why an exactly saturated statistic cannot converge. In a balanced panel the observed isolate count sits on the boundary of its support, so method of moments can match it only as $	heta 	o -\infty$; the same network sampled to permit entry and exit puts the statistic in the interior and the effect estimates cleanly.\label{fig:boundary}](figures/remedies_boundary.png){width=100%}
+![Why an exactly saturated statistic cannot converge. In a balanced panel the observed isolate count sits on the boundary of its support, so method of moments can match it only as $\theta \to -\infty$; the same network sampled to permit entry and exit puts the statistic in the interior and the effect estimates cleanly.\label{fig:boundary}](figures/remedies_boundary.png){width=100%}
 
 The second is a silent-failure pattern rather than a theorem, and it bit this
 package.  \code{RSiena::includeEffects} matches effect names by non-standard
