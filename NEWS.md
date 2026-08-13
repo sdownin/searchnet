@@ -1,3 +1,52 @@
+# searchnet 0.7.0
+
+## New features
+
+* Four diagnostics from the SAOM remedies manuscript are now package functions,
+  so the checks live with the engine rather than in a paper's scripts:
+  `boundary_screen()`, `scope_confound_screen()`, `gof_battery()` and
+  `rate_ladder()`.
+
+  `boundary_screen()` is the one to run first. It classifies candidate
+  degree-threshold effects from the observed data alone, before any model is
+  fitted: a statistic sitting at exactly 0 or exactly 1 of its attainable range
+  cannot converge under method of moments, and nothing else disqualifies an
+  effect. A balanced panel forces that position on every effect keyed to the
+  empty portfolio.
+
+  `scope_confound_screen()` reports the correlation between each coupling
+  statistic and actor scope under raw, row-normalized and banded treatments.
+  Row-normalization does NOT fix the confound, because it lives in the density
+  pattern rather than the scale; banding does.
+
+* `saomnk_model()` gains `influence_arrays` and `influence_array_weights` for
+  **time-varying couplings**. Each entry is an N x N x P array or a list of P
+  N x N matrices, P being periods (one fewer than waves), and generates an
+  RSiena `varDyadCovar` carrying an `XWX` effect. This closes a long-standing
+  gap where the `component_N_varDyadCovar` slots were declared while the
+  assembly returned an empty list, so a coupling could not change between
+  periods.
+
+  Static and time-varying couplings coexist in one model and occupy separate
+  slot sequences, so neither renumbers the other. Callers that do not pass
+  `influence_arrays` are unaffected; that is asserted in the verification suite
+  rather than assumed.
+
+## Verification
+
+* `tests/verify_searchnet_port.R`, 28 checks, all passing. Runnable rather than
+  testthat because the package has no testthat harness wired up; it exits
+  non-zero on failure so it can gate a commit.
+
+## A note on version numbering
+
+Tags `v0.5.0` and `v0.6.0` were never cut: `DESCRIPTION` had already been
+advanced to 0.6.0 while the newest tag was `v0.4.1`, so version and tags had
+drifted two minor versions apart before this release. This release bumps to
+0.7.0 and tags it, which reconciles the two going forward but leaves that gap in
+the tag history rather than back-filling tags for states no one can now
+reconstruct.
+
 # searchnet 0.5.1 (development)
 
 ## New features

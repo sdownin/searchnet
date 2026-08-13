@@ -10,6 +10,74 @@ NULL
 
 
 # ---------------------------------------------------------------------------- #
+# Internal: coerce a time-varying coupling to an N x N x P array                 #
+# ---------------------------------------------------------------------------- #
+
+#' Coerce a time-varying coupling structure to an N x N x P array
+#'
+#' Accepts either an \eqn{N \times N \times P} numeric array or a list of
+#' \eqn{P} \eqn{N \times N} matrices and returns the array form that
+#' \code{sienaDependent}'s \code{varDyadCovar} companion expects.  P counts
+#' PERIODS, one fewer than the number of waves; the wave count itself cannot be
+#' checked here because the model object does not see the dependent variable, so
+#' the engine re-validates it against the actual DV.
+#'
+#' Diagonals are zeroed.  A coupling of a component with itself is not a
+#' coupling, and leaving it non-zero silently inflates every XWX statistic,
+#' which is exactly the class of error that produces a converged model of a
+#' specification the author did not write.
+#'
+#' @param x An array or a list of matrices.
+#' @param nm Name of the coupling, used only in error messages.
+#' @return A numeric \eqn{N \times N \times P} array.
+#' @keywords internal
+#' @noRd
+.saomnk_as_dyad_array <- function(x, nm = "W") {
+  lbl <- sprintf("`influence_arrays[[\"%s\"]]`", nm)
+
+  if (is.list(x) && !is.array(x)) {
+    if (length(x) < 1L)
+      stop(lbl, " is an empty list; it needs one matrix per period.",
+           call. = FALSE)
+    ok <- vapply(x, function(m) is.matrix(m) && is.numeric(m), logical(1))
+    if (!all(ok))
+      stop(lbl, " must be a list of numeric matrices; element(s) ",
+           paste(which(!ok), collapse = ", "), " are not.", call. = FALSE)
+    dims <- vapply(x, dim, integer(2))
+    if (length(unique(as.vector(dims))) != 1L)
+      stop(lbl, " mixes matrix dimensions: ",
+           paste(apply(dims, 2, paste, collapse = "x"), collapse = ", "),
+           ". Every period must share one N x N shape.", call. = FALSE)
+    N <- dims[1, 1]
+    out <- array(0, dim = c(N, N, length(x)))
+    for (i in seq_along(x)) out[, , i] <- x[[i]]
+    dimnames(out) <- list(rownames(x[[1]]), colnames(x[[1]]), NULL)
+  } else if (is.array(x) && length(dim(x)) == 3L) {
+    if (!is.numeric(x)) stop(lbl, " must be numeric.", call. = FALSE)
+    if (dim(x)[1] != dim(x)[2])
+      stop(lbl, " is ", paste(dim(x), collapse = "x"),
+           "; the first two dimensions must be equal (N x N x P).",
+           call. = FALSE)
+    out <- x
+    storage.mode(out) <- "double"
+  } else if (is.matrix(x)) {
+    stop(lbl, " is a single matrix. A time-varying coupling needs one matrix ",
+         "per period; pass it through `epistasis_matrices` if it is static.",
+         call. = FALSE)
+  } else {
+    stop(lbl, " must be an N x N x P array or a list of P N x N matrices.",
+         call. = FALSE)
+  }
+
+  if (dim(out)[3] < 1L)
+    stop(lbl, " has no periods.", call. = FALSE)
+  if (anyNA(out))
+    stop(lbl, " contains NA; couplings must be complete.", call. = FALSE)
+  for (i in seq_len(dim(out)[3])) diag(out[, , i]) <- 0
+  out
+}
+
+# ---------------------------------------------------------------------------- #
 #  Internal constants and helpers
 # ---------------------------------------------------------------------------- #
 
