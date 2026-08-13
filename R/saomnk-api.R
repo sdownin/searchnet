@@ -138,6 +138,19 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #'   \code{influence_matrices}.  Names must match those in
 #'   \code{influence_matrices}.  If \code{NULL} (default), all matrices use
 #'   \code{influence_weight}.
+#' @param influence_arrays Named list of \emph{time-varying} coupling
+#'   structures, one entry per \eqn{W}.  Each entry is either an
+#'   \eqn{N \times N \times P}{N x N x P} numeric array or a list of \eqn{P}
+#'   \eqn{N \times N}{N x N} matrices, where \eqn{P} is the number of
+#'   \emph{periods} in the dependent variable, that is, one fewer than the
+#'   number of waves.  Each entry generates an RSiena \code{varDyadCovar} with
+#'   an \code{XWX} effect, so a coupling can change between periods rather than
+#'   being held constant across the whole panel.  Static
+#'   \code{influence_matrices} and time-varying \code{influence_arrays} may be
+#'   supplied together; they occupy separate slots and both are estimated.
+#' @param influence_array_weights Named numeric vector of weights for each
+#'   entry in \code{influence_arrays}.  Names must match.  If \code{NULL}
+#'   (default), all use \code{influence_weight}.
 #' @param epistasis_matrix,epistasis_weight,epistasis_matrices,epistasis_weights
 #'   \strong{Deprecated} in 0.4.0; renamed to the four \code{influence_*}
 #'   arguments above.  The old names still work and are passed through
@@ -206,6 +219,16 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #'   ),
 #'   epistasis_weights = c(W_modular = 0.2, W_full = -0.1)
 #' )
+#'
+#' ## With a coupling that CHANGES between periods (three waves, two periods)
+#' mod <- saomnk_model(
+#'   density = -0.5,
+#'   influence_arrays = list(
+#'     W_regime = array(c(saomnk_block_diagonal(12, 4),
+#'                        saomnk_block_diagonal(12, 2)), dim = c(12, 12, 2))
+#'   ),
+#'   influence_array_weights = c(W_regime = 0.2)
+#' )
 saomnk_model <- function(density            = -0.5,
                           popularity         = 0,
                           scope              = 0,
@@ -213,6 +236,8 @@ saomnk_model <- function(density            = -0.5,
                           influence_weight   = 0.1,
                           influence_matrices = NULL,
                           influence_weights  = NULL,
+                          influence_arrays   = NULL,
+                          influence_array_weights = NULL,
                           epistasis_matrix   = NULL,
                           epistasis_weight   = NULL,
                           epistasis_matrices = NULL,
@@ -366,6 +391,43 @@ saomnk_model <- function(density            = -0.5,
       )
   }
 
+  ## -- 3b. Time-varying influence (varDyadCovars) ------------------------- ##
+  ## An N x N x P array per coupling, P = waves - 1. These occupy their own
+  ## `self$component_<k>_varDyadCovar` slots, so a model may carry static and
+  ## time-varying couplings at once without either renumbering the other. The
+  ## wave count cannot be checked here (the model does not see the dependent
+  ## variable), so it is validated in the engine against the actual DV.
+  varDyadCovars_list <- list()
+
+  if (!is.null(influence_arrays)) {
+    stopifnot(is.list(influence_arrays), !is.null(names(influence_arrays)),
+              all(nzchar(names(influence_arrays))))
+    if (!is.null(influence_array_weights) &&
+        !all(names(influence_array_weights) %in% names(influence_arrays)))
+      warning("`influence_array_weights` carries names absent from ",
+              "`influence_arrays`; those weights are ignored.", call. = FALSE)
+    for (nm in names(influence_arrays)) {
+      w_arr <- .saomnk_as_dyad_array(influence_arrays[[nm]], nm)
+      w_weight <- if (!is.null(influence_array_weights) &&
+                      nm %in% names(influence_array_weights)) {
+        influence_array_weights[[nm]]
+      } else {
+        influence_weight
+      }
+      slot <- length(varDyadCovars_list) + 1L
+      varDyadCovars_list[[slot]] <-
+        list(
+          effect       = "XWX",
+          parameter    = w_weight,
+          dv_name      = .DV_NAME,
+          fix          = TRUE,
+          nodeSet      = c("COMPONENTS", "COMPONENTS"),
+          interaction1 = sprintf("self$component_%d_varDyadCovar", slot),
+          x            = w_arr
+        )
+    }
+  }
+
   ## Named list of M x N dyadic covariates
   if (!is.null(dyad_covariates)) {
     stopifnot(is.list(dyad_covariates), !is.null(names(dyad_covariates)))
@@ -416,7 +478,7 @@ saomnk_model <- function(density            = -0.5,
       coCovars      = coCovars_list,
       varCovars     = list(),
       coDyadCovars  = coDyadCovars_list,
-      varDyadCovars = list(),
+      varDyadCovars = varDyadCovars_list,
       interactions  = list()
     )
   )
