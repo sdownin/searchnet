@@ -63,6 +63,8 @@ SaomNkRSienaBiEnv_base <- R6Class(
     bipartite_rsienaDV = NULL,
     social_rsienaDV = NULL,
     search_rsienaDV = NULL,
+    behavior_rsienaDV = NULL,   ## behaviour / performance DV coevolving with the bipartite net
+    behavior_values = NULL,     ## the M x waves matrix the behaviour DV was built from
     #
     theta_shocks = NULL,
     theta_matrix = NULL,
@@ -779,6 +781,15 @@ SaomNkRSienaBiEnv_base <- R6Class(
                             fix = fix, verbose = verbose)
           if (!is.null(eff$interaction1) && nzchar(as.character(eff$interaction1)))
             .args_inc$interaction1 <- eff$interaction1
+          ## Two-slot effects. Behaviour effects such as `avXAlt` / `totXAlt`
+          ## and the covariate distance-2 family (`avXInAltDist2`, ...) are
+          ## identified by BOTH a covariate (interaction1) and the network
+          ## through which it reaches ego (interaction2); without
+          ## interaction2 RSiena cannot resolve them. No structure model
+          ## predating behaviour coevolution sets interaction2 on this path,
+          ## so this is inert for them.
+          if (!is.null(eff$interaction2) && nzchar(as.character(eff$interaction2)))
+            .args_inc$interaction2 <- eff$interaction2
           self$rsiena_effects <- do.call(includeEffects, .args_inc)
           if (!is.null(eff$parameter) || !is.null(eff$initialValue)) {
             ## `parameter=` populates the `parm` column that get_theta_matrix() reads;
@@ -790,6 +801,8 @@ SaomNkRSienaBiEnv_base <- R6Class(
             if (!is.null(eff$initialValue)) .args_set$initialValue <- eff$initialValue
             if (!is.null(eff$interaction1) && nzchar(as.character(eff$interaction1)))
               .args_set$interaction1 <- eff$interaction1
+            if (!is.null(eff$interaction2) && nzchar(as.character(eff$interaction2)))
+              .args_set$interaction2 <- eff$interaction2
             self$rsiena_effects <- do.call(setEffect, .args_set)
           }
           if (verbose) cat(sprintf("  [generic] Included effect '%s'\n", eff$effect))
@@ -804,8 +817,29 @@ SaomNkRSienaBiEnv_base <- R6Class(
                                        eff$dv_name, paste(avail, collapse = ", "))
             }
           }
-          warning(sprintf("Effect '%s' could not be included: %s (skipping).%s",
-                          eff$effect, e2$message, available_msg))
+          ## A skipped effect is a silently mis-specified model: the run
+          ## proceeds without the effect the user asked for, and nothing
+          ## downstream shows that it is missing. Effect names are also not
+          ## portable across dependent-variable types -- egoXaltX is a one-mode
+          ## effect and does not exist for a bipartite DV, where the
+          ## dyadic-covariate effect is X -- so this is easy to hit by
+          ## following one-mode examples.
+          ##
+          ## Default is therefore to STOP. Set
+          ##   options(saomnk.skip_missing_effects = TRUE)
+          ## to restore the old permissive behaviour for exploratory work.
+          msg <- sprintf("Effect '%s' could not be included: %s%s",
+                         eff$effect, e2$message, available_msg)
+          if (isTRUE(getOption("saomnk.skip_missing_effects", FALSE))) {
+            warning(paste(msg, "(skipping)"))
+          } else {
+            stop(paste0(msg,
+              "
+  The model would otherwise run WITHOUT this effect. ",
+              "Fix the effect name, or set ",
+              "options(saomnk.skip_missing_effects = TRUE) to skip it."),
+              call. = FALSE)
+          }
         })
       }
       
@@ -1225,6 +1259,33 @@ SaomNkRSienaBiEnv_base <- R6Class(
       return(totInDist2_values)
     },
     
+    ## Number of dependent variables in the current RSiena data object.
+    ## RSiena estimates CONDITIONALLY with exactly one DV (which deletes the
+    ## conditioning DV's basic rate from theta) and UNCONDITIONALLY with two or
+    ## more (which keeps every basic rate in theta). The theta matrix width
+    ## follows from this, so several call sites need to ask.
+    get_n_rsiena_depvars = function() {
+      if (is.null(self$rsiena_data) || is.null(self$rsiena_data$depvars))
+        return(1L)
+      length(self$rsiena_data$depvars)
+    },
+
+    ## The subset of theta columns that belong to the BIPARTITE network's
+    ## evaluation function: the effects whose per-actor statistics the utility
+    ## and K-4 decompositions know how to compute. Excludes basic rates and,
+    ## when a behaviour DV coevolves, that DV's effects -- `linear`, `quad`,
+    ## `avInSimDist2` and the rest are statistics of the behaviour, not of the
+    ## bipartite matrix, and have no decomposition on this path.
+    ##
+    ## For a single-DV model this returns exactly what
+    ## get_rsiena_effects_theta_df(no_rates = TRUE) has always returned.
+    get_bipartite_effects_theta_df = function() {
+      df <- self$get_rsiena_effects_theta_df(
+        no_rates = !(self$get_n_rsiena_depvars() > 1L))
+      df[ df$name == 'self$bipartite_rsienaDV' &
+            !(df$shortName == 'Rate' & df$type == 'rate'), , drop = FALSE ]
+    },
+
     ##
     get_rsiena_effects_theta_df = function(no_rates=TRUE) {
       if (is.null(self$rsiena_effects))
@@ -1316,7 +1377,10 @@ SaomNkRSienaBiEnv_base <- R6Class(
     ##
     get_struct_mod_stats_mat_from_bi_mat = function(bi_env_mat, type='all', .cache=NULL) {
       #
-      theta_df_norates <- self$get_rsiena_effects_theta_df(no_rates=TRUE)
+      ## Bipartite-network effects only: this function computes statistics OF
+      ## bi_env_mat, and a coevolving behaviour DV's effects are not statistics
+      ## of it. Identical to the previous call for single-DV models.
+      theta_df_norates <- self$get_bipartite_effects_theta_df()
       theta_df_norates$effect <-  theta_df_norates$shortName
       #
       ## --- Intermediate result cache (Task 2 optimization) ---
@@ -1571,12 +1635,37 @@ SaomNkRSienaBiEnv_base <- R6Class(
       
       return(mat)
     }
-    
-    
-    
+
+
+
+  ),
+
+  private = list(
+
+    # R6's clone(deep = TRUE) recurses only into fields that are themselves R6
+    # objects. A data.table is not one, so the clone and the original end up
+    # bound to the SAME data.table -- verified: identical addresses, and a
+    # `:=` update on the clone adds a column to the original.
+    #
+    # That matters because `:=` deliberately bypasses R's copy-on-modify. Every
+    # other field here is a value type (matrix, list, plain data.frame) or an
+    # igraph object whose API returns new graphs, so all of those isolate
+    # correctly on their own; the data.tables were the single exception.
+    #
+    # No package code currently trips this: results are installed by assignment
+    # (`self$actor_stats_df <- ...`), never by reference update, so the clone in
+    # plot-markets.R is safe as written. This closes the trap rather than fixing
+    # a live defect -- it is armed the moment anyone writes `:=` against an
+    # env's data.table, and the symptom would be cross-contaminated runs in a
+    # seed batch, which is expensive to diagnose and easy to prevent here.
+    deep_clone = function(name, value) {
+      if (data.table::is.data.table(value)) return(data.table::copy(value))
+      value
+    }
+
   )
-    
-    
+
+
 )
 
 

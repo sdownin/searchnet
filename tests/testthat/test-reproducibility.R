@@ -27,7 +27,7 @@ test_that("same seed produces identical initial bipartite matrix", {
 test_that("same seed + same M/N/density via saomnk_env gives identical init", {
   tryCatch(
     source(file.path(dir_r, "saomnk-api.R"), local = FALSE),
-    error = function(e) skip("Could not source saomnk-api.R")
+    error = function(e) stop("Could not source saomnk-api.R")
   )
 
   env1 <- saomnk_env(M = 6, N = 10, density = 0.3, seed = 42)
@@ -48,11 +48,11 @@ test_that("same run_seed produces identical final bipartite matrix", {
 
   env1 <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 600),
-    error = function(e) skip(paste("Sim 1 failed:", e$message))
+    error = function(e) stop(paste("Sim 1 failed:", e$message))
   )
   env2 <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 600),
-    error = function(e) skip(paste("Sim 2 failed:", e$message))
+    error = function(e) stop(paste("Sim 2 failed:", e$message))
   )
 
   expect_identical(env1$bipartite_matrix, env2$bipartite_matrix)
@@ -63,11 +63,11 @@ test_that("same run_seed produces identical chain_stats length", {
 
   env1 <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 601),
-    error = function(e) skip(paste("Sim 1 failed:", e$message))
+    error = function(e) stop(paste("Sim 1 failed:", e$message))
   )
   env2 <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 601),
-    error = function(e) skip(paste("Sim 2 failed:", e$message))
+    error = function(e) stop(paste("Sim 2 failed:", e$message))
   )
 
   if (is.data.frame(env1$chain_stats) && is.data.frame(env2$chain_stats)) {
@@ -80,11 +80,11 @@ test_that("same seed produces identical bi_env_arr trajectories", {
 
   env1 <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 602),
-    error = function(e) skip(paste("Sim 1 failed:", e$message))
+    error = function(e) stop(paste("Sim 1 failed:", e$message))
   )
   env2 <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 602),
-    error = function(e) skip(paste("Sim 2 failed:", e$message))
+    error = function(e) stop(paste("Sim 2 failed:", e$message))
   )
 
   if (!is.null(env1$bi_env_arr) && !is.null(env2$bi_env_arr)) {
@@ -97,11 +97,11 @@ test_that("same seed produces identical K_AC_df", {
 
   env1 <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 603),
-    error = function(e) skip(paste("Sim 1 failed:", e$message))
+    error = function(e) stop(paste("Sim 1 failed:", e$message))
   )
   env2 <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 603),
-    error = function(e) skip(paste("Sim 2 failed:", e$message))
+    error = function(e) stop(paste("Sim 2 failed:", e$message))
   )
 
   if (!is.null(env1$K_AC_df) && !is.null(env2$K_AC_df)) {
@@ -132,14 +132,14 @@ test_that("different run seeds produce different simulation outcomes", {
 
   env1 <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 10, rand_seed = 700),
-    error = function(e) skip(paste("Sim 1 failed:", e$message))
+    error = function(e) stop(paste("Sim 1 failed:", e$message))
   )
 
   ## Create env2 with same init but different run seed
   params2 <- make_small_environ_params(M = 4, N = 8, rand_seed = 700)
   env2 <- tryCatch(
     SaomNkRSienaBiEnv$new(params2),
-    error = function(e) skip(paste("Init 2 failed:", e$message))
+    error = function(e) stop(paste("Init 2 failed:", e$message))
   )
   struct <- make_minimal_structure_model()
   tryCatch(
@@ -149,7 +149,7 @@ test_that("different run seeds produce different simulation outcomes", {
       run_seed = 999,  # different run seed
       verbose = FALSE
     ),
-    error = function(e) skip(paste("Sim 2 failed:", e$message))
+    error = function(e) stop(paste("Sim 2 failed:", e$message))
   )
 
   ## Initial matrices should be identical (same env seed)
@@ -173,7 +173,7 @@ test_that("three consecutive runs with same seed all produce identical output", 
   for (i in 1:3) {
     results[[i]] <- tryCatch(
       run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 888),
-      error = function(e) skip(paste("Sim", i, "failed:", e$message))
+      error = function(e) stop(paste("Sim", i, "failed:", e$message))
     )
   }
 

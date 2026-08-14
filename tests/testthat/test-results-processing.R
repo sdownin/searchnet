@@ -8,7 +8,7 @@ test_that("actor_util_df is a data frame with expected columns after simulation"
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 101),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   util_df <- env$actor_util_df
@@ -33,7 +33,7 @@ test_that("K4 statistics exist with correct structure after simulation", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 102),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   ## K_AA, K_AC, K_CA, K_CC should be data frames (or at least not NULL)
@@ -58,7 +58,7 @@ test_that("chain_stats is populated after simulation", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 103),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   cs <- env$chain_stats
@@ -79,12 +79,12 @@ test_that("get_bipartite_matrix_from_rsiena_model returns MxN matrix", {
   N <- 8
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 104),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   bi_mat <- tryCatch(
     env$get_bipartite_matrix_from_rsiena_model(),
-    error = function(e) skip(paste("get_bipartite_matrix failed:", e$message))
+    error = function(e) stop(paste("get_bipartite_matrix failed:", e$message))
   )
 
   expect_true(is.matrix(bi_mat))
@@ -101,7 +101,7 @@ test_that("bi_env_arr is a 3D array after simulation", {
   N <- 8
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 105),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   arr <- env$bi_env_arr
@@ -121,7 +121,7 @@ test_that("theta_matrix is populated after simulation", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 106),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   tm <- env$theta_matrix

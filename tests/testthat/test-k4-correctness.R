@@ -158,12 +158,13 @@ test_that("K values match hand-computation from bi_env_arr", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 500),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
-  if (is.null(env$bi_env_arr) || is.null(env$K_AC_df)) {
-    skip("bi_env_arr or K_AC_df not populated")
-  }
+  ## Both are postconditions of the run above; assert rather than skip, so a
+  ## silently empty engine result fails instead of reporting green.
+  expect_false(is.null(env$bi_env_arr))
+  expect_false(is.null(env$K_AC_df))
 
   ## Pick the first step and verify K_AC matches rowSums
   step <- 1
@@ -183,12 +184,11 @@ test_that("K_CA values match hand-computation from bi_env_arr", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 501),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
-  if (is.null(env$bi_env_arr) || is.null(env$K_CA_df)) {
-    skip("bi_env_arr or K_CA_df not populated")
-  }
+  expect_false(is.null(env$bi_env_arr))
+  expect_false(is.null(env$K_CA_df))
 
   step <- 1
   B <- env$bi_env_arr[, , step]
@@ -207,12 +207,11 @@ test_that("K_AA values match hand-computation from bi_env_arr", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 502),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
-  if (is.null(env$bi_env_arr) || is.null(env$K_AA_df)) {
-    skip("bi_env_arr or K_AA_df not populated")
-  }
+  expect_false(is.null(env$bi_env_arr))
+  expect_false(is.null(env$K_AA_df))
 
   step <- 1
   B <- env$bi_env_arr[, , step]
@@ -232,12 +231,11 @@ test_that("K_CC values match hand-computation from bi_env_arr", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 503),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
-  if (is.null(env$bi_env_arr) || is.null(env$K_CC_df)) {
-    skip("bi_env_arr or K_CC_df not populated")
-  }
+  expect_false(is.null(env$bi_env_arr))
+  expect_false(is.null(env$K_CC_df))
 
   step <- 1
   B <- env$bi_env_arr[, , step]
@@ -261,12 +259,11 @@ test_that("K_AC sum equals total number of ties at each step", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 510),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
-  if (is.null(env$bi_env_arr) || is.null(env$K_AC_df)) {
-    skip("Required data not populated")
-  }
+  expect_false(is.null(env$bi_env_arr))
+  expect_false(is.null(env$K_AC_df))
 
   n_steps <- dim(env$bi_env_arr)[3]
   ## Check a few steps
@@ -289,12 +286,11 @@ test_that("Sum of K_AC equals sum of K_CA at each step (conservation)", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 520),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
-  if (is.null(env$K_AC_df) || is.null(env$K_CA_df)) {
-    skip("K degree data not populated")
-  }
+  expect_false(is.null(env$K_AC_df))
+  expect_false(is.null(env$K_CA_df))
 
   ## Both K_AC and K_CA sum to total number of ties at each step
   steps <- unique(env$K_AC_df$chain_step_id)

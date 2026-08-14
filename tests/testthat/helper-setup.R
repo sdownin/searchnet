@@ -13,42 +13,80 @@ if (!file.exists(file.path(pkg_root, "R", "saomnk-base.R"))) {
 
 dir_r <- file.path(pkg_root, "R")
 
-## Load only the packages needed for the core R6 classes
+## Attach the packages NAMESPACE imports from, read FROM NAMESPACE.
+##
+## Sourcing R/*.R directly does not activate importFrom() directives, so every
+## imported function has to be on the search path some other way. This used to
+## be a hand-written library() list, and it drifted: it named 13 packages while
+## NAMESPACE imported from 11 more, so `hue_pal` (scales) was simply absent and
+## test-plotting.R died with "could not find function". Same failure as the
+## hand-written source list below -- a second copy of a dependency list, kept by
+## hand, going stale.
+##
+## Deriving the list means adding an importFrom() to NAMESPACE is enough; the
+## harness follows automatically.
 suppressPackageStartupMessages({
   suppressWarnings({
-    library(R6)
-    library(igraph)
-    library(RSiena)
-    library(ggplot2)
-    library(dplyr)
-    library(plyr)
-    library(tidyr)
-    library(Matrix)
-    library(reshape2)
-    library(uuid)
-    library(grid)
-    library(gridExtra)
-    library(texreg)
-    if (requireNamespace("xml2", quietly = TRUE)) library(xml2)
-    if (requireNamespace("rvest", quietly = TRUE)) library(rvest)
+    .ns <- readLines(file.path(pkg_root, "NAMESPACE"), warn = FALSE)
+    .pkgs <- unique(c(
+      "R6",
+      sub("^importFrom\\(([^,]+),.*$", "\\1", grep("^importFrom\\(", .ns, value = TRUE)),
+      sub("^import\\(([^)]+)\\).*$",  "\\1", grep("^import\\(",     .ns, value = TRUE))
+    ))
+    .pkgs <- setdiff(trimws(.pkgs), c("", "base"))
+    for (.p in .pkgs) {
+      ## Optional/Suggests packages must not abort the run; a genuinely missing
+      ## hard dependency will surface as the first "could not find function".
+      if (requireNamespace(.p, quietly = TRUE)) {
+        suppressMessages(library(.p, character.only = TRUE))
+      }
+    }
+    ## Packages used by the package but not reached through importFrom(), so the
+    ## derivation above cannot see them. RSiena is a hard dependency of every
+    ## simulation test; xml2/rvest are Suggests used by preview_effects(), which
+    ## calls read_html() -- dropping them turned that test into an error.
+    for (.p in c("RSiena", "xml2", "rvest")) {
+      if (requireNamespace(.p, quietly = TRUE)) {
+        suppressMessages(library(.p, character.only = TRUE))
+      }
+    }
   })
 })
 
-## Source the R6 classes in dependency order
+## Source the package via inst/saomnk-loader.R, which discovers every file in R/
+## by glob with the R6 hierarchy (utils -> saomnk-base -> saomnk-class) first.
+##
+## This used to hand-list four files. That is the same defect NEWS records fixing
+## in the loader at v0.3.3, where sourcing 11 of 28 files left whole modules
+## absent -- and the second copy of the list drifted the same way: when behaviour
+## coevolution added a `.searchnet_has_behavior()` call inside saomnk-class.R,
+## searchnet-behavior.R was not on this list, so EVERY simulation-dependent test
+## died with "could not find function" and the surrounding tryCatch turned that
+## into a skip. Five test files reported green while the simulation path was
+## entirely broken.
+##
+## Delegating to the loader means load order is defined in exactly one place and
+## cannot drift from the package again.
 suppressPackageStartupMessages({
   suppressWarnings({
-    tryCatch({
-      source(file.path(dir_r, "utils.R"), local = FALSE)
-      source(file.path(dir_r, "saomnk-base.R"), local = FALSE)
-      source(file.path(dir_r, "saomnk-class.R"), local = FALSE)
-      ## Mean-field solver (Theorem 4)
-      mf_path <- file.path(dir_r, "mean_field_solver.R")
-      if (file.exists(mf_path)) source(mf_path, local = FALSE)
-    }, error = function(e) {
-      message("Failed to source searchnet R6 classes: ", e$message)
-    })
+    loader <- file.path(pkg_root, "inst", "saomnk-loader.R")
+    if (file.exists(loader)) {
+      source(loader, local = FALSE)
+    } else {
+      ## Fallback: glob in the loader's order. Deliberately NOT a curated list.
+      r_files <- list.files(dir_r, pattern = "[.]R$", full.names = TRUE)
+      first <- file.path(dir_r, c("utils.R", "saomnk-base.R", "saomnk-class.R"))
+      for (f in c(first[file.exists(first)], sort(setdiff(r_files, first)))) {
+        source(f, local = FALSE)
+      }
+    }
   })
 })
+
+## No tryCatch around the above. It previously downgraded a sourcing failure to a
+## message(), so a package that would not load produced a full run of skips
+## rather than one loud error. If the package cannot be sourced, every result
+## after this point is meaningless and the run should stop here.
 
 ## ---- Shared constants ----
 DV_NAME <- "self$bipartite_rsienaDV"

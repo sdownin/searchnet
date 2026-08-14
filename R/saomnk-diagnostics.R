@@ -94,8 +94,7 @@
 #' plot(result, type = "curve")
 #'
 #' @importFrom stats setNames pnorm qnorm median
-#' @keywords internal
-#' @noRd
+#' @export
 saomnk_sai <- function(estimates, reference = NULL, weights = NULL, alpha = 0.05,
                         effects = NULL) {
 
@@ -334,8 +333,7 @@ print.saomnk_sai <- function(x, ...) {
 #' @importFrom ggplot2 ggplot aes geom_hline geom_segment geom_point
 #'   scale_color_manual facet_wrap labs theme_minimal theme element_text
 #'   geom_tile geom_text scale_fill_gradient2 geom_vline geom_errorbarh
-#' @keywords internal
-#' @noRd
+#' @exportS3Method
 plot.saomnk_sai <- function(x, type = c("curve", "tile", "forest"),
                              effects = NULL, ...) {
 
@@ -839,8 +837,7 @@ saomnk_map_effects <- function(saom_effects, tergm_effects,
 #' @return A data.frame with columns: effect, specification, estimate,
 #'   std_error, convergence_t.
 #'
-#' @keywords internal
-#' @noRd
+#' @export
 saomnk_extract_estimates_saom <- function(fit, specification = "saom",
                                            include_rate = FALSE) {
   if (!requireNamespace("RSiena", quietly = TRUE)) {

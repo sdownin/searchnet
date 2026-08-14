@@ -293,7 +293,7 @@ test_that("NK component is sole contributor when beta_F=1, all others=0", {
       project_int_mat = TRUE,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("compute_fitness_landscape failed:", e$message))
+    error = function(e) stop(paste("compute_fitness_landscape failed:", e$message))
   )
 
   util <- env$compute_formal_utility(

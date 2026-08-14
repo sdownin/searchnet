@@ -145,7 +145,7 @@ saomnk_plot_K_attribute_shocks <- function(env,
   # Prepare data
   plot_data <- Kdf_new %>%
     mutate(
-      period = ifelse(chain_step_id < shock_times, "Pre-shock", "Post-shock"),
+      period = factor(ifelse(chain_step_id < shock_times, "Pre-shock", "Post-shock"), levels = c("Pre-shock", "Post-shock")),
       treatment = ifelse(strategy == "100", "Treated", "Control")
     ) %>%
     group_by(chain_step_id, treatment) %>%

@@ -25,13 +25,13 @@ run_dgp_sim <- function(model, M = 4, N = 6, density = 0.3,
 
   env <- tryCatch(
     saomnk_env(M = M, N = N, density = density, seed = seed),
-    error = function(e) skip(paste("saomnk_env failed:", e$message))
+    error = function(e) stop(paste("saomnk_env failed:", e$message))
   )
 
   tryCatch(
     saomnk_run(env, model, steps_per_actor = steps_per_actor,
                seed = seed, verbose = FALSE),
-    error = function(e) skip(paste("saomnk_run failed:", e$message))
+    error = function(e) stop(paste("saomnk_run failed:", e$message))
   )
 
   env
@@ -40,8 +40,12 @@ run_dgp_sim <- function(model, M = 4, N = 6, density = 0.3,
 
 # Helper: extract final-step K_AC values from an env
 get_final_k_ac <- function(env) {
+  ## An empty stats table after a successful run is the defect, not a reason to
+  ## skip: RSiena is present and the run did not throw, so the engine produced
+  ## nothing. stop() rather than expect_*() because a failed expectation inside
+  ## a helper does not abort, and the lines below would then error on NULL.
   if (is.null(env$K_AC_df) || nrow(env$K_AC_df) == 0)
-    skip("K_AC_df not populated")
+    stop("K_AC_df not populated after a successful run")
   last_step <- max(env$K_AC_df$chain_step_id)
   vals <- env$K_AC_df$value[env$K_AC_df$chain_step_id == last_step]
   vals
@@ -50,8 +54,9 @@ get_final_k_ac <- function(env) {
 
 # Helper: extract final-step K_CA values from an env
 get_final_k_ca <- function(env) {
+  ## See get_final_k_ac above for why this is stop() and not skip().
   if (is.null(env$K_CA_df) || nrow(env$K_CA_df) == 0)
-    skip("K_CA_df not populated")
+    stop("K_CA_df not populated after a successful run")
   last_step <- max(env$K_CA_df$chain_step_id)
   vals <- env$K_CA_df$value[env$K_CA_df$chain_step_id == last_step]
   vals
@@ -68,7 +73,7 @@ test_that("Strong negative density produces sparse networks (mean K_AC < N/2)", 
   env <- tryCatch(
     run_dgp_sim(mod, M = M, N = N, density = 0.5, seed = 101,
                 steps_per_actor = 10),
-    error = function(e) skip(paste("Simulation error:", e$message))
+    error = function(e) stop(paste("Simulation error:", e$message))
   )
 
   k_ac <- get_final_k_ac(env)
@@ -87,7 +92,7 @@ test_that("Zero density effect yields mean scope near N/2", {
   env <- tryCatch(
     run_dgp_sim(mod, M = M, N = N, density = 0.5, seed = 202,
                 steps_per_actor = 10),
-    error = function(e) skip(paste("Simulation error:", e$message))
+    error = function(e) stop(paste("Simulation error:", e$message))
   )
 
   k_ac <- get_final_k_ac(env)
@@ -111,7 +116,7 @@ test_that("Positive inPop produces more right-skewed K_CA than baseline", {
   env_base <- tryCatch(
     run_dgp_sim(mod_base, M = M, N = N, density = 0.3, seed = 301,
                 steps_per_actor = 10),
-    error = function(e) skip(paste("Baseline sim error:", e$message))
+    error = function(e) stop(paste("Baseline sim error:", e$message))
   )
 
   ## Treatment: density + strong inPop
@@ -119,7 +124,7 @@ test_that("Positive inPop produces more right-skewed K_CA than baseline", {
   env_pop <- tryCatch(
     run_dgp_sim(mod_pop, M = M, N = N, density = 0.3, seed = 301,
                 steps_per_actor = 10),
-    error = function(e) skip(paste("inPop sim error:", e$message))
+    error = function(e) stop(paste("inPop sim error:", e$message))
   )
 
   k_ca_base <- get_final_k_ca(env_base)
@@ -156,11 +161,10 @@ test_that("XWX with block-diagonal W concentrates within-block ties", {
   env <- tryCatch(
     run_dgp_sim(mod, M = M, N = N, density = 0.3, seed = 401,
                 steps_per_actor = 10),
-    error = function(e) skip(paste("XWX sim error:", e$message))
+    error = function(e) stop(paste("XWX sim error:", e$message))
   )
 
-  if (is.null(env$bi_env_arr))
-    skip("bi_env_arr not populated")
+  expect_false(is.null(env$bi_env_arr))
 
   ## Get the final bipartite matrix
   n_steps <- dim(env$bi_env_arr)[3]
@@ -201,17 +205,17 @@ test_that("Same seed produces identical K_AC trajectories", {
   env1 <- tryCatch(
     run_dgp_sim(mod, M = M, N = N, density = 0.3, seed = 501,
                 steps_per_actor = 5),
-    error = function(e) skip(paste("Reproducibility sim 1 error:", e$message))
+    error = function(e) stop(paste("Reproducibility sim 1 error:", e$message))
   )
 
   env2 <- tryCatch(
     run_dgp_sim(mod, M = M, N = N, density = 0.3, seed = 501,
                 steps_per_actor = 5),
-    error = function(e) skip(paste("Reproducibility sim 2 error:", e$message))
+    error = function(e) stop(paste("Reproducibility sim 2 error:", e$message))
   )
 
-  if (is.null(env1$K_AC_df) || is.null(env2$K_AC_df))
-    skip("K_AC_df not populated in one or both envs")
+  expect_false(is.null(env1$K_AC_df))
+  expect_false(is.null(env2$K_AC_df))
 
   ## Values should be identical at every chain step
   expect_equal(env1$K_AC_df$value, env2$K_AC_df$value,
@@ -227,17 +231,17 @@ test_that("Different seed produces different K_AC trajectories", {
   env1 <- tryCatch(
     run_dgp_sim(mod, M = M, N = N, density = 0.3, seed = 601,
                 steps_per_actor = 5),
-    error = function(e) skip(paste("Diff-seed sim 1 error:", e$message))
+    error = function(e) stop(paste("Diff-seed sim 1 error:", e$message))
   )
 
   env2 <- tryCatch(
     run_dgp_sim(mod, M = M, N = N, density = 0.3, seed = 602,
                 steps_per_actor = 5),
-    error = function(e) skip(paste("Diff-seed sim 2 error:", e$message))
+    error = function(e) stop(paste("Diff-seed sim 2 error:", e$message))
   )
 
-  if (is.null(env1$K_AC_df) || is.null(env2$K_AC_df))
-    skip("K_AC_df not populated")
+  expect_false(is.null(env1$K_AC_df))
+  expect_false(is.null(env2$K_AC_df))
 
   ## With different seeds, values should differ at some step
   ## (vanishingly unlikely to match across all steps)

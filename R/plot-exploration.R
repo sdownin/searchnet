@@ -29,7 +29,7 @@ saomnk_plot_exploration_exploitation_consistent <- function(
 ) {
 
   # Get actor strategies - matching the utility plot logic
-  if (attr(env$strat_1_coCovar, 'nodeSet') != 'ACTORS')
+  if (!identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS'))
     stop("Actor Strategy env$strat_1_coCovar not set.")
 
   actor_strat <- env$get_actor_strategies()
@@ -742,7 +742,7 @@ saomnk_plot_exploration_exploitation_improved <- function(
 ) {
 
   # Get actor strategies
-  if (attr(env$strat_1_coCovar, 'nodeSet') != 'ACTORS')
+  if (!identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS'))
     stop("Actor Strategy env$strat_1_coCovar not set.")
 
   actor_strat <- env$get_actor_strategies()
@@ -1601,7 +1601,7 @@ saomnk_plot_did_exploration <- function(
   # Calculate summaries in two steps to avoid n() issues
   did_summary <- metrics_df %>%
     dplyr::mutate(
-      period = ifelse(chain_step_id < treatment_time, "Pre", "Post"),
+      period = factor(ifelse(chain_step_id < treatment_time, "Pre", "Post"), levels = c("Pre", "Post")),
       treatment = ifelse(strategy == "100", "Treated", "Control")
     ) %>%
     dplyr::group_by(period, treatment) %>%

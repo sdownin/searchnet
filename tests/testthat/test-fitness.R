@@ -11,7 +11,7 @@ test_that("compute_fitness_landscape produces valid landscape array", {
   N <- 6  ## Keep N small -- 2^N combinations computed
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 400),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   n_lands <- 5
@@ -24,7 +24,7 @@ test_that("compute_fitness_landscape produces valid landscape array", {
       component_value_sd = 0.1,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("compute_fitness_landscape failed:", e$message))
+    error = function(e) stop(paste("compute_fitness_landscape failed:", e$message))
   )
 
   fl <- env$fitness_landscape
@@ -48,7 +48,7 @@ test_that("compute_fitness_landscape works with different N values", {
   N <- 4
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 401),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   tryCatch(
@@ -57,7 +57,7 @@ test_that("compute_fitness_landscape works with different N values", {
       project_int_mat = TRUE,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("compute_fitness_landscape failed:", e$message))
+    error = function(e) stop(paste("compute_fitness_landscape failed:", e$message))
   )
 
   fl <- env$fitness_landscape
@@ -74,7 +74,7 @@ test_that("fitness landscape contains local peaks", {
   N <- 4
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 402),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   tryCatch(
@@ -83,7 +83,7 @@ test_that("fitness landscape contains local peaks", {
       project_int_mat = TRUE,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("compute_fitness_landscape failed:", e$message))
+    error = function(e) stop(paste("compute_fitness_landscape failed:", e$message))
   )
 
   fl <- env$fitness_landscape
@@ -110,7 +110,7 @@ test_that("process_fitness_landscape runs without error", {
   N <- 4
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 403),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   ## compute_fitness_landscape first (process_ calls it if missing, but let us
@@ -121,17 +121,16 @@ test_that("process_fitness_landscape runs without error", {
       project_int_mat = TRUE,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("compute_fitness_landscape failed:", e$message))
+    error = function(e) stop(paste("compute_fitness_landscape failed:", e$message))
   )
 
-  ## process_fitness_landscape requires theta_matrix
-  if (is.null(env$theta_matrix)) {
-    skip("theta_matrix is NULL; cannot test process_fitness_landscape")
-  }
+  ## process_fitness_landscape requires theta_matrix, and the run above should
+  ## have built one. A NULL here is the defect, not a missing precondition.
+  expect_false(is.null(env$theta_matrix))
 
   result <- tryCatch(
     env$process_fitness_landscape(actor_ids = 1:M, step_ids = 1:3),
-    error = function(e) skip(paste("process_fitness_landscape failed:", e$message))
+    error = function(e) stop(paste("process_fitness_landscape failed:", e$message))
   )
 
   ## The method should complete without error

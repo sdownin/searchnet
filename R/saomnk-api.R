@@ -10,6 +10,74 @@ NULL
 
 
 # ---------------------------------------------------------------------------- #
+# Internal: coerce a time-varying coupling to an N x N x P array                 #
+# ---------------------------------------------------------------------------- #
+
+#' Coerce a time-varying coupling structure to an N x N x P array
+#'
+#' Accepts either an \eqn{N \times N \times P} numeric array or a list of
+#' \eqn{P} \eqn{N \times N} matrices and returns the array form that
+#' \code{sienaDependent}'s \code{varDyadCovar} companion expects.  P counts
+#' PERIODS, one fewer than the number of waves; the wave count itself cannot be
+#' checked here because the model object does not see the dependent variable, so
+#' the engine re-validates it against the actual DV.
+#'
+#' Diagonals are zeroed.  A coupling of a component with itself is not a
+#' coupling, and leaving it non-zero silently inflates every XWX statistic,
+#' which is exactly the class of error that produces a converged model of a
+#' specification the author did not write.
+#'
+#' @param x An array or a list of matrices.
+#' @param nm Name of the coupling, used only in error messages.
+#' @return A numeric \eqn{N \times N \times P} array.
+#' @keywords internal
+#' @noRd
+.saomnk_as_dyad_array <- function(x, nm = "W") {
+  lbl <- sprintf("`influence_arrays[[\"%s\"]]`", nm)
+
+  if (is.list(x) && !is.array(x)) {
+    if (length(x) < 1L)
+      stop(lbl, " is an empty list; it needs one matrix per period.",
+           call. = FALSE)
+    ok <- vapply(x, function(m) is.matrix(m) && is.numeric(m), logical(1))
+    if (!all(ok))
+      stop(lbl, " must be a list of numeric matrices; element(s) ",
+           paste(which(!ok), collapse = ", "), " are not.", call. = FALSE)
+    dims <- vapply(x, dim, integer(2))
+    if (length(unique(as.vector(dims))) != 1L)
+      stop(lbl, " mixes matrix dimensions: ",
+           paste(apply(dims, 2, paste, collapse = "x"), collapse = ", "),
+           ". Every period must share one N x N shape.", call. = FALSE)
+    N <- dims[1, 1]
+    out <- array(0, dim = c(N, N, length(x)))
+    for (i in seq_along(x)) out[, , i] <- x[[i]]
+    dimnames(out) <- list(rownames(x[[1]]), colnames(x[[1]]), NULL)
+  } else if (is.array(x) && length(dim(x)) == 3L) {
+    if (!is.numeric(x)) stop(lbl, " must be numeric.", call. = FALSE)
+    if (dim(x)[1] != dim(x)[2])
+      stop(lbl, " is ", paste(dim(x), collapse = "x"),
+           "; the first two dimensions must be equal (N x N x P).",
+           call. = FALSE)
+    out <- x
+    storage.mode(out) <- "double"
+  } else if (is.matrix(x)) {
+    stop(lbl, " is a single matrix. A time-varying coupling needs one matrix ",
+         "per period; pass it through `epistasis_matrices` if it is static.",
+         call. = FALSE)
+  } else {
+    stop(lbl, " must be an N x N x P array or a list of P N x N matrices.",
+         call. = FALSE)
+  }
+
+  if (dim(out)[3] < 1L)
+    stop(lbl, " has no periods.", call. = FALSE)
+  if (anyNA(out))
+    stop(lbl, " contains NA; couplings must be complete.", call. = FALSE)
+  for (i in seq_len(dim(out)[3])) diag(out[, , i]) <- 0
+  out
+}
+
+# ---------------------------------------------------------------------------- #
 #  Internal constants and helpers
 # ---------------------------------------------------------------------------- #
 
@@ -138,6 +206,19 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #'   \code{influence_matrices}.  Names must match those in
 #'   \code{influence_matrices}.  If \code{NULL} (default), all matrices use
 #'   \code{influence_weight}.
+#' @param influence_arrays Named list of \emph{time-varying} coupling
+#'   structures, one entry per \eqn{W}.  Each entry is either an
+#'   \eqn{N \times N \times P}{N x N x P} numeric array or a list of \eqn{P}
+#'   \eqn{N \times N}{N x N} matrices, where \eqn{P} is the number of
+#'   \emph{periods} in the dependent variable, that is, one fewer than the
+#'   number of waves.  Each entry generates an RSiena \code{varDyadCovar} with
+#'   an \code{XWX} effect, so a coupling can change between periods rather than
+#'   being held constant across the whole panel.  Static
+#'   \code{influence_matrices} and time-varying \code{influence_arrays} may be
+#'   supplied together; they occupy separate slots and both are estimated.
+#' @param influence_array_weights Named numeric vector of weights for each
+#'   entry in \code{influence_arrays}.  Names must match.  If \code{NULL}
+#'   (default), all use \code{influence_weight}.
 #' @param epistasis_matrix,epistasis_weight,epistasis_matrices,epistasis_weights
 #'   \strong{Deprecated} in 0.4.0; renamed to the four \code{influence_*}
 #'   arguments above.  The old names still work and are passed through
@@ -166,7 +247,9 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #' @param dyad_covariate An \eqn{M \times N}{M x N} actor-by-component
 #'   covariate matrix, or \code{NULL} (default).
 #' @param dyad_covariate_effect Character. RSiena effect name for
-#'   \code{dyad_covariate} (default \code{"egoXaltX"}).
+#'   \code{dyad_covariate} (default \code{"X"}, the dyadic-covariate effect
+#'   for a bipartite dependent variable; \code{egoXaltX} is a one-mode
+#'   effect and is NOT valid here).
 #' @param dyad_covariate_weight Numeric. Weight for the dyad covariate effect
 #'   (default \code{0.1}).
 #' @param \dots Additional effects specified as named lists and appended to the
@@ -204,6 +287,16 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #'   ),
 #'   epistasis_weights = c(W_modular = 0.2, W_full = -0.1)
 #' )
+#'
+#' ## With a coupling that CHANGES between periods (three waves, two periods)
+#' mod <- saomnk_model(
+#'   density = -0.5,
+#'   influence_arrays = list(
+#'     W_regime = array(c(saomnk_block_diagonal(12, 4),
+#'                        saomnk_block_diagonal(12, 2)), dim = c(12, 12, 2))
+#'   ),
+#'   influence_array_weights = c(W_regime = 0.2)
+#' )
 saomnk_model <- function(density            = -0.5,
                           popularity         = 0,
                           scope              = 0,
@@ -211,6 +304,8 @@ saomnk_model <- function(density            = -0.5,
                           influence_weight   = 0.1,
                           influence_matrices = NULL,
                           influence_weights  = NULL,
+                          influence_arrays   = NULL,
+                          influence_array_weights = NULL,
                           epistasis_matrix   = NULL,
                           epistasis_weight   = NULL,
                           epistasis_matrices = NULL,
@@ -219,7 +314,7 @@ saomnk_model <- function(density            = -0.5,
                           strategies         = NULL,
                           component_covariates = NULL,
                           dyad_covariate     = NULL,
-                          dyad_covariate_effect = "egoXaltX",
+                          dyad_covariate_effect = "X",
                           dyad_covariate_weight = 0.1,
                           ...) {
 
@@ -364,6 +459,43 @@ saomnk_model <- function(density            = -0.5,
       )
   }
 
+  ## -- 3b. Time-varying influence (varDyadCovars) ------------------------- ##
+  ## An N x N x P array per coupling, P = waves - 1. These occupy their own
+  ## `self$component_<k>_varDyadCovar` slots, so a model may carry static and
+  ## time-varying couplings at once without either renumbering the other. The
+  ## wave count cannot be checked here (the model does not see the dependent
+  ## variable), so it is validated in the engine against the actual DV.
+  varDyadCovars_list <- list()
+
+  if (!is.null(influence_arrays)) {
+    stopifnot(is.list(influence_arrays), !is.null(names(influence_arrays)),
+              all(nzchar(names(influence_arrays))))
+    if (!is.null(influence_array_weights) &&
+        !all(names(influence_array_weights) %in% names(influence_arrays)))
+      warning("`influence_array_weights` carries names absent from ",
+              "`influence_arrays`; those weights are ignored.", call. = FALSE)
+    for (nm in names(influence_arrays)) {
+      w_arr <- .saomnk_as_dyad_array(influence_arrays[[nm]], nm)
+      w_weight <- if (!is.null(influence_array_weights) &&
+                      nm %in% names(influence_array_weights)) {
+        influence_array_weights[[nm]]
+      } else {
+        influence_weight
+      }
+      slot <- length(varDyadCovars_list) + 1L
+      varDyadCovars_list[[slot]] <-
+        list(
+          effect       = "XWX",
+          parameter    = w_weight,
+          dv_name      = .DV_NAME,
+          fix          = TRUE,
+          nodeSet      = c("COMPONENTS", "COMPONENTS"),
+          interaction1 = sprintf("self$component_%d_varDyadCovar", slot),
+          x            = w_arr
+        )
+    }
+  }
+
   ## Named list of M x N dyadic covariates
   if (!is.null(dyad_covariates)) {
     stopifnot(is.list(dyad_covariates), !is.null(names(dyad_covariates)))
@@ -414,7 +546,7 @@ saomnk_model <- function(density            = -0.5,
       coCovars      = coCovars_list,
       varCovars     = list(),
       coDyadCovars  = coDyadCovars_list,
-      varDyadCovars = list(),
+      varDyadCovars = varDyadCovars_list,
       interactions  = list()
     )
   )
@@ -500,6 +632,12 @@ saomnk_shock <- function(effect, parameter, portion = 1L) {
 #'   run.
 #' @param shocks A list of \code{\link{saomnk_shock}} objects defining
 #'   parameter regime changes, or \code{NULL} (default) for no shocks.
+#' @param theta_matrix Optional numeric matrix of per-ministep parameter values
+#'   (\code{iterations} rows x one column per simulated effect), as built by
+#'   \code{\link{saomnk_theta_ramp}} or \code{\link{saomnk_theta_drift}}. When
+#'   supplied it defines the parameter trajectory directly and its row count
+#'   overrides \code{steps_per_actor}. Default \code{NULL}, in which case the
+#'   engine builds a constant theta matrix from \code{model} exactly as before.
 #' @param verbose Logical. If \code{TRUE}, print RSiena diagnostic output
 #'   during the simulation (default \code{FALSE}).
 #' @return The \code{env} object (modified in place), returned invisibly.
@@ -510,7 +648,8 @@ saomnk_shock <- function(effect, parameter, portion = 1L) {
 #'                     influence_matrix = saomnk_block_diagonal(6, 2))
 #' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
 saomnk_run <- function(env, model, steps_per_actor = 30,
-                        seed = NULL, shocks = NULL, verbose = FALSE) {
+                        seed = NULL, shocks = NULL, theta_matrix = NULL,
+                        verbose = FALSE) {
 
   stopifnot(inherits(env, "SaomNkRSienaBiEnv"))
   stopifnot(is.list(model))
@@ -526,6 +665,23 @@ saomnk_run <- function(env, model, steps_per_actor = 30,
   }
 
   run_seed <- if (!is.null(seed)) as.integer(seed) else 123L
+
+  if (!is.null(theta_matrix)) {
+    if (!is.matrix(theta_matrix) || !is.numeric(theta_matrix))
+      stop("`theta_matrix` must be a numeric matrix (see saomnk_theta_ramp()).")
+    ## nrow(theta_matrix) is the ministep count, so iterations_per_actor must
+    ## not also be passed: search_rsiena() prefers theta_matrix, but passing
+    ## both invites a silent mismatch between what the caller asked for and
+    ## what ran.
+    env$search_rsiena(
+      structure_model = model,
+      theta_matrix    = theta_matrix,
+      run_seed        = run_seed,
+      theta_shocks    = theta_shocks,
+      verbose         = verbose
+    )
+    return(invisible(env))
+  }
 
   env$search_rsiena(
     structure_model      = model,

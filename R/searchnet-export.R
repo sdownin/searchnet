@@ -134,7 +134,14 @@ searchnet_export_k4 <- function(env, file = "k4_trajectory.csv",
       component_id = as.character(env$K_CC_df$component_id),
       K_type       = "K_CC",
       value        = env$K_CC_df$value,
-      strategy     = as.character(env$K_CC_df$strategy),
+      ## K_CC is component-by-component, so there is no actor on these rows and
+      ## therefore no strategy: `strategy` is an actor attribute, and K_CC_df is
+      ## built without it. Reading env$K_CC_df$strategy returned NULL, which
+      ## data.frame() saw as a zero-length column against 160 rows and rejected
+      ## with "arguments imply differing number of rows: 160, 1, 0". NA_character_
+      ## matches how actor_id is already handled two lines above, for the same
+      ## reason.
+      strategy     = NA_character_,
       stability    = env$K_CC_df$stability,
       stringsAsFactors = FALSE
     )

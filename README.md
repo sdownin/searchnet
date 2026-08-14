@@ -9,13 +9,13 @@
 **Network-Embedded Search Simulation Engine**
 
 > [!WARNING]
-> **Development status: experimental pre-release (v0.4.x).**
-> This is an early research release of a new package: the API is still
+> **Development status: experimental pre-release (v0.8.x).**
+> This is a research release of a new package: the API is still
 > evolving, breaking changes may occur between 0.x versions, and bugs are
-> to be expected. The companion methods paper is a working draft and has
+> to be expected. The companion methods paper is under review and has
 > not yet been peer-reviewed; results should be treated accordingly.
 > For reproducibility, install a pinned tag rather than the moving branch:
-> `devtools::install_github("sdownin/searchnet@v0.4.1")`.
+> `devtools::install_github("sdownin/searchnet@v0.8.1")`.
 > A stable API will be declared at v1.0.0. Bug reports with reproducible
 > examples are very welcome via
 > [GitHub Issues](https://github.com/sdownin/searchnet/issues).
@@ -337,6 +337,27 @@ The engine includes `verify_nk_equivalence()` for computational verification of 
 | Program site — the research program behind the package | [sdownin.github.io/saomnk](https://sdownin.github.io/saomnk/) |
 | Manuscript source (Rmd, JSS format) | [`paper/searchnet-jss.Rmd`](paper/searchnet-jss.Rmd) |
 
+## Release history
+
+Released tags, newest first; full details in [NEWS.md](NEWS.md). Versions
+0.5.x and 0.6.x were development states that never received tags, so the tag
+history jumps from v0.4.1 to v0.7.0 — NEWS.md records why.
+
+| Version | Highlights |
+|---|---|
+| **v0.8.1** | Theorem 4 empirical check corrected: the diagnostic now compares simulations against the fixed point of the process actually simulated (RSiena's `inPop` is sqrt-form), with a derived tolerance. Suite: 1647 passing, 0 failures, 0 skips. |
+| **v0.8.0** | Diagnostics release: `boundary_screen()`, `scope_confound_screen()`, `gof_battery()`, `rate_ladder()`; time-varying couplings via `influence_arrays` (a coupling can now change between periods). |
+| **v0.7.x** | Test-suite hardening: guards that reported failures as skips repaired; test harness loads all of `R/`; `clone(deep = TRUE)` made actually deep for `data.table` fields; export fixes. |
+| **v0.4.x** | `epistasis_matrix` → `influence_matrix` rename with deprecation shim (you specify an influence matrix; you observe epistasis); netcheck dependency removed from the paper. |
+| **v0.3.x** | Classic NK module: `nk_landscape()`, `nk_walk()`, `nk_local_optima()`, and `nk_verify_reduction()` bridging conventional NK to SaoMNK; loader and endianness fixes. |
+| **v0.2.0** | Initial public release. |
+
+Development happens on `dev`; this branch (`public-release`) carries squashed
+release snapshots. Network–behaviour coevolution, two-sided tie formation
+(`saomnk_assent`/`saomnk_confirm`), and continuous parameter ramps
+(`saomnk_theta_ramp`/`saomnk_theta_drift`) shipped in the 0.5–0.6 development
+line and are exercised by the v0.8.1 test suite.
+
 ## Citation
 
 ```bibtex
@@ -344,7 +365,7 @@ The engine includes `verify_nk_equivalence()` for computational verification of 
   title  = {searchnet: Network-Embedded Search Simulation Engine},
   author = {Stephen Downing},
   year   = {2026},
-  note   = {R package version 0.4.1},
+  note   = {R package version 0.8.1},
   url    = {https://github.com/sdownin/searchnet}
 }
 ```

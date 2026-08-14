@@ -1,3 +1,357 @@
+# searchnet 0.8.1
+
+## Bug fixes
+
+* **The Theorem 4 empirical check no longer compares the simulation against an
+  object that is not the law of the simulated process.** The check had asserted
+  the live simulation lands within 0.10 (spin form) of the linear Curie-Weiss
+  roots at a nominally supercritical coupling. It failed at 0.38 the first time
+  it actually ran -- it had been gated behind NOT_CRAN since it was written --
+  and three independent diagnoses (an adversarial code audit, an M-sweep over
+  12..200 with 25+ seeds per cell, and exact finite-M Gibbs computation)
+  converged on the same verdict: the assertion, not the simulation, was wrong.
+
+  RSiena's `inPop` evaluation delta is sqrt-form, so the simulated process obeys
+  the fixed point p = sigmoid(beta*(h_b + theta*sqrt(M*p+1))) -- the Option B
+  object PROOF_TABLE.md L16 designates "the binding numerical comparison" --
+  not the linear tanh roots. Exact per-column Gibbs laws reject the linear
+  reading at |z| > 80 and the squared reading at |z| > 2000; the sqrt family
+  matches every empirical anchor within 2 SD. The observed 0.38 was the
+  sqrt-vs-linear model gap itself: flat in M (asymptote ~0.41), 15x the genuine
+  finite-size budget at M = 12 (0.025). No tolerance against the old object was
+  defensible at any M -- the 6-column-average observable had an asymptotic
+  failure floor of 0.656.
+
+  `diagnose_mean_field_fit()` now reports both objects: the binding Option B
+  fixed point (which `discrepancy_adopt`/`discrepancy_spin` now measure
+  against), and the linear-CW reference with an `in_BD_regime` flag marking
+  L16's validity regime (near p = 1/2, sub-threshold). It also extracts the
+  density coefficient as the field term -- previously dropped entirely, so the
+  analytical side silently assumed h = 0 against a simulation running at
+  h_b = -1 -- and matches the reference against STABLE roots only. The old
+  `which.min` over all roots selected the unstable m = 0 root for 49 of 76
+  seeds at M = 12, making the reported gap shrink exactly when the simulation
+  was furthest from any attainable equilibrium.
+
+  The rewritten test asserts |p_emp - p_binding| < 0.15 in adoption form, a
+  derived bound: the exact finite-M q95 of |p_emp - E[p]| is 0.119-0.138 at
+  M = 12, N = 6, plus short-chain autocorrelation excess. A second test
+  constructs L16's Option C regime (sub-threshold, fixed point near 1/2) and
+  verifies the Brock-Durlauf correspondence there -- the part of Theorem 4 the
+  live harness CAN verify. The supercritical pitchfork is no longer asserted
+  anywhere, per L16: it "cannot be empirically verified via the live harness."
+
+* `solve_mean_field()` documentation now states what the function returns --
+  the zero-field linear Curie-Weiss REFERENCE object, not the stationary law of
+  an `inPop` simulation -- and cites `inst/proofs/PROOF_TABLE.md` rows L8/L10/
+  L16 instead of a proof file that does not exist in the repository.
+
+## Scope notes
+
+* The manuscript record was swept for the same defect: the JSS paper and its
+  Appendix H are consistent (H explicitly disclaims supercritical live
+  verification), and the industrial-policy manuscript keeps `inPop`/`inPopSqrt`
+  distinct throughout. The defective comparison existed only in
+  `solve_mean_field()` + `diagnose_mean_field_fit()` + this test. One teaching
+  primer overclaimed the coefficient-to-betaJ mapping and now states the
+  linearity condition and L16 rescaling.
+
+# searchnet 0.8.0
+
+Merges the diagnostics port and time-varying W (developed as 0.7.0 on
+`feature/diagnostics-and-time-varying-w`) into `dev`, which had meanwhile
+advanced to 0.7.5 on unrelated work. The features were therefore unreleased
+until this merge; 0.8.0 is the minor bump that releases them. The `v0.7.0` tag
+remains as the feature branch's own marker and is an ancestor of `dev`, but
+`dev` never released a 0.7.0.
+
+See the 0.7.0 entry below for what the features do. Nothing changed in them at
+merge: `tests/verify_searchnet_port.R` passes 28 of 28 against merged `dev`,
+which also confirms the concurrent 0.7.1 through 0.7.5 work did not disturb
+them.
+
+# searchnet 0.7.1
+
+## Bug fixes
+
+* **`clone(deep = TRUE)` now actually deep-copies `data.table` fields.** R6's
+  deep clone recurses only into fields that are themselves R6 objects, so a
+  clone and its original were bound to the SAME table: identical
+  `data.table::address()`, and a `:=` update on one added a column to the other.
+  `:=` bypasses copy-on-modify by design, which is exactly why it defeated the
+  default clone. A `private$deep_clone()` now copies data.tables and passes
+  everything else through unchanged.
+
+  No release shipped a defect from this: results are installed by assignment
+  (`self$actor_stats_df <- ...`), never by reference update, so the per-seed
+  clone in the market-plot batch loop was always safe. It closes a trap that
+  would have armed the moment anyone wrote `:=` against an env's data.table, and
+  whose symptom would have been cross-contaminated runs in a seed batch.
+
+* **`searchnet_export_k4()` and `searchnet_export_all()` no longer fail on
+  `K_CC`.** `strategy` is an actor attribute, and `K_CC_df` is component-by-
+  component, so it is built without one. The exporter read
+  `env$K_CC_df$strategy` anyway, which `data.frame()` saw as a zero-length
+  column against 160 rows: "arguments imply differing number of rows: 160, 1,
+  0". It now uses `NA_character_`, matching how `actor_id` was already handled
+  on the same rows and for the same reason.
+
+## Testing
+
+* **The test harness was sourcing 4 of 34 files in `R/`, and had been since
+  network--behaviour coevolution landed.** `helper-setup.R` hand-listed
+  `utils.R`, `saomnk-base.R`, `saomnk-class.R` and `mean_field_solver.R`. When a
+  `.searchnet_has_behavior()` call was added inside `saomnk-class.R`, the file
+  defining it was not on that list, so every simulation-dependent test died with
+  "could not find function" -- and the surrounding `tryCatch` turned each one
+  into a skip. Five test files reported green while the simulation path was
+  entirely broken.
+
+  This is the same defect fixed in the loader at 0.3.3, where sourcing 11 of 28
+  files left whole modules absent. The loader was fixed by globbing; this second,
+  hand-kept copy then drifted the same way. `helper-setup.R` now delegates to
+  `inst/saomnk-loader.R`, so load order is defined once.
+
+* **The attached-package list is now derived from NAMESPACE.** Sourcing `R/*.R`
+  directly does not activate `importFrom()`, so imported functions must be on
+  the search path some other way. The hand-written `library()` list named 13
+  packages while NAMESPACE imported from 11 more, so `scales::hue_pal` was
+  absent and a plotting test errored. A third hand-kept dependency list, going
+  stale the same way as the other two.
+
+* **158 tests no longer report a failure as a skip.** 20 state guards of the form
+  `if (is.null(env$K_AC_df)) skip(...)` became assertions: they sit after a
+  `skip_if_not_installed("RSiena")` and after a run that did not throw, so an
+  empty field there is the engine silently producing nothing. A further 138
+  handlers of the form `tryCatch(..., error = function(e) skip(...))` now
+  `stop()`, so a crash is an error rather than a green run. Two sites carrying an
+  explicit author rationale for tolerating failure were left alone.
+
+* Suite after these changes: **1585 passing, 0 failures, 1 error, 16 skips.**
+  The single error is a pre-existing defect in `search_rsiena_multiwave_plot()`
+  ("argument is of length zero"), which the skip pattern had been hiding; it is
+  recorded rather than papered over.
+
+* The M=1 NK-greedy test asked `search_rsiena()` for something the package
+  refuses by design, since RSiena's `sienaDataCreate()` does not support
+  single-actor bipartite networks. It now asserts that documented refusal. The
+  greedy-property claim itself is marked in the file as NOT YET COVERED, to be
+  re-tested against the landscape methods that do work at M = 1, rather than
+  deleted and mistaken for covered ground.
+
+# searchnet 0.7.0
+
+## New features
+
+* Four diagnostics from a companion methods manuscript are now package functions,
+  so the checks live with the engine rather than in a paper's scripts:
+  `boundary_screen()`, `scope_confound_screen()`, `gof_battery()` and
+  `rate_ladder()`.
+
+  `boundary_screen()` is the one to run first. It classifies candidate
+  degree-threshold effects from the observed data alone, before any model is
+  fitted: a statistic sitting at exactly 0 or exactly 1 of its attainable range
+  cannot converge under method of moments, and nothing else disqualifies an
+  effect. A balanced panel forces that position on every effect keyed to the
+  empty portfolio.
+
+  `scope_confound_screen()` reports the correlation between each coupling
+  statistic and actor scope under raw, row-normalized and banded treatments.
+  Row-normalization does NOT fix the confound, because it lives in the density
+  pattern rather than the scale; banding does.
+
+* `saomnk_model()` gains `influence_arrays` and `influence_array_weights` for
+  **time-varying couplings**. Each entry is an N x N x P array or a list of P
+  N x N matrices, P being periods (one fewer than waves), and generates an
+  RSiena `varDyadCovar` carrying an `XWX` effect. This closes a long-standing
+  gap where the `component_N_varDyadCovar` slots were declared while the
+  assembly returned an empty list, so a coupling could not change between
+  periods.
+
+  Static and time-varying couplings coexist in one model and occupy separate
+  slot sequences, so neither renumbers the other. Callers that do not pass
+  `influence_arrays` are unaffected; that is asserted in the verification suite
+  rather than assumed.
+
+## Verification
+
+* `tests/verify_searchnet_port.R`, 28 checks, all passing. Runnable rather than
+  testthat because the package has no testthat harness wired up; it exits
+  non-zero on failure so it can gate a commit.
+
+## A note on version numbering
+
+Tags `v0.5.0` and `v0.6.0` were never cut: `DESCRIPTION` had already been
+advanced to 0.6.0 while the newest tag was `v0.4.1`, so version and tags had
+drifted two minor versions apart before this release. This release bumps to
+0.7.0 and tags it, which reconciles the two going forward but leaves that gap in
+the tag history rather than back-filling tags for states no one can now
+reconstruct.
+
+# searchnet 0.5.1 (development)
+
+## New features
+
+* **`saomnk_theta_ramp()` and `saomnk_theta_drift()`: the environment can now
+  change continuously, not only in steps.** Until now the only way to make a
+  parameter move over time was `saomnk_shock()`, which cuts the ministep chain
+  into contiguous blocks and holds a constant within each. That expresses "a
+  shock happened at time t" and nothing else. No number of steps is a ramp, so
+  "the environment erodes at rate r" was simply not sayable.
+
+  `saomnk_theta_ramp()` moves one or more effects from a starting value to an
+  ending value over a window of the chain, under `linear`, `sigmoid` or
+  `exponential` easing. Windows are given as fractions of the chain rather than
+  absolute ministep indices, so the same specification means the same thing at
+  any chain length. `saomnk_theta_drift()` is the separate, undirected operator:
+  a Gaussian random walk on one parameter, which is landscape *instability*
+  rather than landscape *direction*. The two compose --- `add = TRUE`
+  superimposes a walk on an existing ramp --- so a design can vary erosion and
+  volatility independently.
+
+  The engine already accepted a user-supplied `theta_matrix`; what was missing
+  was any way to build one correctly. Column order is decided by RSiena's
+  effects table, not by the structure model, so hand-building the matrix was not
+  something a caller could do reliably. Both functions delegate to a new
+  `env$prepare_theta_scaffold()`, which runs the same data-and-effects
+  construction `search_rsiena()` runs and returns the correctly shaped, correctly
+  named matrix.
+
+  The sigmoid is rescaled onto `[0, 1]`. The raw logistic
+  `1/(1 + exp(-6*(p - 0.5)))` starts at 0.047 and ends at 0.953, so an
+  unrescaled version would jump discontinuously by about 5% of the total change
+  at each end of the window. There is a regression test for this.
+
+* **`saomnk_run()` now forwards a `theta_matrix` argument.** Additive, default
+  `NULL`; existing calls behave exactly as before. When supplied, its row count
+  is the ministep count and `steps_per_actor` is not also passed, so the two
+  cannot silently disagree.
+
+* **`saomnk_behavior()`, `saomnk_behavior_effects()`, `saomnk_get_behavior()`:
+  network--behaviour coevolution.** A structure model may now carry a
+  `dv_behavior` block, making an actor-level attribute (performance,
+  aspiration, capability) a second dependent variable that evolves jointly with
+  the bipartite network instead of sitting fixed as a covariate. Both directions
+  are live: the network shapes the behaviour through influence effects, and the
+  behaviour shapes the network through selection effects declared on
+  `dv_bipartite` with `interaction1` pointing at the behaviour DV.
+
+## What RSiena can and cannot do here, stated plainly
+
+* **RSiena 1.5.0 does support bipartite + behaviour coevolution.** This was
+  verified against a live `getEffects()` object, not recalled. `sienaDataCreate()`
+  accepts both dependent variables and returns a populated effect set for the
+  behaviour. Unlike the K_CA case below, this is a real EFFECT capability and
+  not merely a statistic: the behaviour enters the simulated evaluation function
+  and moves.
+
+* **The one-mode influence effects `avAlt`, `totAlt`, `avSim` and `totSim` are
+  NOT available for a behaviour attached to a bipartite network, and no amount
+  of R-level work can add them.** In a bipartite network ego's direct alters are
+  *components*, and components have no behaviour to average. This is a property
+  of the model, not a gap in RSiena or in searchnet.
+
+  RSiena's substitutes are the distance-2 family, where two actors are
+  neighbours when they hold a component in common: `avInAltDist2`,
+  `totInAltDist2`, `avTInAltDist2`, `totAInAltDist2`, `avInSimDist2`,
+  `totInSimDist2`. **`avInSimDist2` is the bipartite counterpart of `avSim`**,
+  and is what a caller reaching for "imitation" or "social influence" wants.
+  Also available on the behaviour DV: `linear`, `quad`, `constant`,
+  `threshold1-4`, `simAllNear`, `simAllFar`, `avGroup`, `outdeg`, `outIsolate`,
+  `popAlt`, `effFrom`, `avXAlt`, `totXAlt`, and the covariate distance-2 family
+  (`avXInAltDist2`, `totXInAltDist2`, `avTXInAltDist2`, `totAXInAltDist2`).
+
+  In the selection direction RSiena offers `egoX`, `egoSqX`, `altInDist2`,
+  `totInDist2`, `simEgoInDist2`, `sameEgoInDist2`, `inPopX`, `sameXInPop`,
+  `diffXInPop`, `sameXCycle4`, `avGroupEgoX`, `degAbsDiffX`, `degPosDiffX`,
+  `degNegDiffX` and `sameWXClosure`.
+
+  `saomnk_behavior_effects()` regenerates all of this from a live `getEffects()`
+  call rather than from documentation, and the test suite asserts both the
+  presence of the distance-2 effects and the ABSENCE of `avSim`/`avAlt`. If a
+  future RSiena release changes either, those tests will say so.
+
+* **A behaviour DV changes RSiena's estimation mode, and therefore what a row of
+  the theta matrix means.** RSiena estimates *conditionally* with one dependent
+  variable and *unconditionally* with two or more. Under conditional estimation
+  the conditioning variable's basic rate is deleted from the parameter vector,
+  which is why searchnet has always been able to drop basic rates from the theta
+  matrix. Under unconditional estimation every basic rate *is* a theta column,
+  and `siena07()` rejects a matrix of the wrong width outright. `get_theta_matrix()`
+  now derives the width from the number of dependent variables rather than
+  assuming.
+
+  The consequence for callers: with one DV each theta row corresponds to exactly
+  one ministep. With two DVs the number of ministeps per row is drawn from the
+  rate parameters, so **the chain is longer than the theta matrix has rows** and
+  a "run" is no longer a ministep. `saomnk_get_behavior()` reports behaviour once
+  per run; per-ministep behaviour changes are in `env$chain_stats`, in the
+  `beh_difference` column of rows whose `dv_varname` is the behaviour DV.
+
+* **An undeclared basic rate defaults to 1.0, with a message.** RSiena's `parm`
+  column defaults to 0 for basic rates, and searchnet reads `parm` as theta. A
+  rate of exactly 0 freezes that dependent variable for the entire simulation.
+  That is never an intended specification, so it is substituted and announced
+  rather than silently simulated.
+
+* **The utility and K-4 decompositions cover the bipartite evaluation function
+  only.** `linear`, `quad`, `avInSimDist2` and the rest are statistics of the
+  behaviour, not of the bipartite matrix, and have no per-actor decomposition on
+  that path. They are excluded from `actor_stats_df` rather than fabricated.
+  Extending the decomposition to the behaviour evaluation function is a separate
+  piece of work.
+
+## Bug fixes / hardening
+
+* `search_rsiena_process_ministep_chain()` and `get_chain_stats_list()` now skip
+  behaviour ministeps when reconstructing the bipartite state trajectory. A
+  behaviour ministep's `id_to` column carries a behaviour value, not a component
+  id, so toggling on it would have silently corrupted every downstream network
+  statistic. There is a test asserting the bipartite matrix never changes on a
+  behaviour ministep.
+
+* The generic effect-inclusion fallback in
+  `include_rsiena_effect_from_eff_list()` now passes `interaction2` through to
+  `includeEffects()` / `setEffect()`. Two-slot effects such as `avXAlt` and the
+  covariate distance-2 family are identified by both a covariate and the network
+  through which it reaches ego, and could not be included without it. Inert for
+  every structure model that predates this release.
+
+# searchnet 0.5.0
+
+## New features
+
+* **`saomnk_sim_ego_indist2()` and `saomnk_env_imitation()`: the K_CA imitation
+  channel is now measurable on bipartite states.** For actor `i` and component
+  `j`, the statistic is the centered performance similarity between `i` and the
+  mean performance of `j`'s other holders, summed over the components `i` holds.
+  It matches the definition used by the CD4 procedural engines, so the two are
+  directly comparable.
+
+  Components with no co-holders contribute nothing and are excluded from the
+  centering mean. They are invisible rather than unattractive, which is what
+  separates imitation from popularity; counting them as zeros would drag the
+  center down and make held-but-unpopular components look repellent.
+
+  Degenerate performance (zero range) yields similarity 1 everywhere, which
+  centers to zero. That is the right answer on this channel: when all actors
+  perform identically no component is more attractive than any other.
+
+## Scope of the above, stated plainly
+
+* **This is a STATISTIC, not yet an EFFECT.** RSiena's effect set for a
+  bipartite dependent variable has 34 short names and none is a similarity
+  effect; the nearest, `inPop_ego` and `outAct_ego`, are degree-based, and
+  `simEgoInDist2` exists for one-mode networks only. searchnet's simulation path
+  delegates to `siena07()`, so an effect RSiena cannot express cannot enter the
+  evaluation function through it.
+
+  K_CA is therefore now measurable in searchnet, where it was previously absent
+  altogether, but it is still not simulable through `saomnk_run()`. Closing that
+  gap needs either a C-level RSiena effect or a searchnet-native simulation
+  loop. Callers must not read the presence of this statistic as evidence that
+  imitation is driving a simulated trajectory.
+
 # searchnet 0.3.4
 
 ## Testing

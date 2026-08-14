@@ -6,8 +6,29 @@
 # ============================================================================
 
 
+#' Plot bipartite snapshots directly from the stored state array
+#'
+#' Legacy array-based snapshot plotter. Operates on `env$bi_env_arr` and
+#' `env$bipartite_matrix_init` rather than delegating to the R6 method, and
+#' selects steps by index with an option to prepend the initial state.
+#'
+#' RENAMED 2026-08-09. This function was previously also called
+#' `saomnk_plot_snapshots`, which collided with the API function of that name in
+#' `saomnk-api.R`. Both were exported, and because R sources files in
+#' alphabetical order the API version silently won: calling
+#' `saomnk_plot_snapshots(env, snapshot_ids = ...)` failed with an unused-argument
+#' error even though this definition existed. No caller in the package, its
+#' vignettes, its papers or the dependent projects used `snapshot_ids`, so
+#' renaming is behaviour-preserving.
+#'
+#' @param env A SaomNK environment.
+#' @param snapshot_ids Integer vector of step indices. Defaults to first,
+#'   second and last.
+#' @param include_init Logical; prepend the initial state as step 0.
+#' @return Called for side effects (plot display).
+#' @seealso [saomnk_plot_snapshots()] for the R6-delegating API version.
 #' @export
-saomnk_plot_snapshots <- function(env, snapshot_ids = c(), include_init = TRUE) {
+saomnk_plot_snapshots_from_array <- function(env, snapshot_ids = c(), include_init = TRUE) {
   if(!length(snapshot_ids))
     snapshot_ids <- c(1, 2, dim(env$bi_env_arr)[3]  )
   if(include_init)

@@ -136,17 +136,37 @@ test_that("solve_mean_field validates its arguments", {
 ## The test is wrapped in skip_if_not_installed("RSiena") and tryCatch
 ## guards so that environments without RSiena (or transient simulator
 ## flake) skip rather than fail.
-test_that("supercritical simulation lands within 10% of analytical m*", {
+test_that("simulation lands near the binding (Option B) fixed point", {
 
   skip_if_not_installed("RSiena")
-  ## Defensive: skip on CI / CRAN where simulator init is brittle.  Remove
-  ## the skip in interactive use to actually exercise the empirical check.
-  testthat::skip_if(identical(Sys.getenv("NOT_CRAN"), ""))
+  ## HISTORY. Until 2026-08-14 this test asserted the simulation lands
+  ## within 0.10 (spin) of the LINEAR Curie-Weiss roots at a nominally
+  ## supercritical coupling, and was gated behind NOT_CRAN so it never ran.
+  ## When it finally ran it failed at 0.38. Three independent methods
+  ## (adversarial code audit; M-sweep 12..200; exact finite-M Gibbs
+  ## computation) agreed on the diagnosis:
+  ##   - RSiena's inPop evaluation delta is sqrt-form, so the simulated
+  ##     process obeys p = sigmoid(beta*(h_b + theta*sqrt(M*p+1))) -- the
+  ##     Option B object of PROOF_TABLE.md L16 -- not the linear-CW roots.
+  ##     Exact per-column Gibbs laws reject the linear reading at |z| > 80;
+  ##     the sqrt family matches every empirical anchor within 2 SD.
+  ##   - The gap was flat in M (slope +0.035 vs the -0.5 finite-size
+  ##     signature; asymptote ~0.41) and 15x the genuine finite-size budget
+  ##     at M = 12 (0.025), so no tolerance against the old object was
+  ##     defensible.
+  ##   - solve_mean_field() also dropped the density field entirely, and
+  ##     the old root-matching selected the UNSTABLE m = 0 root for 49/76
+  ##     seeds.
+  ## L16 designates Option B "the binding numerical comparison ... what the
+  ## live simulation actually obeys"; the linear-CW object is valid only in
+  ## the sub-threshold near-1/2 regime (Option C, next test), and the
+  ## supercritical pitchfork "cannot be empirically verified via the live
+  ## harness".
 
   ## Source the API wrappers (not loaded by helper-setup.R)
   tryCatch(
     source(file.path(dir_r, "saomnk-api.R"), local = FALSE),
-    error = function(e) skip(paste("api source failed:", e$message))
+    error = function(e) stop(paste("api source failed:", e$message))
   )
 
   M <- 12
@@ -157,14 +177,15 @@ test_that("supercritical simulation lands within 10% of analytical m*", {
 
   env <- tryCatch(
     saomnk_env(M = M, N = N, density = 0.5, seed = 4242L),
-    error = function(e) skip(paste("saomnk_env failed:", conditionMessage(e)))
+    error = function(e) stop(paste("saomnk_env failed:", conditionMessage(e)))
   )
 
-  ## Density chosen to match the symmetric specialisation of Theorem 4
-  ## (\tilde h = 0): density = -theta_inPop * (M + 1) / 2.  Use a moderate
-  ## value to keep the SAOM simulator stable; the diagnostic compares the
-  ## realised m_emp to m_star_closest, so absolute calibration is not
-  ## required.
+  ## The density coefficient is the process's external field (h_b = -1.0
+  ## here) and enters the binding fixed point through
+  ## diagnose_mean_field_fit(), which now extracts it from the structure
+  ## model. The old comment claimed -theta*(M+1)/2 was the zero-field
+  ## choice; that expression was wrong on its own terms ((M+1) where the
+  ## solver's convention uses (M-1)) and the value used satisfied neither.
   mod <- saomnk_model(density    = -1.0,
                       popularity = theta_inPop)
 
@@ -173,18 +194,84 @@ test_that("supercritical simulation lands within 10% of analytical m*", {
                seed = 4242L, verbose = FALSE)
     TRUE
   }, error = function(e) {
-    skip(paste("saomnk_run failed:", conditionMessage(e)))
+    stop(paste("saomnk_run failed:", conditionMessage(e)))
     FALSE
   })
 
   diag <- env$diagnose_mean_field_fit(T = 1,
                                        theta_inPop_override = theta_inPop)
 
+  ## The diagnostic now reports the binding object itself.
   expect_true(diag$above_critical)
-  expect_true(is.finite(diag$discrepancy_spin))
+  expect_true(is.finite(diag$p_binding))
+  expect_true(is.finite(diag$discrepancy_adopt))
 
-  ## Theorem 4 empirical check: spin-form gap below 0.1 on either basin.
-  ## (For small finite M = 12 the Curie--Weiss prediction is asymptotic;
-  ## 10% is a generous tolerance.)
-  expect_lt(abs(diag$discrepancy_spin), 0.10)
+  ## TOLERANCE, adoption form, derived rather than chosen: the exact
+  ## finite-M Gibbs law of the sqrt process gives q95 of |p_emp - E[p]| in
+  ## 0.119-0.138 at M = 12, N = 6 (stationary SD 0.061-0.068; empirical
+  ## seed-SD 0.099, the excess being autocorrelation at short chains).
+  ## 0.15 covers q95 plus that excess. Against the OLD object no tolerance
+  ## was defensible -- the gap was flat in M with asymptote ~0.41 -- and
+  ## even against this correct one, 0.10 would fail ~44% of good seeds,
+  ## which is why the bound is 0.15 and not a rounder number.
+  expect_lt(abs(diag$discrepancy_adopt), 0.15)
+
+  ## The linear-CW reference is out of its validity regime here and the
+  ## diagnostic should say so.
+  expect_false(diag$in_BD_regime)
+})
+
+
+test_that("Option C: sub-threshold linear-CW regime, where B&D applies", {
+
+  skip_if_not_installed("RSiena")
+
+  tryCatch(
+    source(file.path(dir_r, "saomnk-api.R"), local = FALSE),
+    error = function(e) stop(paste("api source failed:", e$message))
+  )
+
+  ## L16's Option C: the Brock-Durlauf linear object is a valid description
+  ## of the live process only near p = 1/2 and below threshold. Construct
+  ## that regime deliberately: small coupling (beta_eff = (M-1)*theta/2 =
+  ## 0.825 < 2, sub-threshold) and a field chosen so the binding fixed
+  ## point sits near 1/2. Here the Option B and linear-CW objects must
+  ## agree, and the simulation must land near both -- this is the part of
+  ## the Theorem 4 correspondence the live harness CAN verify, per L16;
+  ## the supercritical pitchfork is not live-verifiable and is no longer
+  ## asserted anywhere in this file.
+  M <- 12
+  N <- 6
+  theta_inPop <- 0.15
+  ## Field placing the binding fixed point near 1/2:
+  ## p = 0.5  =>  h_b = -theta * sqrt(M/2 + 1)  ~= -0.15 * 2.646 = -0.397
+  h_b <- -theta_inPop * sqrt(M / 2 + 1)
+
+  p_star <- saomnk_inpop_self_consistency(beta = 1,
+                                          theta_inPop = theta_inPop,
+                                          h_b = h_b, M = M)
+  ## Regime sanity: the construction really does sit near 1/2.
+  expect_lt(abs(p_star - 0.5), 0.05)
+
+  env <- tryCatch(
+    saomnk_env(M = M, N = N, density = 0.5, seed = 4343L),
+    error = function(e) stop(paste("saomnk_env failed:", conditionMessage(e)))
+  )
+  mod <- saomnk_model(density = h_b, popularity = theta_inPop)
+  tryCatch(
+    saomnk_run(env, mod, steps_per_actor = 20L, seed = 4343L,
+               verbose = FALSE),
+    error = function(e) stop(paste("saomnk_run failed:", conditionMessage(e)))
+  )
+
+  diag <- env$diagnose_mean_field_fit(T = 1,
+                                      theta_inPop_override = theta_inPop)
+
+  expect_false(diag$above_critical)
+  expect_true(diag$in_BD_regime)
+
+  ## Same derived tolerance as the binding test above. In this regime the
+  ## zero-theta exact stationary SD of the 6-column average is ~0.059, so
+  ## 0.15 is ~2.5 SD.
+  expect_lt(abs(diag$discrepancy_adopt), 0.15)
 })

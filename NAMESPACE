@@ -152,6 +152,9 @@ export(saomnk_plot_market_entry_survival_v0)
 export(track_entry_decisions)
 export(compute_forbearance_metrics)
 export(compute_forbearance_trajectory)
+export(expand_entry_rivals)
+export(compute_multimarket_contact)
+export(compute_dyadic_forbearance)
 
 # ---------------------------------------------------------------------------
 # Plot functions -- plot-forbearance.R
@@ -280,3 +283,63 @@ export(nk_verify_reduction)
 export(searchnet_rd_cross)
 S3method(print,nk_landscape)
 S3method(print,nk_walk)
+
+# K_CA imitation statistic (0.5.0)
+export(saomnk_sim_ego_indist2)
+export(saomnk_env_imitation)
+
+# ---------------------------------------------------------------------------
+# Continuous rate-of-change operators -- searchnet-ramp.R (0.5.1)
+# ---------------------------------------------------------------------------
+export(saomnk_theta_ramp)
+export(saomnk_theta_drift)
+
+# ---------------------------------------------------------------------------
+# Network--behaviour coevolution -- searchnet-behavior.R (0.5.1)
+# ---------------------------------------------------------------------------
+export(saomnk_behavior)
+export(saomnk_behavior_effects)
+export(saomnk_get_behavior)
+
+# ---------------------------------------------------------------------------
+# Reconciled with roxygen @export tags, 2026-08-09 (v0.6.0)
+#
+# NAMESPACE here is MANUALLY maintained (see the header), so an @export tag in
+# R/*.R does nothing on its own. 17 functions carried @export and were absent
+# from this file, making them reachable only via `searchnet:::`. Among them were
+# the three counterfactual bridge functions, which downstream project notes
+# document as the supported path.
+#
+# Keep this in sync: `Rscript tools/check_namespace_sync.R` fails if any
+# @export-tagged function is missing an export()/S3method() entry.
+# ---------------------------------------------------------------------------
+export(saomnk_plot_geo_network)
+export(saomnk_geo_arc)
+export(saomnk_plot_snapshots_from_array)
+
+# specification-curve / robustness diagnostics
+export(saomnk_sai)
+export(saomnk_extract_estimates_saom)
+S3method(plot, saomnk_sai)
+
+# counterfactual bridge (searchnet-bridge.R)
+export(saom_to_saomnk)
+export(empirical_to_saomnk_env)
+export(run_calibrated_counterfactual)
+
+# export helpers
+export(searchnet_export_all)
+export(searchnet_export_k4)
+export(searchnet_export_snapshots)
+export(searchnet_export_utility)
+
+# misc
+export(get_orm_scenarios)
+export(saomnk_assent)
+export(saomnk_confirm)
+export(saomnk_monte_carlo)
+export(saomnk_run_two_sided)
+export(boundary_screen)
+export(gof_battery)
+export(rate_ladder)
+export(scope_confound_screen)

@@ -7,9 +7,8 @@
 #'   with effective coupling
 #'   \deqn{\beta_{\mathrm{eff}} = \tfrac{1}{2} (M - 1)\, \theta_{\mathrm{inPop}}}{
 #'         beta_eff = 0.5 * (M - 1) * theta_inPop}
-#'   as derived in
-#'   \code{proofs/saomnk_dynamic_qre_brock_durlauf_equivalence.tex}, eq.
-#'   (\code{beta_eff}).  In the Curie--Weiss form used here, the bifurcation
+#'   as recorded in \code{inst/proofs/PROOF_TABLE.md} (rows L8, L10, L16).
+#'   In the Curie--Weiss form used here, the bifurcation
 #'   threshold is \eqn{\beta_{\mathrm{eff}} > 2T} (equivalently
 #'   \eqn{\beta J = 1} in the underlying proof), under which the trivial root
 #'   \eqn{m^{*} = 0} loses stability and a symmetric pair \eqn{\pm m^{*}_{+}}
@@ -21,6 +20,21 @@
 #'   strategy researcher actually controls (\code{theta_inPop}, \code{M},
 #'   \code{T}) rather than the spin-form \code{(beta, J, h)} triple of
 #'   Brock & Durlauf.
+#'
+#'   \strong{What this object is, and is not.} This solver returns the
+#'   zero-field \emph{linear} Curie--Weiss roots: the reference object of
+#'   PROOF_TABLE.md L16's Option C, valid as a description of the live
+#'   simulation only in the linearised regime near \eqn{p = 1/2} and below
+#'   threshold. It is \emph{not} the stationary law of a simulation run with
+#'   RSiena's \code{inPop}, whose evaluation delta is sqrt-form; that law is
+#'   the Option B fixed point, \code{\link{saomnk_inpop_self_consistency}}.
+#'   Treating these roots as the prediction for a supercritical \code{inPop}
+#'   run overstates the coupling (the linearised slope at the realised
+#'   equilibrium is the correct local coupling, not
+#'   \eqn{0.5 (M-1) \theta}) and was the source of a persistent spurious
+#'   discrepancy of \eqn{\approx 0.38} in the Theorem 4 empirical check,
+#'   diagnosed 2026-08-14. \code{diagnose_mean_field_fit()} reports both
+#'   objects and an \code{in_BD_regime} flag.
 #' @name mean-field-solver
 NULL
 
@@ -87,8 +101,8 @@ NULL
 #'   interactions. *Review of Economic Studies* 68(2), 235--260.
 #'
 #'   Downing, S. (2026). Theorem 4: Gibbs stationary distribution and the
-#'   Brock--Durlauf reduction of the SaoMNK ministep.  Working paper,
-#'   \code{proofs/saomnk_dynamic_qre_brock_durlauf_equivalence.tex}.
+#'   Brock--Durlauf reduction of the SaoMNK ministep.
+#'   \code{inst/proofs/PROOF_TABLE.md}, rows L8, L10, L16--L18.
 #' @examples
 #' ## Subcritical: theta_inPop * (M - 1) / 2 < 2 * T  =>  unique m* = 0
 #' fp <- solve_mean_field(theta_inPop = 0.05, M = 10, T = 1)
