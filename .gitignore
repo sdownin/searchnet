@@ -175,3 +175,4 @@ tests/testthat/_problems/
 #  written by the benchmark-overhead chunk)
 paper/searchnet-jss.tex
 paper/bench_raw.*
+paper/_local/

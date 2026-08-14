@@ -1582,7 +1582,7 @@ most visible where a user would currently have to write their own engine.
 | Policy shocks | Subsidies and risk-taking | Simulation engine, shock schedule | $K_{AC}$, $K_{CC}$, covariate |
 | Firm vs.\ industry effects | Variance decomposition | Simulation engine | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
 | Market-access institutions | Cross-border expansion | Post-estimation layer | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
-| Evaluator discipline | Venture capital | Refactor candidate (time-varying $W$) | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
+| Evaluator discipline | Venture capital | Bespoke code; time-varying $W$ added in 0.7.0 | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
 | Basin geometry | Industrial policy | Refactor candidate (tournament driver) | $K_{AC}$, $K_{CC}$, $K_{AA}$ |
 
 Two channels deserve a warning that applies throughout.  First, $K_{CA}$ is
@@ -1880,7 +1880,7 @@ pipeline, and we present it as such:
 
 ```r
 env <- saomnk_env(M = M, N = N, density = 0.2, seed = seed)
-K   <- make_epistasis_matrix(N, arch_type)      # modular | hierarchical | random
+K   <- make_influence_matrix(N, arch_type)      # modular | hierarchical | random
 
 mod <- saomnk_model(density = -0.5, popularity = coupling,
                     scope = 0.05, influence_matrix = K, influence_weight = 0.1)
@@ -1955,11 +1955,10 @@ complementarity weighs less in commitment decisions when capital is cheap.
 *Takeaway:* the substantive finding is a $K_{CC}$ result, but it is not currently
 expressed as one.  *Capability required:* the study needs a **time-varying $W$**
 --- \code{varDyadCovar} rather than \code{coDyadCovar} --- so that epistasis can
-shift across waves.  \pkg{searchnet} presently accepts a fixed influence matrix;
-admitting a wave-indexed array would let this analysis be written as an
-\code{influence\_matrix} argument instead of hand-built covariate arrays, and
-would additionally support any application where the technology landscape itself
-evolves.
+shift across waves.  Version 0.7.0 supplies this as the \code{influence\_arrays}
+argument to \code{saomnk\_model}, covering specification and simulation;
+estimation and visualisation of a time-varying $W$ remain open.  The analysis
+reported here predates that release and uses hand-built covariate arrays.
 
 **Basin geometry under policy regimes.**  *Problematization:* policy archetypes
 that produce indistinguishable average fitness may still leave firms in very
