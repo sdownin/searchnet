@@ -1,3 +1,17 @@
+# searchnet 0.8.0
+
+Merges the diagnostics port and time-varying W (developed as 0.7.0 on
+`feature/diagnostics-and-time-varying-w`) into `dev`, which had meanwhile
+advanced to 0.7.5 on unrelated work. The features were therefore unreleased
+until this merge; 0.8.0 is the minor bump that releases them. The `v0.7.0` tag
+remains as the feature branch's own marker and is an ancestor of `dev`, but
+`dev` never released a 0.7.0.
+
+See the 0.7.0 entry below for what the features do. Nothing changed in them at
+merge: `tests/verify_searchnet_port.R` passes 28 of 28 against merged `dev`,
+which also confirms the concurrent 0.7.1 through 0.7.5 work did not disturb
+them.
+
 # searchnet 0.7.1
 
 ## Bug fixes
