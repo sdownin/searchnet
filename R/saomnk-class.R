@@ -2,7 +2,6 @@
 #' @importFrom rvest html_text
 #' @importFrom knitr kable
 #' @importFrom broom tidy
-#' @importFrom did att_gt
 #' @importFrom stringr str_detect str_replace
 #' @importFrom scales percent_format
 #' @importFrom RColorBrewer brewer.pal
@@ -1879,7 +1878,7 @@ SaomNkRSienaBiEnv <- R6Class(
             did_dyna <- NULL
             
             tryCatch({
-              did_attgt <- att_gt(
+              did_attgt <- did::att_gt(
                 yname = 'value_mean',
                 tname = 'chain_step_id',
                 idname = 'actor_id',
@@ -1903,8 +1902,8 @@ SaomNkRSienaBiEnv <- R6Class(
               )
               
               # Aggregate results with na.rm = TRUE
-              did_group <- aggte(did_attgt, type = 'group', na.rm = TRUE, cband = FALSE)
-              did_dyna <- aggte(did_attgt, type = 'dynamic', na.rm = TRUE)
+              did_group <- did::aggte(did_attgt, type = 'group', na.rm = TRUE, cband = FALSE)
+              did_dyna <- did::aggte(did_attgt, type = 'dynamic', na.rm = TRUE)
               
             }, error = function(e) {
               if (verbose) {
@@ -2398,7 +2397,7 @@ SaomNkRSienaBiEnv <- R6Class(
         did_Kdf_dat$treatment_group <- as.numeric( did_Kdf_dat$treatment_group )
         
         
-        did_Kdf_attgt <- att_gt(
+        did_Kdf_attgt <- did::att_gt(
           yname = 'value_mean',
           tname = 'chain_step_id',
           idname = 'actor_id',
@@ -2422,10 +2421,10 @@ SaomNkRSienaBiEnv <- R6Class(
         )
         
         
-        did_Kdf_group <- aggte( did_Kdf_attgt, type = 'group', cband = F)
+        did_Kdf_group <- did::aggte( did_Kdf_attgt, type = 'group', cband = F)
         # did_stat
         
-        did_Kdf_dyna <- aggte( did_Kdf_attgt, type = 'dynamic')
+        did_Kdf_dyna <- did::aggte( did_Kdf_attgt, type = 'dynamic')
         # did_dyna
         
         
@@ -2553,7 +2552,7 @@ SaomNkRSienaBiEnv <- R6Class(
         did_Kdf_dat$treatment_group <- as.numeric( did_Kdf_dat$treatment_group )
         
         
-        did_Kdf_attgt <- att_gt(
+        did_Kdf_attgt <- did::att_gt(
           yname = 'value_mean',
           tname = 'chain_step_id',
           idname = 'actor_id',
@@ -2577,10 +2576,10 @@ SaomNkRSienaBiEnv <- R6Class(
         )
         
         
-        did_Kdf_group <- aggte( did_Kdf_attgt, type = 'group', cband = F)
+        did_Kdf_group <- did::aggte( did_Kdf_attgt, type = 'group', cband = F)
         # did_stat
         
-        did_Kdf_dyna <- aggte( did_Kdf_attgt, type = 'dynamic')
+        did_Kdf_dyna <- did::aggte( did_Kdf_attgt, type = 'dynamic')
         # did_dyna
         
 
@@ -2706,7 +2705,7 @@ SaomNkRSienaBiEnv <- R6Class(
         did_util_dat$treatment_group <- as.numeric( did_util_dat$treatment_group )
         
         
-        did_util_attgt <- att_gt(
+        did_util_attgt <- did::att_gt(
           yname = 'value_mean',
           tname = 'chain_step_id',
           idname = 'actor_id',
@@ -2730,10 +2729,10 @@ SaomNkRSienaBiEnv <- R6Class(
         )
         
         
-        did_util_group <- aggte( did_util_attgt, type = 'group', cband = F)
+        did_util_group <- did::aggte( did_util_attgt, type = 'group', cband = F)
         # did_stat
         
-        did_util_dyna <- aggte( did_util_attgt, type = 'dynamic')
+        did_util_dyna <- did::aggte( did_util_attgt, type = 'dynamic')
         # did_dyna
         
         # did_cal
@@ -13417,7 +13416,7 @@ SaomNkRSienaBiEnv <- R6Class(
       
       # Run att_gt estimation
       tryCatch({
-        did_attgt <- att_gt(
+        did_attgt <- did::att_gt(
           yname = 'value_mean',
           tname = 'chain_step_id',
           idname = 'actor_id',
@@ -13439,10 +13438,10 @@ SaomNkRSienaBiEnv <- R6Class(
         )
         
         # Get dynamic effects
-        did_dyna <- aggte(did_attgt, type = 'dynamic')
+        did_dyna <- did::aggte(did_attgt, type = 'dynamic')
         
         # Get overall ATT
-        did_overall <- aggte(did_attgt, type = 'simple')
+        did_overall <- did::aggte(did_attgt, type = 'simple')
         
         if (debug) {
           cat("\n=== DiD Package Results ===\n")
@@ -13617,7 +13616,7 @@ SaomNkRSienaBiEnv <- R6Class(
     }
     
     # Run att_gt with same parameters as K_AC
-    did_attgt <- att_gt(
+    did_attgt <- did::att_gt(
       yname = 'value_mean',
       tname = 'chain_step_id',
       idname = 'actor_id',
@@ -13641,8 +13640,8 @@ SaomNkRSienaBiEnv <- R6Class(
     )
     
     # Aggregate results
-    did_group <- aggte(did_attgt, type = 'group', cband = FALSE)
-    did_dyna <- aggte(did_attgt, type = 'dynamic')
+    did_group <- did::aggte(did_attgt, type = 'group', cband = FALSE)
+    did_dyna <- did::aggte(did_attgt, type = 'dynamic')
     
     first_treated_step <- min(did_dat$treatment_group[did_dat$treatment_group > 0])
     
@@ -14206,7 +14205,7 @@ SaomNkRSienaBiEnv <- R6Class(
     }
     
     # Run att_gt
-    did_attgt <- att_gt(
+    did_attgt <- did::att_gt(
       yname = 'value_mean',
       tname = 'chain_step_id',
       idname = 'actor_id',
@@ -14230,8 +14229,8 @@ SaomNkRSienaBiEnv <- R6Class(
     )
     
     # Aggregate results
-    did_group <- aggte(did_attgt, type = 'group', cband = FALSE)
-    did_dyna <- aggte(did_attgt, type = 'dynamic')
+    did_group <- did::aggte(did_attgt, type = 'group', cband = FALSE)
+    did_dyna <- did::aggte(did_attgt, type = 'dynamic')
     
     first_treated_step <- min(did_dat$treatment_group[did_dat$treatment_group > 0])
     
@@ -14425,7 +14424,7 @@ SaomNkRSienaBiEnv <- R6Class(
     
     cat("\nTest 1: With explicitly sorted data\n")
     tryCatch({
-      test1 <- att_gt(
+      test1 <- did::att_gt(
         yname = 'value_mean',
         tname = 'chain_step_id',
         idname = 'actor_id',
@@ -14443,7 +14442,7 @@ SaomNkRSienaBiEnv <- R6Class(
     # Test 2: Try with reg method instead of dr
     cat("\nTest 2: With 'reg' estimation method\n")
     tryCatch({
-      test2 <- att_gt(
+      test2 <- did::att_gt(
         yname = 'value_mean',
         tname = 'chain_step_id',
         idname = 'actor_id',
