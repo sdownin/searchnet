@@ -1,3 +1,61 @@
+# searchnet 0.8.1
+
+## Bug fixes
+
+* **The Theorem 4 empirical check no longer compares the simulation against an
+  object that is not the law of the simulated process.** The check had asserted
+  the live simulation lands within 0.10 (spin form) of the linear Curie-Weiss
+  roots at a nominally supercritical coupling. It failed at 0.38 the first time
+  it actually ran -- it had been gated behind NOT_CRAN since it was written --
+  and three independent diagnoses (an adversarial code audit, an M-sweep over
+  12..200 with 25+ seeds per cell, and exact finite-M Gibbs computation)
+  converged on the same verdict: the assertion, not the simulation, was wrong.
+
+  RSiena's `inPop` evaluation delta is sqrt-form, so the simulated process obeys
+  the fixed point p = sigmoid(beta*(h_b + theta*sqrt(M*p+1))) -- the Option B
+  object PROOF_TABLE.md L16 designates "the binding numerical comparison" --
+  not the linear tanh roots. Exact per-column Gibbs laws reject the linear
+  reading at |z| > 80 and the squared reading at |z| > 2000; the sqrt family
+  matches every empirical anchor within 2 SD. The observed 0.38 was the
+  sqrt-vs-linear model gap itself: flat in M (asymptote ~0.41), 15x the genuine
+  finite-size budget at M = 12 (0.025). No tolerance against the old object was
+  defensible at any M -- the 6-column-average observable had an asymptotic
+  failure floor of 0.656.
+
+  `diagnose_mean_field_fit()` now reports both objects: the binding Option B
+  fixed point (which `discrepancy_adopt`/`discrepancy_spin` now measure
+  against), and the linear-CW reference with an `in_BD_regime` flag marking
+  L16's validity regime (near p = 1/2, sub-threshold). It also extracts the
+  density coefficient as the field term -- previously dropped entirely, so the
+  analytical side silently assumed h = 0 against a simulation running at
+  h_b = -1 -- and matches the reference against STABLE roots only. The old
+  `which.min` over all roots selected the unstable m = 0 root for 49 of 76
+  seeds at M = 12, making the reported gap shrink exactly when the simulation
+  was furthest from any attainable equilibrium.
+
+  The rewritten test asserts |p_emp - p_binding| < 0.15 in adoption form, a
+  derived bound: the exact finite-M q95 of |p_emp - E[p]| is 0.119-0.138 at
+  M = 12, N = 6, plus short-chain autocorrelation excess. A second test
+  constructs L16's Option C regime (sub-threshold, fixed point near 1/2) and
+  verifies the Brock-Durlauf correspondence there -- the part of Theorem 4 the
+  live harness CAN verify. The supercritical pitchfork is no longer asserted
+  anywhere, per L16: it "cannot be empirically verified via the live harness."
+
+* `solve_mean_field()` documentation now states what the function returns --
+  the zero-field linear Curie-Weiss REFERENCE object, not the stationary law of
+  an `inPop` simulation -- and cites `inst/proofs/PROOF_TABLE.md` rows L8/L10/
+  L16 instead of a proof file that does not exist in the repository.
+
+## Scope notes
+
+* The manuscript record was swept for the same defect: the JSS paper and its
+  Appendix H are consistent (H explicitly disclaims supercritical live
+  verification), and the industrial-policy manuscript keeps `inPop`/`inPopSqrt`
+  distinct throughout. The defective comparison existed only in
+  `solve_mean_field()` + `diagnose_mean_field_fit()` + this test. One teaching
+  primer overclaimed the coefficient-to-betaJ mapping and now states the
+  linearity condition and L16 rescaling.
+
 # searchnet 0.8.0
 
 Merges the diagnostics port and time-varying W (developed as 0.7.0 on

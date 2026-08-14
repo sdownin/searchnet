@@ -229,7 +229,10 @@ test_that("behaviour values must be one per actor", {
 # --------------------------------------------------------------------------- #
 
 test_that("a coevolution run completes and both DVs actually move", {
-  skip_on_cran()
+  ## skip_on_cran() removed 2026-08-14: the package is not on CRAN, and the
+  ## gate meant these never ran locally either (bare test_dir() does not set
+  ## NOT_CRAN), so the feature shipped with zero executed verification. If a
+  ## CRAN submission happens, re-gate at that point with the cost understood.
   fx <- make_behavior_fixture(M = 5L, N = 6L, rate = 0.5, effects = list(
     list(effect = "linear", parameter = 0.1),
     list(effect = "quad",   parameter = -0.2),
@@ -253,7 +256,6 @@ test_that("a coevolution run completes and both DVs actually move", {
 test_that("behaviour ministeps never mutate the bipartite state trajectory", {
   ## A behaviour ministep's `id_to` is a behaviour value, not a component id.
   ## Toggling on it would silently corrupt every downstream network statistic.
-  skip_on_cran()
   fx <- make_behavior_fixture(M = 5L, N = 6L, rate = 0.5)
   suppressMessages(saomnk_run(fx$env, fx$mod, steps_per_actor = 10L, seed = 7L))
 
@@ -274,7 +276,6 @@ test_that("behaviour ministeps never mutate the bipartite state trajectory", {
 
 
 test_that("post-run statistics processing survives a coevolving behaviour DV", {
-  skip_on_cran()
   fx <- make_behavior_fixture(M = 5L, N = 6L, rate = 0.3)
   suppressMessages(saomnk_run(fx$env, fx$mod, steps_per_actor = 8L, seed = 42L))
 
@@ -288,7 +289,6 @@ test_that("post-run statistics processing survives a coevolving behaviour DV", {
 
 
 test_that("saomnk_get_behavior recovers the simulated behaviour trajectory", {
-  skip_on_cran()
   fx <- make_behavior_fixture(M = 5L, N = 6L, rate = 0.5)
   suppressMessages(saomnk_run(fx$env, fx$mod, steps_per_actor = 10L, seed = 42L))
 
@@ -307,7 +307,6 @@ test_that("saomnk_get_behavior recovers the simulated behaviour trajectory", {
 
 
 test_that("saomnk_get_behavior errors clearly when there is no behaviour DV", {
-  skip_on_cran()
   env <- saomnk_env(M = 4L, N = 6L, seed = 1234L)
   mod <- saomnk_model(density = -0.5,
                       influence_matrix = saomnk_block_diagonal(6, 2))
@@ -321,7 +320,6 @@ test_that("saomnk_get_behavior errors clearly when there is no behaviour DV", {
 test_that("a ramp composes with a coevolving behaviour DV", {
   ## The two new capabilities are independent, and must remain so: a ramp on a
   ## network parameter has to work in a model that also evolves a behaviour.
-  skip_on_cran()
   fx <- make_behavior_fixture(M = 5L, N = 6L, rate = 0.3)
   n <- 40L
   tm <- suppressMessages(

@@ -41,7 +41,10 @@ test_that("no stray loader script sits in R/ (breaks R CMD INSTALL)", {
 # ---------------------------------------------------------------------------
 
 test_that("game_step scales sub-quadratically in M", {
-  skip_on_cran()
+  ## skip_on_cran() removed 2026-08-14: the package is not on CRAN, and the
+  ## gate meant these never ran locally either (bare test_dir() does not set
+  ## NOT_CRAN), so the feature shipped with zero executed verification. If a
+  ## CRAN submission happens, re-gate at that point with the cost understood.
   timed <- function(M, N) {
     g <- searchnet_game_init(M = M, N = N, seed = 42)
     system.time(for (i in 1:3) g <- searchnet_game_step(g, "add", (i %% N) + 1)

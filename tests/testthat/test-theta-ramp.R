@@ -221,7 +221,10 @@ test_that("ramp and drift compose through the theta_matrix argument", {
 
 
 test_that("saomnk_run forwards theta_matrix and the run uses it", {
-  skip_on_cran()
+  ## skip_on_cran() removed 2026-08-14: the package is not on CRAN, and the
+  ## gate meant these never ran locally either (bare test_dir() does not set
+  ## NOT_CRAN), so the feature shipped with zero executed verification. If a
+  ## CRAN submission happens, re-gate at that point with the cost understood.
   fx <- make_ramp_fixture(M = 4L, N = 6L)
   n <- 60L
   tm <- saomnk_theta_ramp(fx$env, fx$mod, n,

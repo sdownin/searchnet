@@ -114,7 +114,11 @@ test_that("at very high beta probability concentrates on best flip", {
 test_that("monotone logit link: higher delta_u gives higher probability", {
   skip_if_not_installed("RSiena")
 
-  M <- 1
+  ## Monotonicity of the logit link is a property of the link, not of
+  ## single-actor dynamics; the test only ever reads result[[1]]. It used to
+  ## request M = 1, which search_rsiena() refuses (RSiena's sienaDataCreate()
+  ## has no single-actor bipartite form), so the whole test silently skipped.
+  M <- 2
   N <- 6
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 504),

@@ -9,10 +9,13 @@ test_that("verify_nk_equivalence with N=4 identity E: max difference < 1e-10", {
 
   M <- 1
   N <- 4
-  env <- tryCatch(
-    run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 600),
-    error = function(e) stop(paste("Tiny sim failed:", e$message))
-  )
+  ## No simulation is needed here: compute_fitness_landscape() and
+  ## verify_nk_equivalence() read only the constructed environment, and the
+  ## simulation path is exactly what cannot exist at M = 1 (RSiena refuses
+  ## single-actor bipartite data). Constructing directly is what lets the
+  ## Theorem 1 reduction actually be tested at M = 1 instead of skipped.
+  env <- SaomNkRSienaBiEnv$new(make_small_environ_params(M = M, N = N,
+                                                         rand_seed = 600))
 
   ## Set epistasis matrix to identity (K=0 in NK terms)
   env$component_1_coDyadCovar <- diag(N)
@@ -49,10 +52,13 @@ test_that("verify_nk_equivalence with N=4 block-diagonal E: max difference < 1e-
 
   M <- 1
   N <- 4
-  env <- tryCatch(
-    run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 601),
-    error = function(e) stop(paste("Tiny sim failed:", e$message))
-  )
+  ## No simulation is needed here: compute_fitness_landscape() and
+  ## verify_nk_equivalence() read only the constructed environment, and the
+  ## simulation path is exactly what cannot exist at M = 1 (RSiena refuses
+  ## single-actor bipartite data). Constructing directly is what lets the
+  ## Theorem 1 reduction actually be tested at M = 1 instead of skipped.
+  env <- SaomNkRSienaBiEnv$new(make_small_environ_params(M = M, N = N,
+                                                         rand_seed = 601))
 
   ## Block-diagonal epistasis: dimensions 1-2 interact, 3-4 interact
   E_block <- diag(N)
@@ -90,10 +96,13 @@ test_that("verify_nk_equivalence errors when N > max_N", {
 
   M <- 1
   N <- 6
-  env <- tryCatch(
-    run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 602),
-    error = function(e) stop(paste("Tiny sim failed:", e$message))
-  )
+  ## No simulation is needed here: compute_fitness_landscape() and
+  ## verify_nk_equivalence() read only the constructed environment, and the
+  ## simulation path is exactly what cannot exist at M = 1 (RSiena refuses
+  ## single-actor bipartite data). Constructing directly is what lets the
+  ## Theorem 1 reduction actually be tested at M = 1 instead of skipped.
+  env <- SaomNkRSienaBiEnv$new(make_small_environ_params(M = M, N = N,
+                                                         rand_seed = 602))
 
   ## Provide a fitness landscape so the error is about max_N, not missing landscape
   tryCatch(
@@ -122,10 +131,13 @@ test_that("verify_nk_equivalence returns data frame with correct columns", {
 
   M <- 1
   N <- 4
-  env <- tryCatch(
-    run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 603),
-    error = function(e) stop(paste("Tiny sim failed:", e$message))
-  )
+  ## No simulation is needed here: compute_fitness_landscape() and
+  ## verify_nk_equivalence() read only the constructed environment, and the
+  ## simulation path is exactly what cannot exist at M = 1 (RSiena refuses
+  ## single-actor bipartite data). Constructing directly is what lets the
+  ## Theorem 1 reduction actually be tested at M = 1 instead of skipped.
+  env <- SaomNkRSienaBiEnv$new(make_small_environ_params(M = M, N = N,
+                                                         rand_seed = 603))
 
   env$component_1_coDyadCovar <- diag(N)
   env$search_matrix <- diag(N)

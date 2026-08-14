@@ -14937,6 +14937,20 @@ SaomNkRSienaBiEnv <- R6Class(
                                      verbose = FALSE) {
 
     ## ---- 1. Extract theta_inPop from current structure model -------------
+    ## The effects list is needed even when theta_inPop is overridden,
+    ## because the density coefficient (the field term) is always read from
+    ## the structure model.
+    sm_eff <- tryCatch(
+      self$config_structure_model$dv_bipartite$effects,
+      error = function(e) NULL
+    )
+    if (is.null(sm_eff) && !is.null(self$structure_model)) {
+      sm_eff <- tryCatch(
+        self$structure_model$dv_bipartite$effects,
+        error = function(e) NULL
+      )
+    }
+
     theta_inPop <- 0
     if (!is.null(theta_inPop_override)) {
       stopifnot(is.numeric(theta_inPop_override),
@@ -14944,16 +14958,6 @@ SaomNkRSienaBiEnv <- R6Class(
                 is.finite(theta_inPop_override))
       theta_inPop <- as.numeric(theta_inPop_override)
     } else {
-      sm_eff <- tryCatch(
-        self$config_structure_model$dv_bipartite$effects,
-        error = function(e) NULL
-      )
-      if (is.null(sm_eff) && !is.null(self$structure_model)) {
-        sm_eff <- tryCatch(
-          self$structure_model$dv_bipartite$effects,
-          error = function(e) NULL
-        )
-      }
       if (!is.null(sm_eff)) {
         for (eff in sm_eff) {
           enm <- eff$effect
@@ -14961,6 +14965,21 @@ SaomNkRSienaBiEnv <- R6Class(
             theta_inPop <- as.numeric(eff$parameter)
             break
           }
+        }
+      }
+    }
+
+    ## The density coefficient is the external field of the process. It was
+    ## previously ignored here, so the analytical side assumed h = 0 while the
+    ## simulation ran under (in the failing test) h_b = -1.0 -- one of the three
+    ## defects behind the 0.38 discrepancy diagnosed on 2026-08-14.
+    h_b <- 0
+    if (!is.null(sm_eff)) {
+      for (eff in sm_eff) {
+        enm <- eff$effect
+        if (!is.null(enm) && identical(enm, "density")) {
+          h_b <- as.numeric(eff$parameter)
+          break
         }
       }
     }
@@ -14974,22 +14993,60 @@ SaomNkRSienaBiEnv <- R6Class(
     p_emp        <- mean(bi)               ## fraction of active ties in [0, 1]
     m_emp_spin   <- 2 * p_emp - 1          ## spin-form magnetisation in [-1, 1]
 
-    ## ---- 3. Analytical fixed point(s) ------------------------------------
+    ## ---- 3. Analytical comparison objects --------------------------------
+    ##
+    ## TWO analytics, per PROOF_TABLE.md L16, which designates them Option B
+    ## and Option C. They are different objects and only one of them is the
+    ## law of the simulated process:
+    ##
+    ##   BINDING (Option B): the fixed point of the map the simulation
+    ##   actually obeys. RSiena's inPop evaluation delta is sqrt-form, so the
+    ##   equilibrium solves p = sigmoid(beta*(h_b + theta*sqrt(M*p + 1))).
+    ##   Identified empirically on 2026-08-14: against exact per-column Gibbs
+    ##   laws, the sqrt family matched the simulated stationary state within
+    ##   2 SD while linear and squared readings were rejected at |z| > 80.
+    ##
+    ##   REFERENCE (Option C): the zero-field linear Curie-Weiss roots from
+    ##   solve_mean_field(). Valid as a comparison only in L16's linearised
+    ##   regime (near p = 1/2, sub-threshold). Reported for orientation, and
+    ##   because the bifurcation structure is stated in these terms.
+    ##
+    ## The previous version compared the simulation against the REFERENCE
+    ## object only, with no field term, and selected the nearest root even
+    ## when that root was the unstable m = 0 -- which made discrepancy_spin
+    ## non-monotone in the actual model error (49/76 seeds at M = 12).
+    p_binding <- saomnk_inpop_self_consistency(beta        = 1 / T,
+                                               theta_inPop = theta_inPop,
+                                               h_b         = h_b,
+                                               M           = self$M)
+    m_binding_spin          <- 2 * p_binding - 1
+    discrepancy_adopt       <- p_emp - p_binding
+    discrepancy_spin        <- m_emp_spin - m_binding_spin
+
     fp <- solve_mean_field(theta_inPop = theta_inPop,
                            M           = self$M,
                            T           = T)
 
-    ## Pick the closest equilibrium to the empirical magnetisation.  In the
-    ## supercritical regime this selects the basin the simulation is in; in
-    ## the subcritical regime there is only one fixed point.
-    closest_idx       <- which.min(abs(fp$m_star - m_emp_spin))
-    m_star_spin       <- fp$m_star[closest_idx]
-    discrepancy_spin  <- m_emp_spin - m_star_spin
+    ## Reference-root selection: STABLE roots only. Above critical the CW map
+    ## has roots (-m*, 0, +m*) and m = 0 is unstable; matching it makes the
+    ## reported gap shrink exactly when the simulation is furthest from any
+    ## attainable equilibrium.
+    stable_roots <- if (fp$above_critical && length(fp$m_star) > 1L) {
+      fp$m_star[abs(fp$m_star) > 1e-8]
+    } else {
+      fp$m_star
+    }
+    closest_idx     <- which.min(abs(stable_roots - m_emp_spin))
+    m_star_spin     <- stable_roots[closest_idx]
+    discrepancy_bd  <- m_emp_spin - m_star_spin
 
-    p_star_adopt        <- (m_star_spin + 1) / 2
-    discrepancy_adopt   <- p_emp - p_star_adopt
+    p_star_adopt    <- (m_star_spin + 1) / 2
 
     regime <- if (fp$above_critical) "supercritical" else "subcritical"
+
+    ## L16's applicability flag for the linear-CW reference: the linearisation
+    ## is locally accurate near p = 1/2 (Option C regime).
+    in_BD_regime <- abs(p_binding - 0.5) < 0.15
 
     if (verbose) {
       cat(sprintf(
@@ -15003,14 +15060,23 @@ SaomNkRSienaBiEnv <- R6Class(
     }
 
     list(
-      m_star_spin       = m_star_spin,
+      ## Binding comparison (Option B): the law of the simulated process.
+      ## discrepancy_* now measure against THIS object.
+      p_binding         = p_binding,
+      m_binding_spin    = m_binding_spin,
       m_emp_spin        = m_emp_spin,
       discrepancy_spin  = discrepancy_spin,
-      m_star_adopt      = p_star_adopt,
       m_emp_adopt       = p_emp,
       discrepancy_adopt = discrepancy_adopt,
+      ## Linear-CW reference (Option C), stable-root gap; valid near p = 1/2.
+      m_star_spin       = m_star_spin,
+      m_star_adopt      = p_star_adopt,
+      discrepancy_bd    = discrepancy_bd,
       m_star_all        = fp$m_star,
+      in_BD_regime      = in_BD_regime,
+      ## Parameters and regime.
       theta_inPop       = theta_inPop,
+      h_b               = h_b,
       M                 = self$M,
       T                 = T,
       beta_eff          = fp$beta_eff,
