@@ -213,9 +213,10 @@ test_that("compute_utility_shocks runs without error when shocks are set", {
   result <- tryCatch(
     env$compute_utility_shocks(verbose = FALSE),
     error = function(e) {
-      ## This is acceptable if the method requires specific structure
-      ## that the tiny model does not provide
-      skip(paste("compute_utility_shocks failed:", e$message))
+      ## Was a skip on the guess that failure "is acceptable if" the tiny model
+      ## lacks required structure. Unverified, and it swallowed every other
+      ## cause with it. Name and check the precondition, or let it fail.
+      stop(paste("compute_utility_shocks failed:", e$message))
     }
   )
 
