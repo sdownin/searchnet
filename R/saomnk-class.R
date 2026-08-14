@@ -5765,9 +5765,9 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                   plot_file=NA, plot_dir=NA
                                                                  ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar are not  set.")
-      if ( attr(self$component_1_coCovar, 'nodeSet') != 'COMPONENTS' )
+      if ( !identical(attr(self$component_1_coCovar, 'nodeSet'), 'COMPONENTS') )
         stop("Component payoff values in self$component_1_coCovar are not set.")
       range_midpoint <- min(self$component_1_coCovar, na.rm=T) + ( abs(diff(range(self$component_1_coCovar, na.rm = T))) / 2 )
       component_types <- as.factor( ifelse(self$component_1_coCovar > range_midpoint, 'High', 'Low') )
@@ -5878,9 +5878,9 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                   plot_file=NA, plot_dir=NA
     ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar are not set.")
-      if ( attr(self$component_1_coCovar, 'nodeSet') != 'COMPONENTS' )
+      if ( !identical(attr(self$component_1_coCovar, 'nodeSet'), 'COMPONENTS') )
         stop("Component payoff values in self$component_1_coCovar are not set.")
       range_midpoint <- min(self$component_1_coCovar, na.rm=T) + ( abs(diff(range(self$component_1_coCovar, na.rm = T))) / 2 )
       component_types <- as.factor( ifelse(self$component_1_coCovar > range_midpoint, 'High', 'Low') )
@@ -5995,7 +5995,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                  plot_file=NA, plot_dir=NA
     ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <-  self$get_actor_strategies() 
       nstep <- sum(!self$chain_stats$stability)
@@ -6108,7 +6108,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                  plot_file=NA, plot_dir=NA
     ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <-  self$get_actor_strategies() 
       nstep <- sum(!self$chain_stats$stability)
@@ -6264,7 +6264,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                            loess_span=0.4
     ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <- self$get_actor_strategies() 
       nstep <- sum(!self$chain_stats$stability)
@@ -6397,7 +6397,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                       plot_file=NA, plot_dir=NA
     ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <- self$get_actor_strategies() 
       ## Compare 2 actors utilty
@@ -6432,7 +6432,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                               plot_file=NA, 
                                                                               plot_dir=NA) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <-  self$get_actor_strategies() 
       strateffs   <- sapply(self$config_structure_model$dv_bipartite$coCovars, function(x)x$effect)
@@ -6538,7 +6538,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                         return_plot=TRUE
                                                         ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <-  self$get_actor_strategies() 
       ## Compare 2 actors utilty
@@ -6574,7 +6574,7 @@ SaomNkRSienaBiEnv <- R6Class(
     
     search_rsiena_plot_actor_utility_density_by_strategy = function(return_plot=TRUE) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <-  self$get_actor_strategies() 
       ## Compare 2 actors utilty
@@ -6602,7 +6602,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                       return_plot=TRUE
                                                                       ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <-  self$get_actor_strategies() 
       ## Compare 2 actors utilty
@@ -7706,7 +7706,7 @@ SaomNkRSienaBiEnv <- R6Class(
     structure_model <- self$config_structure_model
     
     ## actor strategy
-    if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+    if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
       stop("Actor Strategy self$strat_1_coCovar not set.")
     actor_strat <- self$get_actor_strategies() 
     efflist <- c(
@@ -10257,7 +10257,7 @@ SaomNkRSienaBiEnv <- R6Class(
   ) {
 
     # Get actor strategies - matching the utility plot logic
-    if (attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS')
+    if (!identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS'))
       stop("Actor Strategy self$strat_1_coCovar not set.")
     
     actor_strat <- self$get_actor_strategies()
@@ -10964,7 +10964,7 @@ SaomNkRSienaBiEnv <- R6Class(
   ) {
 
     # Get actor strategies
-    if (attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS')
+    if (!identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS'))
       stop("Actor Strategy self$strat_1_coCovar not set.")
     
     actor_strat <- self$get_actor_strategies()

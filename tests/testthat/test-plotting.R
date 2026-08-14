@@ -132,7 +132,12 @@ test_that("multiwave plot functions return ggplot objects", {
   skip_if_not_installed("RSiena")
 
   params <- make_small_environ_params(M = 4, N = 8, rand_seed = 505)
-  struct <- make_minimal_structure_model()
+  ## utility_strategy_summary reads self$strat_1_coCovar, which the minimal
+  ## (density-only) model never sets. With the nodeSet guard repaired the method
+  ## now refuses cleanly instead of failing obscurely -- but asserting the
+  ## refusal would leave the plotting code untested, so use the strategy fixture
+  ## and exercise the real path.
+  struct <- make_strategy_structure_model(M = 4)
 
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),

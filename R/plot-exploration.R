@@ -29,7 +29,7 @@ saomnk_plot_exploration_exploitation_consistent <- function(
 ) {
 
   # Get actor strategies - matching the utility plot logic
-  if (attr(env$strat_1_coCovar, 'nodeSet') != 'ACTORS')
+  if (!identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS'))
     stop("Actor Strategy env$strat_1_coCovar not set.")
 
   actor_strat <- env$get_actor_strategies()
@@ -742,7 +742,7 @@ saomnk_plot_exploration_exploitation_improved <- function(
 ) {
 
   # Get actor strategies
-  if (attr(env$strat_1_coCovar, 'nodeSet') != 'ACTORS')
+  if (!identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS'))
     stop("Actor Strategy env$strat_1_coCovar not set.")
 
   actor_strat <- env$get_actor_strategies()
