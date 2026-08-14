@@ -253,9 +253,9 @@ saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary <- function(env,
                                                                        return_plot = TRUE,
                                                                        plot_file = NA, plot_dir = NA) {
   ## actor strategy
-  if ( attr(env$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+  if ( !identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
     stop("Actor Strategy env$strat_1_coCovar are not  set.")
-  if ( attr(env$component_1_coCovar, 'nodeSet') != 'COMPONENTS' )
+  if ( !identical(attr(env$component_1_coCovar, 'nodeSet'), 'COMPONENTS') )
     stop("Component payoff values in env$component_1_coCovar are not set.")
   range_midpoint <- min(env$component_1_coCovar, na.rm=T) + ( abs(diff(range(env$component_1_coCovar, na.rm = T))) / 2 )
   component_types <- as.factor( ifelse(env$component_1_coCovar > range_midpoint, 'High', 'Low') )
@@ -364,9 +364,9 @@ saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary <- function(env,
                                                                        return_plot = TRUE,
                                                                        plot_file = NA, plot_dir = NA) {
   ## actor strategy
-  if ( attr(env$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+  if ( !identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
     stop("Actor Strategy env$strat_1_coCovar are not set.")
-  if ( attr(env$component_1_coCovar, 'nodeSet') != 'COMPONENTS' )
+  if ( !identical(attr(env$component_1_coCovar, 'nodeSet'), 'COMPONENTS') )
     stop("Component payoff values in env$component_1_coCovar are not set.")
   range_midpoint <- min(env$component_1_coCovar, na.rm=T) + ( abs(diff(range(env$component_1_coCovar, na.rm = T))) / 2 )
   component_types <- as.factor( ifelse(env$component_1_coCovar > range_midpoint, 'High', 'Low') )
@@ -479,7 +479,7 @@ saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary <- function(env,
                                                                        return_plot = TRUE,
                                                                        plot_file = NA, plot_dir = NA) {
   ## actor strategy
-  if ( attr(env$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+  if ( !identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
     stop("Actor Strategy env$strat_1_coCovar not set.")
   actor_strat <-  env$get_actor_strategies()
   nstep <- sum(!env$chain_stats$stability)
@@ -591,7 +591,7 @@ saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary <- function(env,
                                                                        return_plot = TRUE,
                                                                        plot_file = NA, plot_dir = NA) {
   ## actor strategy
-  if ( attr(env$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+  if ( !identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
     stop("Actor Strategy env$strat_1_coCovar not set.")
   actor_strat <-  env$get_actor_strategies()
   nstep <- sum(!env$chain_stats$stability)
@@ -703,7 +703,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_strategy_summary <- function(e
                                                                                 plot_file = NA, plot_dir = NA,
                                                                                 loess_span = 0.4) {
   ## actor strategy
-  if ( attr(env$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+  if ( !identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
     stop("Actor Strategy env$strat_1_coCovar not set.")
   actor_strat <- env$get_actor_strategies()
   nstep <- sum(!env$chain_stats$stability)
@@ -837,7 +837,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_by_strategy <- function(env,
                                                                            return_plot = TRUE,
                                                                            plot_file = NA, plot_dir = NA) {
   ## actor strategy
-  if ( attr(env$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+  if ( !identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
     stop("Actor Strategy env$strat_1_coCovar not set.")
   actor_strat <- env$get_actor_strategies()
   ## Compare 2 actors utilty
@@ -874,7 +874,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_density_by_strategy <- functio
                                                                                    plot_file = NA,
                                                                                    plot_dir = NA) {
   ## actor strategy
-  if ( attr(env$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+  if ( !identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
     stop("Actor Strategy env$strat_1_coCovar not set.")
   actor_strat <-  env$get_actor_strategies()
   strateffs   <- sapply(env$config_structure_model$dv_bipartite$coCovars, function(x)x$effect)

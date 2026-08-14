@@ -2,7 +2,6 @@
 #' @importFrom rvest html_text
 #' @importFrom knitr kable
 #' @importFrom broom tidy
-#' @importFrom did att_gt
 #' @importFrom stringr str_detect str_replace
 #' @importFrom scales percent_format
 #' @importFrom RColorBrewer brewer.pal
@@ -1879,7 +1878,7 @@ SaomNkRSienaBiEnv <- R6Class(
             did_dyna <- NULL
             
             tryCatch({
-              did_attgt <- att_gt(
+              did_attgt <- did::att_gt(
                 yname = 'value_mean',
                 tname = 'chain_step_id',
                 idname = 'actor_id',
@@ -1903,8 +1902,8 @@ SaomNkRSienaBiEnv <- R6Class(
               )
               
               # Aggregate results with na.rm = TRUE
-              did_group <- aggte(did_attgt, type = 'group', na.rm = TRUE, cband = FALSE)
-              did_dyna <- aggte(did_attgt, type = 'dynamic', na.rm = TRUE)
+              did_group <- did::aggte(did_attgt, type = 'group', na.rm = TRUE, cband = FALSE)
+              did_dyna <- did::aggte(did_attgt, type = 'dynamic', na.rm = TRUE)
               
             }, error = function(e) {
               if (verbose) {
@@ -2398,7 +2397,7 @@ SaomNkRSienaBiEnv <- R6Class(
         did_Kdf_dat$treatment_group <- as.numeric( did_Kdf_dat$treatment_group )
         
         
-        did_Kdf_attgt <- att_gt(
+        did_Kdf_attgt <- did::att_gt(
           yname = 'value_mean',
           tname = 'chain_step_id',
           idname = 'actor_id',
@@ -2422,10 +2421,10 @@ SaomNkRSienaBiEnv <- R6Class(
         )
         
         
-        did_Kdf_group <- aggte( did_Kdf_attgt, type = 'group', cband = F)
+        did_Kdf_group <- did::aggte( did_Kdf_attgt, type = 'group', cband = F)
         # did_stat
         
-        did_Kdf_dyna <- aggte( did_Kdf_attgt, type = 'dynamic')
+        did_Kdf_dyna <- did::aggte( did_Kdf_attgt, type = 'dynamic')
         # did_dyna
         
         
@@ -2553,7 +2552,7 @@ SaomNkRSienaBiEnv <- R6Class(
         did_Kdf_dat$treatment_group <- as.numeric( did_Kdf_dat$treatment_group )
         
         
-        did_Kdf_attgt <- att_gt(
+        did_Kdf_attgt <- did::att_gt(
           yname = 'value_mean',
           tname = 'chain_step_id',
           idname = 'actor_id',
@@ -2577,10 +2576,10 @@ SaomNkRSienaBiEnv <- R6Class(
         )
         
         
-        did_Kdf_group <- aggte( did_Kdf_attgt, type = 'group', cband = F)
+        did_Kdf_group <- did::aggte( did_Kdf_attgt, type = 'group', cband = F)
         # did_stat
         
-        did_Kdf_dyna <- aggte( did_Kdf_attgt, type = 'dynamic')
+        did_Kdf_dyna <- did::aggte( did_Kdf_attgt, type = 'dynamic')
         # did_dyna
         
 
@@ -2706,7 +2705,7 @@ SaomNkRSienaBiEnv <- R6Class(
         did_util_dat$treatment_group <- as.numeric( did_util_dat$treatment_group )
         
         
-        did_util_attgt <- att_gt(
+        did_util_attgt <- did::att_gt(
           yname = 'value_mean',
           tname = 'chain_step_id',
           idname = 'actor_id',
@@ -2730,10 +2729,10 @@ SaomNkRSienaBiEnv <- R6Class(
         )
         
         
-        did_util_group <- aggte( did_util_attgt, type = 'group', cband = F)
+        did_util_group <- did::aggte( did_util_attgt, type = 'group', cband = F)
         # did_stat
         
-        did_util_dyna <- aggte( did_util_attgt, type = 'dynamic')
+        did_util_dyna <- did::aggte( did_util_attgt, type = 'dynamic')
         # did_dyna
         
         # did_cal
@@ -5431,10 +5430,20 @@ SaomNkRSienaBiEnv <- R6Class(
           jaccardlist[[sprintf('jac%d-%d', i-1, i)]] <- self$get_jaccard_index(m0 = outlist[[ (i-1) ]], m1 = bi_env_mat_new )
         }
         
-        new_bi_g <- igraph::graph_from_biadjacency_matrix(bi_env_mat_new, 
-                                                          directed = F, mode = 'all', 
-                                                          multiple = T, weighted = T, 
-                                                          add.names = T)
+        ## `multiple` and `weighted` are mutually exclusive in igraph, and this
+        ## call passed both, so search_rsiena_plot_stability() could never run.
+        ## `weighted` is the right one to keep: the other three biadjacency calls
+        ## in this package use weighted = T and none uses multiple, and the
+        ## sibling at get_bipartite_igraph_from_matrix() builds the same graph
+        ## for the same K_soc/K_env degree projections. The matrix is binary
+        ## here in any case, so the two would agree on degree().
+        new_bi_g <- igraph::graph_from_biadjacency_matrix(bi_env_mat_new,
+                                                          directed = F, mode = 'all',
+                                                          weighted = T)
+        ## add.names dropped: igraph wants a character vertex-attribute name or
+        ## NULL there, not a logical, and TRUE raised "`name` must be a single
+        ## string". The matrix already carries dimnames, which is where the
+        ## vertex names come from, so the argument was doing nothing anyway.
         projections <- igraph::bipartite_projection(new_bi_g, multiplicity = T, which = 'both')
         K_soc_list[[i]] <- igraph::degree(projections$proj1)
         K_env_list[[i]] <- igraph::degree(projections$proj2)
@@ -5473,7 +5482,10 @@ SaomNkRSienaBiEnv <- R6Class(
       
       
       #-------------------------------------------
-      par(mfrow=c(1,3))
+      ## par(mfrow=) is global device state. This method set it and never
+      ## restored it, so every subsequent plot in the session stayed split 1x3.
+      op <- par(mfrow = c(1,3))
+      on.exit(par(op), add = TRUE)
       ##------------------------------------------
       jaccard_vec <- plyr::ldply(jaccardlist)[sim_ids_plot[-1], 2] ## skip first period (no change yet)
       n_changes <- length(jaccard_vec)
@@ -5493,8 +5505,20 @@ SaomNkRSienaBiEnv <- R6Class(
            ylab='Ln Stability Change [t-1, t]', 
            main='Sufficient Iterations?\n(Inter-Sim Distance Moving Average Change)' 
            ); abline(h = tol, col='pink', lty=2)
-      
-      
+
+      ## Return the computed series invisibly. The method drew three plots and
+      ## then threw away the numbers behind them, so a caller could look at the
+      ## stability trace but could not test or reuse it -- and the return was
+      ## NULL, which is what test-plotting.R asserts against. invisible(), so
+      ## callers that ignore the value are unaffected.
+      invisible(list(
+        degree_plot     = K_plt,
+        sim_ids         = sim_ids_plot_steps,
+        jaccard         = jaccard_vec,
+        stability       = stability_vec,
+        stability_delta = stability_delta,
+        tol             = tol
+      ))
     },
     
     # Convenience function for plotting all relevant plots 
@@ -5741,9 +5765,9 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                   plot_file=NA, plot_dir=NA
                                                                  ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar are not  set.")
-      if ( attr(self$component_1_coCovar, 'nodeSet') != 'COMPONENTS' )
+      if ( !identical(attr(self$component_1_coCovar, 'nodeSet'), 'COMPONENTS') )
         stop("Component payoff values in self$component_1_coCovar are not set.")
       range_midpoint <- min(self$component_1_coCovar, na.rm=T) + ( abs(diff(range(self$component_1_coCovar, na.rm = T))) / 2 )
       component_types <- as.factor( ifelse(self$component_1_coCovar > range_midpoint, 'High', 'Low') )
@@ -5854,9 +5878,9 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                   plot_file=NA, plot_dir=NA
     ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar are not set.")
-      if ( attr(self$component_1_coCovar, 'nodeSet') != 'COMPONENTS' )
+      if ( !identical(attr(self$component_1_coCovar, 'nodeSet'), 'COMPONENTS') )
         stop("Component payoff values in self$component_1_coCovar are not set.")
       range_midpoint <- min(self$component_1_coCovar, na.rm=T) + ( abs(diff(range(self$component_1_coCovar, na.rm = T))) / 2 )
       component_types <- as.factor( ifelse(self$component_1_coCovar > range_midpoint, 'High', 'Low') )
@@ -5971,7 +5995,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                  plot_file=NA, plot_dir=NA
     ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <-  self$get_actor_strategies() 
       nstep <- sum(!self$chain_stats$stability)
@@ -6084,7 +6108,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                  plot_file=NA, plot_dir=NA
     ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <-  self$get_actor_strategies() 
       nstep <- sum(!self$chain_stats$stability)
@@ -6240,7 +6264,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                            loess_span=0.4
     ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <- self$get_actor_strategies() 
       nstep <- sum(!self$chain_stats$stability)
@@ -6373,7 +6397,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                       plot_file=NA, plot_dir=NA
     ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <- self$get_actor_strategies() 
       ## Compare 2 actors utilty
@@ -6408,7 +6432,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                               plot_file=NA, 
                                                                               plot_dir=NA) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <-  self$get_actor_strategies() 
       strateffs   <- sapply(self$config_structure_model$dv_bipartite$coCovars, function(x)x$effect)
@@ -6514,7 +6538,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                         return_plot=TRUE
                                                         ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <-  self$get_actor_strategies() 
       ## Compare 2 actors utilty
@@ -6550,7 +6574,7 @@ SaomNkRSienaBiEnv <- R6Class(
     
     search_rsiena_plot_actor_utility_density_by_strategy = function(return_plot=TRUE) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <-  self$get_actor_strategies() 
       ## Compare 2 actors utilty
@@ -6578,7 +6602,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                       return_plot=TRUE
                                                                       ) {
       ## actor strategy
-      if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+      if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
       actor_strat <-  self$get_actor_strategies() 
       ## Compare 2 actors utilty
@@ -7682,7 +7706,7 @@ SaomNkRSienaBiEnv <- R6Class(
     structure_model <- self$config_structure_model
     
     ## actor strategy
-    if ( attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS' )
+    if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
       stop("Actor Strategy self$strat_1_coCovar not set.")
     actor_strat <- self$get_actor_strategies() 
     efflist <- c(
@@ -10233,7 +10257,7 @@ SaomNkRSienaBiEnv <- R6Class(
   ) {
 
     # Get actor strategies - matching the utility plot logic
-    if (attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS')
+    if (!identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS'))
       stop("Actor Strategy self$strat_1_coCovar not set.")
     
     actor_strat <- self$get_actor_strategies()
@@ -10940,7 +10964,7 @@ SaomNkRSienaBiEnv <- R6Class(
   ) {
 
     # Get actor strategies
-    if (attr(self$strat_1_coCovar, 'nodeSet') != 'ACTORS')
+    if (!identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS'))
       stop("Actor Strategy self$strat_1_coCovar not set.")
     
     actor_strat <- self$get_actor_strategies()
@@ -13417,7 +13441,7 @@ SaomNkRSienaBiEnv <- R6Class(
       
       # Run att_gt estimation
       tryCatch({
-        did_attgt <- att_gt(
+        did_attgt <- did::att_gt(
           yname = 'value_mean',
           tname = 'chain_step_id',
           idname = 'actor_id',
@@ -13439,10 +13463,10 @@ SaomNkRSienaBiEnv <- R6Class(
         )
         
         # Get dynamic effects
-        did_dyna <- aggte(did_attgt, type = 'dynamic')
+        did_dyna <- did::aggte(did_attgt, type = 'dynamic')
         
         # Get overall ATT
-        did_overall <- aggte(did_attgt, type = 'simple')
+        did_overall <- did::aggte(did_attgt, type = 'simple')
         
         if (debug) {
           cat("\n=== DiD Package Results ===\n")
@@ -13617,7 +13641,7 @@ SaomNkRSienaBiEnv <- R6Class(
     }
     
     # Run att_gt with same parameters as K_AC
-    did_attgt <- att_gt(
+    did_attgt <- did::att_gt(
       yname = 'value_mean',
       tname = 'chain_step_id',
       idname = 'actor_id',
@@ -13641,8 +13665,8 @@ SaomNkRSienaBiEnv <- R6Class(
     )
     
     # Aggregate results
-    did_group <- aggte(did_attgt, type = 'group', cband = FALSE)
-    did_dyna <- aggte(did_attgt, type = 'dynamic')
+    did_group <- did::aggte(did_attgt, type = 'group', cband = FALSE)
+    did_dyna <- did::aggte(did_attgt, type = 'dynamic')
     
     first_treated_step <- min(did_dat$treatment_group[did_dat$treatment_group > 0])
     
@@ -14206,7 +14230,7 @@ SaomNkRSienaBiEnv <- R6Class(
     }
     
     # Run att_gt
-    did_attgt <- att_gt(
+    did_attgt <- did::att_gt(
       yname = 'value_mean',
       tname = 'chain_step_id',
       idname = 'actor_id',
@@ -14230,8 +14254,8 @@ SaomNkRSienaBiEnv <- R6Class(
     )
     
     # Aggregate results
-    did_group <- aggte(did_attgt, type = 'group', cband = FALSE)
-    did_dyna <- aggte(did_attgt, type = 'dynamic')
+    did_group <- did::aggte(did_attgt, type = 'group', cband = FALSE)
+    did_dyna <- did::aggte(did_attgt, type = 'dynamic')
     
     first_treated_step <- min(did_dat$treatment_group[did_dat$treatment_group > 0])
     
@@ -14425,7 +14449,7 @@ SaomNkRSienaBiEnv <- R6Class(
     
     cat("\nTest 1: With explicitly sorted data\n")
     tryCatch({
-      test1 <- att_gt(
+      test1 <- did::att_gt(
         yname = 'value_mean',
         tname = 'chain_step_id',
         idname = 'actor_id',
@@ -14443,7 +14467,7 @@ SaomNkRSienaBiEnv <- R6Class(
     # Test 2: Try with reg method instead of dr
     cat("\nTest 2: With 'reg' estimation method\n")
     tryCatch({
-      test2 <- att_gt(
+      test2 <- did::att_gt(
         yname = 'value_mean',
         tname = 'chain_step_id',
         idname = 'actor_id',

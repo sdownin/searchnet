@@ -115,8 +115,11 @@ test_that("search_rsiena_plot_stability runs after simulation", {
   result <- tryCatch(
     env$search_rsiena_plot_stability(tol = 1e-5, step_size = 1, wave_id = 1),
     error = function(e) {
-      ## Stability plot may require specific chain structure; skip if it fails
-      skip(paste("search_rsiena_plot_stability failed:", e$message))
+      ## Was a skip on the guess that the plot "may require specific chain
+      ## structure". A guess is not a precondition: it excused every failure,
+      ## including real ones. If this genuinely cannot run on the tiny model,
+      ## the precondition should be named and checked, not assumed.
+      stop(paste("search_rsiena_plot_stability failed:", e$message))
     }
   )
 
@@ -129,7 +132,12 @@ test_that("multiwave plot functions return ggplot objects", {
   skip_if_not_installed("RSiena")
 
   params <- make_small_environ_params(M = 4, N = 8, rand_seed = 505)
-  struct <- make_minimal_structure_model()
+  ## utility_strategy_summary reads self$strat_1_coCovar, which the minimal
+  ## (density-only) model never sets. With the nodeSet guard repaired the method
+  ## now refuses cleanly instead of failing obscurely -- but asserting the
+  ## refusal would leave the plotting code untested, so use the strategy fixture
+  ## and exercise the real path.
+  struct <- make_strategy_structure_model(M = 4)
 
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),
