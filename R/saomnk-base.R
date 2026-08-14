@@ -1635,12 +1635,37 @@ SaomNkRSienaBiEnv_base <- R6Class(
       
       return(mat)
     }
-    
-    
-    
+
+
+
+  ),
+
+  private = list(
+
+    # R6's clone(deep = TRUE) recurses only into fields that are themselves R6
+    # objects. A data.table is not one, so the clone and the original end up
+    # bound to the SAME data.table -- verified: identical addresses, and a
+    # `:=` update on the clone adds a column to the original.
+    #
+    # That matters because `:=` deliberately bypasses R's copy-on-modify. Every
+    # other field here is a value type (matrix, list, plain data.frame) or an
+    # igraph object whose API returns new graphs, so all of those isolate
+    # correctly on their own; the data.tables were the single exception.
+    #
+    # No package code currently trips this: results are installed by assignment
+    # (`self$actor_stats_df <- ...`), never by reference update, so the clone in
+    # plot-markets.R is safe as written. This closes the trap rather than fixing
+    # a live defect -- it is armed the moment anyone writes `:=` against an
+    # env's data.table, and the symptom would be cross-contaminated runs in a
+    # seed batch, which is expensive to diagnose and easy to prevent here.
+    deep_clone = function(name, value) {
+      if (data.table::is.data.table(value)) return(data.table::copy(value))
+      value
+    }
+
   )
-    
-    
+
+
 )
 
 
