@@ -10,12 +10,12 @@ test_that("all probabilities sum to 1 for each actor", {
   N <- 4
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 500),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   result <- tryCatch(
     env$compute_choice_probabilities(beta = 1),
-    error = function(e) skip(paste("compute_choice_probabilities failed:", e$message))
+    error = function(e) stop(paste("compute_choice_probabilities failed:", e$message))
   )
 
   for (i in seq_along(result)) {
@@ -33,12 +33,12 @@ test_that("all probabilities between 0 and 1", {
   N <- 5
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 501),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   result <- tryCatch(
     env$compute_choice_probabilities(beta = 2),
-    error = function(e) skip(paste("compute_choice_probabilities failed:", e$message))
+    error = function(e) stop(paste("compute_choice_probabilities failed:", e$message))
   )
 
   for (i in seq_along(result)) {
@@ -58,13 +58,13 @@ test_that("at beta near 0 probabilities are approximately uniform", {
   N <- 4
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 502),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   ## beta very close to zero: exp(beta * delta_u) ~ 1 for all options
   result <- tryCatch(
     env$compute_choice_probabilities(beta = 1e-8),
-    error = function(e) skip(paste("compute_choice_probabilities failed:", e$message))
+    error = function(e) stop(paste("compute_choice_probabilities failed:", e$message))
   )
 
   uniform_prob <- 1 / (N + 1)  ## N flips + 1 pass option
@@ -87,12 +87,12 @@ test_that("at very high beta probability concentrates on best flip", {
   N <- 4
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 503),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   result <- tryCatch(
     env$compute_choice_probabilities(beta = 100),
-    error = function(e) skip(paste("compute_choice_probabilities failed:", e$message))
+    error = function(e) stop(paste("compute_choice_probabilities failed:", e$message))
   )
 
   for (i in seq_along(result)) {
@@ -118,13 +118,13 @@ test_that("monotone logit link: higher delta_u gives higher probability", {
   N <- 6
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 504),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   set.seed(504)
   result <- tryCatch(
     env$compute_choice_probabilities(beta = 1),
-    error = function(e) skip(paste("compute_choice_probabilities failed:", e$message))
+    error = function(e) stop(paste("compute_choice_probabilities failed:", e$message))
   )
 
   actor <- result[[1]]
@@ -157,12 +157,12 @@ test_that("pass probability exists and is positive", {
   N <- 4
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 505),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   result <- tryCatch(
     env$compute_choice_probabilities(beta = 1),
-    error = function(e) skip(paste("compute_choice_probabilities failed:", e$message))
+    error = function(e) stop(paste("compute_choice_probabilities failed:", e$message))
   )
 
   for (i in seq_along(result)) {
@@ -182,12 +182,12 @@ test_that("returns list of length M (one per actor)", {
   N <- 5
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 506),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   result <- tryCatch(
     env$compute_choice_probabilities(beta = 1),
-    error = function(e) skip(paste("compute_choice_probabilities failed:", e$message))
+    error = function(e) stop(paste("compute_choice_probabilities failed:", e$message))
   )
 
   expect_true(is.list(result))

@@ -52,7 +52,7 @@ test_that("M=2, N=2 simulation runs without error", {
   params <- make_small_environ_params(M = 2, N = 2, BI_PROB = 0.5, rand_seed = 10)
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),
-    error = function(e) skip(paste("Init failed:", e$message))
+    error = function(e) stop(paste("Init failed:", e$message))
   )
   struct <- make_minimal_structure_model()
 
@@ -63,7 +63,7 @@ test_that("M=2, N=2 simulation runs without error", {
       run_seed = 10,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("Sim failed:", e$message))
+    error = function(e) stop(paste("Sim failed:", e$message))
   )
 
   expect_false(is.null(env$rsiena_model))
@@ -96,7 +96,7 @@ test_that("BI_PROB=0 simulation runs without error", {
   params <- make_small_environ_params(M = 4, N = 6, BI_PROB = 0, rand_seed = 20)
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),
-    error = function(e) skip(paste("Init failed:", e$message))
+    error = function(e) stop(paste("Init failed:", e$message))
   )
   struct <- make_minimal_structure_model()
 
@@ -107,7 +107,7 @@ test_that("BI_PROB=0 simulation runs without error", {
       run_seed = 20,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("Empty-start sim failed:", e$message))
+    error = function(e) stop(paste("Empty-start sim failed:", e$message))
   )
 
   expect_false(is.null(env$rsiena_model))
@@ -119,7 +119,7 @@ test_that("BI_PROB=1 simulation runs without error", {
   params <- make_small_environ_params(M = 4, N = 6, BI_PROB = 1, rand_seed = 30)
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),
-    error = function(e) skip(paste("Init failed:", e$message))
+    error = function(e) stop(paste("Init failed:", e$message))
   )
   struct <- make_minimal_structure_model()
 
@@ -130,7 +130,7 @@ test_that("BI_PROB=1 simulation runs without error", {
       run_seed = 30,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("Full-start sim failed:", e$message))
+    error = function(e) stop(paste("Full-start sim failed:", e$message))
   )
 
   expect_false(is.null(env$rsiena_model))
@@ -166,7 +166,7 @@ test_that("empty coCovars/coDyadCovars simulation runs", {
   params <- make_small_environ_params(M = 4, N = 8, rand_seed = 40)
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),
-    error = function(e) skip(paste("Init failed:", e$message))
+    error = function(e) stop(paste("Init failed:", e$message))
   )
 
   ## Minimal structure: no covariates at all
@@ -179,7 +179,7 @@ test_that("empty coCovars/coDyadCovars simulation runs", {
       run_seed = 40,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("Sim failed:", e$message))
+    error = function(e) stop(paste("Sim failed:", e$message))
   )
 
   expect_false(is.null(env$rsiena_model))
@@ -244,7 +244,7 @@ test_that("simulation with 1 step per actor completes", {
   params <- make_small_environ_params(M = 4, N = 8, rand_seed = 50)
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),
-    error = function(e) skip(paste("Init failed:", e$message))
+    error = function(e) stop(paste("Init failed:", e$message))
   )
   struct <- make_minimal_structure_model()
 
@@ -255,7 +255,7 @@ test_that("simulation with 1 step per actor completes", {
       run_seed = 50,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("1-step sim failed:", e$message))
+    error = function(e) stop(paste("1-step sim failed:", e$message))
   )
 
   expect_false(is.null(env$rsiena_model))

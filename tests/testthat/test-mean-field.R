@@ -146,7 +146,7 @@ test_that("supercritical simulation lands within 10% of analytical m*", {
   ## Source the API wrappers (not loaded by helper-setup.R)
   tryCatch(
     source(file.path(dir_r, "saomnk-api.R"), local = FALSE),
-    error = function(e) skip(paste("api source failed:", e$message))
+    error = function(e) stop(paste("api source failed:", e$message))
   )
 
   M <- 12
@@ -157,7 +157,7 @@ test_that("supercritical simulation lands within 10% of analytical m*", {
 
   env <- tryCatch(
     saomnk_env(M = M, N = N, density = 0.5, seed = 4242L),
-    error = function(e) skip(paste("saomnk_env failed:", conditionMessage(e)))
+    error = function(e) stop(paste("saomnk_env failed:", conditionMessage(e)))
   )
 
   ## Density chosen to match the symmetric specialisation of Theorem 4
@@ -173,7 +173,7 @@ test_that("supercritical simulation lands within 10% of analytical m*", {
                seed = 4242L, verbose = FALSE)
     TRUE
   }, error = function(e) {
-    skip(paste("saomnk_run failed:", conditionMessage(e)))
+    stop(paste("saomnk_run failed:", conditionMessage(e)))
     FALSE
   })
 

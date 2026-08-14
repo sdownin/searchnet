@@ -1,3 +1,72 @@
+# searchnet 0.7.1
+
+## Bug fixes
+
+* **`clone(deep = TRUE)` now actually deep-copies `data.table` fields.** R6's
+  deep clone recurses only into fields that are themselves R6 objects, so a
+  clone and its original were bound to the SAME table: identical
+  `data.table::address()`, and a `:=` update on one added a column to the other.
+  `:=` bypasses copy-on-modify by design, which is exactly why it defeated the
+  default clone. A `private$deep_clone()` now copies data.tables and passes
+  everything else through unchanged.
+
+  No release shipped a defect from this: results are installed by assignment
+  (`self$actor_stats_df <- ...`), never by reference update, so the per-seed
+  clone in the market-plot batch loop was always safe. It closes a trap that
+  would have armed the moment anyone wrote `:=` against an env's data.table, and
+  whose symptom would have been cross-contaminated runs in a seed batch.
+
+* **`searchnet_export_k4()` and `searchnet_export_all()` no longer fail on
+  `K_CC`.** `strategy` is an actor attribute, and `K_CC_df` is component-by-
+  component, so it is built without one. The exporter read
+  `env$K_CC_df$strategy` anyway, which `data.frame()` saw as a zero-length
+  column against 160 rows: "arguments imply differing number of rows: 160, 1,
+  0". It now uses `NA_character_`, matching how `actor_id` was already handled
+  on the same rows and for the same reason.
+
+## Testing
+
+* **The test harness was sourcing 4 of 34 files in `R/`, and had been since
+  network--behaviour coevolution landed.** `helper-setup.R` hand-listed
+  `utils.R`, `saomnk-base.R`, `saomnk-class.R` and `mean_field_solver.R`. When a
+  `.searchnet_has_behavior()` call was added inside `saomnk-class.R`, the file
+  defining it was not on that list, so every simulation-dependent test died with
+  "could not find function" -- and the surrounding `tryCatch` turned each one
+  into a skip. Five test files reported green while the simulation path was
+  entirely broken.
+
+  This is the same defect fixed in the loader at 0.3.3, where sourcing 11 of 28
+  files left whole modules absent. The loader was fixed by globbing; this second,
+  hand-kept copy then drifted the same way. `helper-setup.R` now delegates to
+  `inst/saomnk-loader.R`, so load order is defined once.
+
+* **The attached-package list is now derived from NAMESPACE.** Sourcing `R/*.R`
+  directly does not activate `importFrom()`, so imported functions must be on
+  the search path some other way. The hand-written `library()` list named 13
+  packages while NAMESPACE imported from 11 more, so `scales::hue_pal` was
+  absent and a plotting test errored. A third hand-kept dependency list, going
+  stale the same way as the other two.
+
+* **158 tests no longer report a failure as a skip.** 20 state guards of the form
+  `if (is.null(env$K_AC_df)) skip(...)` became assertions: they sit after a
+  `skip_if_not_installed("RSiena")` and after a run that did not throw, so an
+  empty field there is the engine silently producing nothing. A further 138
+  handlers of the form `tryCatch(..., error = function(e) skip(...))` now
+  `stop()`, so a crash is an error rather than a green run. Two sites carrying an
+  explicit author rationale for tolerating failure were left alone.
+
+* Suite after these changes: **1585 passing, 0 failures, 1 error, 16 skips.**
+  The single error is a pre-existing defect in `search_rsiena_multiwave_plot()`
+  ("argument is of length zero"), which the skip pattern had been hiding; it is
+  recorded rather than papered over.
+
+* The M=1 NK-greedy test asked `search_rsiena()` for something the package
+  refuses by design, since RSiena's `sienaDataCreate()` does not support
+  single-actor bipartite networks. It now asserts that documented refusal. The
+  greedy-property claim itself is marked in the file as NOT YET COVERED, to be
+  re-tested against the landscape methods that do work at M = 1, rather than
+  deleted and mistaken for covered ground.
+
 # searchnet 0.7.0
 
 ## New features

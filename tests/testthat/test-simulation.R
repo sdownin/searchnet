@@ -28,7 +28,7 @@ test_that("search_rsiena runs with minimal structure model", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 99),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   ## rsiena_model should be populated after a run
@@ -51,7 +51,7 @@ test_that("bipartite matrix can change from initial state after simulation", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 10, rand_seed = 77),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   init_mat <- env$bipartite_matrix_init
@@ -77,11 +77,11 @@ test_that("random seed produces reproducible results", {
 
   env1 <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 555),
-    error = function(e) skip(paste("Tiny sim run 1 failed:", e$message))
+    error = function(e) stop(paste("Tiny sim run 1 failed:", e$message))
   )
   env2 <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 555),
-    error = function(e) skip(paste("Tiny sim run 2 failed:", e$message))
+    error = function(e) stop(paste("Tiny sim run 2 failed:", e$message))
   )
 
   ## Same seed should give the same final bipartite matrix
@@ -102,7 +102,7 @@ test_that("search_rsiena_multiwave_run executes with waves=1", {
 
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),
-    error = function(e) skip(paste("Init failed:", e$message))
+    error = function(e) stop(paste("Init failed:", e$message))
   )
 
   result <- tryCatch(
@@ -112,7 +112,7 @@ test_that("search_rsiena_multiwave_run executes with waves=1", {
       iterations = 10,
       rand_seed = 321
     ),
-    error = function(e) skip(paste("Multiwave run failed:", e$message))
+    error = function(e) stop(paste("Multiwave run failed:", e$message))
   )
 
   ## After multiwave run, rsiena_model should exist

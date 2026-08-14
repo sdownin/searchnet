@@ -11,7 +11,7 @@ test_that("preprocess_theta_shocks correctly structures shock schedule", {
 
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),
-    error = function(e) skip(paste("Init failed:", e$message))
+    error = function(e) stop(paste("Init failed:", e$message))
   )
 
   ## Must set config_structure_model before preprocessing shocks
@@ -38,7 +38,7 @@ test_that("preprocess_theta_shocks correctly structures shock schedule", {
   iterations <- 20
   processed <- tryCatch(
     env$preprocess_theta_shocks(theta_shocks, iterations),
-    error = function(e) skip(paste("preprocess_theta_shocks failed:", e$message))
+    error = function(e) stop(paste("preprocess_theta_shocks failed:", e$message))
   )
 
   expect_true(is.list(processed))
@@ -66,7 +66,7 @@ test_that("preprocess_theta_shocks handles effect_level input", {
 
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),
-    error = function(e) skip(paste("Init failed:", e$message))
+    error = function(e) stop(paste("Init failed:", e$message))
   )
   env$config_structure_model <- struct
 
@@ -90,7 +90,7 @@ test_that("preprocess_theta_shocks handles effect_level input", {
 
   processed <- tryCatch(
     env$preprocess_theta_shocks(theta_shocks, 30),
-    error = function(e) skip(paste("preprocess_theta_shocks failed:", e$message))
+    error = function(e) stop(paste("preprocess_theta_shocks failed:", e$message))
   )
 
   expect_true(is.list(processed))
@@ -111,7 +111,7 @@ test_that("search_rsiena with theta_shocks runs without error", {
 
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),
-    error = function(e) skip(paste("Init failed:", e$message))
+    error = function(e) stop(paste("Init failed:", e$message))
   )
 
   theta_shocks <- list(
@@ -139,7 +139,7 @@ test_that("search_rsiena with theta_shocks runs without error", {
       run_seed = 202,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("search_rsiena with shocks failed:", e$message))
+    error = function(e) stop(paste("search_rsiena with shocks failed:", e$message))
   )
 
   ## Shocks should be stored on the object
@@ -158,7 +158,7 @@ test_that("search_rsiena with NULL theta_shocks is a no-op for shocks", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 203),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   ## theta_shocks should remain NULL when not provided
@@ -178,7 +178,7 @@ test_that("compute_utility_shocks runs without error when shocks are set", {
 
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),
-    error = function(e) skip(paste("Init failed:", e$message))
+    error = function(e) stop(paste("Init failed:", e$message))
   )
 
   theta_shocks <- list(
@@ -206,7 +206,7 @@ test_that("compute_utility_shocks runs without error when shocks are set", {
       run_seed = 204,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("search_rsiena with shocks failed:", e$message))
+    error = function(e) stop(paste("search_rsiena with shocks failed:", e$message))
   )
 
   ## compute_utility_shocks should run without error

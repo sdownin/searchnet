@@ -52,7 +52,7 @@ test_that("searchnet_export_k4() creates a CSV file", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 300),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   ## A populated K_AC_df is the postcondition of the run above, so assert it
@@ -65,7 +65,7 @@ test_that("searchnet_export_k4() creates a CSV file", {
 
   result <- tryCatch(
     searchnet_export_k4(env, file = tmpfile),
-    error = function(e) skip(paste("export_k4 failed:", e$message))
+    error = function(e) stop(paste("export_k4 failed:", e$message))
   )
 
   expect_true(file.exists(tmpfile))
@@ -84,7 +84,7 @@ test_that("searchnet_export_k4() also creates summary CSV", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 301),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
   expect_false(is.null(env$K_AC_df))
 
@@ -94,7 +94,7 @@ test_that("searchnet_export_k4() also creates summary CSV", {
 
   tryCatch(
     searchnet_export_k4(env, file = tmpfile),
-    error = function(e) skip(paste("export_k4 failed:", e$message))
+    error = function(e) stop(paste("export_k4 failed:", e$message))
   )
 
   expect_true(file.exists(summary_file))
@@ -119,7 +119,7 @@ test_that("searchnet_export_snapshots() creates CSV with correct columns", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 310),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
   expect_false(is.null(env$bi_env_arr))
 
@@ -128,7 +128,7 @@ test_that("searchnet_export_snapshots() creates CSV with correct columns", {
 
   tryCatch(
     searchnet_export_snapshots(env, file = tmpfile),
-    error = function(e) skip(paste("export_snapshots failed:", e$message))
+    error = function(e) stop(paste("export_snapshots failed:", e$message))
   )
 
   expect_true(file.exists(tmpfile))
@@ -143,7 +143,7 @@ test_that("searchnet_export_snapshots() sparse mode omits zero-ties", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 311),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
   expect_false(is.null(env$bi_env_arr))
 
@@ -152,7 +152,7 @@ test_that("searchnet_export_snapshots() sparse mode omits zero-ties", {
 
   tryCatch(
     searchnet_export_snapshots(env, file = tmpfile, sparse = TRUE),
-    error = function(e) skip(paste("export failed:", e$message))
+    error = function(e) stop(paste("export failed:", e$message))
   )
 
   df <- utils::read.csv(tmpfile, stringsAsFactors = FALSE)
@@ -176,7 +176,7 @@ test_that("searchnet_export_utility() creates a CSV", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 320),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
   expect_false(is.null(env$actor_util_df))
 
@@ -186,7 +186,7 @@ test_that("searchnet_export_utility() creates a CSV", {
 
   tryCatch(
     searchnet_export_utility(env, file = tmpfile),
-    error = function(e) skip(paste("export_utility failed:", e$message))
+    error = function(e) stop(paste("export_utility failed:", e$message))
   )
 
   expect_true(file.exists(tmpfile))
@@ -212,7 +212,7 @@ test_that("searchnet_export_all() creates directory and multiple files", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 330),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
   expect_false(is.null(env$bi_env_arr))
   expect_false(is.null(env$K_AC_df))
@@ -223,7 +223,7 @@ test_that("searchnet_export_all() creates directory and multiple files", {
 
   result <- tryCatch(
     searchnet_export_all(env, dir = tmpdir),
-    error = function(e) skip(paste("export_all failed:", e$message))
+    error = function(e) stop(paste("export_all failed:", e$message))
   )
 
   expect_true(dir.exists(tmpdir))
@@ -249,7 +249,7 @@ test_that("exported CSVs round-trip through read.csv correctly", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 340),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
   expect_false(is.null(env$bi_env_arr))
 
@@ -258,7 +258,7 @@ test_that("exported CSVs round-trip through read.csv correctly", {
 
   tryCatch(
     searchnet_export_snapshots(env, steps = 1, file = tmpfile, sparse = FALSE),
-    error = function(e) skip(paste("export failed:", e$message))
+    error = function(e) stop(paste("export failed:", e$message))
   )
 
   df <- utils::read.csv(tmpfile, stringsAsFactors = FALSE)

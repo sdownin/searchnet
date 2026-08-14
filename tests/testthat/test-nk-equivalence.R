@@ -11,7 +11,7 @@ test_that("verify_nk_equivalence with N=4 identity E: max difference < 1e-10", {
   N <- 4
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 600),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   ## Set epistasis matrix to identity (K=0 in NK terms)
@@ -28,12 +28,12 @@ test_that("verify_nk_equivalence with N=4 identity E: max difference < 1e-10", {
       component_value_sd = 0.1,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("compute_fitness_landscape failed:", e$message))
+    error = function(e) stop(paste("compute_fitness_landscape failed:", e$message))
   )
 
   result <- tryCatch(
     env$verify_nk_equivalence(max_N = 12, landscape_id = 1),
-    error = function(e) skip(paste("verify_nk_equivalence failed:", e$message))
+    error = function(e) stop(paste("verify_nk_equivalence failed:", e$message))
   )
 
   expect_true(is.data.frame(result))
@@ -51,7 +51,7 @@ test_that("verify_nk_equivalence with N=4 block-diagonal E: max difference < 1e-
   N <- 4
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 601),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   ## Block-diagonal epistasis: dimensions 1-2 interact, 3-4 interact
@@ -70,12 +70,12 @@ test_that("verify_nk_equivalence with N=4 block-diagonal E: max difference < 1e-
       component_value_sd = 0.1,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("compute_fitness_landscape failed:", e$message))
+    error = function(e) stop(paste("compute_fitness_landscape failed:", e$message))
   )
 
   result <- tryCatch(
     env$verify_nk_equivalence(max_N = 12, landscape_id = 1),
-    error = function(e) skip(paste("verify_nk_equivalence failed:", e$message))
+    error = function(e) stop(paste("verify_nk_equivalence failed:", e$message))
   )
 
   expect_true(is.data.frame(result))
@@ -92,7 +92,7 @@ test_that("verify_nk_equivalence errors when N > max_N", {
   N <- 6
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 602),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   ## Provide a fitness landscape so the error is about max_N, not missing landscape
@@ -105,7 +105,7 @@ test_that("verify_nk_equivalence errors when N > max_N", {
       component_value_sd = 0.1,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("compute_fitness_landscape failed:", e$message))
+    error = function(e) stop(paste("compute_fitness_landscape failed:", e$message))
   )
 
   ## max_N = 4 but N = 6, should error
@@ -124,7 +124,7 @@ test_that("verify_nk_equivalence returns data frame with correct columns", {
   N <- 4
   env <- tryCatch(
     run_tiny_sim(M = M, N = N, iterations_per_actor = 5, rand_seed = 603),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   env$component_1_coDyadCovar <- diag(N)
@@ -139,12 +139,12 @@ test_that("verify_nk_equivalence returns data frame with correct columns", {
       component_value_sd = 0.1,
       verbose = FALSE
     ),
-    error = function(e) skip(paste("compute_fitness_landscape failed:", e$message))
+    error = function(e) stop(paste("compute_fitness_landscape failed:", e$message))
   )
 
   result <- tryCatch(
     env$verify_nk_equivalence(max_N = 12, landscape_id = 1),
-    error = function(e) skip(paste("verify_nk_equivalence failed:", e$message))
+    error = function(e) stop(paste("verify_nk_equivalence failed:", e$message))
   )
 
   expect_true(is.data.frame(result))
@@ -159,53 +159,31 @@ test_that("verify_nk_equivalence returns data frame with correct columns", {
 })
 
 
-test_that("M=1 theta=0 simulation has non-decreasing utility (NK greedy property)", {
+test_that("M=1 simulation is refused with an actionable message", {
   skip_if_not_installed("RSiena")
 
-  M <- 1
-  N <- 4
-  env <- tryCatch({
-    params <- make_small_environ_params(M = M, N = N, rand_seed = 604)
-    SaomNkRSienaBiEnv$new(params)
-  }, error = function(e) {
-    skip(paste("searchnet init failed:", e$message))
-  })
-
-  struct <- make_minimal_structure_model()
-
-  ## Run simulation with theta = 0 (no social effects) and high beta (greedy)
-  tryCatch(
-    env$search_rsiena(
-      structure_model = struct,
-      iterations_per_actor = 10,
-      run_seed = 604,
-      verbose = FALSE
-    ),
-    error = function(e) {
-      skip(paste("search_rsiena failed:", e$message))
-    }
+  ## This test previously tried to run search_rsiena() at M=1 to check the NK
+  ## greedy property. That is not something the package can do: RSiena's
+  ## sienaDataCreate() does not support single-actor bipartite networks, and
+  ## search_rsiena() refuses M < 2 deliberately. The failure was invisible
+  ## because the error was caught and turned into a skip.
+  ##
+  ## What IS worth asserting is the refusal itself: it is a documented boundary
+  ## of the package, and a silent change to it (crashing instead, or quietly
+  ## accepting M=1 and producing nonsense) would be a real regression.
+  env <- SaomNkRSienaBiEnv$new(make_small_environ_params(M = 1, N = 4,
+                                                         rand_seed = 604))
+  expect_error(
+    env$search_rsiena(structure_model = make_minimal_structure_model(),
+                      iterations_per_actor = 10, run_seed = 604, verbose = FALSE),
+    regexp = "M >= 2|single-actor"
   )
-
-  ## Extract utility trajectory for the single actor across steps
-  ## bi_env_arr stores the bipartite state at each step
-  n_steps <- dim(env$bi_env_arr)[3]
-  ## The run above requested multiple iterations, so fewer than two recorded
-  ## steps means the chain was not stored -- assert it rather than skipping.
-  expect_false(is.null(n_steps))
-  expect_gte(n_steps, 2)
-
-  utilities <- tryCatch({
-    sapply(1:n_steps, function(s) {
-      env$compute_formal_utility(actor_id = 1, step = s)$total
-    })
-  }, error = function(e) {
-    skip(paste("compute_formal_utility failed:", e$message))
-  })
-
-  ## With theta=0 and greedy search (high rationality), utility should be non-decreasing
-  ## Allow small floating-point tolerance
-  diffs <- diff(utilities)
-  expect_true(all(diffs >= -1e-10),
-              info = sprintf("Utility trajectory should be non-decreasing (min diff = %.4e)",
-                             min(diffs)))
 })
+
+## NOT YET COVERED: the NK greedy property (utility non-decreasing under
+## theta = 0 and high beta) at M = 1. The test above cannot carry that claim,
+## because the simulation path it needs does not exist for a single actor. The
+## package's own error message names the route -- compute_fitness_landscape()
+## and verify_nk_equivalence() remain available at M = 1 -- so the claim should
+## be re-tested against the landscape rather than a ministep chain. Left as an
+## explicit gap rather than deleted, so it is not mistaken for covered ground.

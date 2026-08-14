@@ -207,13 +207,13 @@ test_that("saomnk_run() executes without error on small env", {
 
   env <- tryCatch(
     saomnk_env(M = 4, N = 6, density = 0.3, seed = 42),
-    error = function(e) skip(paste("saomnk_env failed:", e$message))
+    error = function(e) stop(paste("saomnk_env failed:", e$message))
   )
   mod <- saomnk_model(density = -1)
 
   result <- tryCatch(
     saomnk_run(env, mod, steps_per_actor = 5, seed = 42),
-    error = function(e) skip(paste("saomnk_run failed:", e$message))
+    error = function(e) stop(paste("saomnk_run failed:", e$message))
   )
 
   ## Should return the env invisibly
@@ -236,12 +236,12 @@ test_that("saomnk_summary() runs after simulation", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 6, iterations_per_actor = 5, rand_seed = 55),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   result <- tryCatch(
     saomnk_summary(env),
-    error = function(e) skip(paste("saomnk_summary failed:", e$message))
+    error = function(e) stop(paste("saomnk_summary failed:", e$message))
   )
 
   ## No crash is the key assertion
@@ -257,13 +257,13 @@ test_that("saomnk_plot_k4() returns without error after simulation", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 88),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   ## Should not error (actual plot output depends on graphics device)
   result <- tryCatch(
     saomnk_plot_k4(env, smooth = 0.5),
-    error = function(e) skip(paste("saomnk_plot_k4 failed:", e$message))
+    error = function(e) stop(paste("saomnk_plot_k4 failed:", e$message))
   )
 
   expect_true(TRUE)
@@ -298,7 +298,7 @@ test_that("saomnk_get_degrees() returns named list with K_AC, K_CA, K_AA, K_CC",
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 77),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   degrees <- saomnk_get_degrees(env)
@@ -311,7 +311,7 @@ test_that("saomnk_get_degrees() data frames have expected columns", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 78),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   degrees <- saomnk_get_degrees(env)

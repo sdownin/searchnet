@@ -158,7 +158,7 @@ test_that("K values match hand-computation from bi_env_arr", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 500),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   ## Both are postconditions of the run above; assert rather than skip, so a
@@ -184,7 +184,7 @@ test_that("K_CA values match hand-computation from bi_env_arr", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 501),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   expect_false(is.null(env$bi_env_arr))
@@ -207,7 +207,7 @@ test_that("K_AA values match hand-computation from bi_env_arr", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 502),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   expect_false(is.null(env$bi_env_arr))
@@ -231,7 +231,7 @@ test_that("K_CC values match hand-computation from bi_env_arr", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 503),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   expect_false(is.null(env$bi_env_arr))
@@ -259,7 +259,7 @@ test_that("K_AC sum equals total number of ties at each step", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 510),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   expect_false(is.null(env$bi_env_arr))
@@ -286,7 +286,7 @@ test_that("Sum of K_AC equals sum of K_CA at each step (conservation)", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 520),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   expect_false(is.null(env$K_AC_df))

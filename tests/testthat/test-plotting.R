@@ -9,7 +9,7 @@ test_that("plot_bipartite_system_from_mat returns a plot object", {
   params <- make_small_environ_params(M = 4, N = 8, rand_seed = 500)
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),
-    error = function(e) skip(paste("Init failed:", e$message))
+    error = function(e) stop(paste("Init failed:", e$message))
   )
 
   plt <- tryCatch(
@@ -19,7 +19,7 @@ test_that("plot_bipartite_system_from_mat returns a plot object", {
       plot_save = FALSE,
       return_plot = TRUE
     ),
-    error = function(e) skip(paste("plot_bipartite_system_from_mat failed:", e$message))
+    error = function(e) stop(paste("plot_bipartite_system_from_mat failed:", e$message))
   )
 
   ## Should return something plot-like (ggplot, recordedplot, or at least not NULL)
@@ -32,13 +32,13 @@ test_that("search_rsiena_plot returns ggplot objects after simulation", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 501),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   ## search_rsiena_plot returns a list of plot types
   plist <- tryCatch(
     env$search_rsiena_plot(type = c("utility")),
-    error = function(e) skip(paste("search_rsiena_plot failed:", e$message))
+    error = function(e) stop(paste("search_rsiena_plot failed:", e$message))
   )
 
   expect_true(is.list(plist), info = "search_rsiena_plot should return a list")
@@ -58,12 +58,12 @@ test_that("search_rsiena_plot utility_density variant works", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 502),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   plist <- tryCatch(
     env$search_rsiena_plot(type = c("utility_density")),
-    error = function(e) skip(paste("search_rsiena_plot utility_density failed:", e$message))
+    error = function(e) stop(paste("search_rsiena_plot utility_density failed:", e$message))
   )
 
   expect_true(is.list(plist))
@@ -83,12 +83,12 @@ test_that("search_rsiena_plot with strategy model produces plots", {
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5,
                  rand_seed = 503, use_strategy = TRUE),
-    error = function(e) skip(paste("Tiny sim with strategy failed:", e$message))
+    error = function(e) stop(paste("Tiny sim with strategy failed:", e$message))
   )
 
   plist <- tryCatch(
     env$search_rsiena_plot(type = c("utility_by_strategy")),
-    error = function(e) skip(paste("search_rsiena_plot utility_by_strategy failed:", e$message))
+    error = function(e) stop(paste("search_rsiena_plot utility_by_strategy failed:", e$message))
   )
 
   expect_true(is.list(plist))
@@ -107,7 +107,7 @@ test_that("search_rsiena_plot_stability runs after simulation", {
 
   env <- tryCatch(
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 504),
-    error = function(e) skip(paste("Tiny sim failed:", e$message))
+    error = function(e) stop(paste("Tiny sim failed:", e$message))
   )
 
   ## stability plot is available via search_rsiena_plot type = "stability"
@@ -133,7 +133,7 @@ test_that("multiwave plot functions return ggplot objects", {
 
   env <- tryCatch(
     SaomNkRSienaBiEnv$new(params),
-    error = function(e) skip(paste("Init failed:", e$message))
+    error = function(e) stop(paste("Init failed:", e$message))
   )
 
   tryCatch(
@@ -143,13 +143,13 @@ test_that("multiwave plot functions return ggplot objects", {
       iterations = 10,
       rand_seed = 505
     ),
-    error = function(e) skip(paste("Multiwave run failed:", e$message))
+    error = function(e) stop(paste("Multiwave run failed:", e$message))
   )
 
   ## Process results for multiwave
   tryCatch(
     env$search_rsiena_multiwave_process_results(),
-    error = function(e) skip(paste("Multiwave process results failed:", e$message))
+    error = function(e) stop(paste("Multiwave process results failed:", e$message))
   )
 
   ## Try the multiwave plot
@@ -159,7 +159,7 @@ test_that("multiwave plot functions return ggplot objects", {
       thin_factor = 1,
       thin_wave_factor = 1
     ),
-    error = function(e) skip(paste("Multiwave plot failed:", e$message))
+    error = function(e) stop(paste("Multiwave plot failed:", e$message))
   )
 
   if (!is.null(plist) && is.list(plist)) {

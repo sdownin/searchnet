@@ -13,24 +13,43 @@ if (!file.exists(file.path(pkg_root, "R", "saomnk-base.R"))) {
 
 dir_r <- file.path(pkg_root, "R")
 
-## Load only the packages needed for the core R6 classes
+## Attach the packages NAMESPACE imports from, read FROM NAMESPACE.
+##
+## Sourcing R/*.R directly does not activate importFrom() directives, so every
+## imported function has to be on the search path some other way. This used to
+## be a hand-written library() list, and it drifted: it named 13 packages while
+## NAMESPACE imported from 11 more, so `hue_pal` (scales) was simply absent and
+## test-plotting.R died with "could not find function". Same failure as the
+## hand-written source list below -- a second copy of a dependency list, kept by
+## hand, going stale.
+##
+## Deriving the list means adding an importFrom() to NAMESPACE is enough; the
+## harness follows automatically.
 suppressPackageStartupMessages({
   suppressWarnings({
-    library(R6)
-    library(igraph)
-    library(RSiena)
-    library(ggplot2)
-    library(dplyr)
-    library(plyr)
-    library(tidyr)
-    library(Matrix)
-    library(reshape2)
-    library(uuid)
-    library(grid)
-    library(gridExtra)
-    library(texreg)
-    if (requireNamespace("xml2", quietly = TRUE)) library(xml2)
-    if (requireNamespace("rvest", quietly = TRUE)) library(rvest)
+    .ns <- readLines(file.path(pkg_root, "NAMESPACE"), warn = FALSE)
+    .pkgs <- unique(c(
+      "R6",
+      sub("^importFrom\\(([^,]+),.*$", "\\1", grep("^importFrom\\(", .ns, value = TRUE)),
+      sub("^import\\(([^)]+)\\).*$",  "\\1", grep("^import\\(",     .ns, value = TRUE))
+    ))
+    .pkgs <- setdiff(trimws(.pkgs), c("", "base"))
+    for (.p in .pkgs) {
+      ## Optional/Suggests packages must not abort the run; a genuinely missing
+      ## hard dependency will surface as the first "could not find function".
+      if (requireNamespace(.p, quietly = TRUE)) {
+        suppressMessages(library(.p, character.only = TRUE))
+      }
+    }
+    ## Packages used by the package but not reached through importFrom(), so the
+    ## derivation above cannot see them. RSiena is a hard dependency of every
+    ## simulation test; xml2/rvest are Suggests used by preview_effects(), which
+    ## calls read_html() -- dropping them turned that test into an error.
+    for (.p in c("RSiena", "xml2", "rvest")) {
+      if (requireNamespace(.p, quietly = TRUE)) {
+        suppressMessages(library(.p, character.only = TRUE))
+      }
+    }
   })
 })
 
