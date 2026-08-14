@@ -124,10 +124,9 @@ test_that("process_fitness_landscape runs without error", {
     error = function(e) skip(paste("compute_fitness_landscape failed:", e$message))
   )
 
-  ## process_fitness_landscape requires theta_matrix
-  if (is.null(env$theta_matrix)) {
-    skip("theta_matrix is NULL; cannot test process_fitness_landscape")
-  }
+  ## process_fitness_landscape requires theta_matrix, and the run above should
+  ## have built one. A NULL here is the defect, not a missing precondition.
+  expect_false(is.null(env$theta_matrix))
 
   result <- tryCatch(
     env$process_fitness_landscape(actor_ids = 1:M, step_ids = 1:3),

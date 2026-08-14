@@ -34,21 +34,40 @@ suppressPackageStartupMessages({
   })
 })
 
-## Source the R6 classes in dependency order
+## Source the package via inst/saomnk-loader.R, which discovers every file in R/
+## by glob with the R6 hierarchy (utils -> saomnk-base -> saomnk-class) first.
+##
+## This used to hand-list four files. That is the same defect NEWS records fixing
+## in the loader at v0.3.3, where sourcing 11 of 28 files left whole modules
+## absent -- and the second copy of the list drifted the same way: when behaviour
+## coevolution added a `.searchnet_has_behavior()` call inside saomnk-class.R,
+## searchnet-behavior.R was not on this list, so EVERY simulation-dependent test
+## died with "could not find function" and the surrounding tryCatch turned that
+## into a skip. Five test files reported green while the simulation path was
+## entirely broken.
+##
+## Delegating to the loader means load order is defined in exactly one place and
+## cannot drift from the package again.
 suppressPackageStartupMessages({
   suppressWarnings({
-    tryCatch({
-      source(file.path(dir_r, "utils.R"), local = FALSE)
-      source(file.path(dir_r, "saomnk-base.R"), local = FALSE)
-      source(file.path(dir_r, "saomnk-class.R"), local = FALSE)
-      ## Mean-field solver (Theorem 4)
-      mf_path <- file.path(dir_r, "mean_field_solver.R")
-      if (file.exists(mf_path)) source(mf_path, local = FALSE)
-    }, error = function(e) {
-      message("Failed to source searchnet R6 classes: ", e$message)
-    })
+    loader <- file.path(pkg_root, "inst", "saomnk-loader.R")
+    if (file.exists(loader)) {
+      source(loader, local = FALSE)
+    } else {
+      ## Fallback: glob in the loader's order. Deliberately NOT a curated list.
+      r_files <- list.files(dir_r, pattern = "[.]R$", full.names = TRUE)
+      first <- file.path(dir_r, c("utils.R", "saomnk-base.R", "saomnk-class.R"))
+      for (f in c(first[file.exists(first)], sort(setdiff(r_files, first)))) {
+        source(f, local = FALSE)
+      }
+    }
   })
 })
+
+## No tryCatch around the above. It previously downgraded a sourcing failure to a
+## message(), so a package that would not load produced a full run of skips
+## rather than one loud error. If the package cannot be sourced, every result
+## after this point is meaningless and the run should stop here.
 
 ## ---- Shared constants ----
 DV_NAME <- "self$bipartite_rsienaDV"

@@ -189,9 +189,10 @@ test_that("M=1 theta=0 simulation has non-decreasing utility (NK greedy property
   ## Extract utility trajectory for the single actor across steps
   ## bi_env_arr stores the bipartite state at each step
   n_steps <- dim(env$bi_env_arr)[3]
-  if (is.null(n_steps) || n_steps < 2) {
-    skip("Not enough simulation steps to test monotonicity")
-  }
+  ## The run above requested multiple iterations, so fewer than two recorded
+  ## steps means the chain was not stored -- assert it rather than skipping.
+  expect_false(is.null(n_steps))
+  expect_gte(n_steps, 2)
 
   utilities <- tryCatch({
     sapply(1:n_steps, function(s) {

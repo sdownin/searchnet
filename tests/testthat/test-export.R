@@ -55,8 +55,9 @@ test_that("searchnet_export_k4() creates a CSV file", {
     error = function(e) skip(paste("Tiny sim failed:", e$message))
   )
 
-  ## Skip if K_AC_df not populated (simulation may not have processed stats)
-  if (is.null(env$K_AC_df)) skip("K_AC_df not populated after sim")
+  ## A populated K_AC_df is the postcondition of the run above, so assert it
+  ## rather than skipping: an empty one means the stats pass produced nothing.
+  expect_false(is.null(env$K_AC_df))
 
   tmpfile <- tempfile(fileext = ".csv")
   on.exit(unlink(c(tmpfile, sub("\\.csv$", "_summary.csv", tmpfile))),
@@ -85,7 +86,7 @@ test_that("searchnet_export_k4() also creates summary CSV", {
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 301),
     error = function(e) skip(paste("Tiny sim failed:", e$message))
   )
-  if (is.null(env$K_AC_df)) skip("K_AC_df not populated after sim")
+  expect_false(is.null(env$K_AC_df))
 
   tmpfile <- tempfile(fileext = ".csv")
   summary_file <- sub("\\.csv$", "_summary.csv", tmpfile)
@@ -120,7 +121,7 @@ test_that("searchnet_export_snapshots() creates CSV with correct columns", {
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 310),
     error = function(e) skip(paste("Tiny sim failed:", e$message))
   )
-  if (is.null(env$bi_env_arr)) skip("bi_env_arr not populated after sim")
+  expect_false(is.null(env$bi_env_arr))
 
   tmpfile <- tempfile(fileext = ".csv")
   on.exit(unlink(tmpfile), add = TRUE)
@@ -144,7 +145,7 @@ test_that("searchnet_export_snapshots() sparse mode omits zero-ties", {
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 311),
     error = function(e) skip(paste("Tiny sim failed:", e$message))
   )
-  if (is.null(env$bi_env_arr)) skip("bi_env_arr not populated")
+  expect_false(is.null(env$bi_env_arr))
 
   tmpfile <- tempfile(fileext = ".csv")
   on.exit(unlink(tmpfile), add = TRUE)
@@ -177,7 +178,7 @@ test_that("searchnet_export_utility() creates a CSV", {
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 320),
     error = function(e) skip(paste("Tiny sim failed:", e$message))
   )
-  if (is.null(env$actor_util_df)) skip("actor_util_df not populated")
+  expect_false(is.null(env$actor_util_df))
 
   tmpfile <- tempfile(fileext = ".csv")
   summary_file <- sub("\\.csv$", "_summary.csv", tmpfile)
@@ -213,10 +214,9 @@ test_that("searchnet_export_all() creates directory and multiple files", {
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 330),
     error = function(e) skip(paste("Tiny sim failed:", e$message))
   )
-  if (is.null(env$bi_env_arr) || is.null(env$K_AC_df) ||
-      is.null(env$actor_util_df)) {
-    skip("Required fields not populated after sim")
-  }
+  expect_false(is.null(env$bi_env_arr))
+  expect_false(is.null(env$K_AC_df))
+  expect_false(is.null(env$actor_util_df))
 
   tmpdir <- file.path(tempdir(), paste0("export_test_", Sys.getpid()))
   on.exit(unlink(tmpdir, recursive = TRUE), add = TRUE)
@@ -251,7 +251,7 @@ test_that("exported CSVs round-trip through read.csv correctly", {
     run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 340),
     error = function(e) skip(paste("Tiny sim failed:", e$message))
   )
-  if (is.null(env$bi_env_arr)) skip("bi_env_arr not populated")
+  expect_false(is.null(env$bi_env_arr))
 
   tmpfile <- tempfile(fileext = ".csv")
   on.exit(unlink(tmpfile), add = TRUE)
