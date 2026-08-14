@@ -5430,10 +5430,20 @@ SaomNkRSienaBiEnv <- R6Class(
           jaccardlist[[sprintf('jac%d-%d', i-1, i)]] <- self$get_jaccard_index(m0 = outlist[[ (i-1) ]], m1 = bi_env_mat_new )
         }
         
-        new_bi_g <- igraph::graph_from_biadjacency_matrix(bi_env_mat_new, 
-                                                          directed = F, mode = 'all', 
-                                                          multiple = T, weighted = T, 
-                                                          add.names = T)
+        ## `multiple` and `weighted` are mutually exclusive in igraph, and this
+        ## call passed both, so search_rsiena_plot_stability() could never run.
+        ## `weighted` is the right one to keep: the other three biadjacency calls
+        ## in this package use weighted = T and none uses multiple, and the
+        ## sibling at get_bipartite_igraph_from_matrix() builds the same graph
+        ## for the same K_soc/K_env degree projections. The matrix is binary
+        ## here in any case, so the two would agree on degree().
+        new_bi_g <- igraph::graph_from_biadjacency_matrix(bi_env_mat_new,
+                                                          directed = F, mode = 'all',
+                                                          weighted = T)
+        ## add.names dropped: igraph wants a character vertex-attribute name or
+        ## NULL there, not a logical, and TRUE raised "`name` must be a single
+        ## string". The matrix already carries dimnames, which is where the
+        ## vertex names come from, so the argument was doing nothing anyway.
         projections <- igraph::bipartite_projection(new_bi_g, multiplicity = T, which = 'both')
         K_soc_list[[i]] <- igraph::degree(projections$proj1)
         K_env_list[[i]] <- igraph::degree(projections$proj2)
@@ -5472,7 +5482,10 @@ SaomNkRSienaBiEnv <- R6Class(
       
       
       #-------------------------------------------
-      par(mfrow=c(1,3))
+      ## par(mfrow=) is global device state. This method set it and never
+      ## restored it, so every subsequent plot in the session stayed split 1x3.
+      op <- par(mfrow = c(1,3))
+      on.exit(par(op), add = TRUE)
       ##------------------------------------------
       jaccard_vec <- plyr::ldply(jaccardlist)[sim_ids_plot[-1], 2] ## skip first period (no change yet)
       n_changes <- length(jaccard_vec)
@@ -5492,8 +5505,20 @@ SaomNkRSienaBiEnv <- R6Class(
            ylab='Ln Stability Change [t-1, t]', 
            main='Sufficient Iterations?\n(Inter-Sim Distance Moving Average Change)' 
            ); abline(h = tol, col='pink', lty=2)
-      
-      
+
+      ## Return the computed series invisibly. The method drew three plots and
+      ## then threw away the numbers behind them, so a caller could look at the
+      ## stability trace but could not test or reuse it -- and the return was
+      ## NULL, which is what test-plotting.R asserts against. invisible(), so
+      ## callers that ignore the value are unaffected.
+      invisible(list(
+        degree_plot     = K_plt,
+        sim_ids         = sim_ids_plot_steps,
+        jaccard         = jaccard_vec,
+        stability       = stability_vec,
+        stability_delta = stability_delta,
+        tol             = tol
+      ))
     },
     
     # Convenience function for plotting all relevant plots 
