@@ -19,3 +19,7 @@ Data frame with policy, penalty, gradient, width, steepness
 The imitation penalty = fitness cost of landing on the basin wall
 rather than the floor. Steeper walls = higher penalty.
 }
+\examples{
+td <- saomnk_depth_width_tradeoff()
+saomnk_imitation_penalty(td, imitation_distance = 0.5)
+}

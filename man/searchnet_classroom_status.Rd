@@ -19,3 +19,12 @@ A list with session status information, printed to the console.
 Provides a quick summary of the session state: current round, pending
 submissions, and a student's current portfolio.
 }
+\examples{
+\donttest{
+session <- searchnet_classroom_init(n_students = 4, n_rounds = 6,
+                                    industry = "airline",
+                                    difficulty = "intro", seed = 1)
+status <- searchnet_classroom_status(session)
+status$rounds_remaining
+}
+}

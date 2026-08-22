@@ -23,3 +23,16 @@ ggplot object
 \description{
 Bar chart of final ELO ratings with parity band.
 }
+\examples{
+\donttest{
+set.seed(42)
+fitness_by_type <- list(
+  RS = rnorm(30, 0.80, 0.05),
+  RE = rnorm(30, 0.80, 0.05),
+  RR = rnorm(30, 0.80, 0.05),
+  RF = rnorm(30, 0.80, 0.05)
+)
+tour <- saomnk_elo_tournament(fitness_by_type, matches_per_pair = 10)
+p <- saomnk_plot_elo(tour)
+}
+}

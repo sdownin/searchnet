@@ -60,6 +60,19 @@ Compares consecutive bipartite matrices in the ministep chain to identify
 each ADD (0 -> 1) and DROP (1 -> 0) action, then records how many OTHER
 firms held that activity at the moment of the decision.
 }
+\examples{
+## From a holdings history: 3 firms, 4 activities, 5 rounds
+set.seed(7)
+h <- list(matrix(rbinom(12, 1, 0.4), nrow = 3))
+for (t in 2:5) {
+  m <- h[[t - 1]]
+  i <- sample(3, 1); j <- sample(4, 1)
+  m[i, j] <- 1 - m[i, j]   # one firm toggles one activity per round
+  h[[t]] <- m
+}
+entry_log <- track_entry_decisions(holdings_history = h)
+entry_log
+}
 \seealso{
 \code{\link{expand_entry_rivals}} for the one-row-per-dyad form,
 \code{\link{compute_dyadic_forbearance}} for the pair-level measure.

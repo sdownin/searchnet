@@ -49,7 +49,7 @@ saomnk_plot_shocks <- function(env, verbose = FALSE) {
     Kdf$shock_label[ Kdf_idx ]        <- ifelse(is.null(shock$label), as.character(i), shock$label)
     statdf$shock_label[ statdf_idx ]  <- ifelse(is.null(shock$label), as.character(i), shock$label)
 
-    strat_effs <- env$get_rsiena_effects_theta_df(no_rates = T) %>% filter(grepl('(self\\$)?strat_\\d{1,2}',effect_key,ignore.case = T))
+    strat_effs <- env$get_rsiena_effects_theta_df(no_rates = TRUE) %>% filter(grepl('(self\\$)?strat_\\d{1,2}',effect_key,ignore.case = TRUE))
     ## LOOP EFFECTS j IN SHOCK i
     for (j in 1:nrow(strat_effs)) {
 

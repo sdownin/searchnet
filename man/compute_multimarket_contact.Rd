@@ -24,3 +24,10 @@ hold. This is the conditioning variable the multimarket forbearance
 construct is defined on, and it is what distinguishes forbearance from
 ordinary crowding avoidance.
 }
+\examples{
+## 3 firms, 4 activities: firms 1 and 2 meet in two activities
+H <- rbind(c(1, 1, 0, 0),
+           c(1, 1, 1, 0),
+           c(0, 0, 1, 1))
+compute_multimarket_contact(H)
+}

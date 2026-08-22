@@ -19,3 +19,7 @@ A \code{data.frame} with columns: \code{firm_id}, \code{scope}
 Returns a data frame summarising each firm's current state including
 utility, K-4 degrees, rank, and whether the firm is the player.
 }
+\examples{
+game <- searchnet_game_init(M = 4, N = 6, difficulty = "easy", seed = 42)
+searchnet_game_scoreboard(game)
+}

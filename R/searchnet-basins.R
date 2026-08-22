@@ -29,6 +29,12 @@
 #' @param base_depth Numeric baseline depth (default 0.3)
 #' @param base_steepness Numeric baseline steepness exponent (default 1.0)
 #' @return Named list with width, depth, steepness, escape_difficulty
+#' @examples
+#' ## Resource-suppressing policy: narrow, shallow, steep-walled basin
+#' saomnk_basin_geometry(scope_cost = 0.6, synergy = -0.3, herding = 0.2)
+#'
+#' ## Resource-freeing policy: wide and deep
+#' saomnk_basin_geometry(scope_cost = -0.6, synergy = 0.5, herding = 0)
 #' @export
 saomnk_basin_geometry <- function(scope_cost, synergy, herding,
                                    base_width = 0.4, base_depth = 0.3,
@@ -67,6 +73,8 @@ saomnk_basin_geometry <- function(scope_cost, synergy, herding,
 #'   contain scope_cost, synergy, herding. Default uses the AMR paper values.
 #' @return Data frame with columns: policy, label, width, depth, steepness,
 #'   escape_difficulty, scope_cost, synergy, herding
+#' @examples
+#' saomnk_depth_width_tradeoff()
 #' @export
 saomnk_depth_width_tradeoff <- function(policy_params = .policy_params) {
   results <- lapply(names(policy_params), function(pid) {
@@ -104,6 +112,9 @@ saomnk_depth_width_tradeoff <- function(policy_params = .policy_params) {
 #'   \item{sigma_values}{Numeric vector of sigma grid points}
 #'   \item{gamma_values}{Numeric vector of gamma grid points}
 #'   \item{mean_cross_partial}{Scalar mean cross-partial (should be < 0)}
+#' @examples
+#' cp <- saomnk_cross_partial(n_grid = 21)
+#' cp$mean_cross_partial   # negative: the complementarity trap
 #' @export
 saomnk_cross_partial <- function(sigma_range = c(-0.6, 0.6),
                                   gamma_range = c(-0.6, 0.6),
@@ -153,6 +164,11 @@ saomnk_cross_partial <- function(sigma_range = c(-0.6, 0.6),
 #' @param show_frontier Logical whether to draw the Pareto frontier curve
 #' @param title Character plot title
 #' @return ggplot object
+#' @examples
+#' \donttest{
+#' td <- saomnk_depth_width_tradeoff()
+#' p <- saomnk_plot_tradeoff_frontier(td, show_frontier = FALSE)
+#' }
 #' @export
 saomnk_plot_tradeoff_frontier <- function(tradeoff_data,
                                            colors = .basin_colors,
@@ -213,6 +229,11 @@ saomnk_plot_tradeoff_frontier <- function(tradeoff_data,
 #' @param x_range Numeric vector c(min, max) for x-axis (default c(-3, 3))
 #' @param title Character plot title
 #' @return ggplot object
+#' @examples
+#' \donttest{
+#' td <- saomnk_depth_width_tradeoff()
+#' p <- saomnk_plot_basin_comparison(td)
+#' }
 #' @export
 saomnk_plot_basin_comparison <- function(tradeoff_data,
                                           colors = .basin_colors,
@@ -260,6 +281,11 @@ saomnk_plot_basin_comparison <- function(tradeoff_data,
 #' @param colors Named color vector
 #' @param title Character plot title
 #' @return ggplot object
+#' @examples
+#' \donttest{
+#' td <- saomnk_depth_width_tradeoff()
+#' p <- saomnk_plot_erosion_simulation(td, n_periods = 20, shock_period = 11)
+#' }
 #' @export
 saomnk_plot_erosion_simulation <- function(tradeoff_data,
                                             n_periods = 20L,
@@ -331,6 +357,9 @@ saomnk_plot_erosion_simulation <- function(tradeoff_data,
 #' @param imitation_distance Numeric how far from the peak the imitator lands
 #'   (as fraction of basin width, default 0.5)
 #' @return Data frame with policy, penalty, gradient, width, steepness
+#' @examples
+#' td <- saomnk_depth_width_tradeoff()
+#' saomnk_imitation_penalty(td, imitation_distance = 0.5)
 #' @export
 saomnk_imitation_penalty <- function(tradeoff_data, imitation_distance = 0.5) {
   penalties <- lapply(seq_len(nrow(tradeoff_data)), function(i) {

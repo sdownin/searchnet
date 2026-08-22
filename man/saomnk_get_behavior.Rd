@@ -37,3 +37,21 @@ than after every individual change. Per-ministep behaviour changes are in
 \code{env$chain_stats}, in the \code{beh_difference} column of the rows whose
 \code{dv_varname} is the behaviour DV.
 }
+\examples{
+\donttest{
+env <- saomnk_env(M = 4, N = 6, seed = 42)
+mod <- saomnk_model(density = -0.5)
+mod$dv_behavior <- saomnk_behavior(
+  values  = c(1, 2, 3, 2),
+  effects = list(
+    list(effect = "linear", parameter =  0.0),
+    list(effect = "quad",   parameter = -0.2)
+  )
+)
+saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+
+beh <- saomnk_get_behavior(env)
+head(beh)
+saomnk_get_behavior(env, wide = TRUE)[1:3, ]
+}
+}

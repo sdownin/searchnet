@@ -24,6 +24,20 @@
 #' @param loess_span Numeric span for loess smoother. Default 0.4.
 #' @param plot_return Logical; if TRUE return the ggplot object. Default TRUE.
 #' @return A ggplot object (if \code{plot_return} is TRUE).
+#' @examples
+#' \donttest{
+#' ## From a synthetic holdings history (no simulation required)
+#' set.seed(7)
+#' h <- list(matrix(rbinom(12, 1, 0.4), nrow = 3))
+#' for (t in 2:30) {
+#'   m <- h[[t - 1]]
+#'   i <- sample(3, 1); j <- sample(4, 1)
+#'   m[i, j] <- 1 - m[i, j]
+#'   h[[t]] <- m
+#' }
+#' entry_log <- track_entry_decisions(holdings_history = h)
+#' p <- saomnk_plot_forbearance(entry_log = entry_log, window = 5)
+#' }
 #' @export
 saomnk_plot_forbearance <- function(env = NULL,
                                     entry_log = NULL,
@@ -78,6 +92,18 @@ saomnk_plot_forbearance <- function(env = NULL,
 #'   Each row represents one (theta_inPop, replicate) combination.
 #' @param ci Numeric confidence level for ribbons. Default 0.95.
 #' @return A ggplot object assembled via \code{cowplot::plot_grid()}.
+#' @examples
+#' \donttest{
+#' ## Synthetic sweep: 5 theta_inPop values x 4 replicates
+#' set.seed(1)
+#' sweep <- expand.grid(theta_inPop = seq(-1, 1, by = 0.5), rep = 1:4)
+#' sweep$competitive_entry_rate <- plogis(sweep$theta_inPop + rnorm(20, 0, 0.2))
+#' sweep$mean_rivals_at_entry   <- 1 + sweep$competitive_entry_rate * 2
+#' sweep$terminal_kaa           <- 2 + sweep$theta_inPop + rnorm(20, 0, 0.1)
+#' sweep$avoidance_rate         <- 1 - sweep$competitive_entry_rate
+#'
+#' p <- saomnk_plot_forbearance_spectrum(sweep)
+#' }
 #' @export
 saomnk_plot_forbearance_spectrum <- function(forbearance_sweep_results,
                                              ci = 0.95) {
@@ -184,6 +210,19 @@ saomnk_plot_forbearance_spectrum <- function(forbearance_sweep_results,
 #' @param max_rivals Integer. Cap the x-axis at this value (values above
 #'   are lumped). Default \code{NULL} (no cap).
 #' @return A ggplot object.
+#' @examples
+#' \donttest{
+#' set.seed(7)
+#' h <- list(matrix(rbinom(12, 1, 0.4), nrow = 3))
+#' for (t in 2:20) {
+#'   m <- h[[t - 1]]
+#'   i <- sample(3, 1); j <- sample(4, 1)
+#'   m[i, j] <- 1 - m[i, j]
+#'   h[[t]] <- m
+#' }
+#' entry_log <- track_entry_decisions(holdings_history = h)
+#' p <- saomnk_plot_entry_rivalry(entry_log)
+#' }
 #' @export
 saomnk_plot_entry_rivalry <- function(entry_log, max_rivals = NULL) {
   adds <- entry_log %>% filter(action_type == "add")

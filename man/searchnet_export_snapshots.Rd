@@ -39,3 +39,15 @@ Output columns:
 \item{tie}{0 or 1 indicating whether a tie exists}
 }
 }
+\examples{
+\donttest{
+env <- saomnk_env(M = 4, N = 6, seed = 42)
+mod <- saomnk_model(density = -0.5, popularity = 0.2)
+saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+
+f <- tempfile(fileext = ".csv")
+searchnet_export_snapshots(env, steps = c(1, 10, 20), file = f)
+head(read.csv(f))
+unlink(f)
+}
+}

@@ -30,7 +30,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                FALSE, ##default to not show on init
                                config_environ_params[['plot_init']])
       if (plot_init) {
-        self$plot_bipartite_system_from_mat(self$bipartite_matrix_init, RSIENA_ITERATION=0, return_plot=F)
+        self$plot_bipartite_system_from_mat(self$bipartite_matrix_init, RSIENA_ITERATION=0, return_plot=FALSE)
       }
     },
 
@@ -441,13 +441,13 @@ SaomNkRSienaBiEnv <- R6Class(
     
       
       if ('dv_social' %in% structure_model_dvs ) {
-        self$social_rsienaDV <- sienaDependent(array_social, type='oneMode', nodeSet = 'ACTORS', allowOnly = F)
+        self$social_rsienaDV <- sienaDependent(array_social, type='oneMode', nodeSet = 'ACTORS', allowOnly = FALSE)
       }
       if ('dv_search' %in% structure_model_dvs) {
-        self$search_rsienaDV <- sienaDependent(array_search, type='oneMode', nodeSet = 'COMPONENTS', allowOnly = F)
+        self$search_rsienaDV <- sienaDependent(array_search, type='oneMode', nodeSet = 'COMPONENTS', allowOnly = FALSE)
       }
       if ('dv_bipartite' %in% structure_model_dvs) {
-        self$bipartite_rsienaDV <- sienaDependent(array_bi_net, type='bipartite', nodeSet =c('ACTORS', 'COMPONENTS'), allowOnly = F)
+        self$bipartite_rsienaDV <- sienaDependent(array_bi_net, type='bipartite', nodeSet =c('ACTORS', 'COMPONENTS'), allowOnly = FALSE)
       }
       ## Behaviour co-evolution DV; no-op when structure_model has no dv_behavior.
       self$set_behavior_rsienaDV(structure_model)
@@ -501,13 +501,13 @@ SaomNkRSienaBiEnv <- R6Class(
       array_social[ array_social > 1 ] <- 1
       array_search[ array_search > 1 ] <- 1
       if ('dv_social' %in% structure_model_dvs ) {
-        self$social_rsienaDV <- sienaDependent(array_social, type='oneMode', nodeSet = 'ACTORS', allowOnly = F)
+        self$social_rsienaDV <- sienaDependent(array_social, type='oneMode', nodeSet = 'ACTORS', allowOnly = FALSE)
       }
       if ('dv_search' %in% structure_model_dvs) {
-        self$search_rsienaDV <- sienaDependent(array_search, type='oneMode', nodeSet = 'COMPONENTS', allowOnly = F)
+        self$search_rsienaDV <- sienaDependent(array_search, type='oneMode', nodeSet = 'COMPONENTS', allowOnly = FALSE)
       }
       if ('dv_bipartite' %in% structure_model_dvs) {
-        self$bipartite_rsienaDV <- sienaDependent(array_bi_net, type='bipartite', nodeSet =c('ACTORS', 'COMPONENTS'), allowOnly = F)
+        self$bipartite_rsienaDV <- sienaDependent(array_bi_net, type='bipartite', nodeSet =c('ACTORS', 'COMPONENTS'), allowOnly = FALSE)
       }
       ##---------------------------------------------
       self$rsiena_data <- self$get_rsiena_data_from_structure_model(structure_model)
@@ -723,7 +723,7 @@ SaomNkRSienaBiEnv <- R6Class(
       self$bipartite_rsienaDV <- sienaDependent(array_bi_net,
                                                 type='bipartite',
                                                 nodeSet =c('ACTORS', 'COMPONENTS'),
-                                                allowOnly = F)
+                                                allowOnly = FALSE)
       ## Behaviour co-evolution DV (structure_model$dv_behavior). Also CLEARS a
       ## behaviour DV left over from a previous model when none is declared, so
       ## an environment reused across models cannot carry one over silently.
@@ -736,7 +736,7 @@ SaomNkRSienaBiEnv <- R6Class(
       self$rsiena_effects <- getEffects(self$rsiena_data)
       
       eff_filename <- file.path(self$DIR_OUTPUT, '_rsiena_effects_doc_')
-      effectsDocumentation(self$rsiena_effects, type = 'html', display = F, filename = eff_filename)
+      effectsDocumentation(self$rsiena_effects, type = 'html', display = FALSE, filename = eff_filename)
       
       # ##--2. NETWORK: STRUCTURE EVOLUTION (structure_Model)-----
       # ##  2.1. Add effects from model objective function list
@@ -804,7 +804,7 @@ SaomNkRSienaBiEnv <- R6Class(
     
       # Effects Documentation
       if(get_eff_doc)
-        effectsDocumentation(self$rsiena_effects, type = 'html', display = T)
+        effectsDocumentation(self$rsiena_effects, type = 'html', display = TRUE)
       ##-----------------------------
       
       
@@ -815,7 +815,7 @@ SaomNkRSienaBiEnv <- R6Class(
       ## RSiena Algorithm
       self$rsiena_run_seed <- run_seed
       self$rsiena_algorithm <- sienaAlgorithmCreate(projname=sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP),
-                                                    simOnly = T,
+                                                    simOnly = TRUE,
                                                     nsub = 0,
                                                     n3 = iterations,
                                                     seed = run_seed)
@@ -838,7 +838,7 @@ SaomNkRSienaBiEnv <- R6Class(
         print(mod_summary)
       
       
-      print(screenreg(list(self$rsiena_model), single.row = T, digits = digits))
+      print(screenreg(list(self$rsiena_model), single.row = TRUE, digits = digits))
       
       ## update simulation object environment from RSiena simulation model
       new_bi_env_igraph <- self$get_bipartite_igraph_from_rsiena_model()
@@ -1109,7 +1109,7 @@ SaomNkRSienaBiEnv <- R6Class(
         theta_shocks[[ii]]$shock_on <- 1
 
         if(ii == length(theta_shocks) && remainder>0){
-          maxid <- max(theta_shocks[[ii]]$chain_step_ids, na.rm = T)
+          maxid <- max(theta_shocks[[ii]]$chain_step_ids, na.rm = TRUE)
           theta_shocks[[ii]]$chain_step_ids <- c( theta_shocks[[ii]]$chain_step_ids , (maxid+1):(maxid+remainder) )
         }
           
@@ -1145,7 +1145,7 @@ SaomNkRSienaBiEnv <- R6Class(
         last_set_params <- theta_matrix[last_set_row, ]
         fill_rows <- (1+last_set_row):nrow(theta_matrix)
         theta_matrix[fill_rows, ] <- matrix(rep(last_set_params, length(fill_rows)), 
-                                            byrow=T, nrow=length(fill_rows))
+                                            byrow=TRUE, nrow=length(fill_rows))
       }
       return(theta_matrix)
     },
@@ -1208,7 +1208,7 @@ SaomNkRSienaBiEnv <- R6Class(
       self$bipartite_rsienaDV <- sienaDependent(array_bi_net,
                                                 type='bipartite',
                                                 nodeSet =c('ACTORS', 'COMPONENTS'),
-                                                allowOnly = F)
+                                                allowOnly = FALSE)
       ## Behaviour co-evolution DV (structure_model$dv_behavior). Also CLEARS a
       ## behaviour DV left over from a previous model when none is declared, so
       ## an environment reused across models cannot carry one over silently.
@@ -1260,7 +1260,7 @@ SaomNkRSienaBiEnv <- R6Class(
       self$rsiena_algorithm <- if (verbose) {
         do.call(sienaAlgorithmCreate, c(list(
           projname=file.path(self$DIR_OUTPUT, sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP)),
-          simOnly = T,  # nsub = rsiena_phase2_nsub * 1,
+          simOnly = TRUE,  # nsub = rsiena_phase2_nsub * 1,
           nsub = 0, # n2start = rsiena_n2start_scale * 2.52 * (7+sum(self$rsiena_effects$include)),
           n3 = nrow(theta_matrix), seed = run_seed
         ), .cond_arg))
@@ -1276,7 +1276,7 @@ SaomNkRSienaBiEnv <- R6Class(
             on.exit(sink(), add = TRUE)
             do.call(sienaAlgorithmCreate, c(list(
               projname=file.path(sink_dir, sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP)),
-              simOnly = T,
+              simOnly = TRUE,
               nsub = 0,
               n3 = nrow(theta_matrix), seed = run_seed
             ), .cond_arg))
@@ -1322,7 +1322,7 @@ SaomNkRSienaBiEnv <- R6Class(
       
       ## Show RSiena model screenreg after chain stats (show users what they expect to see at bottom)
       if(verbose)
-        print(screenreg(list(self$rsiena_model), single.row = T, digits = digits))
+        print(screenreg(list(self$rsiena_model), single.row = TRUE, digits = digits))
       
     },
     ############################################################################
@@ -1356,7 +1356,7 @@ SaomNkRSienaBiEnv <- R6Class(
     
     get_K4_df = function(type='all') {
       
-      if (grepl('new', type, ignore.case = T)) {
+      if (grepl('new', type, ignore.case = TRUE)) {
         
         Kdf <- self$K_AC_NEW_df %>% mutate(effect='K_AC', node_type='Actor', dyad_type='2-mode  (bipartite)')  %>% 
           bind_rows(self$K_AA_NEW_df %>% mutate(effect='K_AA', node_type='Actor', dyad_type='1-mode  (projected)') ) %>%
@@ -1364,7 +1364,7 @@ SaomNkRSienaBiEnv <- R6Class(
           bind_rows( self$K_CC_NEW_df %>% mutate(effect='K_CC', node_type='Component', dyad_type='1-mode  (projected)')  ) 
           
         
-      } else if (grepl('old', type, ignore.case = T)) {
+      } else if (grepl('old', type, ignore.case = TRUE)) {
         
         Kdf <- self$K_AC_OLD_df %>% mutate(effect='K_AC', node_type='Actor', dyad_type='2-mode  (bipartite)')  %>% 
           bind_rows(self$K_AA_OLD_df %>% mutate(effect='K_AA', node_type='Actor', dyad_type='1-mode  (projected)') ) %>%
@@ -1452,7 +1452,7 @@ SaomNkRSienaBiEnv <- R6Class(
         Kdf$shock_label[ Kdf_idx ]        <- ifelse(is.null(shock$label), as.character(i), shock$label)
         statdf$shock_label[ statdf_idx ]  <- ifelse(is.null(shock$label), as.character(i), shock$label)
         
-        strat_effs <- self$get_rsiena_effects_theta_df(no_rates = T) %>% filter(grepl('(self\\$)?strat_\\d{1,2}',effect_key,ignore.case = T))
+        strat_effs <- self$get_rsiena_effects_theta_df(no_rates = TRUE) %>% filter(grepl('(self\\$)?strat_\\d{1,2}',effect_key,ignore.case = TRUE))
         ## LOOP EFFECTS j IN SHOCK i
         for (j in 1:nrow(strat_effs)) {
           
@@ -2334,8 +2334,8 @@ SaomNkRSienaBiEnv <- R6Class(
         Kdf$shock_label[ Kdf_idx ] <- ifelse(is.null(shock$label), as.character(i), shock$label)
         
         
-        shockable_effs <- self$get_rsiena_effects_theta_df(no_rates = T) %>% 
-          filter(grepl('(strat|component)_\\d{1,2}',effect_key,ignore.case = T))
+        shockable_effs <- self$get_rsiena_effects_theta_df(no_rates = TRUE) %>% 
+          filter(grepl('(strat|component)_\\d{1,2}',effect_key,ignore.case = TRUE))
         ## LOOP EFFECTS j IN SHOCK i
         for (j in 1:nrow(shockable_effs)) {
           
@@ -2409,19 +2409,19 @@ SaomNkRSienaBiEnv <- R6Class(
           anticipation = 0,
           weightsname = NULL,
           alp = 0.05,
-          bstrap = T,
-          cband = T,
+          bstrap = TRUE,
+          cband = TRUE,
           biters = 2000,
           clustervars = NULL,
           est_method = "dr", ## "reg", "dr", "ipw"
           base_period = 'universal',#"varying",
           print_details = verbose,
-          pl = T,
+          pl = TRUE,
           cores = 4
         )
         
         
-        did_Kdf_group <- did::aggte( did_Kdf_attgt, type = 'group', cband = F)
+        did_Kdf_group <- did::aggte( did_Kdf_attgt, type = 'group', cband = FALSE)
         # did_stat
         
         did_Kdf_dyna <- did::aggte( did_Kdf_attgt, type = 'dynamic')
@@ -2489,8 +2489,8 @@ SaomNkRSienaBiEnv <- R6Class(
         Kdf$shock_label[ Kdf_idx ] <- ifelse(is.null(shock$label), as.character(i), shock$label)
         
         
-        shockable_effs <- self$get_rsiena_effects_theta_df(no_rates = T) %>% 
-          filter(grepl('(strat|component)_\\d{1,2}',effect_key,ignore.case = T))
+        shockable_effs <- self$get_rsiena_effects_theta_df(no_rates = TRUE) %>% 
+          filter(grepl('(strat|component)_\\d{1,2}',effect_key,ignore.case = TRUE))
         ## LOOP EFFECTS j IN SHOCK i
         for (j in 1:nrow(shockable_effs)) {
           
@@ -2564,19 +2564,19 @@ SaomNkRSienaBiEnv <- R6Class(
           anticipation = 0,
           weightsname = NULL,
           alp = 0.05,
-          bstrap = T,
-          cband = T,
+          bstrap = TRUE,
+          cband = TRUE,
           biters = 2000,
           clustervars = NULL,
           est_method = "dr", ## "reg", "dr", "ipw"
           base_period = 'universal',#"varying",
           print_details = verbose,
-          pl = T,
+          pl = TRUE,
           cores = 4
         )
         
         
-        did_Kdf_group <- did::aggte( did_Kdf_attgt, type = 'group', cband = F)
+        did_Kdf_group <- did::aggte( did_Kdf_attgt, type = 'group', cband = FALSE)
         # did_stat
         
         did_Kdf_dyna <- did::aggte( did_Kdf_attgt, type = 'dynamic')
@@ -2643,7 +2643,7 @@ SaomNkRSienaBiEnv <- R6Class(
         util$shock_label[ util_idx ] <- ifelse(is.null(shock$label), as.character(i), shock$label)
        
         ## ## Changed from strategy effects to shockable effects include any covariate terms 
-        shockable_effs <- self$get_rsiena_effects_theta_df(no_rates = T) %>% filter(grepl('(self\\$)?(strat|component)_\\d{1,2}',effect_key,ignore.case = T))
+        shockable_effs <- self$get_rsiena_effects_theta_df(no_rates = TRUE) %>% filter(grepl('(self\\$)?(strat|component)_\\d{1,2}',effect_key,ignore.case = TRUE))
         ## LOOP EFFECTS j IN SHOCK i
         for (j in 1:nrow(shockable_effs)) {
           
@@ -2717,19 +2717,19 @@ SaomNkRSienaBiEnv <- R6Class(
           anticipation = 0,
           weightsname = NULL,
           alp = 0.05,
-          bstrap = T,
-          cband = T,
+          bstrap = TRUE,
+          cband = TRUE,
           biters = 2000,
           clustervars = NULL,
           est_method = "dr", ## "reg", "dr", "ipw"
           base_period = 'universal',#"varying",
           print_details = verbose,
-          pl = T,
+          pl = TRUE,
           cores = 4
         )
         
         
-        did_util_group <- did::aggte( did_util_attgt, type = 'group', cband = F)
+        did_util_group <- did::aggte( did_util_attgt, type = 'group', cband = FALSE)
         # did_stat
         
         did_util_dyna <- did::aggte( did_util_attgt, type = 'dynamic')
@@ -3198,7 +3198,7 @@ SaomNkRSienaBiEnv <- R6Class(
         combined_plot <- ggarrange(plotlist=list(plt1, plt2), nrow=2)
         
         # Add common title
-        combined_title_str <- if(grepl('new', component_type, ignore.case = T)) {
+        combined_title_str <- if(grepl('new', component_type, ignore.case = TRUE)) {
           "Multiperiod Diff-in-Diff Tests of Actor Utility and Degrees (K_AC_NEW, K_AA_NEW)"
         } else {
           "Multiperiod Diff-in-Diff Tests of Actor Utility and Degrees (K_AC, K_AA)"
@@ -3308,7 +3308,7 @@ SaomNkRSienaBiEnv <- R6Class(
       bipartite_rsienaDV <- sienaDependent(bi_env_arr,
                                           type='bipartite',
                                           nodeSet =c('ACTORS', 'COMPONENTS'),
-                                          allowOnly = F)
+                                          allowOnly = FALSE)
 
       ## input list of variable for RSiena model
       input_varlist <- list(bipartite_rsienaDV=bipartite_rsienaDV)
@@ -4174,8 +4174,8 @@ SaomNkRSienaBiEnv <- R6Class(
           ##  This uses only ego's own counterfactual fits (landscape)
           ##  but the corresponding other actor's affected fits (landscapes are not currently used )
           z <- rbind(z, utility_ego=ifit[ actor_id , ] )
-          z <- rbind(z, utility_alter_mean= colMeans(ifit[ -actor_id , ], na.rm = T) )
-          z <- rbind(z, utility_alter_sd  = apply(ifit[ -actor_id , ], 2, function(x) sd(x, na.rm = T)) )
+          z <- rbind(z, utility_alter_mean= colMeans(ifit[ -actor_id , ], na.rm = TRUE) )
+          z <- rbind(z, utility_alter_sd  = apply(ifit[ -actor_id , ], 2, function(x) sd(x, na.rm = TRUE)) )
           
           wdf <- as.data.frame( t(z) )
           
@@ -4266,8 +4266,8 @@ SaomNkRSienaBiEnv <- R6Class(
     
     
     search_rsiena_execute_sim = function(iterations,
-                                         returnDeps=T,
-                                         returnChains=T,
+                                         returnDeps=TRUE,
+                                         returnChains=TRUE,
                                          rsiena_phase2_nsub=1, rsiena_n2start_scale=1,
                                          digits=3,
                                          seed=123) {
@@ -4278,7 +4278,7 @@ SaomNkRSienaBiEnv <- R6Class(
       ##-----------------------------
       ## RSiena Algorithm
       self$rsiena_algorithm <- sienaAlgorithmCreate(projname=sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP),
-                                                    simOnly = T,
+                                                    simOnly = TRUE,
                                                     nsub = rsiena_phase2_nsub,
                                                     n2start = rsiena_n2start_scale * 2.52 * (7+sum(self$rsiena_effects$include)),
                                                     n3 = iterations,
@@ -4302,7 +4302,7 @@ SaomNkRSienaBiEnv <- R6Class(
         print(mod_summary)
 
 
-      print(screenreg(list(self$rsiena_model), single.row = T, digits = digits))
+      print(screenreg(list(self$rsiena_model), single.row = TRUE, digits = digits))
 
       ## update simulation object environment from RSiena simulation model
       new_bi_env_igraph <- self$get_bipartite_igraph_from_rsiena_model()
@@ -4349,8 +4349,8 @@ SaomNkRSienaBiEnv <- R6Class(
     search_rsiena_multiwave_run = function(structure_model,
                                            waves=2,
                                            iterations=1000,
-                                           returnDeps=T,
-                                           returnChains=T,
+                                           returnDeps=TRUE,
+                                           returnChains=TRUE,
                                            rsiena_phase2_nsub=1, rsiena_n2start_scale=1,
                                            digits=3,
                                            rand_seed=123,
@@ -4369,7 +4369,7 @@ SaomNkRSienaBiEnv <- R6Class(
       .projdir <- ifelse(is.na(dir_output), getwd(), dir_output)
       .projname <-  ifelse(!is.na(file_output), file_output, as.character(as.numeric(Sys.time())))
       self$rsiena_algorithm <- sienaAlgorithmCreate(projname=file.path( .projdir,  sprintf('%s.log', .projname) ), ## rsiena project log filename
-                                                    simOnly = T,
+                                                    simOnly = TRUE,
                                                     nsub = rsiena_phase2_nsub,
                                                     n3 = iterations,
                                                     seed = rand_seed)
@@ -4388,7 +4388,7 @@ SaomNkRSienaBiEnv <- R6Class(
       mod_summary <- summary(self$rsiena_model)
       if(!is.null(mod_summary))
         print(mod_summary)
-      print(screenreg(list(self$rsiena_model), single.row = T, digits = digits))
+      print(screenreg(list(self$rsiena_model), single.row = TRUE, digits = digits))
       
       # 6. Update System
       ## update simulation object environment from RSiena simulation model
@@ -4411,7 +4411,7 @@ SaomNkRSienaBiEnv <- R6Class(
         self$add_rsiena_effects(structure_model)
         ##  4. RSiena Algorithm
         self$rsiena_algorithm <- sienaAlgorithmCreate(projname=sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP),
-                                                      simOnly = T,
+                                                      simOnly = TRUE,
                                                       nsub = rsiena_phase2_nsub,
                                                       n3 = iterations,
                                                       seed = rand_seed)
@@ -4430,7 +4430,7 @@ SaomNkRSienaBiEnv <- R6Class(
         mod_summary <- summary(self$rsiena_model)
         if(!is.null(mod_summary))
           print(mod_summary)
-        print(screenreg(list(self$rsiena_model), single.row = T, digits = digits))
+        print(screenreg(list(self$rsiena_model), single.row = TRUE, digits = digits))
         
         ## 6. Update System
         ## update simulation object environment from RSiena simulation model
@@ -4513,14 +4513,14 @@ SaomNkRSienaBiEnv <- R6Class(
     #**TODO**
     search_rsiena_multiwave_extend = function(waves=1,
                                                iterations=1000,
-                                               returnDeps=T,
-                                               returnChains=T,
+                                               returnDeps=TRUE,
+                                               returnChains=TRUE,
                                                rsiena_phase2_nsub=1, rsiena_n2start_scale=1, 
                                                digits=3,
                                                rand_seed=123) {
       ##  4. RSiena Algorithm 
       self$rsiena_algorithm <- sienaAlgorithmCreate(projname=sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP),
-                                                    simOnly = T,
+                                                    simOnly = TRUE,
                                                     nsub = rsiena_phase2_nsub,
                                                     n3 = iterations,
                                                     seed = rand_seed)
@@ -4540,7 +4540,7 @@ SaomNkRSienaBiEnv <- R6Class(
       mod_summary <- summary(self$rsiena_model)
       if(!is.null(mod_summary))
         print(mod_summary)
-      print(screenreg(list(self$rsiena_model), single.row = T, digits = digits))
+      print(screenreg(list(self$rsiena_model), single.row = TRUE, digits = digits))
       
       # 6. Update System
       ## update simulation object environment from RSiena simulation model
@@ -4598,7 +4598,7 @@ SaomNkRSienaBiEnv <- R6Class(
       rsiena_model <- if(is.null(rsiena_model)) { self$rsiena_model } else { rsiena_model }
       sim_iteration <- ifelse( is.null(sim_iteration), rsiena_model$n3 , sim_iteration)
       new_bi_env_mat <- self$get_bipartite_matrix_from_rsiena_model(rsiena_model, sim_iteration)
-      new_bi_env_igraph <- igraph::graph_from_biadjacency_matrix(new_bi_env_mat, directed = F, weighted = T, mode = 'out') ##**TODO: CHECK** all vs. out
+      new_bi_env_igraph <- igraph::graph_from_biadjacency_matrix(new_bi_env_mat, directed = FALSE, weighted = TRUE, mode = 'out') ##**TODO: CHECK** all vs. out
       return(new_bi_env_igraph)
     },
     
@@ -5278,7 +5278,7 @@ SaomNkRSienaBiEnv <- R6Class(
       chainDat[,7] <- as.numeric(chainDat[,7]) ##
       chainDat[,8] <- as.numeric(chainDat[,8]) ##
       chainDat[,9] <- as.numeric(chainDat[,9]) ##
-      chainDat[,11] <-as.logical(chainDat[,11]) ## Stability
+      chainDat[,11] <- as.logical(chainDat[,11]) ## Stability
       # Set dataframe Names
       
       
@@ -5439,13 +5439,13 @@ SaomNkRSienaBiEnv <- R6Class(
         ## for the same K_soc/K_env degree projections. The matrix is binary
         ## here in any case, so the two would agree on degree().
         new_bi_g <- igraph::graph_from_biadjacency_matrix(bi_env_mat_new,
-                                                          directed = F, mode = 'all',
-                                                          weighted = T)
+                                                          directed = FALSE, mode = 'all',
+                                                          weighted = TRUE)
         ## add.names dropped: igraph wants a character vertex-attribute name or
         ## NULL there, not a logical, and TRUE raised "`name` must be a single
         ## string". The matrix already carries dimnames, which is where the
         ## vertex names come from, so the argument was doing nothing anyway.
-        projections <- igraph::bipartite_projection(new_bi_g, multiplicity = T, which = 'both')
+        projections <- igraph::bipartite_projection(new_bi_g, multiplicity = TRUE, which = 'both')
         K_soc_list[[i]] <- igraph::degree(projections$proj1)
         K_env_list[[i]] <- igraph::degree(projections$proj2)
         
@@ -5543,31 +5543,31 @@ SaomNkRSienaBiEnv <- R6Class(
     ) {
       plist <- list()
       if (length(type)==0 |  'K_4panel' %in% type)
-        plist[['K_4panel']] <- self$search_rsiena_multiwave_plot_K_4panel(actor_ids, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=T, plot_file=plot_file )
+        plist[['K_4panel']] <- self$search_rsiena_multiwave_plot_K_4panel(actor_ids, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
       
       if (length(type)==0 |  'K_AA_strategy_summary' %in% type)
-        plist[['K_AA_strategy_summary']] <- self$search_rsiena_multiwave_plot_K_AA_strategy_summary(actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=T, plot_file=plot_file )
+        plist[['K_AA_strategy_summary']] <- self$search_rsiena_multiwave_plot_K_AA_strategy_summary(actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
       
       if (length(type)==0 |  'K_AC_strategy_summary' %in% type)
-        plist[['K_AC_strategy_summary']] <- self$search_rsiena_multiwave_plot_K_AC_strategy_summary(actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=T, plot_file=plot_file )
+        plist[['K_AC_strategy_summary']] <- self$search_rsiena_multiwave_plot_K_AC_strategy_summary(actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
       
       if (length(type)==0 |  'K_CA_strategy_summary' %in% type)
-        plist[['K_CA_strategy_summary']] <- self$search_rsiena_multiwave_plot_K_CA_strategy_summary(component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=T, plot_file=plot_file )
+        plist[['K_CA_strategy_summary']] <- self$search_rsiena_multiwave_plot_K_CA_strategy_summary(component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
       
       if (length(type)==0 |  'K_CC_strategy_summary' %in% type)
-        plist[['K_CC_strategy_summary']] <- self$search_rsiena_multiwave_plot_K_CC_strategy_summary(component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=T, plot_file=plot_file )
+        plist[['K_CC_strategy_summary']] <- self$search_rsiena_multiwave_plot_K_CC_strategy_summary(component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
       
       
       if (length(type)==0 |  'utility_strategy_summary' %in% type)
-        plist[['utility_strategy_summary']] <- self$search_rsiena_multiwave_plot_actor_utility_strategy_summary(actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, scale_utility, return_plot=T, plot_file=plot_file, loess_span=loess_span )
+        plist[['utility_strategy_summary']] <- self$search_rsiena_multiwave_plot_actor_utility_strategy_summary(actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, scale_utility, return_plot=TRUE, plot_file=plot_file, loess_span=loess_span )
       
       if (length(type)==0 |  'utility_by_strategy' %in% type)
-        plist[['utility_by_strategy']] <- self$search_rsiena_multiwave_plot_actor_utility_by_strategy(actor_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=T, plot_file=plot_file )
+        plist[['utility_by_strategy']] <- self$search_rsiena_multiwave_plot_actor_utility_by_strategy(actor_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
       if (length(type)==0 |  'utility_density_by_strategy' %in% type)
-        plist[['utility_density_by_strategy']] <- self$search_rsiena_multiwave_plot_actor_utility_density_by_strategy(thin_wave_factor, return_plot=T, plot_file=plot_file )
+        plist[['utility_density_by_strategy']] <- self$search_rsiena_multiwave_plot_actor_utility_density_by_strategy(thin_wave_factor, return_plot=TRUE, plot_file=plot_file )
       #   plist[['stability']] <- self$search_rsiena_plot_stability() ##**TODO** Fix return plot
       if (length(type)==0 |  'utility_ridge_density_by_strategy' %in% type)
-        plist[['utility_ridge_density_by_strategy']] <- self$search_rsiena_multiwave_plot_utility_ridge_density_by_strategy(actor_ids, wave_ids, thin_factor, thin_wave_factor, show_utility_points, show_strategy_means, return_plot=T, plot_file=plot_file )
+        plist[['utility_ridge_density_by_strategy']] <- self$search_rsiena_multiwave_plot_utility_ridge_density_by_strategy(actor_ids, wave_ids, thin_factor, thin_wave_factor, show_utility_points, show_strategy_means, return_plot=TRUE, plot_file=plot_file )
       #  SET plots 
       self$multiwave_plots <- if(append_plot) { append(self$multiwave_plots, plist) } else { plist }
       
@@ -5580,8 +5580,8 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                               wave_ids=c(),
                                                                               thin_factor=1,
                                                                               thin_wave_factor=1,
-                                                                              show_utility_points=T,
-                                                                              show_strategy_means=T,
+                                                                              show_utility_points=TRUE,
+                                                                              show_strategy_means=TRUE,
                                                                               scale_utility=TRUE,
                                                                               return_plot=TRUE,
                                                                               plot_file=NA,
@@ -5629,7 +5629,7 @@ SaomNkRSienaBiEnv <- R6Class(
         if (!all(dat$utility == 0))
           dat <- dat %>% mutate(utility = c(scale(utility)))
       }
-      density_rng <- range(dat$utility, na.rm=T)
+      density_rng <- range(dat$utility, na.rm=TRUE)
       density_absdiff_scale <- abs(diff(density_rng)) * 0.15
       util_lim <- c(density_rng[1] - density_absdiff_scale,  density_rng[2] + density_absdiff_scale)
       point_size <- 10 / log( nstep )
@@ -5639,7 +5639,7 @@ SaomNkRSienaBiEnv <- R6Class(
       if(length(wave_ids))
         dat <- dat %>% filter(wave_id %in% wave_ids)
       dat_acp_stabil_means <- dat %>% group_by(stabilization_summary_period, strategy) %>% 
-        dplyr::summarize(mean=mean(utility, na.rm=T)) %>%
+        dplyr::summarize(mean=mean(utility, na.rm=TRUE)) %>%
         mutate(PeriodFct = fct_rev(as.factor(stabilization_summary_period)))
       ##==============================================
       strat_legend_title <- sprintf("Strategy (%s) :  ", paste(strateffs, collapse = '_'))
@@ -5652,14 +5652,14 @@ SaomNkRSienaBiEnv <- R6Class(
       dat_dens_rigde <- dat %>%
         mutate(PeriodFct = fct_rev(as.factor(stabilization_summary_period))) 
       group_dens_means <- dat_dens_rigde %>% ungroup() %>% group_by(strategy) %>% 
-        dplyr::summarize(n=n(),mean=mean(utility,na.rm=T))
+        dplyr::summarize(n=n(),mean=mean(utility,na.rm=TRUE))
       ##---------------------
       ## Start Plot
       plt.dr <- ggplot(dat_dens_rigde, aes(y = PeriodFct, x = utility, color=strategy, fill=strategy)) +
         stat_density_ridges(aes(point_color = strategy, point_fill = strategy, point_shape = strategy),
                             quantile_lines = TRUE, alpha = .3, rel_min_height = density_ridges_rel_min_height,
                             point_size=.4,
-                            jittered_points = T, 
+                            jittered_points = TRUE, 
                             position = position_raincloud(adjust_vlines = FALSE, ygap = -.1, height = .15),# "raincloud",
                             quantiles = c(0.5), linewidth=.75 ) +
         scale_y_discrete(expand = c(0, 0)) +
@@ -5683,7 +5683,7 @@ SaomNkRSienaBiEnv <- R6Class(
         ) +
         geom_vline(xintercept = 0, linetype=1) +
         coord_cartesian(clip = "off") +
-        theme_ridges(grid = T, center=T) + 
+        theme_ridges(grid = TRUE, center=TRUE) + 
         theme(legend.position = 'bottom')
       if(show_strategy_means) {
         plt.dr <- plt.dr +  
@@ -5705,14 +5705,14 @@ SaomNkRSienaBiEnv <- R6Class(
                                                      thin_factor=1, 
                                                      thin_wave_factor=1, 
                                                      smooth_method='loess',  ##"lm", "glm", "gam", "loess","auto"
-                                                     show_utility_points=T, 
+                                                     show_utility_points=TRUE, 
                                                      return_plot=TRUE,
                                                      plot_file=NA, plot_dir=NA
                                                      ) {
-      K_AA  <- self$search_rsiena_multiwave_plot_K_AA_strategy_summary(actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=T, show_title=F, return_plot=T)
-      K_AC <- self$search_rsiena_multiwave_plot_K_AC_strategy_summary(actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=F, show_title=F, return_plot=T)
-      K_CA <- self$search_rsiena_multiwave_plot_K_CA_strategy_summary(component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=F, show_title=F, return_plot=T)
-      K_CC  <- self$search_rsiena_multiwave_plot_K_CC_strategy_summary(component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=T, show_title=F, return_plot=T)
+      K_AA  <- self$search_rsiena_multiwave_plot_K_AA_strategy_summary(actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=TRUE, show_title=FALSE, return_plot=TRUE)
+      K_AC <- self$search_rsiena_multiwave_plot_K_AC_strategy_summary(actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=FALSE, show_title=FALSE, return_plot=TRUE)
+      K_CA <- self$search_rsiena_multiwave_plot_K_CA_strategy_summary(component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=FALSE, show_title=FALSE, return_plot=TRUE)
+      K_CC  <- self$search_rsiena_multiwave_plot_K_CC_strategy_summary(component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=TRUE, show_title=FALSE, return_plot=TRUE)
       strateffs   <- sapply(self$config_structure_model$dv_bipartite$coCovars, function(x)x$effect)
       stratparams <- sapply(self$config_structure_model$dv_bipartite$coCovars, function(x)x$parameter)
       stratfixs   <- sapply(self$config_structure_model$dv_bipartite$coCovars, function(x)ifelse(x$fix,'','(var)'))
@@ -5759,7 +5759,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                   thin_factor=1, 
                                                                   thin_wave_factor=1,
                                                                   smooth_method='loess',  ##"lm", "glm", "gam", "loess","auto"
-                                                                  show_utility_points=T,
+                                                                  show_utility_points=TRUE,
                                                                   show_legend=TRUE,
                                                                   show_title=TRUE,
                                                                   return_plot=TRUE,
@@ -5770,7 +5770,7 @@ SaomNkRSienaBiEnv <- R6Class(
         stop("Actor Strategy self$strat_1_coCovar are not  set.")
       if ( !identical(attr(self$component_1_coCovar, 'nodeSet'), 'COMPONENTS') )
         stop("Component payoff values in self$component_1_coCovar are not set.")
-      range_midpoint <- min(self$component_1_coCovar, na.rm=T) + ( abs(diff(range(self$component_1_coCovar, na.rm = T))) / 2 )
+      range_midpoint <- min(self$component_1_coCovar, na.rm=TRUE) + ( abs(diff(range(self$component_1_coCovar, na.rm = TRUE))) / 2 )
       component_types <- as.factor( ifelse(self$component_1_coCovar > range_midpoint, 'High', 'Low') )
       nstep <- sum(!self$chain_stats$stability)
       strateffs   <- sapply(self$config_structure_model$dv_bipartite$coCovars, function(x)x$effect)
@@ -5789,7 +5789,7 @@ SaomNkRSienaBiEnv <- R6Class(
         )
       dat$chain_half <- factor(ifelse(dat$chain_below_med, '1st Half', '2nd Half'))
       y_lab <- 'K_CC: Component Epistasis Degree'
-      density_rng <- range(dat$value, na.rm=T)
+      density_rng <- range(dat$value, na.rm=TRUE)
       density_absdiff_scale <- abs(diff(density_rng)) * 0.15
       y_lim <- c(density_rng[1] - density_absdiff_scale,  density_rng[2] + density_absdiff_scale)
       point_size <- 10 / log( nstep )
@@ -5799,14 +5799,14 @@ SaomNkRSienaBiEnv <- R6Class(
       if(length(wave_ids))
         dat <- dat %>% filter(wave_id %in% wave_ids)
       dat_wave_means <- dat %>% group_by(wave_id) %>% 
-        dplyr::summarize(mean=mean(value, na.rm=T))
+        dplyr::summarize(mean=mean(value, na.rm=TRUE))
       plt <- ggplot(dat, aes(x=chain_step_id, y=value)) + 
         geom_hline(data=dat_wave_means, aes(yintercept=mean), linetype=3, col='black' ) +
         facet_grid(wave_id ~ .) 
       if(show_utility_points)
-        plt <- plt + geom_point(aes(color=component_id), alpha=point_alpha, shape=1, size=point_size, show.legend = F)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
+        plt <- plt + geom_point(aes(color=component_id), alpha=point_alpha, shape=1, size=point_size, show.legend = FALSE)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
       if(self$exists(smooth_method))
-        plt <- plt + geom_smooth(aes(color=component_id, fill=component_id), method = smooth_method, linewidth=.5, alpha=.09, show.legend = F, se=F)
+        plt <- plt + geom_smooth(aes(color=component_id, fill=component_id), method = smooth_method, linewidth=.5, alpha=.09, show.legend = FALSE, se=FALSE)
       plt <- plt + theme_bw() + 
         # scale_linetype_manual(values = rep(1:8, length.out = length(unique(dat$component_id)))) +
         ylim(y_lim) + 
@@ -5825,11 +5825,11 @@ SaomNkRSienaBiEnv <- R6Class(
       
       #### Density
       stratmeans <- dat %>% group_by(component_id, wave_id) %>% 
-        dplyr::summarize(n=n(), mean=mean(value, na.rm=T), sd=sd(value, na.rm=T))
+        dplyr::summarize(n=n(), mean=mean(value, na.rm=TRUE), sd=sd(value, na.rm=TRUE))
       ## Actor density fact plots comparing H1 to H2 utility distribution
       plt2 <- ggplot(dat, aes(x=value, color=component_id, fill=component_id)) + ##linetype=chain_half
-        geom_density(alpha=.01, linewidth=.5, show.legend = F)  +
-        geom_vline(data = stratmeans, aes(xintercept = mean, color=component_id), linetype=2, linewidth=.5, show.legend = F) +
+        geom_density(alpha=.01, linewidth=.5, show.legend = FALSE)  +
+        geom_vline(data = stratmeans, aes(xintercept = mean, color=component_id), linetype=2, linewidth=.5, show.legend = FALSE) +
         geom_vline(data = dat_wave_means,  aes(xintercept=mean), linetype=3, col='black' ) +
         labs(y='', x='') +
         # xlim(c(ggplot_build(plt)$layout$panel_params[[1]]$y.range)) + 
@@ -5872,7 +5872,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                   thin_factor=1, 
                                                                   thin_wave_factor=1,
                                                                   smooth_method='loess',  ##"lm", "glm", "gam", "loess","auto"
-                                                                  show_utility_points=T,
+                                                                  show_utility_points=TRUE,
                                                                   show_legend=TRUE,
                                                                   show_title=TRUE,
                                                                   return_plot=TRUE,
@@ -5883,7 +5883,7 @@ SaomNkRSienaBiEnv <- R6Class(
         stop("Actor Strategy self$strat_1_coCovar are not set.")
       if ( !identical(attr(self$component_1_coCovar, 'nodeSet'), 'COMPONENTS') )
         stop("Component payoff values in self$component_1_coCovar are not set.")
-      range_midpoint <- min(self$component_1_coCovar, na.rm=T) + ( abs(diff(range(self$component_1_coCovar, na.rm = T))) / 2 )
+      range_midpoint <- min(self$component_1_coCovar, na.rm=TRUE) + ( abs(diff(range(self$component_1_coCovar, na.rm = TRUE))) / 2 )
       component_types <- as.factor( ifelse(self$component_1_coCovar > range_midpoint, 'High', 'Low') )
       nstep <- sum(!self$chain_stats$stability)
       strateffs   <- sapply(self$config_structure_model$dv_bipartite$coCovars, function(x)x$effect)
@@ -5902,7 +5902,7 @@ SaomNkRSienaBiEnv <- R6Class(
         )
       dat$chain_half <- factor(ifelse(dat$chain_below_med, '1st Half', '2nd Half'))
       y_lab <- 'K_CA: Component-Actor Degree'
-      density_rng <- range(dat$value, na.rm=T)
+      density_rng <- range(dat$value, na.rm=TRUE)
       density_absdiff_scale <- abs(diff(density_rng)) * 0.15
       y_lim <- c(density_rng[1] - density_absdiff_scale,  density_rng[2] + density_absdiff_scale)
       point_size <- 10 / log( nstep )
@@ -5912,14 +5912,14 @@ SaomNkRSienaBiEnv <- R6Class(
       if(length(wave_ids))
         dat <- dat %>% filter(wave_id %in% wave_ids)
       dat_wave_means <- dat %>% group_by(wave_id) %>% 
-        dplyr::summarize(mean=mean(value, na.rm=T))
+        dplyr::summarize(mean=mean(value, na.rm=TRUE))
       plt <- ggplot(dat, aes(x=chain_step_id, y=value)) + 
         geom_hline(data=dat_wave_means, aes(yintercept=mean), linetype=3, col='black' ) +
         facet_grid(wave_id ~ .) 
       if(show_utility_points)
-        plt <- plt + geom_point(aes(color=component_id), alpha=point_alpha, shape=1, size=point_size, show.legend = F)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
+        plt <- plt + geom_point(aes(color=component_id), alpha=point_alpha, shape=1, size=point_size, show.legend = FALSE)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
       if(self$exists(smooth_method))
-        plt <- plt + geom_smooth(aes(color=component_id, fill=component_id), method = smooth_method, linewidth=.5, alpha=.09, se=F, show.legend = F)
+        plt <- plt + geom_smooth(aes(color=component_id, fill=component_id), method = smooth_method, linewidth=.5, alpha=.09, se=FALSE, show.legend = FALSE)
       plt <- plt + theme_bw() + 
         # scale_linetype_manual(values = rep(1:8, length.out = length(unique(dat$component_id)))) +
         ylim(y_lim) + 
@@ -5942,11 +5942,11 @@ SaomNkRSienaBiEnv <- R6Class(
       
       #### Density
       stratmeans <- dat %>% group_by(component_id, wave_id) %>% 
-        dplyr::summarize(n=n(), mean=mean(value, na.rm=T), sd=sd(value, na.rm=T))
+        dplyr::summarize(n=n(), mean=mean(value, na.rm=TRUE), sd=sd(value, na.rm=TRUE))
       ## Actor density fact plots comparing H1 to H2 utility distribution
       plt2 <- ggplot(dat, aes(x=value, color=component_id, fill=component_id)) + ##linetype=chain_half
-        geom_density(alpha=.01, linewidth=.5, show.legend = F)  +
-        geom_vline(data = stratmeans, aes(xintercept = mean, color=component_id), linetype=2, linewidth=.5, show.legend = F) +
+        geom_density(alpha=.01, linewidth=.5, show.legend = FALSE)  +
+        geom_vline(data = stratmeans, aes(xintercept = mean, color=component_id), linetype=2, linewidth=.5, show.legend = FALSE) +
         geom_vline(data = dat_wave_means,  aes(xintercept=mean), linetype=3, col='black' ) +
         labs(y='', x='') +
         # xlim(c(ggplot_build(plt)$layout$panel_params[[1]]$y.range)) + 
@@ -5989,7 +5989,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                  thin_factor=1, 
                                                                  thin_wave_factor=1,
                                                                  smooth_method='loess',  ##"lm", "glm", "gam", "loess","auto"
-                                                                 show_utility_points=T,
+                                                                 show_utility_points=TRUE,
                                                                  show_legend=TRUE,
                                                                  show_title=TRUE,
                                                                  return_plot=TRUE,
@@ -6016,7 +6016,7 @@ SaomNkRSienaBiEnv <- R6Class(
         )
       dat$chain_half <- factor(ifelse(dat$chain_below_med, '1st Half', '2nd Half'))
       y_lab <- 'K_AC: Actor-Component Degree'
-      density_rng <- range(dat$value, na.rm=T)
+      density_rng <- range(dat$value, na.rm=TRUE)
       density_absdiff_scale <- abs(diff(density_rng)) * 0.15
       y_lim <- c(density_rng[1] - density_absdiff_scale,  density_rng[2] + density_absdiff_scale)
       point_size <- 10 / log( nstep )
@@ -6026,7 +6026,7 @@ SaomNkRSienaBiEnv <- R6Class(
       if(length(wave_ids))
         dat <- dat %>% filter(wave_id %in% wave_ids)
       dat_wave_means <- dat %>% group_by(wave_id) %>% 
-        dplyr::summarize(mean=mean(value, na.rm=T))
+        dplyr::summarize(mean=mean(value, na.rm=TRUE))
       plt <- ggplot(dat, aes(x=chain_step_id, y=value)) + 
         geom_hline(data=dat_wave_means, aes(yintercept=mean), linetype=3, col='black' ) +
         facet_grid(wave_id ~ .) 
@@ -6055,7 +6055,7 @@ SaomNkRSienaBiEnv <- R6Class(
       
       #### Density
       stratmeans <- dat %>% group_by(strategy, wave_id) %>% 
-        dplyr::summarize(n=n(), mean=mean(value, na.rm=T), sd=sd(value, na.rm=T))
+        dplyr::summarize(n=n(), mean=mean(value, na.rm=TRUE), sd=sd(value, na.rm=TRUE))
       ## Actor density fact plots comparing H1 to H2 utility distribution
       plt2 <- ggplot(dat, aes(x=value, color=strategy, fill=strategy)) + ##linetype=chain_half
         geom_density(alpha=.1, linewidth=1)  +
@@ -6102,7 +6102,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                  thin_factor=1, 
                                                                  thin_wave_factor=1,
                                                                  smooth_method='loess',  ##"lm", "glm", "gam", "loess","auto"
-                                                                 show_utility_points=T,
+                                                                 show_utility_points=TRUE,
                                                                  show_legend=TRUE,
                                                                  show_title=TRUE,
                                                                  return_plot=TRUE,
@@ -6129,7 +6129,7 @@ SaomNkRSienaBiEnv <- R6Class(
         )
       dat$chain_half <- factor(ifelse(dat$chain_below_med, '1st Half', '2nd Half'))
       y_lab <- 'K_AA: Social Degree'
-      density_rng <- range(dat$value, na.rm=T)
+      density_rng <- range(dat$value, na.rm=TRUE)
       density_absdiff_scale <- abs(diff(density_rng)) * 0.15
       y_lim <- c(density_rng[1] - density_absdiff_scale,  density_rng[2] + density_absdiff_scale)
       point_size <- 10 / log( nstep )
@@ -6139,7 +6139,7 @@ SaomNkRSienaBiEnv <- R6Class(
       if(length(wave_ids))
         dat <- dat %>% filter(wave_id %in% wave_ids)
       dat_wave_means <- dat %>% group_by(wave_id) %>% 
-        dplyr::summarize(mean=mean(value, na.rm=T))
+        dplyr::summarize(mean=mean(value, na.rm=TRUE))
       plt <- ggplot(dat, aes(x=chain_step_id, y=value)) + 
         geom_hline(data=dat_wave_means, aes(yintercept=mean), linetype=3, col='black' ) +
         facet_grid(wave_id ~ .) 
@@ -6168,7 +6168,7 @@ SaomNkRSienaBiEnv <- R6Class(
       
       #### Density
       stratmeans <- dat %>% group_by(strategy, wave_id) %>% 
-        dplyr::summarize(n=n(), mean=mean(value, na.rm=T), sd=sd(value, na.rm=T))
+        dplyr::summarize(n=n(), mean=mean(value, na.rm=TRUE), sd=sd(value, na.rm=TRUE))
       ## Actor density fact plots comparing H1 to H2 utility distribution
       plt2 <- ggplot(dat, aes(x=value, color=strategy, fill=strategy)) + ##linetype=chain_half
         geom_density(alpha=.1, linewidth=1)  +
@@ -6258,7 +6258,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                             thin_factor=1, 
                                                                             thin_wave_factor=1,
                                                                             smooth_method='loess',  ##"lm", "glm", "gam", "loess","auto"
-                                                                            show_utility_points=T,
+                                                                            show_utility_points=TRUE,
                                                                             scale_utility=TRUE,
                                                                             return_plot=TRUE,
                                                                             plot_file=NA, plot_dir=NA,
@@ -6296,7 +6296,7 @@ SaomNkRSienaBiEnv <- R6Class(
         if (!all(dat$utility == 0))
           dat <- dat %>% mutate(utility = c(scale(utility)))
       }
-      density_rng <- range(dat$utility, na.rm=T)
+      density_rng <- range(dat$utility, na.rm=TRUE)
       density_absdiff_scale <- abs(diff(density_rng)) * 0.15
       util_lim <- c(density_rng[1] - density_absdiff_scale,  density_rng[2] + density_absdiff_scale)
       point_size <- 10 / log( nstep )
@@ -6306,7 +6306,7 @@ SaomNkRSienaBiEnv <- R6Class(
       if(length(wave_ids))
         dat <- dat %>% filter(wave_id %in% wave_ids)
       dat_wave_means <- dat %>% group_by(wave_id) %>% 
-        dplyr::summarize(mean=mean(utility, na.rm=T))
+        dplyr::summarize(mean=mean(utility, na.rm=TRUE))
       plt <- ggplot(dat, aes(x=chain_step_id, y=utility)) + 
         geom_hline(data=dat_wave_means, aes(yintercept=mean), linetype=3, col='black' ) +
         facet_grid(wave_id ~ .) 
@@ -6349,7 +6349,7 @@ SaomNkRSienaBiEnv <- R6Class(
      
       #### Density
       stratmeans <- dat %>% group_by(strategy, wave_id) %>% 
-        dplyr::summarize(n=n(), mean=mean(utility, na.rm=T), sd=sd(utility, na.rm=T))
+        dplyr::summarize(n=n(), mean=mean(utility, na.rm=TRUE), sd=sd(utility, na.rm=TRUE))
       ## Actor density fact plots comparing H1 to H2 utility distribution
       plt2 <- ggplot(dat, aes(x=utility, color=strategy, fill=strategy)) + ##linetype=chain_half
         geom_density(alpha=.1, linewidth=1)  +
@@ -6409,7 +6409,7 @@ SaomNkRSienaBiEnv <- R6Class(
       if(length(actor_ids))
         dat <- dat %>% filter(actor_id %in% actor_ids)
       plt <- ggplot(dat, aes(x=chain_step_id, y=utility)) + 
-        geom_hline(data=dat%>%group_by(wave_id)%>%dplyr::summarize(mean=mean(utility, na.rm=T)), aes(yintercept=mean), linetype=2, col='black' ) +
+        geom_hline(data=dat%>%group_by(wave_id)%>%dplyr::summarize(mean=mean(utility, na.rm=TRUE)), aes(yintercept=mean), linetype=2, col='black' ) +
         facet_wrap( ~ wave_id)
       if(show_utility_points)
         plt <- plt + geom_point(aes(color=strategy), alpha=.25, shape=1, size=2)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
@@ -6452,7 +6452,7 @@ SaomNkRSienaBiEnv <- R6Class(
       dat$chain_half <- factor(ifelse(dat$chain_below_med, '1st Half', '2nd Half'))
       ##filter(chain_step_id %% thin_factor == 0) %>% 
       stratmeans <- dat %>% group_by(strategy, chain_half, wave_id) %>% 
-        dplyr::summarize(n=n(), mean=mean(utility, na.rm=T), sd=sd(utility, na.rm=T))
+        dplyr::summarize(n=n(), mean=mean(utility, na.rm=TRUE), sd=sd(utility, na.rm=TRUE))
       ## Actor density fact plots comparing H1 to H2 utility distribution
       plt <- ggplot(dat, aes(x=utility, color=strategy, fill=strategy)) + ##linetype=chain_half
         geom_density(alpha=.1, linewidth=1)  +
@@ -6488,19 +6488,19 @@ SaomNkRSienaBiEnv <- R6Class(
                                   ) {
       plist <- list()
       if (all(is.na(type)) |  'utility' %in% type)
-        plist[['utility']] <- self$search_rsiena_plot_actor_utility(actor_ids, thin_factor, smooth_method, show_utility_points, return_plot=T)
+        plist[['utility']] <- self$search_rsiena_plot_actor_utility(actor_ids, thin_factor, smooth_method, show_utility_points, return_plot=TRUE)
       
       if (all(is.na(type)) |  'utility_by_strategy' %in% type)
-        plist[['utility_by_strategy']] <- self$search_rsiena_plot_actor_utility_by_strategy(actor_ids, thin_factor, smooth_method, show_utility_points, return_plot=T)
+        plist[['utility_by_strategy']] <- self$search_rsiena_plot_actor_utility_by_strategy(actor_ids, thin_factor, smooth_method, show_utility_points, return_plot=TRUE)
       
       if (all(is.na(type)) |  'utility_density' %in% type)
-        plist[['utility_density']] <- self$search_rsiena_plot_actor_utility_density(return_plot=T)
+        plist[['utility_density']] <- self$search_rsiena_plot_actor_utility_density(return_plot=TRUE)
       
       if (all(is.na(type)) |  'utility_density_by_strategy' %in% type)
-        plist[['utility_density_by_strategy']] <- self$search_rsiena_plot_actor_utility_density_by_strategy(return_plot=T)
+        plist[['utility_density_by_strategy']] <- self$search_rsiena_plot_actor_utility_density_by_strategy(return_plot=TRUE)
       
       if (all(is.na(type)) |  'utility_histogram_by_strategy' %in% type)
-        plist[['utility_histogram_by_strategy']] <- self$search_rsiena_plot_actor_utility_histogram_by_strategy(histogram_position, return_plot=T)
+        plist[['utility_histogram_by_strategy']] <- self$search_rsiena_plot_actor_utility_histogram_by_strategy(histogram_position, return_plot=TRUE)
       
       if (all(is.na(type)) |  'stability' %in% type)
         plist[['stability']] <- self$search_rsiena_plot_stability() ##**TODO** Fix return plot
@@ -6522,7 +6522,7 @@ SaomNkRSienaBiEnv <- R6Class(
       if(length(actor_ids))
         dat <- dat%>%filter(actor_id %in% actor_ids)
       plt <- ggplot(dat, aes(x=chain_step_id, y=utility, color=actor_id)) + 
-        geom_hline(yintercept = mean(dat$utility, na.rm=T), linetype=2, col='black' )
+        geom_hline(yintercept = mean(dat$utility, na.rm=TRUE), linetype=2, col='black' )
       if(show_utility_points)
         plt <- plt + geom_point(alpha=.25, shape=1, size=2)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
       if(self$exists(smooth_method))
@@ -6549,7 +6549,7 @@ SaomNkRSienaBiEnv <- R6Class(
       if(length(actor_ids))
         dat <- dat %>% filter(actor_id %in% actor_ids)
       plt <- ggplot(dat, aes(x=chain_step_id, y=utility)) + 
-        geom_hline(yintercept = mean(dat$utility, na.rm=T), linetype=2, col='black' )
+        geom_hline(yintercept = mean(dat$utility, na.rm=TRUE), linetype=2, col='black' )
       if(show_utility_points)
         plt <- plt + geom_point(aes(color=strategy), alpha=.25, shape=1, size=2)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
       if(self$exists(smooth_method))
@@ -6587,7 +6587,7 @@ SaomNkRSienaBiEnv <- R6Class(
       dat$chain_half <- factor(ifelse(dat$chain_below_med, '1st Half', '2nd Half'))
       ##filter(chain_step_id %% thin_factor == 0) %>% 
       stratmeans <- dat %>% group_by(strategy, chain_half) %>% 
-        dplyr::summarize(n=n(), mean=mean(utility, na.rm=T), sd=sd(utility, na.rm=T))
+        dplyr::summarize(n=n(), mean=mean(utility, na.rm=TRUE), sd=sd(utility, na.rm=TRUE))
       ## Actor density fact plots comparing H1 to H2 utility distribution
       plt <- ggplot(dat, aes(x=utility, color=strategy, fill=strategy)) + ##linetype=chain_half
         geom_density(alpha=.1, linewidth=1)  +
@@ -6614,7 +6614,7 @@ SaomNkRSienaBiEnv <- R6Class(
         )
       dat$chain_half <- factor(ifelse(dat$chain_below_med, '1st Half', '2nd Half'))
       stratmeans <- dat %>% group_by(strategy, chain_half) %>% 
-        dplyr::summarize(n=n(), mean=mean(utility, na.rm=T), sd=sd(utility, na.rm=T))
+        dplyr::summarize(n=n(), mean=mean(utility, na.rm=TRUE), sd=sd(utility, na.rm=TRUE))
       ## Actor density fact plots comparing H1 to H2 utility distribution
       plt <- ggplot(dat, aes(x=utility, color=strategy, fill=strategy)) + ##linetype=chain_half
         geom_histogram(alpha=.1, position = histogram_position) +
@@ -6819,9 +6819,9 @@ SaomNkRSienaBiEnv <- R6Class(
       # Map normalized strategies to colors
       
       # 1. Bipartite network plot using ggraph with vertex labels
-      ig_bipartite <- igraph::graph_from_biadjacency_matrix(bipartite_matrix, directed = F, weighted = T)
+      ig_bipartite <- igraph::graph_from_biadjacency_matrix(bipartite_matrix, directed = FALSE, weighted = TRUE)
       
-      projs <- igraph::bipartite_projection(ig_bipartite, multiplicity = T, which = 'both')
+      projs <- igraph::bipartite_projection(ig_bipartite, multiplicity = TRUE, which = 'both')
       ig_social <- projs$proj1
       ig_component <- projs$proj2
       
@@ -6903,7 +6903,7 @@ SaomNkRSienaBiEnv <- R6Class(
         )
       
       # 3. Component influence matrix heatmap
-      component_matrix <- igraph::as_adjacency_matrix(ig_component, type = 'both', sparse = F, attr = 'weight')
+      component_matrix <- igraph::as_adjacency_matrix(ig_component, type = 'both', sparse = FALSE, attr = 'weight')
       
       component_df <- melt(component_matrix)
       colnames(component_df) <- c("Component1", "Component2", "Weight")
@@ -6925,9 +6925,9 @@ SaomNkRSienaBiEnv <- R6Class(
       }
       
       # Calculate average degree (K) for the social space and component interaction space
-      avg_degree_social <- mean(igraph::degree(ig_social, mode = 'all', loops = F, normalized = normalize_degree))
-      avg_degree_component <- mean(igraph::degree(ig_component, mode = 'all', loops = F, normalized = normalize_degree))
-      density_current <- igraph::edge_density(ig_bipartite, loops = F)
+      avg_degree_social <- mean(igraph::degree(ig_social, mode = 'all', loops = FALSE, normalized = normalize_degree))
+      avg_degree_component <- mean(igraph::degree(ig_component, mode = 'all', loops = FALSE, normalized = normalize_degree))
+      density_current <- igraph::edge_density(ig_bipartite, loops = FALSE)
       
       # Create a main title using sprintf with simulation parameters
       main_title <- sprintf("Environment M=%s, N=%s:   Step = %s,  Density = %.2f, K_AA = %.2f, K_CC = %.2f", 
@@ -6988,7 +6988,7 @@ SaomNkRSienaBiEnv <- R6Class(
         geom_point(alpha=point_alpha, shape=1, size= point_size ) +
         geom_smooth(aes(fill=actor_id, linetype=actor_id), method='loess', span=loess_span, alpha=.05) +
         geom_smooth(aes(x=chain_step_id, y=mean), 
-                    data=actthin %>% group_by(chain_step_id,actor_id) %>% dplyr::summarize(mean=mean(utility, na.rm=T)),
+                    data=actthin %>% group_by(chain_step_id,actor_id) %>% dplyr::summarize(mean=mean(utility, na.rm=TRUE)),
                     method='loess', color='black', span=loess_span, alpha=.05, linewidth=1.1) +
         geom_hline(yintercept = 0, linetype=4, color='black') +
         theme_bw()
@@ -7016,7 +7016,7 @@ SaomNkRSienaBiEnv <- R6Class(
                     method='loess', span=loess_span, alpha=.1) +
         geom_smooth(aes(x=chain_step_id, y=mean, color=strategy), 
                     method='loess', color='black', span=loess_span, alpha=.05, linewidth=1.1,
-                    data=actthin %>% group_by(chain_step_id) %>% dplyr::summarize(mean=mean(utility, na.rm=T)) %>% 
+                    data=actthin %>% group_by(chain_step_id) %>% dplyr::summarize(mean=mean(utility, na.rm=TRUE)) %>% 
                       mutate(strategy=NA)) +
         geom_hline(yintercept = 0, linetype=4, color='black') +
         ggtitle("Average Utility by Strategy") +
@@ -7112,7 +7112,7 @@ SaomNkRSienaBiEnv <- R6Class(
     effnames <- self$expand_names(duplist)
     neffs <- length(efflist)
     ### empty matrix to hold actor network statistics
-    effparams <- sapply(efflist, function(x) x$parameter, simplify = T)
+    effparams <- sapply(efflist, function(x) x$parameter, simplify = TRUE)
     names(effparams) <- effnames
     ACTORS     <- sienaNodeSet(self$M, nodeSetName="ACTORS")
     COMPONENTS <- sienaNodeSet(self$N, nodeSetName="COMPONENTS")
@@ -7235,8 +7235,8 @@ SaomNkRSienaBiEnv <- R6Class(
     if(filter_shocks_on)
       theta_shocks <- theta_shocks[ sapply(theta_shocks,function(x)x$shock_on==1) ]
     theta_shock_df <- theta_shocks %>% ldply(.fun = function(x){
-      first_step <-  min(x$chain_step_ids, na.rm=T)
-      last_step <-  max(x$chain_step_ids, na.rm=T)
+      first_step <-  min(x$chain_step_ids, na.rm=TRUE)
+      last_step <-  max(x$chain_step_ids, na.rm=TRUE)
       shock_label <- ifelse( !is.null(x$label), 
                              x$label,  
                              paste(paste(x$effect, x$parameter, sep='='), collapse = '; ') )
@@ -7388,7 +7388,7 @@ SaomNkRSienaBiEnv <- R6Class(
     act_effs2 <- act_effs %>% filter(chain_step_id %% thin_factor == 0)
     
     if (thin_pct < 1) {
-      sample_rows <- sample(1:nrow(act_effs2), size = round(nrow(act_effs2)*thin_pct), replace = F )
+      sample_rows <- sample(1:nrow(act_effs2), size = round(nrow(act_effs2)*thin_pct), replace = FALSE )
       act_effs2 <- act_effs2 %>% filter(row_number() %in% sample_rows )
     }
     
@@ -7496,7 +7496,7 @@ SaomNkRSienaBiEnv <- R6Class(
   },
   
   
-  search_rsiena_model_summary = function(digits=3, single.row = T) {
+  search_rsiena_model_summary = function(digits=3, single.row = TRUE) {
     if (is.null(self$rsiena_model))
       stop('No rsiena_model to summarize')
     
@@ -7537,7 +7537,7 @@ SaomNkRSienaBiEnv <- R6Class(
     Klabels_df$panel_label[which(Klabels_df$node_type == 'Component'  & Klabels_df$dyad_type == '2-mode  (bipartite)' )]  <- 'K_CA'
     
     if (thin_pct < 1) {
-      sample_rows <- sample(1:nrow(Kdf), size = round(nrow(Kdf)*thin_pct), replace = F )
+      sample_rows <- sample(1:nrow(Kdf), size = round(nrow(Kdf)*thin_pct), replace = FALSE )
       Kdf <- Kdf %>% filter(row_number() %in% sample_rows )
     }
     
@@ -7554,7 +7554,7 @@ SaomNkRSienaBiEnv <- R6Class(
                     method='loess', alpha=.05, span=loess_span) + 
         geom_smooth(aes(x=chain_step_id, y=mean), span=loess_span, 
                     data=Kdf %>% group_by(chain_step_id, node_type, dyad_type) %>% dplyr::summarize(mean=mean(value)),
-                    method='loess', se=F, color='black', linewidth=1) +
+                    method='loess', se=FALSE, color='black', linewidth=1) +
         geom_text(data=Klabels_df, aes(label=panel_label, x=Inf, y=-Inf), hjust=1.15, vjust=-.5, size=7, color='black', fontface='bold') +
         geom_hline(yintercept = 0, linetype=2) +
         scale_y_continuous(position = 'right') +
@@ -7617,7 +7617,7 @@ SaomNkRSienaBiEnv <- R6Class(
                     method='loess', alpha=.1, span=loess_span) + 
         geom_smooth(aes(x=chain_step_id, y=mean), span=loess_span, 
                     data=Kdf2 %>% group_by(chain_step_id, effect) %>% dplyr::summarize(mean=mean(value)),
-                    method='loess', se=F, color='black', linewidth=1) +
+                    method='loess', se=FALSE, color='black', linewidth=1) +
         geom_hline(yintercept = 0, linetype=2) +
         facet_grid( effect ~ . ) +
         theme_bw() +
@@ -7663,7 +7663,7 @@ SaomNkRSienaBiEnv <- R6Class(
                     method='loess', alpha=.1, span=loess_span) + 
         geom_smooth(aes(x=chain_step_id, y=mean), span=loess_span, 
                     data=Kdf1 %>% group_by(chain_step_id, effect) %>% dplyr::summarize(mean=mean(value)),
-                    method='loess', se=F, color='black', linewidth=1) +
+                    method='loess', se=FALSE, color='black', linewidth=1) +
         geom_hline(yintercept = 0, linetype=2) +
         facet_grid( effect ~ . ) +
         theme_bw() + 
@@ -7693,7 +7693,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                  thin_pct=1,
                                                  thin_wave_factor=1,
                                                  smooth_method='loess',  ##"lm", "glm", "gam", "loess","auto"
-                                                 show_utility_points=T,
+                                                 show_utility_points=TRUE,
                                                  scale_utility=TRUE,
                                                  plot_return = TRUE,
                                                  plot_save = FALSE,
@@ -7779,11 +7779,11 @@ SaomNkRSienaBiEnv <- R6Class(
         dat <- dat %>% mutate(utility = c(scale(utility)))
     }
     if (thin_pct < 1) {
-      sample_rows <- sample(1:nrow(dat), size = round(nrow(dat)*thin_pct), replace = F )
+      sample_rows <- sample(1:nrow(dat), size = round(nrow(dat)*thin_pct), replace = FALSE )
       dat <- dat %>% filter(row_number() %in% sample_rows )
     }
     npoints <- nrow(dat)
-    density_rng <- range(dat$utility, na.rm=T)
+    density_rng <- range(dat$utility, na.rm=TRUE)
     density_absdiff_scale <- abs(diff(density_rng)) * 0.15
     util_lim <- c(density_rng[1] - density_absdiff_scale,  density_rng[2] + density_absdiff_scale)
     ylim <- if(!is.null(ylim)){ ylim } else { util_lim }
@@ -7843,7 +7843,7 @@ SaomNkRSienaBiEnv <- R6Class(
     #### Density -------------------------------------------------------
     nrows_title <- stringr::str_count(sim_title_str, "\\\n")
     stratmeans <- dat %>% group_by(strategy) %>% 
-      dplyr::summarize(n=n(), mean=mean(utility, na.rm=T), sd=sd(utility, na.rm=T))
+      dplyr::summarize(n=n(), mean=mean(utility, na.rm=TRUE), sd=sd(utility, na.rm=TRUE))
     ## Actor density fact plots comparing H1 to H2 utility distribution
     plt2 <- ggplot(dat, aes(x=utility, color=strategy, fill=strategy)) + ##linetype=chain_half
       geom_density(alpha=.1, linewidth=1)  +
@@ -9040,7 +9040,7 @@ SaomNkRSienaBiEnv <- R6Class(
     exit_list <- list()
     
     set.seed(experiment_seed)
-    batch_seeds <- sample(1:9999999, size = n, replace = F)
+    batch_seeds <- sample(1:9999999, size = n, replace = FALSE)
     
     # Run simulations with multiple seeds
     for (i in 1:length(batch_seeds)) {
@@ -9370,7 +9370,7 @@ SaomNkRSienaBiEnv <- R6Class(
     entry_list <- list()
     
     set.seed(experiment_seed)
-    batch_seeds <- sample(1:9999999, size = n, replace = F)
+    batch_seeds <- sample(1:9999999, size = n, replace = FALSE)
     
     # Run simulations with multiple seeds
     for (i in 1:length(batch_seeds)) {
@@ -9711,10 +9711,10 @@ SaomNkRSienaBiEnv <- R6Class(
       } else {
         survival_data <- survival_data %>% group_by(step, strategy) %>% 
           dplyr::summarize(
-            survival_rate = mean(survival_rate, na.rm=T),
-            entry_rate = mean(entry_rate, na.rm=T),
-            ci_lower_entry = mean(ci_lower_entry, na.rm=T),
-            ci_upper_entry = mean(ci_upper_entry, na.rm=T)
+            survival_rate = mean(survival_rate, na.rm=TRUE),
+            entry_rate = mean(entry_rate, na.rm=TRUE),
+            ci_lower_entry = mean(ci_lower_entry, na.rm=TRUE),
+            ci_upper_entry = mean(ci_upper_entry, na.rm=TRUE)
           )
         plot <- ggplot2::ggplot(survival_data, 
                                 ggplot2::aes(x = step, y = survival_rate, 
@@ -9754,10 +9754,10 @@ SaomNkRSienaBiEnv <- R6Class(
       } else {
         survival_data <- survival_data %>% group_by(step, strategy) %>% 
           dplyr::summarize(
-            survival_rate = mean(survival_rate, na.rm=T),
-            entry_rate = mean(entry_rate, na.rm=T),
-            ci_lower_entry = mean(ci_lower_entry, na.rm=T),
-            ci_upper_entry = mean(ci_upper_entry, na.rm=T)
+            survival_rate = mean(survival_rate, na.rm=TRUE),
+            entry_rate = mean(entry_rate, na.rm=TRUE),
+            ci_lower_entry = mean(ci_lower_entry, na.rm=TRUE),
+            ci_upper_entry = mean(ci_upper_entry, na.rm=TRUE)
           )
         plot <- ggplot2::ggplot(survival_data, 
                                 ggplot2::aes(x = step, y = entry_rate, 
@@ -9831,7 +9831,7 @@ SaomNkRSienaBiEnv <- R6Class(
     util_list <- list()
     entry_list <- list()
     
-    batch_seeds <- sample(1:9999999, size = n, replace = F)
+    batch_seeds <- sample(1:9999999, size = n, replace = FALSE)
     
 
     # Run simulations with multiple seeds
@@ -10071,12 +10071,12 @@ SaomNkRSienaBiEnv <- R6Class(
                       data = udf_trim_1,
                       distance = "glm",
                       link = "probit",
-                      replace = F)
+                      replace = FALSE)
     m.out2 <- matchit(treat ~ entry_scenario + utility,
                       data = udf_trim_2,
                       distance = "glm",
                       link = "probit",
-                      replace = F)
+                      replace = FALSE)
 
     ###------- Actor 1 -----------------
     match_dat_1 <- match_data(m.out1, data=udf_trim_1) 
@@ -10139,12 +10139,12 @@ SaomNkRSienaBiEnv <- R6Class(
                       data = udf_trim_A,
                       distance = "glm",
                       link = "probit",
-                      replace = F)
+                      replace = FALSE)
     m.outB <- matchit(treat ~ actor_id + utility,
                       data = udf_trim_B,
                       distance = "glm",
                       link = "probit",
-                      replace = F)
+                      replace = FALSE)
     
     ###------- Scenario A (1 first, 2 second) -----------------
     match_dat_A <- match_data(m.outA, data=udf_trim_A) 

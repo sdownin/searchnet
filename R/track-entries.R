@@ -131,6 +131,18 @@ NULL
 #'   unaffected.
 #' @seealso \code{\link{expand_entry_rivals}} for the one-row-per-dyad form,
 #'   \code{\link{compute_dyadic_forbearance}} for the pair-level measure.
+#' @examples
+#' ## From a holdings history: 3 firms, 4 activities, 5 rounds
+#' set.seed(7)
+#' h <- list(matrix(rbinom(12, 1, 0.4), nrow = 3))
+#' for (t in 2:5) {
+#'   m <- h[[t - 1]]
+#'   i <- sample(3, 1); j <- sample(4, 1)
+#'   m[i, j] <- 1 - m[i, j]   # one firm toggles one activity per round
+#'   h[[t]] <- m
+#' }
+#' entry_log <- track_entry_decisions(holdings_history = h)
+#' entry_log
 #' @export
 track_entry_decisions <- function(env = NULL,
                                   holdings_history = NULL,
@@ -310,6 +322,18 @@ track_entry_decisions <- function(env = NULL,
 #'     \item{entry_count}{Total number of ADD actions.}
 #'     \item{drop_count}{Total number of DROP actions.}
 #'   }
+#' @examples
+#' set.seed(7)
+#' h <- list(matrix(rbinom(12, 1, 0.4), nrow = 3))
+#' for (t in 2:5) {
+#'   m <- h[[t - 1]]
+#'   i <- sample(3, 1); j <- sample(4, 1)
+#'   m[i, j] <- 1 - m[i, j]
+#'   h[[t]] <- m
+#' }
+#' entry_log <- track_entry_decisions(holdings_history = h)
+#' compute_forbearance_metrics(entry_log)
+#' compute_forbearance_metrics(entry_log, by_firm = TRUE)
 #' @export
 compute_forbearance_metrics <- function(entry_log, by_firm = FALSE) {
   stopifnot(is.data.frame(entry_log))
@@ -371,6 +395,17 @@ compute_forbearance_metrics <- function(entry_log, by_firm = FALSE) {
 #'   window. Default 50.
 #' @return A \code{data.frame} with columns \code{step}, \code{window_center},
 #'   \code{competitive_entry_rate}, \code{mean_rivals_at_entry}.
+#' @examples
+#' set.seed(7)
+#' h <- list(matrix(rbinom(12, 1, 0.4), nrow = 3))
+#' for (t in 2:16) {
+#'   m <- h[[t - 1]]
+#'   i <- sample(3, 1); j <- sample(4, 1)
+#'   m[i, j] <- 1 - m[i, j]
+#'   h[[t]] <- m
+#' }
+#' entry_log <- track_entry_decisions(holdings_history = h)
+#' compute_forbearance_trajectory(entry_log, window = 3)
 #' @export
 compute_forbearance_trajectory <- function(entry_log, window = 50L) {
   adds <- entry_log %>% filter(action_type == "add") %>% arrange(step)
@@ -418,6 +453,19 @@ compute_forbearance_trajectory <- function(entry_log, window = 50L) {
 #' @return A \code{data.frame} with all input columns plus \code{rival}
 #'   (integer firm ID of the rival). Rows whose \code{rival_ids} is \code{NA}
 #'   (identity not recoverable) are dropped with a warning, never silently.
+#' @examples
+#' set.seed(7)
+#' h <- list(matrix(rbinom(12, 1, 0.4), nrow = 3))
+#' for (t in 2:8) {
+#'   m <- h[[t - 1]]
+#'   i <- sample(3, 1); j <- sample(4, 1)
+#'   m[i, j] <- 1 - m[i, j]
+#'   h[[t]] <- m
+#' }
+#' entry_log <- track_entry_decisions(holdings_history = h)
+#'
+#' ## One row per decision-rival dyad: an ADD against two rivals is two rows
+#' expand_entry_rivals(entry_log)
 #' @export
 expand_entry_rivals <- function(entry_log, drop_uncontested = TRUE) {
   stopifnot(is.data.frame(entry_log))
@@ -490,6 +538,12 @@ expand_entry_rivals <- function(entry_log, drop_uncontested = TRUE) {
 #'   the first element, that is contact measured at the start rather than
 #'   after the behavior being explained, which is the usual requirement.
 #' @return An \eqn{M \times M}{M x M} integer matrix with a zero diagonal.
+#' @examples
+#' ## 3 firms, 4 activities: firms 1 and 2 meet in two activities
+#' H <- rbind(c(1, 1, 0, 0),
+#'            c(1, 1, 1, 0),
+#'            c(0, 0, 1, 1))
+#' compute_multimarket_contact(H)
 #' @export
 compute_multimarket_contact <- function(holdings, at = 1L) {
   if (is.list(holdings)) {
@@ -544,6 +598,22 @@ compute_multimarket_contact <- function(holdings, at = 1L) {
 #'   \code{firm}, \code{rival}, \code{n_entries_focal},
 #'   \code{n_entries_vs_rival}, \code{observed_rate}, \code{expected_rate},
 #'   \code{forbearance_index}, \code{exposure_corrected} and \code{sparse}.
+#' @examples
+#' set.seed(7)
+#' h <- list(matrix(rbinom(12, 1, 0.4), nrow = 3))
+#' for (t in 2:16) {
+#'   m <- h[[t - 1]]
+#'   i <- sample(3, 1); j <- sample(4, 1)
+#'   m[i, j] <- 1 - m[i, j]
+#'   h[[t]] <- m
+#' }
+#' entry_log <- track_entry_decisions(holdings_history = h)
+#'
+#' ## Incidence shares only (no exposure correction)
+#' compute_dyadic_forbearance(entry_log, min_entries = 1)
+#'
+#' ## Exposure-corrected: positive forbearance_index = restraint
+#' compute_dyadic_forbearance(entry_log, holdings = h, min_entries = 1)
 #' @export
 compute_dyadic_forbearance <- function(entry_log, holdings = NULL,
                                        min_entries = 5L) {

@@ -324,6 +324,21 @@
 #' @param ... Additional arguments (currently unused; reserved for future use).
 #' @return A \code{plotly} interactive 3D scatter if \pkg{plotly} is available;
 #'   otherwise a \code{ggplot} 2D faceted projection.
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, seed = 42)
+#' mod <- saomnk_model(density = -0.5, popularity = 0.2)
+#' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+#'
+#' ## searchnet 0.8.1: coerce the stored utility table to a plain data.frame
+#' ## before phase-space plotting (the extractor returns a data.table, which
+#' ## the plot functions index with data.frame semantics)
+#' env$actor_util_df <- as.data.frame(env$actor_util_df)
+#'
+#' p <- saomnk_plot_phase_space_3d(env, x_var = "K_AC",
+#'                                 y_var = "exploration_rate",
+#'                                 z_var = "utility", color_by = "time")
+#' }
 #' @export
 saomnk_plot_phase_space_3d <- function(env,
                                        x_var = "K_AC",
@@ -661,6 +676,18 @@ saomnk_plot_phase_space_3d <- function(env,
 #' @param bins Number of bins for hexagonal binning (default 30).
 #' @param thin_factor Integer thinning factor for chain steps.
 #' @return A \code{ggplot} object.
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, seed = 42)
+#' mod <- saomnk_model(density = -0.5, popularity = 0.2)
+#' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+#'
+#' ## searchnet 0.8.1: coerce the stored utility table to a plain data.frame
+#' env$actor_util_df <- as.data.frame(env$actor_util_df)
+#'
+#' p <- saomnk_plot_phase_heatmap(env, x_var = "K_AC", y_var = "utility",
+#'                                bins = 10)
+#' }
 #' @export
 saomnk_plot_phase_heatmap <- function(env,
                                       x_var = "K_AC",
@@ -777,6 +804,18 @@ saomnk_plot_phase_heatmap <- function(env,
 #'   \pkg{plotly} is available (default \code{FALSE} -- uses gganimate).
 #' @return A \code{gganimate} object (if \pkg{gganimate} is available),
 #'   otherwise a list of \code{ggplot} frame objects.
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, seed = 42)
+#' mod <- saomnk_model(density = -0.5, popularity = 0.2)
+#' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+#'
+#' ## searchnet 0.8.1: coerce the stored utility table to a plain data.frame
+#' env$actor_util_df <- as.data.frame(env$actor_util_df)
+#'
+#' anim <- saomnk_plot_phase_evolution(env, x_var = "K_AC", y_var = "utility",
+#'                                     thin_factor = 5)
+#' }
 #' @export
 saomnk_plot_phase_evolution <- function(env,
                                         x_var = "K_AC",
@@ -904,6 +943,22 @@ saomnk_plot_phase_evolution <- function(env,
 #' @param smooth Loess smoothing span for trajectories.
 #' @param alpha Point transparency.
 #' @return A \code{ggplot} object (2D) or \code{plotly} object (3D overlay).
+#' @examples
+#' \donttest{
+#' env1 <- saomnk_env(M = 4, N = 6, seed = 42)
+#' env2 <- saomnk_env(M = 4, N = 6, seed = 42)
+#' mod_weak   <- saomnk_model(density = -0.5)
+#' mod_strong <- saomnk_model(density = -0.5, popularity = 0.4)
+#' saomnk_run(env1, mod_weak,   steps_per_actor = 5, seed = 12345)
+#' saomnk_run(env2, mod_strong, steps_per_actor = 5, seed = 12345)
+#'
+#' ## searchnet 0.8.1: coerce the stored utility tables to plain data.frames
+#' env1$actor_util_df <- as.data.frame(env1$actor_util_df)
+#' env2$actor_util_df <- as.data.frame(env2$actor_util_df)
+#'
+#' p <- saomnk_plot_phase_comparison(list(weak = env1, strong = env2),
+#'                                   x_var = "K_AC", y_var = "utility")
+#' }
 #' @export
 saomnk_plot_phase_comparison <- function(envs,
                                          x_var = "K_AC",
@@ -1037,6 +1092,17 @@ saomnk_plot_phase_comparison <- function(envs,
 #' @param file Output CSV file path.
 #' @param thin_factor Integer thinning factor for chain steps (default 1).
 #' @return Invisible path to the written file.
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, seed = 42)
+#' mod <- saomnk_model(density = -0.5, popularity = 0.2)
+#' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+#'
+#' f <- tempfile(fileext = ".csv")
+#' searchnet_export_phase_space(env, file = f)
+#' head(read.csv(f))
+#' unlink(f)
+#' }
 #' @export
 searchnet_export_phase_space <- function(env,
                                          vars = c("K_AC", "K_AA",

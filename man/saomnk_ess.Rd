@@ -18,3 +18,12 @@ Named numeric vector of ESS population shares
 Extracts terminal population shares from replicator dynamics
 as the evolutionarily stable strategy.
 }
+\examples{
+traj <- saomnk_replicator_dynamics(
+  c(RS = 0.80, RE = 0.81, RR = 0.79, RF = 0.82),
+  generations = 100
+)
+ess <- saomnk_ess(traj)
+ess
+attr(ess, "surviving")
+}

@@ -26,30 +26,30 @@ saomnk_search_rsiena_multiwave_plot <- function(env,
                                                  loess_span = 0.4) {
   plist <- list()
   if (length(type)==0 |  'K_4panel' %in% type)
-    plist[['K_4panel']] <- saomnk_search_rsiena_multiwave_plot_K_4panel(env, actor_ids, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=T, plot_file=plot_file )
+    plist[['K_4panel']] <- saomnk_search_rsiena_multiwave_plot_K_4panel(env, actor_ids, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
 
   if (length(type)==0 |  'K_AA_strategy_summary' %in% type)
-    plist[['K_AA_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=T, plot_file=plot_file )
+    plist[['K_AA_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
 
   if (length(type)==0 |  'K_AC_strategy_summary' %in% type)
-    plist[['K_AC_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=T, plot_file=plot_file )
+    plist[['K_AC_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
 
   if (length(type)==0 |  'K_CA_strategy_summary' %in% type)
-    plist[['K_CA_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=T, plot_file=plot_file )
+    plist[['K_CA_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
 
   if (length(type)==0 |  'K_CC_strategy_summary' %in% type)
-    plist[['K_CC_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=T, plot_file=plot_file )
+    plist[['K_CC_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
 
 
   if (length(type)==0 |  'utility_strategy_summary' %in% type)
-    plist[['utility_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_actor_utility_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, scale_utility, return_plot=T, plot_file=plot_file, loess_span=loess_span )
+    plist[['utility_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_actor_utility_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, scale_utility, return_plot=TRUE, plot_file=plot_file, loess_span=loess_span )
 
   if (length(type)==0 |  'utility_by_strategy' %in% type)
-    plist[['utility_by_strategy']] <- saomnk_search_rsiena_multiwave_plot_actor_utility_by_strategy(env, actor_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=T, plot_file=plot_file )
+    plist[['utility_by_strategy']] <- saomnk_search_rsiena_multiwave_plot_actor_utility_by_strategy(env, actor_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
   if (length(type)==0 |  'utility_density_by_strategy' %in% type)
-    plist[['utility_density_by_strategy']] <- saomnk_search_rsiena_multiwave_plot_actor_utility_density_by_strategy(env, thin_wave_factor, return_plot=T, plot_file=plot_file )
+    plist[['utility_density_by_strategy']] <- saomnk_search_rsiena_multiwave_plot_actor_utility_density_by_strategy(env, thin_wave_factor, return_plot=TRUE, plot_file=plot_file )
   if (length(type)==0 |  'utility_ridge_density_by_strategy' %in% type)
-    plist[['utility_ridge_density_by_strategy']] <- saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, show_utility_points, show_strategy_means, return_plot=T, plot_file=plot_file )
+    plist[['utility_ridge_density_by_strategy']] <- saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, show_utility_points, show_strategy_means, return_plot=TRUE, plot_file=plot_file )
   #  SET plots
   env$multiwave_plots <- if(append_plot) { append(env$multiwave_plots, plist) } else { plist }
 
@@ -113,7 +113,7 @@ saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy <- functio
     if (!all(dat$utility == 0))
       dat <- dat %>% mutate(utility = c(scale(utility)))
   }
-  density_rng <- range(dat$utility, na.rm=T)
+  density_rng <- range(dat$utility, na.rm=TRUE)
   density_absdiff_scale <- abs(diff(density_rng)) * 0.15
   util_lim <- c(density_rng[1] - density_absdiff_scale,  density_rng[2] + density_absdiff_scale)
   point_size <- 10 / log( nstep )
@@ -123,7 +123,7 @@ saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy <- functio
   if(length(wave_ids))
     dat <- dat %>% filter(wave_id %in% wave_ids)
   dat_acp_stabil_means <- dat %>% group_by(stabilization_summary_period, strategy) %>%
-    dplyr::summarize(mean=mean(utility, na.rm=T)) %>%
+    dplyr::summarize(mean=mean(utility, na.rm=TRUE)) %>%
     mutate(PeriodFct = fct_rev(as.factor(stabilization_summary_period)))
   ##==============================================
   strat_legend_title <- sprintf("Strategy (%s) :  ", paste(strateffs, collapse = '_'))
@@ -136,14 +136,14 @@ saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy <- functio
   dat_dens_rigde <- dat %>%
     mutate(PeriodFct = fct_rev(as.factor(stabilization_summary_period)))
   group_dens_means <- dat_dens_rigde %>% ungroup() %>% group_by(strategy) %>%
-    dplyr::summarize(n=n(),mean=mean(utility,na.rm=T))
+    dplyr::summarize(n=n(),mean=mean(utility,na.rm=TRUE))
   ##---------------------
   ## Start Plot
   plt.dr <- ggplot(dat_dens_rigde, aes(y = PeriodFct, x = utility, color=strategy, fill=strategy)) +
     stat_density_ridges(aes(point_color = strategy, point_fill = strategy, point_shape = strategy),
                         quantile_lines = TRUE, alpha = .3, rel_min_height = density_ridges_rel_min_height,
                         point_size=.4,
-                        jittered_points = T,
+                        jittered_points = TRUE,
                         position = position_raincloud(adjust_vlines = FALSE, ygap = -.1, height = .15),
                         quantiles = c(0.5), linewidth=.75 ) +
     scale_y_discrete(expand = c(0, 0)) +
@@ -167,7 +167,7 @@ saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy <- functio
     ) +
     geom_vline(xintercept = 0, linetype=1) +
     coord_cartesian(clip = "off") +
-    theme_ridges(grid = T, center=T) +
+    theme_ridges(grid = TRUE, center=TRUE) +
     theme(legend.position = 'bottom')
   if(show_strategy_means) {
     plt.dr <- plt.dr +
@@ -194,10 +194,10 @@ saomnk_search_rsiena_multiwave_plot_K_4panel <- function(env,
                                                           show_utility_points = TRUE,
                                                           return_plot = TRUE,
                                                           plot_file = NA, plot_dir = NA) {
-  K_AA  <- saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=T, show_title=F, return_plot=T)
-  K_AC <- saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=F, show_title=F, return_plot=T)
-  K_CA <- saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=F, show_title=F, return_plot=T)
-  K_CC  <- saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=T, show_title=F, return_plot=T)
+  K_AA  <- saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=TRUE, show_title=FALSE, return_plot=TRUE)
+  K_AC <- saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=FALSE, show_title=FALSE, return_plot=TRUE)
+  K_CA <- saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=FALSE, show_title=FALSE, return_plot=TRUE)
+  K_CC  <- saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=TRUE, show_title=FALSE, return_plot=TRUE)
   strateffs   <- sapply(env$config_structure_model$dv_bipartite$coCovars, function(x)x$effect)
   stratparams <- sapply(env$config_structure_model$dv_bipartite$coCovars, function(x)x$parameter)
   stratfixs   <- sapply(env$config_structure_model$dv_bipartite$coCovars, function(x)ifelse(x$fix,'','(var)'))
@@ -257,7 +257,7 @@ saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary <- function(env,
     stop("Actor Strategy env$strat_1_coCovar are not  set.")
   if ( !identical(attr(env$component_1_coCovar, 'nodeSet'), 'COMPONENTS') )
     stop("Component payoff values in env$component_1_coCovar are not set.")
-  range_midpoint <- min(env$component_1_coCovar, na.rm=T) + ( abs(diff(range(env$component_1_coCovar, na.rm = T))) / 2 )
+  range_midpoint <- min(env$component_1_coCovar, na.rm=TRUE) + ( abs(diff(range(env$component_1_coCovar, na.rm = TRUE))) / 2 )
   component_types <- as.factor( ifelse(env$component_1_coCovar > range_midpoint, 'High', 'Low') )
   nstep <- sum(!env$chain_stats$stability)
   strateffs   <- sapply(env$config_structure_model$dv_bipartite$coCovars, function(x)x$effect)
@@ -276,7 +276,7 @@ saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary <- function(env,
     )
   dat$chain_half <- factor(ifelse(dat$chain_below_med, '1st Half', '2nd Half'))
   y_lab <- 'K_CC: Component Epistasis Degree'
-  density_rng <- range(dat$value, na.rm=T)
+  density_rng <- range(dat$value, na.rm=TRUE)
   density_absdiff_scale <- abs(diff(density_rng)) * 0.15
   y_lim <- c(density_rng[1] - density_absdiff_scale,  density_rng[2] + density_absdiff_scale)
   point_size <- 10 / log( nstep )
@@ -286,14 +286,14 @@ saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary <- function(env,
   if(length(wave_ids))
     dat <- dat %>% filter(wave_id %in% wave_ids)
   dat_wave_means <- dat %>% group_by(wave_id) %>%
-    dplyr::summarize(mean=mean(value, na.rm=T))
+    dplyr::summarize(mean=mean(value, na.rm=TRUE))
   plt <- ggplot(dat, aes(x=chain_step_id, y=value)) +
     geom_hline(data=dat_wave_means, aes(yintercept=mean), linetype=3, col='black' ) +
     facet_grid(wave_id ~ .)
   if(show_utility_points)
-    plt <- plt + geom_point(aes(color=component_id), alpha=point_alpha, shape=1, size=point_size, show.legend = F)
+    plt <- plt + geom_point(aes(color=component_id), alpha=point_alpha, shape=1, size=point_size, show.legend = FALSE)
   if(env$exists(smooth_method))
-    plt <- plt + geom_smooth(aes(color=component_id, fill=component_id), method = smooth_method, linewidth=.5, alpha=.09, show.legend = F, se=F)
+    plt <- plt + geom_smooth(aes(color=component_id, fill=component_id), method = smooth_method, linewidth=.5, alpha=.09, show.legend = FALSE, se=FALSE)
   plt <- plt + theme_bw() +
     ylim(y_lim) +
     ylab(y_lab) +
@@ -311,10 +311,10 @@ saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary <- function(env,
 
   #### Density
   stratmeans <- dat %>% group_by(component_id, wave_id) %>%
-    dplyr::summarize(n=n(), mean=mean(value, na.rm=T), sd=sd(value, na.rm=T))
+    dplyr::summarize(n=n(), mean=mean(value, na.rm=TRUE), sd=sd(value, na.rm=TRUE))
   plt2 <- ggplot(dat, aes(x=value, color=component_id, fill=component_id)) +
-    geom_density(alpha=.01, linewidth=.5, show.legend = F)  +
-    geom_vline(data = stratmeans, aes(xintercept = mean, color=component_id), linetype=2, linewidth=.5, show.legend = F) +
+    geom_density(alpha=.01, linewidth=.5, show.legend = FALSE)  +
+    geom_vline(data = stratmeans, aes(xintercept = mean, color=component_id), linetype=2, linewidth=.5, show.legend = FALSE) +
     geom_vline(data = dat_wave_means,  aes(xintercept=mean), linetype=3, col='black' ) +
     labs(y='', x='') +
     xlim(y_lim) +
@@ -368,7 +368,7 @@ saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary <- function(env,
     stop("Actor Strategy env$strat_1_coCovar are not set.")
   if ( !identical(attr(env$component_1_coCovar, 'nodeSet'), 'COMPONENTS') )
     stop("Component payoff values in env$component_1_coCovar are not set.")
-  range_midpoint <- min(env$component_1_coCovar, na.rm=T) + ( abs(diff(range(env$component_1_coCovar, na.rm = T))) / 2 )
+  range_midpoint <- min(env$component_1_coCovar, na.rm=TRUE) + ( abs(diff(range(env$component_1_coCovar, na.rm = TRUE))) / 2 )
   component_types <- as.factor( ifelse(env$component_1_coCovar > range_midpoint, 'High', 'Low') )
   nstep <- sum(!env$chain_stats$stability)
   strateffs   <- sapply(env$config_structure_model$dv_bipartite$coCovars, function(x)x$effect)
@@ -387,7 +387,7 @@ saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary <- function(env,
     )
   dat$chain_half <- factor(ifelse(dat$chain_below_med, '1st Half', '2nd Half'))
   y_lab <- 'K_CA: Component-Actor Degree'
-  density_rng <- range(dat$value, na.rm=T)
+  density_rng <- range(dat$value, na.rm=TRUE)
   density_absdiff_scale <- abs(diff(density_rng)) * 0.15
   y_lim <- c(density_rng[1] - density_absdiff_scale,  density_rng[2] + density_absdiff_scale)
   point_size <- 10 / log( nstep )
@@ -397,14 +397,14 @@ saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary <- function(env,
   if(length(wave_ids))
     dat <- dat %>% filter(wave_id %in% wave_ids)
   dat_wave_means <- dat %>% group_by(wave_id) %>%
-    dplyr::summarize(mean=mean(value, na.rm=T))
+    dplyr::summarize(mean=mean(value, na.rm=TRUE))
   plt <- ggplot(dat, aes(x=chain_step_id, y=value)) +
     geom_hline(data=dat_wave_means, aes(yintercept=mean), linetype=3, col='black' ) +
     facet_grid(wave_id ~ .)
   if(show_utility_points)
-    plt <- plt + geom_point(aes(color=component_id), alpha=point_alpha, shape=1, size=point_size, show.legend = F)
+    plt <- plt + geom_point(aes(color=component_id), alpha=point_alpha, shape=1, size=point_size, show.legend = FALSE)
   if(env$exists(smooth_method))
-    plt <- plt + geom_smooth(aes(color=component_id, fill=component_id), method = smooth_method, linewidth=.5, alpha=.09, se=F, show.legend = F)
+    plt <- plt + geom_smooth(aes(color=component_id, fill=component_id), method = smooth_method, linewidth=.5, alpha=.09, se=FALSE, show.legend = FALSE)
   plt <- plt + theme_bw() +
     ylim(y_lim) +
     ylab(y_lab) +
@@ -426,10 +426,10 @@ saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary <- function(env,
 
   #### Density
   stratmeans <- dat %>% group_by(component_id, wave_id) %>%
-    dplyr::summarize(n=n(), mean=mean(value, na.rm=T), sd=sd(value, na.rm=T))
+    dplyr::summarize(n=n(), mean=mean(value, na.rm=TRUE), sd=sd(value, na.rm=TRUE))
   plt2 <- ggplot(dat, aes(x=value, color=component_id, fill=component_id)) +
-    geom_density(alpha=.01, linewidth=.5, show.legend = F)  +
-    geom_vline(data = stratmeans, aes(xintercept = mean, color=component_id), linetype=2, linewidth=.5, show.legend = F) +
+    geom_density(alpha=.01, linewidth=.5, show.legend = FALSE)  +
+    geom_vline(data = stratmeans, aes(xintercept = mean, color=component_id), linetype=2, linewidth=.5, show.legend = FALSE) +
     geom_vline(data = dat_wave_means,  aes(xintercept=mean), linetype=3, col='black' ) +
     labs(y='', x='') +
     xlim(y_lim) +
@@ -499,7 +499,7 @@ saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary <- function(env,
     )
   dat$chain_half <- factor(ifelse(dat$chain_below_med, '1st Half', '2nd Half'))
   y_lab <- 'K_AC: Actor-Component Degree'
-  density_rng <- range(dat$value, na.rm=T)
+  density_rng <- range(dat$value, na.rm=TRUE)
   density_absdiff_scale <- abs(diff(density_rng)) * 0.15
   y_lim <- c(density_rng[1] - density_absdiff_scale,  density_rng[2] + density_absdiff_scale)
   point_size <- 10 / log( nstep )
@@ -509,7 +509,7 @@ saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary <- function(env,
   if(length(wave_ids))
     dat <- dat %>% filter(wave_id %in% wave_ids)
   dat_wave_means <- dat %>% group_by(wave_id) %>%
-    dplyr::summarize(mean=mean(value, na.rm=T))
+    dplyr::summarize(mean=mean(value, na.rm=TRUE))
   plt <- ggplot(dat, aes(x=chain_step_id, y=value)) +
     geom_hline(data=dat_wave_means, aes(yintercept=mean), linetype=3, col='black' ) +
     facet_grid(wave_id ~ .)
@@ -538,7 +538,7 @@ saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary <- function(env,
 
   #### Density
   stratmeans <- dat %>% group_by(strategy, wave_id) %>%
-    dplyr::summarize(n=n(), mean=mean(value, na.rm=T), sd=sd(value, na.rm=T))
+    dplyr::summarize(n=n(), mean=mean(value, na.rm=TRUE), sd=sd(value, na.rm=TRUE))
   plt2 <- ggplot(dat, aes(x=value, color=strategy, fill=strategy)) +
     geom_density(alpha=.1, linewidth=1)  +
     geom_vline(data = stratmeans, aes(xintercept = mean, color=strategy), linetype=2, linewidth=.9) +
@@ -611,7 +611,7 @@ saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary <- function(env,
     )
   dat$chain_half <- factor(ifelse(dat$chain_below_med, '1st Half', '2nd Half'))
   y_lab <- 'K_AA: Social Degree'
-  density_rng <- range(dat$value, na.rm=T)
+  density_rng <- range(dat$value, na.rm=TRUE)
   density_absdiff_scale <- abs(diff(density_rng)) * 0.15
   y_lim <- c(density_rng[1] - density_absdiff_scale,  density_rng[2] + density_absdiff_scale)
   point_size <- 10 / log( nstep )
@@ -621,7 +621,7 @@ saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary <- function(env,
   if(length(wave_ids))
     dat <- dat %>% filter(wave_id %in% wave_ids)
   dat_wave_means <- dat %>% group_by(wave_id) %>%
-    dplyr::summarize(mean=mean(value, na.rm=T))
+    dplyr::summarize(mean=mean(value, na.rm=TRUE))
   plt <- ggplot(dat, aes(x=chain_step_id, y=value)) +
     geom_hline(data=dat_wave_means, aes(yintercept=mean), linetype=3, col='black' ) +
     facet_grid(wave_id ~ .)
@@ -650,7 +650,7 @@ saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary <- function(env,
 
   #### Density
   stratmeans <- dat %>% group_by(strategy, wave_id) %>%
-    dplyr::summarize(n=n(), mean=mean(value, na.rm=T), sd=sd(value, na.rm=T))
+    dplyr::summarize(n=n(), mean=mean(value, na.rm=TRUE), sd=sd(value, na.rm=TRUE))
   plt2 <- ggplot(dat, aes(x=value, color=strategy, fill=strategy)) +
     geom_density(alpha=.1, linewidth=1)  +
     geom_vline(data = stratmeans, aes(xintercept = mean, color=strategy), linetype=2, linewidth=.9) +
@@ -734,7 +734,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_strategy_summary <- function(e
     if (!all(dat$utility == 0))
       dat <- dat %>% mutate(utility = c(scale(utility)))
   }
-  density_rng <- range(dat$utility, na.rm=T)
+  density_rng <- range(dat$utility, na.rm=TRUE)
   density_absdiff_scale <- abs(diff(density_rng)) * 0.15
   util_lim <- c(density_rng[1] - density_absdiff_scale,  density_rng[2] + density_absdiff_scale)
   point_size <- 10 / log( nstep )
@@ -744,7 +744,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_strategy_summary <- function(e
   if(length(wave_ids))
     dat <- dat %>% filter(wave_id %in% wave_ids)
   dat_wave_means <- dat %>% group_by(wave_id) %>%
-    dplyr::summarize(mean=mean(utility, na.rm=T))
+    dplyr::summarize(mean=mean(utility, na.rm=TRUE))
   plt <- ggplot(dat, aes(x=chain_step_id, y=utility)) +
     geom_hline(data=dat_wave_means, aes(yintercept=mean), linetype=3, col='black' ) +
     facet_grid(wave_id ~ .)
@@ -787,7 +787,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_strategy_summary <- function(e
 
   #### Density
   stratmeans <- dat %>% group_by(strategy, wave_id) %>%
-    dplyr::summarize(n=n(), mean=mean(utility, na.rm=T), sd=sd(utility, na.rm=T))
+    dplyr::summarize(n=n(), mean=mean(utility, na.rm=TRUE), sd=sd(utility, na.rm=TRUE))
   ## Actor density fact plots comparing H1 to H2 utility distribution
   plt2 <- ggplot(dat, aes(x=utility, color=strategy, fill=strategy)) +
     geom_density(alpha=.1, linewidth=1)  +
@@ -848,7 +848,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_by_strategy <- function(env,
   if(length(actor_ids))
     dat <- dat %>% filter(actor_id %in% actor_ids)
   plt <- ggplot(dat, aes(x=chain_step_id, y=utility)) +
-    geom_hline(data=dat%>%group_by(wave_id)%>%dplyr::summarize(mean=mean(utility, na.rm=T)), aes(yintercept=mean), linetype=2, col='black' ) +
+    geom_hline(data=dat%>%group_by(wave_id)%>%dplyr::summarize(mean=mean(utility, na.rm=TRUE)), aes(yintercept=mean), linetype=2, col='black' ) +
     facet_wrap( ~ wave_id)
   if(show_utility_points)
     plt <- plt + geom_point(aes(color=strategy), alpha=.25, shape=1, size=2)
@@ -892,7 +892,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_density_by_strategy <- functio
     )
   dat$chain_half <- factor(ifelse(dat$chain_below_med, '1st Half', '2nd Half'))
   stratmeans <- dat %>% group_by(strategy, chain_half, wave_id) %>%
-    dplyr::summarize(n=n(), mean=mean(utility, na.rm=T), sd=sd(utility, na.rm=T))
+    dplyr::summarize(n=n(), mean=mean(utility, na.rm=TRUE), sd=sd(utility, na.rm=TRUE))
   ## Actor density fact plots comparing H1 to H2 utility distribution
   plt <- ggplot(dat, aes(x=utility, color=strategy, fill=strategy)) +
     geom_density(alpha=.1, linewidth=1)  +

@@ -849,7 +849,10 @@ saomnk_plot_utility <- function(env, smooth = 0.35, weighted = TRUE) {
 #'
 #' @param env A \code{SaomNkRSienaBiEnv} object after running
 #'   \code{\link{saomnk_run}}.
-#' @return The formatted summary table (invisibly).
+#' @return A character string of class \code{"saomnk_summary"} holding the
+#'   formatted table.  Its \code{\link{print.saomnk_summary}} method displays
+#'   the table without quoting or escape characters, so typing
+#'   \code{saomnk_summary(env)} at the console shows the table exactly once.
 #' @export
 #' @examples
 #' \dontrun{
@@ -857,7 +860,13 @@ saomnk_plot_utility <- function(env, smooth = 0.35, weighted = TRUE) {
 #' }
 saomnk_summary <- function(env) {
   stopifnot(inherits(env, "SaomNkRSienaBiEnv"))
-  env$search_rsiena_model_summary()
+  ## screenreg() inside the R6 method cats the table AND returns the string,
+  ## so at the console the table used to appear twice: once formatted, once as
+  ## a quoted "\n"-riddled character.  Swallow the cat here and hand the string
+  ## to print.saomnk_summary() (R/saomnk-methods.R), which displays it once.
+  out <- NULL
+  utils::capture.output(out <- env$search_rsiena_model_summary())
+  structure(out, class = c("saomnk_summary", "character"))
 }
 
 
@@ -916,41 +925,8 @@ saomnk_get_bipartite <- function(env, step = NULL) {
 
 
 # ---------------------------------------------------------------------------- #
-#  print method for saomnk_model
+#  S3 print/summary methods live in R/saomnk-methods.R
 # ---------------------------------------------------------------------------- #
-
-#' @export
-print.saomnk_model <- function(x, ...) {
-
-  effs <- x$dv_bipartite$effects
-  cat("SaoMNK Structure Model\n")
-  cat("----------------------\n")
-  cat("Effects:\n")
-  for (e in effs) {
-    label <- names(which(.EFFECT_MAP == e$effect))
-    if (length(label) == 0) label <- e$effect
-    cat(sprintf("  %-15s  theta = %s\n", label, format(e$parameter)))
-  }
-
-  covs <- x$dv_bipartite$coCovars
-  if (length(covs)) {
-    cat("Actor covariates:\n")
-    for (cv in covs) {
-      cat(sprintf("  %-15s  theta = %s\n", cv$effect, format(cv$parameter)))
-    }
-  }
-
-  dycovs <- x$dv_bipartite$coDyadCovars
-  if (length(dycovs)) {
-    cat("Dyad covariates:\n")
-    for (dc in dycovs) {
-      label <- names(which(.EFFECT_MAP == dc$effect))
-      if (length(label) == 0) label <- dc$effect
-      mat_dim <- if (!is.null(dc$x)) paste(dim(dc$x), collapse = "x") else "?"
-      cat(sprintf("  %-15s  theta = %s  [%s matrix]\n",
-                  label, format(dc$parameter), mat_dim))
-    }
-  }
-
-  invisible(x)
-}
+## print.saomnk_model() was defined here through 0.8.1; it moved to
+## R/saomnk-methods.R so every S3 method on a user-facing return sits in one
+## file rather than being scattered across the modules that construct them.

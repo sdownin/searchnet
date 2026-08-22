@@ -18,3 +18,7 @@ Enumerates all legal add/drop actions for the player's firm and
 computes the predicted change in utility for each, sorted from best
 to worst.
 }
+\examples{
+game <- searchnet_game_init(M = 4, N = 6, difficulty = "easy", seed = 42)
+searchnet_game_available_moves(game)   # best move first
+}

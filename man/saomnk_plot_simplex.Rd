@@ -30,3 +30,12 @@ ggplot object
 Creates a 2D De Finetti diagram (simplex projection) showing
 evolutionary pressure and population trajectory.
 }
+\examples{
+\donttest{
+traj <- saomnk_replicator_dynamics(
+  c(RS = 0.80, RE = 0.81, RR = 0.79, RF = 0.82),
+  generations = 100
+)
+p <- saomnk_plot_simplex(traj, x_type = "RE", y_type = "RF")
+}
+}

@@ -39,3 +39,15 @@ Summary output columns:
 \item{max_utility}{Maximum}
 }
 }
+\examples{
+\donttest{
+env <- saomnk_env(M = 4, N = 6, seed = 42)
+mod <- saomnk_model(density = -0.5, popularity = 0.2)
+saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+
+f <- file.path(tempdir(), "utility_trajectory.csv")
+files <- searchnet_export_utility(env, file = f)
+head(read.csv(files[["summary"]]))
+unlink(files)
+}
+}

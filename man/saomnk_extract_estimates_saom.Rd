@@ -28,3 +28,19 @@ Pulls effect names, estimates, standard errors, and convergence diagnostics
 from an RSiena model fit into a tidy data.frame suitable for
 \code{\link{saomnk_sai}}.
 }
+\examples{
+\donttest{
+## Quick fit on RSiena's built-in s50 friendship panel
+friendship <- RSiena::sienaDependent(
+  array(c(RSiena::s501, RSiena::s502), dim = c(50, 50, 2))
+)
+dat <- RSiena::sienaDataCreate(friendship)
+eff <- RSiena::getEffects(dat)
+alg <- RSiena::sienaAlgorithmCreate(projname = NULL, nsub = 1, n3 = 50,
+                                    seed = 7)
+fit <- RSiena::siena07(alg, data = dat, effects = eff,
+                       batch = TRUE, silent = TRUE)
+
+saomnk_extract_estimates_saom(fit, specification = "baseline")
+}
+}

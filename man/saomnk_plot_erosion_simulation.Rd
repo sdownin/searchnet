@@ -36,3 +36,9 @@ ggplot object
 Simulates 4 firms with different basin geometries over n_periods.
 Shows fitness parity pre-shock, then divergent trajectories post-shock.
 }
+\examples{
+\donttest{
+td <- saomnk_depth_width_tradeoff()
+p <- saomnk_plot_erosion_simulation(td, n_periods = 20, shock_period = 11)
+}
+}

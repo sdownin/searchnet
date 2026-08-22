@@ -39,3 +39,14 @@ applies \code{\link{saomnk_confirm}}. Set \code{assent = NULL} to run the
 one-sided (declared-tie) case, which is the comparison that isolates what
 the confirmation step contributes.
 }
+\examples{
+\donttest{
+env <- saomnk_env(M = 4, N = 6, seed = 42)
+mod <- saomnk_model(density = -0.5, popularity = 0.2)
+a <- saomnk_assent(prob = 0.5)
+
+res <- saomnk_run_two_sided(env, mod, assent = a,
+                            waves = 2, steps_per_actor = 4, seed = 1)
+res$degrees
+}
+}

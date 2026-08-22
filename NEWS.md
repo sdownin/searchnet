@@ -1,3 +1,53 @@
+# searchnet 0.8.3
+
+JSS submission preparation, Phase 1 (items b, c, d of JSS_SUBMISSION_PREP_2026-08-15.md),
+merged onto the 0.8.2 terminology sweep.
+
+## Style
+
+* **`T`/`F` shorthand is gone from package code: 290 sites now read
+  `TRUE`/`FALSE`**, plus two cramped assignments spaced. The sweep operated on
+  `getParseData()` tokens rather than text, so strings and comments were
+  untouchable by construction, and the two functions whose formal `T` is a
+  temperature (`solve_mean_field()`, `diagnose_mean_field_fit()`) were
+  excluded automatically. Every hunk of the diff was pair-checked line for
+  line (245 insertions / 245 deletions, 0 mismatches). JSS and Hyndman both
+  name this as a review item.
+
+## Classes and methods
+
+* **`print()` methods for the user-facing returns**, in `R/saomnk-methods.R`:
+  `print.saomnk_model()` (effects with thetas and fixed/free flags, covariates,
+  static influence matrices with dimensions, time-varying influence arrays with
+  period counts, behaviour DV presence), `print.saomnk_shock()`,
+  `print.saomnk_assent()`, and `print.saomnk_summary()`. JSS's minimum
+  expectation is that R's class and method systems are leveraged on returns;
+  typing a model object at the console now shows its specification instead of
+  a list dump.
+
+* `saomnk_summary()` printed its table and then a quoted, escape-riddled copy
+  of the same string; it now prints once. The return carries class
+  `saomnk_summary`.
+
+## Documentation
+
+* **Examples on every user-facing help page**: 83 of 155 pages had an
+  `\examples{}` section; 130 of 160 do now (43 written; 5 pages for the
+  diagnostic screens generated for the first time). The 30 pages without are
+  internal helpers and `@name`-only module overviews. Simulation-dependent
+  examples are `\donttest{}` with tiny seeded environments; none is
+  `\dontrun{}`. All 36 executable blocks were run to prove they execute.
+
+## Known issue (open, not fixed here)
+
+* The four phase-space plot functions (`saomnk_plot_phase_space_3d()`,
+  `_heatmap()`, `_evolution()`, `_comparison()`) error on real engine output:
+  `.extract_phase_data()` returns a `data.table`, and the plots subset it with
+  `df[complete.cases(df[, cols]), ]`, which under data.table j-semantics
+  recycles to a length-2 logical. Their examples carry an explicit
+  `as.data.frame()` workaround line until `.extract_phase_data()` returns a
+  data.frame; that one-line fix is queued.
+
 # searchnet 0.8.2
 
 ## Terminology

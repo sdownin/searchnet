@@ -32,3 +32,7 @@ Numerically estimates d2W/d(sigma)d(gamma) — the cross-partial
 of basin width with respect to synergy and scope cost.
 Negative cross-partial = the complementarity trap.
 }
+\examples{
+cp <- saomnk_cross_partial(n_grid = 21)
+cp$mean_cross_partial   # negative: the complementarity trap
+}

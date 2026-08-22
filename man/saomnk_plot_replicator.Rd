@@ -23,3 +23,12 @@ ggplot object
 \description{
 Creates a line plot showing how population shares evolve over generations.
 }
+\examples{
+\donttest{
+traj <- saomnk_replicator_dynamics(
+  c(RS = 0.80, RE = 0.81, RR = 0.79, RF = 0.82),
+  generations = 100
+)
+p <- saomnk_plot_replicator(traj)
+}
+}

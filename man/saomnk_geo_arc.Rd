@@ -21,3 +21,8 @@ Spherical linear interpolation between two lon/lat points, returned as a
 data frame of intermediate positions. Used to draw edges that follow the
 earth's curvature rather than straight lines in projected space.
 }
+\examples{
+## Kansas to Tokyo, 20 interpolated points along the great circle
+arc <- saomnk_geo_arc(-98, 39, 138, 36, n = 20)
+head(arc)
+}

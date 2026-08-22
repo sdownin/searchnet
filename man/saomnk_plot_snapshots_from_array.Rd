@@ -32,6 +32,16 @@ error even though this definition existed. No caller in the package, its
 vignettes, its papers or the dependent projects used \code{snapshot_ids}, so
 renaming is behaviour-preserving.
 }
+\examples{
+\donttest{
+env <- saomnk_env(M = 4, N = 6, seed = 42)
+mod <- saomnk_model(density = -0.5, popularity = 0.2)
+saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+
+saomnk_plot_snapshots_from_array(env, snapshot_ids = c(1, 10),
+                                 include_init = FALSE)
+}
+}
 \seealso{
 \code{\link[=saomnk_plot_snapshots]{saomnk_plot_snapshots()}} for the R6-delegating API version.
 }

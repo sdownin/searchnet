@@ -742,6 +742,14 @@ searchnet_classroom_debrief <- function(classroom, output_dir = "debrief") {
 #' @param student_id Character or NULL. If provided, shows that student's
 #'   current portfolio and metrics.
 #' @return A list with session status information, printed to the console.
+#' @examples
+#' \donttest{
+#' session <- searchnet_classroom_init(n_students = 4, n_rounds = 6,
+#'                                     industry = "airline",
+#'                                     difficulty = "intro", seed = 1)
+#' status <- searchnet_classroom_status(session)
+#' status$rounds_remaining
+#' }
 #' @export
 searchnet_classroom_status <- function(classroom, student_id = NULL) {
   stopifnot(inherits(classroom, "searchnet_classroom"))

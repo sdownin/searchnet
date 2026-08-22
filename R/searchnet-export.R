@@ -91,6 +91,17 @@ NULL
 #'   component decomposition variants (K_AC_NEW, K_AC_OLD, etc.). Default
 #'   \code{FALSE}.
 #' @return Invisible character vector of written file paths.
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, seed = 42)
+#' mod <- saomnk_model(density = -0.5, popularity = 0.2)
+#' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+#'
+#' f <- file.path(tempdir(), "k4_trajectory.csv")
+#' files <- searchnet_export_k4(env, file = f)
+#' head(read.csv(files[["detail"]]))
+#' unlink(files)
+#' }
 #' @export
 searchnet_export_k4 <- function(env, file = "k4_trajectory.csv",
                                 include_new_old = FALSE) {
@@ -237,6 +248,17 @@ searchnet_export_k4 <- function(env, file = "k4_trajectory.csv",
 #' @param sparse Logical; if \code{TRUE} (default), only writes rows where
 #'   \code{tie == 1}, substantially reducing file size for sparse networks.
 #' @return Invisible path to the written file.
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, seed = 42)
+#' mod <- saomnk_model(density = -0.5, popularity = 0.2)
+#' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+#'
+#' f <- tempfile(fileext = ".csv")
+#' searchnet_export_snapshots(env, steps = c(1, 10, 20), file = f)
+#' head(read.csv(f))
+#' unlink(f)
+#' }
 #' @export
 searchnet_export_snapshots <- function(env, steps = NULL, file = "snapshots.csv",
                                        sparse = TRUE) {
@@ -330,6 +352,17 @@ searchnet_export_snapshots <- function(env, steps = NULL, file = "snapshots.csv"
 #' @param file Output CSV file path for actor-level data. Summary file is
 #'   written with \code{_summary} appended before the extension.
 #' @return Invisible character vector of written file paths.
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, seed = 42)
+#' mod <- saomnk_model(density = -0.5, popularity = 0.2)
+#' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+#'
+#' f <- file.path(tempdir(), "utility_trajectory.csv")
+#' files <- searchnet_export_utility(env, file = f)
+#' head(read.csv(files[["summary"]]))
+#' unlink(files)
+#' }
 #' @export
 searchnet_export_utility <- function(env, file = "utility_trajectory.csv") {
   .validate_env(env, "actor_util_df")
@@ -397,6 +430,17 @@ searchnet_export_utility <- function(env, file = "utility_trajectory.csv") {
 #' @param sparse Logical; passed to \code{searchnet_export_snapshots}.
 #'   Default \code{TRUE}.
 #' @return Invisible named list of all written file paths.
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, seed = 42)
+#' mod <- saomnk_model(density = -0.5, popularity = 0.2)
+#' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+#'
+#' out_dir <- file.path(tempdir(), "searchnet_export")
+#' files <- searchnet_export_all(env, dir = out_dir)
+#' names(files)
+#' unlink(out_dir, recursive = TRUE)
+#' }
 #' @export
 searchnet_export_all <- function(env, dir = "searchnet_export", prefix = "",
                                  include_new_old = FALSE,

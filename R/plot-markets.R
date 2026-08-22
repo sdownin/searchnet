@@ -1121,10 +1121,10 @@ saomnk_plot_market_entry_survival_strategy <- function(env,
     } else {
       survival_data <- survival_data %>% group_by(step, strategy) %>%
         dplyr::summarize(
-          survival_rate = mean(survival_rate, na.rm=T),
-          entry_rate = mean(entry_rate, na.rm=T),
-          ci_lower_entry = mean(ci_lower_entry, na.rm=T),
-          ci_upper_entry = mean(ci_upper_entry, na.rm=T)
+          survival_rate = mean(survival_rate, na.rm=TRUE),
+          entry_rate = mean(entry_rate, na.rm=TRUE),
+          ci_lower_entry = mean(ci_lower_entry, na.rm=TRUE),
+          ci_upper_entry = mean(ci_upper_entry, na.rm=TRUE)
         )
       plot <- ggplot2::ggplot(survival_data,
                               ggplot2::aes(x = step, y = survival_rate,
@@ -1162,10 +1162,10 @@ saomnk_plot_market_entry_survival_strategy <- function(env,
     } else {
       survival_data <- survival_data %>% group_by(step, strategy) %>%
         dplyr::summarize(
-          survival_rate = mean(survival_rate, na.rm=T),
-          entry_rate = mean(entry_rate, na.rm=T),
-          ci_lower_entry = mean(ci_lower_entry, na.rm=T),
-          ci_upper_entry = mean(ci_upper_entry, na.rm=T)
+          survival_rate = mean(survival_rate, na.rm=TRUE),
+          entry_rate = mean(entry_rate, na.rm=TRUE),
+          ci_lower_entry = mean(ci_lower_entry, na.rm=TRUE),
+          ci_upper_entry = mean(ci_upper_entry, na.rm=TRUE)
         )
       plot <- ggplot2::ggplot(survival_data,
                               ggplot2::aes(x = step, y = entry_rate,
@@ -1239,7 +1239,7 @@ saomnk_plot_market_entry_survival_v0 <- function(env,
   util_list <- list()
   entry_list <- list()
 
-  batch_seeds <- sample(1:9999999, size = n, replace = F)
+  batch_seeds <- sample(1:9999999, size = n, replace = FALSE)
 
 
   # Run simulations with multiple seeds

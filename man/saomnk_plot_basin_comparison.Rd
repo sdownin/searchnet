@@ -26,3 +26,9 @@ ggplot object
 \description{
 Overlays basin profiles for all policy types on the same axes.
 }
+\examples{
+\donttest{
+td <- saomnk_depth_width_tradeoff()
+p <- saomnk_plot_basin_comparison(td)
+}
+}

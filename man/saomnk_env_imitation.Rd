@@ -28,3 +28,7 @@ Convenience wrapper that pulls the bipartite state and a performance vector
 out of a \code{SaomNkRSienaBiEnv} and applies
 \code{\link{saomnk_sim_ego_indist2}}.
 }
+\examples{
+env <- saomnk_env(M = 5, N = 8, density = 0.3, seed = 1)
+saomnk_env_imitation(env, performance = runif(5))
+}

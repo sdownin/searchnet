@@ -24,3 +24,17 @@ Every dyadic statistic needs the decision expanded against each rival that
 was present, because a single ADD into a cell held by three rivals is three
 dyadic events, not one.
 }
+\examples{
+set.seed(7)
+h <- list(matrix(rbinom(12, 1, 0.4), nrow = 3))
+for (t in 2:8) {
+  m <- h[[t - 1]]
+  i <- sample(3, 1); j <- sample(4, 1)
+  m[i, j] <- 1 - m[i, j]
+  h[[t]] <- m
+}
+entry_log <- track_entry_decisions(holdings_history = h)
+
+## One row per decision-rival dyad: an ADD against two rivals is two rows
+expand_entry_rivals(entry_log)
+}

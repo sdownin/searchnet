@@ -330,6 +330,21 @@ print.saomnk_sai <- function(x, ...) {
 #'
 #' @return A ggplot2 object.
 #'
+#' @examples
+#' \donttest{
+#' grid <- data.frame(
+#'   effect = rep(c("reciprocity", "transitivity"), each = 5),
+#'   specification = rep(paste0("spec_", 1:5), 2),
+#'   estimate = c(0.8, 0.9, 0.7, 0.85, 0.75,
+#'                0.3, -0.1, 0.2, 0.4, -0.05),
+#'   std_error = rep(0.15, 10)
+#' )
+#' result <- saomnk_sai(grid)
+#'
+#' p1 <- plot(result, type = "curve")
+#' p2 <- plot(result, type = "tile")
+#' p3 <- plot(result, type = "forest")
+#' }
 #' @importFrom ggplot2 ggplot aes geom_hline geom_segment geom_point
 #'   scale_color_manual facet_wrap labs theme_minimal theme element_text
 #'   geom_tile geom_text scale_fill_gradient2 geom_vline geom_errorbarh
@@ -837,6 +852,21 @@ saomnk_map_effects <- function(saom_effects, tergm_effects,
 #' @return A data.frame with columns: effect, specification, estimate,
 #'   std_error, convergence_t.
 #'
+#' @examples
+#' \donttest{
+#' ## Quick fit on RSiena's built-in s50 friendship panel
+#' friendship <- RSiena::sienaDependent(
+#'   array(c(RSiena::s501, RSiena::s502), dim = c(50, 50, 2))
+#' )
+#' dat <- RSiena::sienaDataCreate(friendship)
+#' eff <- RSiena::getEffects(dat)
+#' alg <- RSiena::sienaAlgorithmCreate(projname = NULL, nsub = 1, n3 = 50,
+#'                                     seed = 7)
+#' fit <- RSiena::siena07(alg, data = dat, effects = eff,
+#'                        batch = TRUE, silent = TRUE)
+#'
+#' saomnk_extract_estimates_saom(fit, specification = "baseline")
+#' }
 #' @export
 saomnk_extract_estimates_saom <- function(fit, specification = "saom",
                                            include_rate = FALSE) {

@@ -29,3 +29,13 @@ Compiles the player's performance across all rounds, compares to AI
 opponents, and returns a structured summary with trajectory data
 suitable for visualization or replay rendering.
 }
+\examples{
+game <- searchnet_game_init(M = 4, N = 6, difficulty = "easy",
+                            max_rounds = 2, seed = 42)
+game <- searchnet_game_step(game, action = "add", activity_id = 3)
+game <- searchnet_game_step(game, action = "pass", activity_id = NA)
+
+summary <- searchnet_game_summary(game)
+summary$player_rank
+summary$mode_score
+}

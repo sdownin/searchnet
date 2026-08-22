@@ -30,3 +30,9 @@ ggplot object
 Scatter plot with width on x-axis, depth on y-axis. Each policy type
 is a labeled point. Optionally shows RBV-optimal and DC-optimal endpoints.
 }
+\examples{
+\donttest{
+td <- saomnk_depth_width_tradeoff()
+p <- saomnk_plot_tradeoff_frontier(td, show_frontier = FALSE)
+}
+}

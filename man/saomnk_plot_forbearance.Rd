@@ -44,3 +44,18 @@ Shows a rolling-window competitive entry rate (proportion of ADD actions
 directed at rival-occupied activities), optionally grouped by actor
 strategy.
 }
+\examples{
+\donttest{
+## From a synthetic holdings history (no simulation required)
+set.seed(7)
+h <- list(matrix(rbinom(12, 1, 0.4), nrow = 3))
+for (t in 2:30) {
+  m <- h[[t - 1]]
+  i <- sample(3, 1); j <- sample(4, 1)
+  m[i, j] <- 1 - m[i, j]
+  h[[t]] <- m
+}
+entry_log <- track_entry_decisions(holdings_history = h)
+p <- saomnk_plot_forbearance(entry_log = entry_log, window = 5)
+}
+}

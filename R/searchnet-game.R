@@ -263,6 +263,9 @@ searchnet_game_step <- function(game, action, activity_id) {
 #'   (K_AC), \code{popularity} (K_CA mean), \code{rivalry} (K_AA),
 #'   \code{epistasis} (K_CC mean), \code{n_activities}, \code{rank},
 #'   \code{is_player}.
+#' @examples
+#' game <- searchnet_game_init(M = 4, N = 6, difficulty = "easy", seed = 42)
+#' searchnet_game_scoreboard(game)
 #' @export
 searchnet_game_scoreboard <- function(game) {
   stopifnot(inherits(game, "searchnet_game"))
@@ -284,6 +287,9 @@ searchnet_game_scoreboard <- function(game) {
 #' @param game A \code{searchnet_game} object.
 #' @return A \code{data.frame} with columns: \code{action} ("add" or "drop"),
 #'   \code{activity_id}, \code{delta_utility}, \code{current_state} (0/1).
+#' @examples
+#' game <- searchnet_game_init(M = 4, N = 6, difficulty = "easy", seed = 42)
+#' searchnet_game_available_moves(game)   # best move first
 #' @export
 searchnet_game_available_moves <- function(game) {
   stopifnot(inherits(game, "searchnet_game"))
@@ -347,6 +353,15 @@ searchnet_game_available_moves <- function(game) {
 #'     \item{\code{bipartite_snapshots}}{List of bipartite matrices by round
 #'       (for replay animation).}
 #'   }
+#' @examples
+#' game <- searchnet_game_init(M = 4, N = 6, difficulty = "easy",
+#'                             max_rounds = 2, seed = 42)
+#' game <- searchnet_game_step(game, action = "add", activity_id = 3)
+#' game <- searchnet_game_step(game, action = "pass", activity_id = NA)
+#'
+#' summary <- searchnet_game_summary(game)
+#' summary$player_rank
+#' summary$mode_score
 #' @export
 searchnet_game_summary <- function(game) {
   stopifnot(inherits(game, "searchnet_game"))

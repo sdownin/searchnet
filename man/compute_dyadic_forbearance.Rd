@@ -48,3 +48,20 @@ different object and at a different time point than the decisions, and
 joining them silently is how the timing assumption stops being visible.
 }
 
+\examples{
+set.seed(7)
+h <- list(matrix(rbinom(12, 1, 0.4), nrow = 3))
+for (t in 2:16) {
+  m <- h[[t - 1]]
+  i <- sample(3, 1); j <- sample(4, 1)
+  m[i, j] <- 1 - m[i, j]
+  h[[t]] <- m
+}
+entry_log <- track_entry_decisions(holdings_history = h)
+
+## Incidence shares only (no exposure correction)
+compute_dyadic_forbearance(entry_log, min_entries = 1)
+
+## Exposure-corrected: positive forbearance_index = restraint
+compute_dyadic_forbearance(entry_log, holdings = h, min_entries = 1)
+}

@@ -27,6 +27,15 @@
 #' @param include_init Logical; prepend the initial state as step 0.
 #' @return Called for side effects (plot display).
 #' @seealso [saomnk_plot_snapshots()] for the R6-delegating API version.
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, seed = 42)
+#' mod <- saomnk_model(density = -0.5, popularity = 0.2)
+#' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+#'
+#' saomnk_plot_snapshots_from_array(env, snapshot_ids = c(1, 10),
+#'                                  include_init = FALSE)
+#' }
 #' @export
 saomnk_plot_snapshots_from_array <- function(env, snapshot_ids = c(), include_init = TRUE) {
   if(!length(snapshot_ids))
@@ -184,9 +193,9 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
   actor_colors <- scales::hue_pal()( length(levels(actor_strategies))  )
 
   # 1. Bipartite network plot using ggraph with vertex labels
-  ig_bipartite <- igraph::graph_from_biadjacency_matrix(bipartite_matrix, directed = F, weighted = T)
+  ig_bipartite <- igraph::graph_from_biadjacency_matrix(bipartite_matrix, directed = FALSE, weighted = TRUE)
 
-  projs <- igraph::bipartite_projection(ig_bipartite, multiplicity = T, which = 'both')
+  projs <- igraph::bipartite_projection(ig_bipartite, multiplicity = TRUE, which = 'both')
   ig_social <- projs$proj1
   ig_component <- projs$proj2
 
@@ -267,7 +276,7 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
     )
 
   # 3. Component influence matrix heatmap
-  component_matrix <- igraph::as_adjacency_matrix(ig_component, type = 'both', sparse = F, attr = 'weight')
+  component_matrix <- igraph::as_adjacency_matrix(ig_component, type = 'both', sparse = FALSE, attr = 'weight')
 
   component_df <- melt(component_matrix)
   colnames(component_df) <- c("Component1", "Component2", "Weight")
@@ -289,9 +298,9 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
   }
 
   # Calculate average degree (K) for the social space and component interaction space
-  avg_degree_social <- mean(igraph::degree(ig_social, mode = 'all', loops = F, normalized = normalize_degree))
-  avg_degree_component <- mean(igraph::degree(ig_component, mode = 'all', loops = F, normalized = normalize_degree))
-  density_current <- igraph::edge_density(ig_bipartite, loops = F)
+  avg_degree_social <- mean(igraph::degree(ig_social, mode = 'all', loops = FALSE, normalized = normalize_degree))
+  avg_degree_component <- mean(igraph::degree(ig_component, mode = 'all', loops = FALSE, normalized = normalize_degree))
+  density_current <- igraph::edge_density(ig_bipartite, loops = FALSE)
 
   # Create a main title using sprintf with simulation parameters
   main_title <- sprintf("Environment M=%s, N=%s:   Step = %s,  Density = %.2f, K_AA = %.2f, K_CC = %.2f",

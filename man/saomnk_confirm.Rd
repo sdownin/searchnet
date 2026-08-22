@@ -28,3 +28,17 @@ retained: the proposal network is stored in \code{env$proposal_matrix} and
 the environment's \code{bipartite_matrix} becomes the confirmed network, so
 downstream projections and plots operate on the realised ties.
 }
+\examples{
+\donttest{
+env <- saomnk_env(M = 4, N = 6, seed = 42)
+mod <- saomnk_model(density = -0.5, popularity = 0.2)
+saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+
+## Screening: high-quality actors confirmed at .8, others at .2
+quality <- c(1, 1, 0, 0)
+a <- saomnk_assent(actor_attribute = quality,
+                   rate_high = 0.8, rate_low = 0.2)
+cf <- saomnk_confirm(env, a, seed = 1)
+cf$diagnostics$confirmation_rate_by_group
+}
+}

@@ -23,6 +23,13 @@
 #'   Higher values = stronger selection pressure.
 #' @param policy_labels Character vector of policy type names.
 #' @return Data frame with columns: generation, policy_type, share, fitness
+#' @examples
+#' ## Near-parity fitness with a slight RF advantage
+#' traj <- saomnk_replicator_dynamics(
+#'   c(RS = 0.80, RE = 0.81, RR = 0.79, RF = 0.82),
+#'   generations = 100
+#' )
+#' tail(traj, 4)   # terminal population shares
 #' @export
 saomnk_replicator_dynamics <- function(fitness_matrix,
                                         population = NULL,
@@ -93,6 +100,14 @@ saomnk_replicator_dynamics <- function(fitness_matrix,
 #' @param replicator_result Data frame output from saomnk_replicator_dynamics
 #' @param threshold Numeric minimum share to be considered present (default 0.01)
 #' @return Named numeric vector of ESS population shares
+#' @examples
+#' traj <- saomnk_replicator_dynamics(
+#'   c(RS = 0.80, RE = 0.81, RR = 0.79, RF = 0.82),
+#'   generations = 100
+#' )
+#' ess <- saomnk_ess(traj)
+#' ess
+#' attr(ess, "surviving")
 #' @export
 saomnk_ess <- function(replicator_result, threshold = 0.01) {
   max_gen <- max(replicator_result$generation)
@@ -121,6 +136,17 @@ saomnk_ess <- function(replicator_result, threshold = 0.01) {
 #'   \item{ratings}{Named numeric vector of final ELO ratings}
 #'   \item{history}{Data frame of match results}
 #'   \item{parity_test}{Logical: are all ratings within 20 points?}
+#' @examples
+#' set.seed(42)
+#' fitness_by_type <- list(
+#'   RS = rnorm(30, 0.80, 0.05),
+#'   RE = rnorm(30, 0.80, 0.05),
+#'   RR = rnorm(30, 0.80, 0.05),
+#'   RF = rnorm(30, 0.80, 0.05)
+#' )
+#' tour <- saomnk_elo_tournament(fitness_by_type, matches_per_pair = 10)
+#' tour$ratings
+#' tour$parity_test
 #' @export
 saomnk_elo_tournament <- function(fitness_by_type,
                                    matches_per_pair = 60L,
@@ -197,6 +223,14 @@ saomnk_elo_tournament <- function(fitness_by_type,
 #' @param colors Named vector of colors for policy types (default Okabe-Ito)
 #' @param title Character plot title
 #' @return ggplot object
+#' @examples
+#' \donttest{
+#' traj <- saomnk_replicator_dynamics(
+#'   c(RS = 0.80, RE = 0.81, RR = 0.79, RF = 0.82),
+#'   generations = 100
+#' )
+#' p <- saomnk_plot_replicator(traj)
+#' }
 #' @export
 saomnk_plot_replicator <- function(replicator_result,
                                     colors = .policy_colors,
@@ -233,6 +267,14 @@ saomnk_plot_replicator <- function(replicator_result,
 #' @param colors Named color vector
 #' @param title Character plot title
 #' @return ggplot object
+#' @examples
+#' \donttest{
+#' traj <- saomnk_replicator_dynamics(
+#'   c(RS = 0.80, RE = 0.81, RR = 0.79, RF = 0.82),
+#'   generations = 100
+#' )
+#' p <- saomnk_plot_simplex(traj, x_type = "RE", y_type = "RF")
+#' }
 #' @export
 saomnk_plot_simplex <- function(replicator_result,
                                  x_type = "RE", y_type = "RF",
@@ -275,6 +317,18 @@ saomnk_plot_simplex <- function(replicator_result,
 #' @param colors Named color vector
 #' @param title Character plot title
 #' @return ggplot object
+#' @examples
+#' \donttest{
+#' set.seed(42)
+#' fitness_by_type <- list(
+#'   RS = rnorm(30, 0.80, 0.05),
+#'   RE = rnorm(30, 0.80, 0.05),
+#'   RR = rnorm(30, 0.80, 0.05),
+#'   RF = rnorm(30, 0.80, 0.05)
+#' )
+#' tour <- saomnk_elo_tournament(fitness_by_type, matches_per_pair = 10)
+#' p <- saomnk_plot_elo(tour)
+#' }
 #' @export
 saomnk_plot_elo <- function(tournament_result,
                              colors = .policy_colors,

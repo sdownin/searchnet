@@ -36,7 +36,7 @@ saomnk_plot_actor_utility <- function(env,
       geom_smooth(aes(x = chain_step_id, y = mean),
                   data = actthin %>%
                     group_by(chain_step_id, actor_id) %>%
-                    dplyr::summarize(mean = mean(utility, na.rm = T)),
+                    dplyr::summarize(mean = mean(utility, na.rm = TRUE)),
                   method = 'loess', color = 'black', span = loess_span,
                   alpha = .05, linewidth = 1.1) +
       geom_hline(yintercept = 0, linetype = 4, color = 'black') +
@@ -85,7 +85,7 @@ saomnk_plot_strategy_utility <- function(env,
                   alpha = .05, linewidth = 1.1,
                   data = actthin %>%
                     group_by(chain_step_id) %>%
-                    dplyr::summarize(mean = mean(utility, na.rm = T)) %>%
+                    dplyr::summarize(mean = mean(utility, na.rm = TRUE)) %>%
                     mutate(strategy = NA)) +
       geom_hline(yintercept = 0, linetype = 4, color = 'black') +
       ggtitle("Average Utility by Strategy") +

@@ -30,3 +30,15 @@ Export the network-behavior-fitness data to CSV for use with
 manim, Python, Tableau, or other 3D visualization tools. The exported
 CSV contains one row per actor per timestep with all requested variables.
 }
+\examples{
+\donttest{
+env <- saomnk_env(M = 4, N = 6, seed = 42)
+mod <- saomnk_model(density = -0.5, popularity = 0.2)
+saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+
+f <- tempfile(fileext = ".csv")
+searchnet_export_phase_space(env, file = f)
+head(read.csv(f))
+unlink(f)
+}
+}

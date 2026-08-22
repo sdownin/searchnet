@@ -42,3 +42,20 @@ A \code{ggplot} object (2D) or \code{plotly} object (3D overlay).
 Side-by-side or overlay of phase space trajectories from multiple simulations
 (e.g., baseline vs shocked, or different strategy compositions).
 }
+\examples{
+\donttest{
+env1 <- saomnk_env(M = 4, N = 6, seed = 42)
+env2 <- saomnk_env(M = 4, N = 6, seed = 42)
+mod_weak   <- saomnk_model(density = -0.5)
+mod_strong <- saomnk_model(density = -0.5, popularity = 0.4)
+saomnk_run(env1, mod_weak,   steps_per_actor = 5, seed = 12345)
+saomnk_run(env2, mod_strong, steps_per_actor = 5, seed = 12345)
+
+## searchnet 0.8.1: coerce the stored utility tables to plain data.frames
+env1$actor_util_df <- as.data.frame(env1$actor_util_df)
+env2$actor_util_df <- as.data.frame(env2$actor_util_df)
+
+p <- saomnk_plot_phase_comparison(list(weak = env1, strong = env2),
+                                  x_var = "K_AC", y_var = "utility")
+}
+}

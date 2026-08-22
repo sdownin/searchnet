@@ -145,6 +145,19 @@ saomnk_assent <- function(prob = NULL,
 #'   and plots operate on realised ties. The proposal network is returned rather
 #'   than attached to the environment, because the R6 environment is locked and
 #'   will not accept new bindings.
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, seed = 42)
+#' mod <- saomnk_model(density = -0.5, popularity = 0.2)
+#' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+#'
+#' ## Screening: high-quality actors confirmed at .8, others at .2
+#' quality <- c(1, 1, 0, 0)
+#' a <- saomnk_assent(actor_attribute = quality,
+#'                    rate_high = 0.8, rate_low = 0.2)
+#' cf <- saomnk_confirm(env, a, seed = 1)
+#' cf$diagnostics$confirmation_rate_by_group
+#' }
 #' @export
 saomnk_confirm <- function(env, assent, seed = NULL) {
   stopifnot(inherits(assent, "saomnk_assent"))
@@ -200,6 +213,16 @@ saomnk_confirm <- function(env, assent, seed = NULL) {
 #' @param verbose Print per-wave diagnostics.
 #' @return A list with the per-wave confirmed and proposal matrices, the
 #'   four coupled degree processes for each, and the assent diagnostics.
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, seed = 42)
+#' mod <- saomnk_model(density = -0.5, popularity = 0.2)
+#' a <- saomnk_assent(prob = 0.5)
+#'
+#' res <- saomnk_run_two_sided(env, mod, assent = a,
+#'                             waves = 2, steps_per_actor = 4, seed = 1)
+#' res$degrees
+#' }
 #' @export
 saomnk_run_two_sided <- function(env, model, assent = NULL, waves = 5,
                                  steps_per_actor = 6, seed = 1,

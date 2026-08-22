@@ -18,3 +18,6 @@ escape_difficulty, scope_cost, synergy, herding
 Computes basin geometry for each policy type and returns the
 tradeoff frontier data.
 }
+\examples{
+saomnk_depth_width_tradeoff()
+}

@@ -44,3 +44,16 @@ Generate frame-by-frame data for animating system evolution through
 phase space. Each frame shows actor positions at one timestep with
 trailing trajectories from previous steps.
 }
+\examples{
+\donttest{
+env <- saomnk_env(M = 4, N = 6, seed = 42)
+mod <- saomnk_model(density = -0.5, popularity = 0.2)
+saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+
+## searchnet 0.8.1: coerce the stored utility table to a plain data.frame
+env$actor_util_df <- as.data.frame(env$actor_util_df)
+
+anim <- saomnk_plot_phase_evolution(env, x_var = "K_AC", y_var = "utility",
+                                    thin_factor = 5)
+}
+}

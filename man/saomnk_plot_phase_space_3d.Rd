@@ -60,3 +60,19 @@ Each point is one actor at one timestep. Trajectories show evolution over time.
 Color encodes time (early = cool, late = warm), strategy type, actor identity,
 or exploration/exploitation phase.
 }
+\examples{
+\donttest{
+env <- saomnk_env(M = 4, N = 6, seed = 42)
+mod <- saomnk_model(density = -0.5, popularity = 0.2)
+saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+
+## searchnet 0.8.1: coerce the stored utility table to a plain data.frame
+## before phase-space plotting (the extractor returns a data.table, which
+## the plot functions index with data.frame semantics)
+env$actor_util_df <- as.data.frame(env$actor_util_df)
+
+p <- saomnk_plot_phase_space_3d(env, x_var = "K_AC",
+                                y_var = "exploration_rate",
+                                z_var = "utility", color_by = "time")
+}
+}

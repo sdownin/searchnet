@@ -43,3 +43,15 @@ into the specified directory.
 Also writes a small \code{metadata.csv} containing simulation parameters
 (M, N, number of chain steps) for use by downstream scripts.
 }
+\examples{
+\donttest{
+env <- saomnk_env(M = 4, N = 6, seed = 42)
+mod <- saomnk_model(density = -0.5, popularity = 0.2)
+saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+
+out_dir <- file.path(tempdir(), "searchnet_export")
+files <- searchnet_export_all(env, dir = out_dir)
+names(files)
+unlink(out_dir, recursive = TRUE)
+}
+}

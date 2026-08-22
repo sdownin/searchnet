@@ -19,3 +19,17 @@ A ggplot object.
 Histogram of the number of rivals present when firms enter an activity.
 Useful for understanding the shape of competitive intensity at entry.
 }
+\examples{
+\donttest{
+set.seed(7)
+h <- list(matrix(rbinom(12, 1, 0.4), nrow = 3))
+for (t in 2:20) {
+  m <- h[[t - 1]]
+  i <- sample(3, 1); j <- sample(4, 1)
+  m[i, j] <- 1 - m[i, j]
+  h[[t]] <- m
+}
+entry_log <- track_entry_decisions(holdings_history = h)
+p <- saomnk_plot_entry_rivalry(entry_log)
+}
+}

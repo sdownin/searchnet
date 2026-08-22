@@ -27,3 +27,16 @@ Creates a 2x2 panel figure showing competitive entry behaviour across
 a range of theta_inPop values, following the design from the CD2026
 forbearance spectrum experiment (script 54).
 }
+\examples{
+\donttest{
+## Synthetic sweep: 5 theta_inPop values x 4 replicates
+set.seed(1)
+sweep <- expand.grid(theta_inPop = seq(-1, 1, by = 0.5), rep = 1:4)
+sweep$competitive_entry_rate <- plogis(sweep$theta_inPop + rnorm(20, 0, 0.2))
+sweep$mean_rivals_at_entry   <- 1 + sweep$competitive_entry_rate * 2
+sweep$terminal_kaa           <- 2 + sweep$theta_inPop + rnorm(20, 0, 0.1)
+sweep$avoidance_rate         <- 1 - sweep$competitive_entry_rate
+
+p <- saomnk_plot_forbearance_spectrum(sweep)
+}
+}

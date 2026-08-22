@@ -91,7 +91,11 @@ export(saomnk_summary)
 export(saomnk_get_degrees)
 export(saomnk_get_bipartite)
 export(saomnk_block_diagonal)
+# S3 print methods for user-facing returns (R/saomnk-methods.R)
 S3method(print, saomnk_model)
+S3method(print, saomnk_shock)
+S3method(print, saomnk_assent)
+S3method(print, saomnk_summary)
 
 # ---------------------------------------------------------------------------
 # Standalone utility functions (utils.R)

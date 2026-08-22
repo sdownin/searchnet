@@ -34,3 +34,10 @@ Derives basin width, depth, and steepness from the three search
 parameters (scope cost, synergy, herding) using the analytical
 mapping from the AMR manuscript.
 }
+\examples{
+## Resource-suppressing policy: narrow, shallow, steep-walled basin
+saomnk_basin_geometry(scope_cost = 0.6, synergy = -0.3, herding = 0.2)
+
+## Resource-freeing policy: wide and deep
+saomnk_basin_geometry(scope_cost = -0.6, synergy = 0.5, herding = 0)
+}

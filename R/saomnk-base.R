@@ -241,7 +241,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
     initialize = function(config_environ_params, verbose=FALSE) {
       if(verbose) cat('\nCALLED _BASE_ INIT\n')
       ## ----- prevent clashes with sna package-----------
-      sna_err_check <-tryCatch(expr = { detach('package:sna') }, error=function(e)e )
+      sna_err_check <- tryCatch(expr = { detach('package:sna') }, error=function(e)e )
       ## -------------------------------------------------
       ##**TODO:  LOAD DEPENDENCY FUNCTIONS ETC**
       ##
@@ -249,7 +249,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
       self$M <- config_environ_params[['M']]
       self$N <- config_environ_params[['N']]
       self$BI_PROB <- config_environ_params[['BI_PROB']]
-      self$UUID <- UUIDgenerate(use.time = T)
+      self$UUID <- UUIDgenerate(use.time = TRUE)
       self$DIR_OUTPUT <- ifelse(is.null(config_environ_params[['dir_output']]),
                                 getwd(),
                                 config_environ_params[['dir_output']])
@@ -332,7 +332,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
     
     #
     set_system_from_bipartite_matrix = function(bipartite_matrix) {
-      bipartite_igraph <- igraph::graph_from_biadjacency_matrix(bipartite_matrix, directed = F, mode = 'all')
+      bipartite_igraph <- igraph::graph_from_biadjacency_matrix(bipartite_matrix, directed = FALSE, mode = 'all')
       self$set_system_from_bipartite_igraph(bipartite_igraph)
     },
     
@@ -354,9 +354,9 @@ SaomNkRSienaBiEnv_base <- R6Class(
       self$social_igraph <- social_ig
       self$search_igraph <- search_ig
       #
-      self$bipartite_matrix <- igraph::as_biadjacency_matrix(bipartite_igraph,attr = 'weight', sparse = F)
-      self$social_matrix <- igraph::as_adjacency_matrix(self$social_igraph, attr = 'weight', sparse = F)
-      self$search_matrix <- igraph::as_adjacency_matrix(self$search_igraph, attr = 'weight', sparse = F)
+      self$bipartite_matrix <- igraph::as_biadjacency_matrix(bipartite_igraph,attr = 'weight', sparse = FALSE)
+      self$social_matrix <- igraph::as_adjacency_matrix(self$social_igraph, attr = 'weight', sparse = FALSE)
+      self$search_matrix <- igraph::as_adjacency_matrix(self$search_igraph, attr = 'weight', sparse = FALSE)
     },
     
     # Generate a random bipartite network matrix
@@ -379,13 +379,13 @@ SaomNkRSienaBiEnv_base <- R6Class(
     random_bipartite_igraph = function(rand_seed = 123) {
       bipartite_matrix <- self$random_bipartite_matrix(rand_seed)
       # bipartite_net <- network(bipartite_matrix, bipartite = TRUE, directed = TRUE)
-      bipartite_igraph <- igraph::graph_from_biadjacency_matrix(bipartite_matrix, directed = F, mode = 'all')
+      bipartite_igraph <- igraph::graph_from_biadjacency_matrix(bipartite_matrix, directed = FALSE, mode = 'all')
       return(bipartite_igraph)
     },
     
     ##
     get_bipartite_projections = function(ig_bipartite) {
-      projs <- igraph::bipartite_projection(ig_bipartite, multiplicity = T, which = 'both')
+      projs <- igraph::bipartite_projection(ig_bipartite, multiplicity = TRUE, which = 'both')
       return(projs)    
     },
 
@@ -872,12 +872,12 @@ SaomNkRSienaBiEnv_base <- R6Class(
     
     include_rsiena_effect_from_eff_list_static = function(rsiena_effects, eff, unfix_all=TRUE, verbose=FALSE) {
       
-      if (grepl('rate',eff$effect, ignore.case = T)) {
+      if (grepl('rate',eff$effect, ignore.case = TRUE)) {
         cat(sprintf('**NOTE** skipping rate effect `%s`',eff$effect))
         return(rsiena_effects)
       }
       #
-      dv_name <- gsub('self\\$','',eff$dv_name, ignore.case = T)
+      dv_name <- gsub('self\\$','',eff$dv_name, ignore.case = TRUE)
       #
       if (is.null(eff$interaction1)) {
         rsiena_effects <- includeEffects(rsiena_effects,  eff$effect, 
@@ -890,7 +890,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
                                     fix = ifelse(unfix_all, FALSE, eff$fix), 
                                     character = TRUE, verbose=verbose)
       } else {
-        interact1 <- gsub('self\\$','',eff$interaction1, ignore.case = T)
+        interact1 <- gsub('self\\$','',eff$interaction1, ignore.case = TRUE)
         rsiena_effects <- includeEffects(rsiena_effects,  eff$effect, 
                                          name = dv_name,  # interaction1 = eff$interaction1,
                                          fix = ifelse(unfix_all, FALSE, eff$fix), 
@@ -916,7 +916,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
         rsiena_effects$manual_interaction <- NA
       }
       #
-      dv_name <- gsub('self\\$','',interact$dv_name, ignore.case = T)
+      dv_name <- gsub('self\\$','',interact$dv_name, ignore.case = TRUE)
       #
       if (is.null(interact$interaction1)) {
         rsiena_effects <- includeInteraction(rsiena_effects, interact$effects[1], interact$effects[2],  ## get network statistic function from effect name (character)
@@ -927,8 +927,8 @@ SaomNkRSienaBiEnv_base <- R6Class(
                                            character = TRUE, verbose = verbose)
       } else {
         interact1 <- c(
-          gsub('self\\$','',eff$interaction1, ignore.case = T),
-          gsub('self\\$','',eff$interaction2, ignore.case = T)
+          gsub('self\\$','',eff$interaction1, ignore.case = TRUE),
+          gsub('self\\$','',eff$interaction2, ignore.case = TRUE)
         )
         rsiena_effects <- includeInteraction(rsiena_effects, interact$effects[1], interact$effects[2],  ## get network statistic function from effect name (character)
                                              name = dv_name, # interaction1 = eff$interaction1,
@@ -1312,7 +1312,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
       ## Handle Interactions
       theta_df$effect_level_orig <- theta_df$effect_level
       for (i in 1:nrow(theta_df)) {
-        if ( grepl('.*unspInt.*',  theta_df$effect_level[i], ignore.case = T) ) {
+        if ( grepl('.*unspInt.*',  theta_df$effect_level[i], ignore.case = TRUE) ) {
           theta_df$effect_level[i] <- theta_df$manual_interaction[i]
         }
       }
@@ -1498,7 +1498,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
           if( ! checkConform )
             stop('altX covar not conformable for multiplication given number of components or actors')
           covarComponentMat <- matrix(rep(covar, self$M), nrow=self$M, ncol=self$N, byrow = TRUE)
-          mat[ , i] <- rowSums( covarComponentMat * bi_env_mat, na.rm=T ) ##**vector element-wise multiplication by rows of covar matrix, or elements of covar array
+          mat[ , i] <- rowSums( covarComponentMat * bi_env_mat, na.rm=TRUE ) ##**vector element-wise multiplication by rows of covar matrix, or elements of covar array
           
         } else if (item$effect == 'outActX') { ## interaction1 component_coCovar
           
@@ -1508,7 +1508,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
           # MxN matrix of row-stacked component covariate (repeated for each actor)
           covarComponentMat <- matrix(rep(covar, self$M), nrow=self$M, ncol=self$N, byrow = TRUE)
           ## M-vector of actor's squared sum of component-covariate-weighted component connections (weighted version of the squared degree)
-          mat[ , i] <- xActorDegree * rowSums( covarComponentMat * bi_env_mat, na.rm = T)
+          mat[ , i] <- xActorDegree * rowSums( covarComponentMat * bi_env_mat, na.rm = TRUE)
         
         } else if (item$effect == 'inPopX') { #M-vector of actor strategy covars
 
@@ -1517,9 +1517,9 @@ SaomNkRSienaBiEnv_base <- R6Class(
           ## MxN matrix holding actor strategy covariate as columns stacked for each component
           covarActorMat <- matrix(rep(covar, self$N), nrow=self$M, ncol=self$N,  byrow = FALSE)
           ## N-vector of square roots of component weights (sum of actor covariate for the component's connected actors)
-          component_weights_from_actor_stats <-  colSums(covarActorMat * bi_env_mat, na.rm=T)
+          component_weights_from_actor_stats <-  colSums(covarActorMat * bi_env_mat, na.rm=TRUE)
           ## M-vector of actor sum of it's connected component weights (which are computed as the sum of the connected actor covariates)
-          mat[ , i] <- rowSums( bi_env_mat * component_weights_from_actor_stats, na.rm=T ) ##**vector element-wise multiplication by rows of covar matrix, or elements of covar array
+          mat[ , i] <- rowSums( bi_env_mat * component_weights_from_actor_stats, na.rm=TRUE ) ##**vector element-wise multiplication by rows of covar matrix, or elements of covar array
         
         } else if (item$effect == 'XWX') { ## NxN
           
@@ -1528,7 +1528,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
           ## MxM matrix of inter-actor connections weighted by component covarite matrix
           interactor_cov_w <- bi_env_mat %*% covar %*% t(bi_env_mat)
           ## covert to M-vector of actor attributes
-          mat[ , i] <- rowSums( interactor_cov_w, na.rm=T ) ##**TODO: CHECK**
+          mat[ , i] <- rowSums( interactor_cov_w, na.rm=TRUE ) ##**TODO: CHECK**
           # mat[ , i] <- colSums( interactor_cov_w, na.rm=T ) ##**TODO: CHECK**
           
         }  else if (item$effect == 'X') { ## MxN
@@ -1539,7 +1539,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
           # interactor_cov_w <- bi_env_mat * (covar - mean(c(covar, na.rm=T)) )
           interactor_cov_w <- bi_env_mat * covar ##**TODO** Not Centered
           ## covert to M-vector of actor attributes
-          mat[ , i] <- rowSums( interactor_cov_w, na.rm=T ) ##**TODO: CHECK**
+          mat[ , i] <- rowSums( interactor_cov_w, na.rm=TRUE ) ##**TODO: CHECK**
           # stop('implement altX|XWX .')
 
           
@@ -1550,9 +1550,9 @@ SaomNkRSienaBiEnv_base <- R6Class(
           # 1xN matrix
           component_sums_w_by_actor_covar <-  covar %*% bi_env_mat 
           #
-          compo_w_stacked_mat <- matrix(rep(component_sums_w_by_actor_covar, self$M), byrow=T, ncol=self$N)
+          compo_w_stacked_mat <- matrix(rep(component_sums_w_by_actor_covar, self$M), byrow=TRUE, ncol=self$N)
           ## covert to M-vector of actor attributes
-          mat[ , i ] <-  rowSums( compo_w_stacked_mat * bi_env_mat, na.rm=T )
+          mat[ , i ] <-  rowSums( compo_w_stacked_mat * bi_env_mat, na.rm=TRUE )
           # mat[ , i] <- self$getTotInDist2(bi_env_mat, covar, interaction_type = 'absdiff') ##**TODO: CHECK**
           
           

@@ -23,3 +23,19 @@ A ggplot2 object.
 \description{
 Produces one of three visualization types for specification curve analysis.
 }
+\examples{
+\donttest{
+grid <- data.frame(
+  effect = rep(c("reciprocity", "transitivity"), each = 5),
+  specification = rep(paste0("spec_", 1:5), 2),
+  estimate = c(0.8, 0.9, 0.7, 0.85, 0.75,
+               0.3, -0.1, 0.2, 0.4, -0.05),
+  std_error = rep(0.15, 10)
+)
+result <- saomnk_sai(grid)
+
+p1 <- plot(result, type = "curve")
+p2 <- plot(result, type = "tile")
+p3 <- plot(result, type = "forest")
+}
+}

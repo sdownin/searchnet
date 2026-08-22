@@ -35,3 +35,11 @@ Implements discrete-time replicator dynamics with softmax selection.
 The replicator equation: x_i(t+1) = x_i(t) * exp(s * f_i) / Z
 where s is selection strength and Z is the normalization constant.
 }
+\examples{
+## Near-parity fitness with a slight RF advantage
+traj <- saomnk_replicator_dynamics(
+  c(RS = 0.80, RE = 0.81, RR = 0.79, RF = 0.82),
+  generations = 100
+)
+tail(traj, 4)   # terminal population shares
+}

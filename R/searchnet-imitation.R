@@ -137,6 +137,9 @@ saomnk_sim_ego_indist2 <- function(bi_mat, performance,
 #' @param ... Passed to \code{\link{saomnk_sim_ego_indist2}}.
 #'
 #' @return Numeric vector of length M, or a matrix, per \code{per_component}.
+#' @examples
+#' env <- saomnk_env(M = 5, N = 8, density = 0.3, seed = 1)
+#' saomnk_env_imitation(env, performance = runif(5))
 #' @export
 saomnk_env_imitation <- function(env, performance = NULL, step = NULL, ...) {
 

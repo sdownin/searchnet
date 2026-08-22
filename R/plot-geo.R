@@ -30,6 +30,10 @@ NULL
 #' @param n Integer. Number of interpolated points (default 50).
 #'
 #' @return A data frame with columns \code{lon} and \code{lat}.
+#' @examples
+#' ## Kansas to Tokyo, 20 interpolated points along the great circle
+#' arc <- saomnk_geo_arc(-98, 39, 138, 36, n = 20)
+#' head(arc)
 #' @export
 saomnk_geo_arc <- function(lon1, lat1, lon2, lat2, n = 50) {
   d2r <- pi / 180

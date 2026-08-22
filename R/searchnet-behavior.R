@@ -365,6 +365,23 @@ saomnk_behavior_effects <- function(M = 10L, N = 6L,
 #' @return A \code{data.frame} with columns \code{run}, \code{actor_id},
 #'   \code{value}, or a numeric matrix when \code{wide = TRUE}.
 #'
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, seed = 42)
+#' mod <- saomnk_model(density = -0.5)
+#' mod$dv_behavior <- saomnk_behavior(
+#'   values  = c(1, 2, 3, 2),
+#'   effects = list(
+#'     list(effect = "linear", parameter =  0.0),
+#'     list(effect = "quad",   parameter = -0.2)
+#'   )
+#' )
+#' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
+#'
+#' beh <- saomnk_get_behavior(env)
+#' head(beh)
+#' saomnk_get_behavior(env, wide = TRUE)[1:3, ]
+#' }
 #' @export
 saomnk_get_behavior <- function(env, wide = FALSE,
                                 name = .SEARCHNET_BEHAVIOR_DV_NAME) {
