@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot-geo.R
 \name{saomnk_plot_geo_network}
 \alias{saomnk_plot_geo_network}
-\title{Plot a component interaction matrix on geographic coordinates}
+\title{Plot a component influence matrix on geographic coordinates}
 \usage{
 saomnk_plot_geo_network(
   W,
@@ -21,7 +21,7 @@ saomnk_plot_geo_network(
 )
 }
 \arguments{
-\item{W}{Numeric \eqn{N \times N} interaction matrix. Row and column names
+\item{W}{Numeric \eqn{N \times N} influence matrix. Row and column names
 must match \code{coords$id}.}
 
 \item{coords}{Data frame with columns \code{id}, \code{lon}, \code{lat}.}
@@ -46,7 +46,7 @@ keeps a dense W legible (default 250). Set \code{NULL} for all non-zero.}
 A ggplot object.
 }
 \description{
-Draws the component-by-component interaction matrix \code{W} as a network
+Draws the component-by-component influence matrix \code{W} as a network
 positioned by real-world coordinates, with a world basemap. Edge opacity and
 width encode coupling strength; node size and fill encode any component-level
 attribute (component degree, actor count, treatment status).

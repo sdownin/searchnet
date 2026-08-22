@@ -98,7 +98,7 @@ nested list:
 ```{r structure-model}
 DV_NAME <- "self$bipartite_rsienaDV"
 
-## Define a modular epistasis matrix (2 blocks of 3 components)
+## Define a modular influence matrix (2 blocks of 3 components)
 component_int_mat <- create_block_diag(environment_parameters$N, 2)
 
 structure_model <- list(

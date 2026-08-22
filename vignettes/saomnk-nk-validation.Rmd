@@ -70,7 +70,7 @@ increasingly likely to become trapped at suboptimal peaks.
 
 SaoMNK reproduces this by setting $M=2$ (single actor) with $N=8$
 components. The epistasis structure is specified via a block-diagonal
-interaction matrix passed to the `XWX` effect, which captures the
+influence matrix passed to the `XWX` effect, which captures the
 component--component interdependence mediated by actor affiliations. The
 `density` parameter controls the baseline propensity to adopt
 components: negative values make the landscape more rugged (higher cost
@@ -85,7 +85,7 @@ steps_per_actor <- 30
 ## Modular epistasis: 2 blocks of 4 components each
 ## This is analogous to K=3 within each module (full intra-block epistasis)
 epistasis_mat <- create_block_diag(8, 2)
-cat("Epistasis matrix (2 blocks of 4):\n")
+cat("Influence matrix (2 blocks of 4):\n")
 print(epistasis_mat)
 ```
 

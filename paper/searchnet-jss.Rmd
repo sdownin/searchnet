@@ -486,7 +486,7 @@ in the package; access via \code{searchnet\_proof()}).
 of the SAOM-NK model.  Specifically, the NK landscape and its adaptive walk are
 recovered exactly under five restrictions: (R1)~$M = 1$ (single actor);
 (R2)~$\mathbf{E} = \mathbf{A}$ (SAOM-NK influence matrix equals the NK
-interaction matrix); (R3)~$\boldsymbol{\theta} = \mathbf{0}$ (all SAOM
+influence matrix); (R3)~$\boldsymbol{\theta} = \mathbf{0}$ (all SAOM
 parameters zero); (R4)~$\beta \to \infty$ (deterministic greedy choice);
 (R5)~uniform component selection probability.
 
@@ -1206,7 +1206,7 @@ abline(a = 0, b = 1, lty = 2, col = "gray50")
 
 ### Landscape erosion under shocks
 
-When shocks modify the interaction matrix $\mathbf{W}$, the landscape
+When shocks modify the influence matrix $\mathbf{W}$, the landscape
 reshapes.  The \pkg{searchnet} shock infrastructure enables systematic
 measurement of **landscape erosion**:
 \begin{equation}\label{eq:erosion}
@@ -1697,7 +1697,7 @@ covariates carry $W_{\text{pre}}$ and $W_{\text{post}}$, and \code{theta\_shocks
 flips their weights from $(1,0)$ to $(0,1)$ at the midpoint, so the firm's
 position carries across the switch and is re-scored under the new structure.
 
-![The $K_{CC}$ switch. Left, the pre-shock interaction matrix $W_{\text{pre}}$; centre, the post-shock $W_{\text{post}}$; right, their difference. The shock schedule flips the weights of two \code{XWX} covariates at the midpoint, so actors carry their positions across a change in which components complement which.\label{fig:wswitch}](figures/ishock_w_switch.png){width=100%}
+![The $K_{CC}$ switch. Left, the pre-shock influence matrix $W_{\text{pre}}$; centre, the post-shock $W_{\text{post}}$; right, their difference. The shock schedule flips the weights of two \code{XWX} covariates at the midpoint, so actors carry their positions across a change in which components complement which.\label{fig:wswitch}](figures/ishock_w_switch.png){width=100%}
 
 ```r
 Wpre  <- create_block_diag(N, 2)

@@ -741,11 +741,11 @@ verify_brock_durlauf_reduction <- function(M_seq        = c(50, 100, 200, 500),
         ## Option B reference uses the SAME theta the simulation sees.
         pop_coef <- if (sqrt_correction) J_b / sqrt(max(2, 2 * M_k)) else J_b
         N_int    <- as.integer(n_components)
-        epi_mat  <- saomnk_block_diagonal(N_int, max(2L, N_int %/% 2L))
+        infl_mat  <- saomnk_block_diagonal(N_int, max(2L, N_int %/% 2L))
         model <- saomnk_model(density    = h_b,
                               popularity = pop_coef,
                               scope      = 0,
-                              influence_matrix = epi_mat,
+                              influence_matrix = infl_mat,
                               influence_weight = 0)
         ## n_steps is interpreted as steps_per_actor (so mixing time is
         ## independent of M).  Each actor revises n_steps times,

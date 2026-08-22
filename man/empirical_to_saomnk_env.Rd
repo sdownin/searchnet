@@ -29,7 +29,7 @@ A list with components:
 \describe{
 \item{\code{env}}{A \code{SaomNkRSienaBiEnv} object with the bipartite
 matrix set to the empirical data.}
-\item{\code{W}}{An \eqn{N \times N}{N x N} epistasis matrix built from
+\item{\code{W}}{An \eqn{N \times N}{N x N} influence matrix estimated from
 SIC co-occurrence in supply chains (normalized to \link{0,1}).}
 \item{\code{actor_attrs}}{A \code{data.frame} of actor (firm) covariates.}
 \item{\code{component_attrs}}{A \code{data.frame} of component (SIC
@@ -50,6 +50,6 @@ in, both directly and through supply-chain partnerships.
 mi_data <- readRDS("path/to/mi_data.rds")
 bridge_env <- empirical_to_saomnk_env(mi_data, wave = 3)
 bridge_env$env  # the SaomNkRSienaBiEnv object
-bridge_env$W    # epistasis matrix
+bridge_env$W    # influence matrix (estimated from co-occurrence)
 }
 }

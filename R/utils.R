@@ -76,7 +76,7 @@ saomnk_exists <- function(x) {
 }
 
 
-#' Create a Block-Diagonal Epistasis Matrix
+#' Create a Block-Diagonal Influence Matrix
 #'
 #' Builds a symmetric block-diagonal binary matrix of dimension
 #' \eqn{N \times N} with \code{B} approximately equal-sized blocks.
@@ -104,11 +104,12 @@ create_block_diag <- function(N, B) {
 }
 
 
-#' Compute an empirical epistasis matrix from observed bipartite data
+#' Estimate an Influence Matrix from Observed Bipartite Data
 #'
 #' Given a bipartite matrix B (actors x components), computes the component
-#' co-occurrence matrix as a measure of empirical epistasis. Components that
-#' frequently co-occur in the same actors' portfolios have higher epistasis.
+#' co-occurrence matrix as an estimate of the influence matrix. Components that
+#' frequently co-occur in the same actors' portfolios are inferred to influence
+#' one another more strongly.
 #'
 #' Three methods available:
 #' \itemize{
@@ -121,17 +122,18 @@ create_block_diag <- function(N, B) {
 #' @param method One of \code{"jaccard"}, \code{"cosine"}, \code{"cooccurrence"}
 #' @param threshold Minimum similarity to retain (set to 0 below threshold)
 #' @param diagonal Value for diagonal entries (default 0, matching block_diag convention)
-#' @return An N x N symmetric epistasis matrix suitable for use as
-#'   \code{influence_matrix} in \code{\link{saomnk_model}}
+#' @return An N x N symmetric influence-matrix estimate built from realized
+#'   co-holding, suitable as the \code{influence_matrix} argument of
+#'   \code{\link{saomnk_model}}
 #' @export
 #' @examples
 #' # From a simulated environment
 #' env <- saomnk_env(M = 10, N = 8, density = 0.4, seed = 42)
-#' W <- saomnk_empirical_epistasis(env$bipartite_matrix)
+#' W <- saomnk_empirical_influence(env$bipartite_matrix)
 #'
 #' # Use in a model
 #' model <- saomnk_model(density = -0.5, influence_matrix = W, influence_weight = 0.3)
-saomnk_empirical_epistasis <- function(B, method = "jaccard", threshold = 0, diagonal = 0) {
+saomnk_empirical_influence <- function(B, method = "jaccard", threshold = 0, diagonal = 0) {
   # If B is an env object, extract the matrix
   if (is.environment(B) || inherits(B, "R6")) {
     B <- B$bipartite_matrix
@@ -179,6 +181,33 @@ saomnk_empirical_epistasis <- function(B, method = "jaccard", threshold = 0, dia
   W
 }
 
+
+## Once-per-session deprecation flags (internal). The alias below warns the
+## first time it is called in a session, not on every call, so an old script
+## that loops over it is not buried in repeats.
+.searchnet_deprecation_flags <- new.env(parent = emptyenv())
+.searchnet_reset_deprecations <- function() {
+  rm(list = ls(.searchnet_deprecation_flags), envir = .searchnet_deprecation_flags)
+  invisible(TRUE)
+}
+
+#' @rdname saomnk_empirical_influence
+#' @section Deprecated alias:
+#' \code{saomnk_empirical_epistasis()} is the pre-0.8.2 name and is kept as a
+#' deprecated alias: same arguments, same return value, plus a one-time
+#' deprecation warning per session. The function returns an influence-matrix
+#' estimate, not epistasis, which is why the name changed.
+#' @export
+saomnk_empirical_epistasis <- function(B, method = "jaccard", threshold = 0, diagonal = 0) {
+  if (!isTRUE(.searchnet_deprecation_flags$empirical_epistasis)) {
+    .Deprecated("saomnk_empirical_influence", package = "searchnet",
+                msg = paste0("saomnk_empirical_epistasis() is deprecated as of searchnet ",
+                             "0.8.2; use saomnk_empirical_influence(). It returns an ",
+                             "influence-matrix estimate, not epistasis."))
+    .searchnet_deprecation_flags$empirical_epistasis <- TRUE
+  }
+  saomnk_empirical_influence(B, method = method, threshold = threshold, diagonal = diagonal)
+}
 
 #' Get path to searchnet proof files
 #'

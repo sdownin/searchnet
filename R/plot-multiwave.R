@@ -151,7 +151,7 @@ saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy <- functio
     scale_fill_cyclical(
       breaks = strat_break,
       labels = strat_labs,
-      values = hue_pal()(length(levels(actor_strat))),
+      values = scales::hue_pal()(length(levels(actor_strat))),
       guide = "legend"
     ) +
     labs(

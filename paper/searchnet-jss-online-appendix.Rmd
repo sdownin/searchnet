@@ -74,7 +74,7 @@ cat("Environment:", env_qs$M, "actors x", env_qs$N, "components\n")
 ```
 
 The structure model defines the SAOM objective function. We specify a
-block-diagonal epistasis matrix (2 blocks of 3 components) via the `XWX`
+block-diagonal influence matrix (2 blocks of 3 components) via the `XWX`
 effect, with a negative `density` parameter creating sparsity pressure:
 
 ```{r appendix-a-model}
@@ -164,7 +164,7 @@ $f_d: \{0,1\}^{K+1} \to [0,1]$ is drawn i.i.d. from $\text{Uniform}(0,1)$
 
 For actor $i$ with affiliation vector $\mathbf{b}_i \in \{0,1\}^N$
 in the context of all other actors' affiliations $\mathbf{B}_{-i}$ and
-epistasis matrix $E \in \{0,1\}^{N \times N}$:
+influence matrix $E \in \{0,1\}^{N \times N}$:
 
 $$u_i(\mathbf{b}_i; \mathbf{B}_{-i}, E) = \underbrace{\sum_{d=1}^{N} b_{id} \cdot f_d(\mathbf{b}_i \odot E_{d\cdot})}_{\text{NK component}} + \underbrace{\sum_{k=1}^{p} \theta_k \cdot s_k(\mathbf{b}_i, \mathbf{B})}_{\text{SAOM statistics}}$$
 

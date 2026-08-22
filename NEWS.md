@@ -1,3 +1,61 @@
+# searchnet 0.8.2
+
+## Terminology
+
+* **W is the influence matrix throughout; epistasis is the fitness outcome.**
+  The 0.4.0 release renamed the API (`influence_matrix`, `influence_weight`,
+  `influence_matrices`, `influence_weights`, with deprecation shims that keep
+  working). This release finishes the prose half: roxygen and code comments,
+  the generated help pages, every vignette, the proofs (`PROOF_TABLE.md`, the
+  NK-equivalence proof, the proof tutorial), the JSS paper and its online
+  appendix, the notation concordance and the submission bundle now all say
+  "influence matrix" for the N x N object a user passes in, and reserve
+  "epistasis" for what those influences produce through the utility. This is
+  the standard the companion paper carries (CD2026, Paper T): W is the
+  influence matrix, the NK interaction matrix with real-valued entries giving
+  the magnitude and sign of one activity's influence on another's fitness
+  contribution; its binary support E is the influence pattern; epistasis
+  (K_CC) is the fitness interdependence W induces, indexed by the density and
+  pattern of W. Theorem 1 (R2) now reads "E = A, the SaoMNK influence matrix
+  equals the NK influence matrix". K_CC keeps its label "Epistasis";
+  "epistasis parameter K" and the adjective "epistatic" are unchanged. One
+  concordance sentence survives, in the `saomnk_model()` help for
+  `influence_matrix`, so a reader arriving from the NK literature can find the
+  object.
+
+* `saomnk_empirical_epistasis()` is deprecated in favour of
+  `saomnk_empirical_influence()`; it returns an influence-matrix estimate
+  built from realized co-holding, not epistasis. Same arguments, same return;
+  the old name warns once per session and then calls the new function.
+
+* `epistatic_int_mat` on `saomnk_plot_bipartite_ring_markets()`,
+  `saomnk_plot_bipartite_ring_markets_animation()`, their R6 method twins and
+  `get_component_groups_list()` is deprecated in favour of `influence_matrix`.
+  The new name takes the old argument's position, so positional calls are
+  unaffected; the old name is kept as a trailing formal with a warning, and
+  the new name wins if both are supplied.
+
+* A terminology gate, `tests/testthat/test-terminology.R`, fails the suite if
+  "epistasis matrix" or "interaction matrix" reappears in R/, man/,
+  vignettes/ or inst/proofs/ outside the one allowed concordance sentence.
+  The 2026-08-21 audit found 67 stale uses after the API rename had
+  supposedly settled the question; the rule now lives in a test.
+
+## Bug fixes
+
+* `get_component_groups_list()` referenced a bare `N` where it meant
+  `self$N`, so calling it directly with an influence matrix errored with
+  "object 'N' not found". Found by the new deprecation test.
+
+## Documentation
+
+* Three help pages that carried stale titles were hand-maintained Rd files
+  that roxygen refuses to overwrite (45 of 160 pages are in that state,
+  marked "Generated manually for R CMD check compliance"); they are now
+  roxygen-owned, with aliases, arguments, value and examples preserved. Five
+  pages that existed only as roxygen sources (the four diagnostic screens and
+  their overview) are generated for the first time.
+
 # searchnet 0.8.1
 
 ## Bug fixes

@@ -94,7 +94,7 @@ NULL
 )
 
 
-#' Create a Block-Diagonal Epistasis Matrix
+#' Create a Block-Diagonal Influence Matrix
 #'
 #' Constructs an \eqn{N \times N}{N x N} binary block-diagonal matrix
 #' representing modular component interaction structure.  Each block is a
@@ -191,7 +191,10 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #'   structures.
 #'
 #'   This is the \emph{input} to the model: the influence matrix in the sense
-#'   of Rivkin and Siggelkow (2007).  It is distinct from epistasis, which is
+#'   of Rivkin and Siggelkow (2007), that is, the NK interaction matrix with
+#'   real-valued entries giving the magnitude and sign of one component's
+#'   influence on another's fitness contribution.  It is distinct from
+#'   epistasis, which is
 #'   the \emph{consequence} -- a portfolio's fitness running through \eqn{W}
 #'   as \eqn{X'WX}.  The realised epistasis of a simulated system is reported
 #'   separately as \eqn{K_{CC}}; see \code{\link{saomnk_get_degrees}}.
@@ -319,13 +322,13 @@ saomnk_model <- function(density            = -0.5,
                           ...) {
 
   ## -- 0. Deprecated arguments (renamed in 0.4.0) ------------------------- ##
-  ## `epistasis_*` -> `influence_*`.  W is the influence / interaction matrix
-  ## (the INPUT); epistasis is the fitness coupling it produces (the EFFECT),
+  ## `epistasis_*` -> `influence_*`.  W is the influence matrix (the INPUT);
+  ## epistasis is the fitness coupling it produces (the EFFECT),
   ## reported as K_CC.  Old names keep working, with a warning.
   .dep <- function(old_val, old_nm, new_nm, new_val, default = NULL) {
     if (is.null(old_val)) return(new_val)
     warning("`", old_nm, "` is deprecated as of searchnet 0.4.0; use `",
-            new_nm, "` instead. W is the influence (interaction) matrix, ",
+            new_nm, "` instead. W is the influence matrix, ",
             "the model INPUT; epistasis is the resulting fitness coupling, ",
             "reported as K_CC.", call. = FALSE)
     if (identical(new_val, default)) old_val else new_val

@@ -126,7 +126,7 @@ check("A3", sprintf("State space |S| = 2^(MN) = 2^%d = %d", M * N, n_states),
 ## A4: NK Landscape Definition
 
 > **Statement.** An NK landscape is a tuple $(N, K, \mathbf{A}, \{f_d\}_{d=1}^N)$
-> where $K \in \{0, \ldots, N-1\}$, $\mathbf{A}$ is the epistasis matrix, and
+> where $K \in \{0, \ldots, N-1\}$, $\mathbf{A}$ is the NK influence matrix, and
 > $f_d: \{0,1\}^{K+1} \to [0,1]$ are i.i.d.\ Uniform payoff functions.
 > Fitness: $W(\mathbf{x}) = \frac{1}{N}\sum_{d=1}^{N} f_d(\mathbf{x}_{\mathcal{N}(d)})$.
 
@@ -135,13 +135,13 @@ Total fitness is the average.
 
 ```{r A4}
 N <- 4; K <- 1
-## Build a simple epistasis matrix: each component depends on itself + next
+## Build a simple influence matrix: each component depends on itself + next
 A <- diag(N)
 for (d in 1:N) A[d, (d %% N) + 1] <- 1
 ## Each row sums to K+1 = 2
-check("A4a", "Epistasis matrix: diagonal is 1",
+check("A4a", "Influence matrix: diagonal is 1",
       all(diag(A) == 1))
-check("A4b", sprintf("Epistasis matrix: row sums = K+1 = %d", K + 1),
+check("A4b", sprintf("Influence matrix: row sums = K+1 = %d", K + 1),
       all(rowSums(A) == K + 1))
 
 ## Random payoff table: 2^(K+1) entries per component
@@ -153,16 +153,16 @@ check("A4d", "Payoff values in [0,1]",
       all(payoff_table >= 0) && all(payoff_table <= 1))
 ```
 
-## A5: Epistasis Matrix
+## A5: Influence Matrix
 
 > **Statement.** $\mathbf{A} \in \{0,1\}^{N \times N}$ with $A_{dd}=1$
 > and $\sum_j A_{dj} = K + 1$ for all $d$.
 
-*Plain English:* The epistasis matrix says which components influence each
+*Plain English:* The influence matrix says which components influence each
 other's payoff.
 
 ```{r A5}
-check("A5", "Epistasis matrix properties verified (see A4a, A4b)", TRUE)
+check("A5", "Influence matrix properties verified (see A4a, A4b)", TRUE)
 ```
 
 ## A6: Epistatic Neighborhood

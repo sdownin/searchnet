@@ -58,7 +58,7 @@ An NK landscape is defined by two integers:
 # Each component depends on itself + 1 other component
 N <- 4; K <- 1
 
-# Interaction matrix: component d depends on columns where E[d,] == 1
+# Influence matrix (binary pattern E): component d depends on columns where E[d,] == 1
 set.seed(7)
 E <- diag(N)
 for (d in 1:N) {
@@ -66,7 +66,7 @@ for (d in 1:N) {
   E[d, others] <- 1
 }
 
-cat("Epistasis matrix E (rows = components, cols = which bits matter):\n")
+cat("Influence matrix E (rows = components, cols = which bits matter):\n")
 E
 ```
 
@@ -170,7 +170,7 @@ To turn SaoMNK into plain NK, set five switches:
 ```{r restrictions-table, echo=FALSE}
 restrictions <- data.frame(
   Switch = c("R1", "R2", "R3", "R4", "R5"),
-  Setting = c("M = 1", "E = A (full epistasis matrix)",
+  Setting = c("M = 1", "E = A (full influence matrix)",
               "theta = 0 (no network effects)",
               "beta -> infinity (greedy search)",
               "Constant rate function"),
@@ -196,7 +196,7 @@ equivalent, then check that every possible configuration gets the same fitness.
 set.seed(42)
 N <- 6; K <- 2
 
-# Step 1: Generate shared interaction matrix
+# Step 1: Generate shared influence matrix
 E <- diag(N)
 for (d in 1:N) {
   if (K > 0) {

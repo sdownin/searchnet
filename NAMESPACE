@@ -102,6 +102,7 @@ export(saomnk_toggle_bipartite)
 export(saomnk_exists)
 export(create_block_diag)
 export(saomnk_empirical_epistasis)
+export(saomnk_empirical_influence)
 export(searchnet_proof)
 
 # ---------------------------------------------------------------------------

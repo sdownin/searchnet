@@ -10,7 +10,7 @@
 saomnk_plot_bipartite_ring_markets <- function(env,
                                                 step_ids = c(),
                                                 component_groups = NULL,
-                                                epistatic_int_mat = NULL,
+                                                influence_matrix = NULL,
                                                 actor_strategies = NULL,
                                                 component_labels = NULL,
                                                 actor_labels = NULL,
@@ -21,7 +21,8 @@ saomnk_plot_bipartite_ring_markets <- function(env,
                                                 path_linewidth = 0.8,
                                                 ring_radius = 11,
                                                 center_radius = 4,
-                                                market_alpha = 0.2) {
+                                                market_alpha = 0.2,
+                                                epistatic_int_mat = NULL) {
 
   affiliation_array <- env$bi_env_arr
 
@@ -42,11 +43,18 @@ saomnk_plot_bipartite_ring_markets <- function(env,
   S <- dims[3]  # Number of steps in decision chain
 
 
-  # Set default epistatic interaction matrix if not provided
-  if (is.null(epistatic_int_mat) && is.null(component_groups) &&
+  if (!is.null(epistatic_int_mat)) {
+    warning("`epistatic_int_mat` is deprecated as of searchnet 0.8.2; use ",
+            "`influence_matrix` instead. W is the influence matrix, the model ",
+            "INPUT; epistasis is the resulting fitness coupling, reported as K_CC.",
+            call. = FALSE)
+    if (is.null(influence_matrix)) influence_matrix <- epistatic_int_mat
+  }
+  # Set default influence matrix if not provided
+  if (is.null(influence_matrix) && is.null(component_groups) &&
       (is.null(env$markets) || is.null(env$markets$component_groups) )
       ) {
-    stop("Either epistatic_int_mat or component_groups must be provided")
+    stop("Either influence_matrix or component_groups must be provided")
   }
 
   ## use markets$component_groups if set during environment init
@@ -54,11 +62,11 @@ saomnk_plot_bipartite_ring_markets <- function(env,
     component_groups <- env$markets[['component_groups']]
   }
 
-  # If epistatic_int_mat is provided but component_groups is not, generate groups
-  if (is.null(component_groups) && !is.null(epistatic_int_mat)) {
-    # Convert interaction matrix to graph
+  # If influence_matrix is provided but component_groups is not, generate groups
+  if (is.null(component_groups) && !is.null(influence_matrix)) {
+    # Convert influence matrix to graph
     g <- graph_from_adjacency_matrix(
-      epistatic_int_mat,
+      influence_matrix,
       mode = "undirected",
       weighted = TRUE,
       diag = FALSE
@@ -485,7 +493,7 @@ saomnk_plot_bipartite_ring_markets <- function(env,
 saomnk_plot_bipartite_ring_markets_animation <- function(env,
                                                           step_ids = c(),
                                                           component_groups = NULL,
-                                                          epistatic_int_mat = NULL,
+                                                          influence_matrix = NULL,
                                                           actor_strategies = NULL,
                                                           component_labels = NULL,
                                                           actor_labels = NULL,
@@ -498,7 +506,8 @@ saomnk_plot_bipartite_ring_markets_animation <- function(env,
                                                           center_radius = 4,
                                                           market_alpha = 0.2,
                                                           animation_fps = 10,
-                                                          animation_duration = 10) {
+                                                          animation_duration = 10,
+                                                          epistatic_int_mat = NULL) {
 
   # Load required libraries if not already loaded
   if (!requireNamespace("gganimate", quietly = TRUE)) {
@@ -524,16 +533,23 @@ saomnk_plot_bipartite_ring_markets_animation <- function(env,
   S <- dims[3]  # Number of steps in decision chain
 
 
-  # Set default epistatic interaction matrix if not provided
-  if (is.null(epistatic_int_mat) && is.null(component_groups) && !is.null(env$markets)) {
+  if (!is.null(epistatic_int_mat)) {
+    warning("`epistatic_int_mat` is deprecated as of searchnet 0.8.2; use ",
+            "`influence_matrix` instead. W is the influence matrix, the model ",
+            "INPUT; epistasis is the resulting fitness coupling, reported as K_CC.",
+            call. = FALSE)
+    if (is.null(influence_matrix)) influence_matrix <- epistatic_int_mat
+  }
+  # Set default influence matrix if not provided
+  if (is.null(influence_matrix) && is.null(component_groups) && !is.null(env$markets)) {
     component_groups <- env$markets$component_groups
   }
 
-  # If epistatic_int_mat is provided but component_groups is not, generate groups
-  if (is.null(component_groups) && !is.null(epistatic_int_mat)) {
-    # Convert interaction matrix to graph
+  # If influence_matrix is provided but component_groups is not, generate groups
+  if (is.null(component_groups) && !is.null(influence_matrix)) {
+    # Convert influence matrix to graph
     g <- graph_from_adjacency_matrix(
-      epistatic_int_mat,
+      influence_matrix,
       mode = "undirected",
       weighted = TRUE,
       diag = FALSE

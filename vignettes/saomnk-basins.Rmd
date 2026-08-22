@@ -291,7 +291,7 @@ define **erosion** as the change in basin depth:
 
 $$\text{Erosion}(p) = \text{Depth}_{W_0}(p) - \text{Depth}_{W_1}(p)$$
 
-where $W_0$ and $W_1$ are the pre-shock and post-shock epistasis matrices.
+where $W_0$ and $W_1$ are the pre-shock and post-shock influence matrices.
 Positive erosion means the moat has weakened; negative erosion means the shock
 has deepened the basin (rare but possible when the shock reinforces existing
 complementarities).
@@ -311,13 +311,13 @@ entirely, with Blockbuster's former peak becoming a valley in the new landscape.
 
 In `searchnet`, shocks are implemented as changes to the `coDyadCovars`
 specification in the structure model.  To compute erosion, we evaluate the
-fitness landscape under both the pre-shock and post-shock epistasis matrices:
+fitness landscape under both the pre-shock and post-shock influence matrices:
 
 ```{r erosion-setup}
 # Pre-shock environment with high epistasis
 env_pre <- SaomNkRSienaBiEnv$new(list(M = 8, N = 8, BI_PROB = 0.4, rand_seed = 42))
 
-# Dense epistasis matrix (high K)
+# Dense influence matrix (high K)
 W_high <- create_block_diag(8, 4)
 
 structure_model_pre <- list(

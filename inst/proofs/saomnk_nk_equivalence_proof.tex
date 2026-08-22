@@ -122,7 +122,7 @@ An \emph{NK landscape} is a tuple $(N, K, \bA, \{f_d\}_{d=1}^N)$ where:
 \begin{enumerate}[label=(\roman*)]
   \item $N \in \N$ is the number of binary components.
   \item $K \in \{0, 1, \ldots, N-1\}$ is the epistasis parameter.
-  \item $\bA \in \{0,1\}^{N \times N}$ is the epistasis matrix with
+  \item $\bA \in \{0,1\}^{N \times N}$ is the NK influence matrix with
         $A_{dd} = 1$ for all $d$ (each component depends on itself) and
         $\sum_{j} A_{dj} = K+1$ for all $d$.
   \item $f_d : \{0,1\}^{K+1} \to [0,1]$ is the component payoff function,
@@ -173,7 +173,7 @@ $(M, N, \bE, \{f_d\}_{d=1}^N, \btheta, \beta)$ where:
 \begin{enumerate}[label=(\roman*)]
   \item $M \in \N$ is the number of actors.
   \item $N \in \N$ is the number of binary components.
-  \item $\bE \in \{0,1\}^{N \times N}$ is the epistasis matrix (with
+  \item $\bE \in \{0,1\}^{N \times N}$ is the influence matrix (with
         $E_{dd}=1$ for all $d$).
   \item $\{f_d\}_{d=1}^N$ is a set of component payoff functions, as in the NK
         model.
@@ -188,7 +188,7 @@ configuration.
 \begin{definition}[SaoMNK Utility]
 \label{def:saomnk_utility}
 Actor $i$'s utility from configuration $\bb_i$, given the configurations of all
-other actors $\bB_{-i}$ and epistasis matrix $\bE$, is
+other actors $\bB_{-i}$ and influence matrix $\bE$, is
 \begin{equation}
 \label{eq:saomnk_utility}
   u_i(\bb_i; \bB_{-i}, \bE)
@@ -253,7 +253,7 @@ def:saomnk_dynamics}\emph{)}. Specifically, the NK landscape and its adaptive
 walk are recovered exactly from SaoMNK under the following restriction:
 \begin{enumerate}[label=(R\arabic*)]
   \item\label{R1} $M = 1$ (single actor);
-  \item\label{R2} $\bE = \bA$ (SaoMNK epistasis matrix equals the NK interaction
+  \item\label{R2} $\bE = \bA$ (SaoMNK influence matrix equals the NK influence
         matrix, with $K+1$ ones per row);
   \item\label{R3} $\btheta = \mathbf{0}$ (all SAOM network-statistic parameters
         set to zero);
@@ -472,7 +472,7 @@ framework \citep{snijders2010introduction}.
 This is the most consequential departure from the NK model. In the standard
 NK model (and its multi-agent extensions), the fitness landscape $W(\bx)$
 is fixed and exogenous: it depends only on the payoff table $\{f_d\}$ and
-the epistasis matrix $\bA$. Other agents' configurations do not enter the
+the NK influence matrix $\bA$. Other agents' configurations do not enter the
 payoff function.
 
 In SaoMNK, the SAOM network statistics in \eqref{eq:saomnk_utility}

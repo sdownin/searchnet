@@ -266,7 +266,7 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
       size = guide_legend(order = 2, nrow = 2)
     )
 
-  # 3. Component interaction matrix heatmap
+  # 3. Component influence matrix heatmap
   component_matrix <- igraph::as_adjacency_matrix(ig_component, type = 'both', sparse = F, attr = 'weight')
 
   component_df <- melt(component_matrix)

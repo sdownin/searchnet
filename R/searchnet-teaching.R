@@ -161,7 +161,7 @@ searchnet_classroom_init <- function(n_students, n_rounds = 10, N = 12,
     name    = paste0("classroom_", industry)
   )
 
-  # ---- Build epistasis matrix ----
+  # ---- Build influence matrix ----
   epist_type <- preset$epistasis %||% "modular"
   n_blocks   <- preset$blocks %||% 3
   W <- saomnk_block_diagonal(N_actual, n_blocks)

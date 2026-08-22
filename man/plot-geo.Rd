@@ -12,6 +12,6 @@ to read on a map than in a force-directed layout: the question is usually
 whether coupling tracks geography or cuts across it, and only a geographic
 layout answers that by eye.
 
-These functions plot an interaction matrix over geographic coordinates,
+These functions plot an influence matrix over geographic coordinates,
 with edges drawn as great-circle arcs.
 }

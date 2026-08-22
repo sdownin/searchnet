@@ -759,7 +759,7 @@ cat("  shock <- saomnk_shock(effect, parameter, portion)\n")
 cat("  saomnk_run(env, model, shocks = list(s1, s2, ...))\n\n")
 
 cat("HELPERS:\n")
-cat("  saomnk_block_diagonal(N, blocks)  # modular epistasis matrix\n")
+cat("  saomnk_block_diagonal(N, blocks)  # modular influence matrix\n")
 ```
 
 ## The {K} Framework at a Glance

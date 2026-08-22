@@ -94,6 +94,6 @@ Brock, W. A. & Durlauf, S. N. (2001). Discrete choice with social
 interactions. \emph{Review of Economic Studies} 68(2), 235--260.
 
 Downing, S. (2026). Theorem 4: Gibbs stationary distribution and the
-Brock--Durlauf reduction of the SaoMNK ministep.  Working paper,
-\code{proofs/saomnk_dynamic_qre_brock_durlauf_equivalence.tex}.
+Brock--Durlauf reduction of the SaoMNK ministep.
+\code{inst/proofs/PROOF_TABLE.md}, rows L8, L10, L16--L18.
 }

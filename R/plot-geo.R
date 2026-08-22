@@ -8,7 +8,7 @@
 #' whether coupling tracks geography or cuts across it, and only a geographic
 #' layout answers that by eye.
 #'
-#' These functions plot an interaction matrix over geographic coordinates,
+#' These functions plot an influence matrix over geographic coordinates,
 #' with edges drawn as great-circle arcs.
 #'
 #' @name plot-geo
@@ -59,14 +59,14 @@ saomnk_geo_arc <- function(lon1, lat1, lon2, lat2, n = 50) {
 #  saomnk_plot_geo_network
 # ---------------------------------------------------------------------------- #
 
-#' Plot a component interaction matrix on geographic coordinates
+#' Plot a component influence matrix on geographic coordinates
 #'
-#' Draws the component-by-component interaction matrix \code{W} as a network
+#' Draws the component-by-component influence matrix \code{W} as a network
 #' positioned by real-world coordinates, with a world basemap. Edge opacity and
 #' width encode coupling strength; node size and fill encode any component-level
 #' attribute (component degree, actor count, treatment status).
 #'
-#' @param W Numeric \eqn{N \times N} interaction matrix. Row and column names
+#' @param W Numeric \eqn{N \times N} influence matrix. Row and column names
 #'   must match \code{coords$id}.
 #' @param coords Data frame with columns \code{id}, \code{lon}, \code{lat}.
 #' @param top_edges Integer. Draw only the strongest this-many edges, which

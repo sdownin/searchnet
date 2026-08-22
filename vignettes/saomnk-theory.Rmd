@@ -178,13 +178,13 @@ $f_d: \{0,1\}^{K+1} \to [0,1]$ is drawn i.i.d.\ from $\text{Uniform}(0,1)$
 
 For actor $i$ with affiliation vector $\mathbf{b}_i \in \{0,1\}^N$
 in the context of all other actors' affiliations $\mathbf{B}_{-i}$ and
-epistasis matrix $E \in \{0,1\}^{N \times N}$, the SaoMNK utility function
+influence matrix $E \in \{0,1\}^{N \times N}$, the SaoMNK utility function
 is:
 
 $$u_i(\mathbf{b}_i; \mathbf{B}_{-i}, E) = \underbrace{\sum_{d=1}^{N} b_{id} \cdot f_d(\mathbf{b}_i \odot E_{d\cdot})}_{\text{NK component}} + \underbrace{\sum_{k=1}^{p} \theta_k \cdot s_k(\mathbf{b}_i, \mathbf{B})}_{\text{SAOM statistics}}$$
 
 The first term is the epistatic fitness contribution, where $\odot$
-denotes element-wise masking by the $d$-th row of the epistasis matrix.
+denotes element-wise masking by the $d$-th row of the influence matrix.
 The second term captures endogenous network effects (density, popularity,
 scope, etc.) weighted by structural parameters $\theta_k$.
 
@@ -203,7 +203,7 @@ choice. The $1$ in the denominator represents the option of making no change.
 
 *Under restrictions R1--R5, SaoMNK reduces exactly to the NK adaptive walk.*
 
-The restrictions are: (R1) $M=1$ actor, (R2) epistasis matrix
+The restrictions are: (R1) $M=1$ actor, (R2) influence matrix
 $E = A$ fixed exogenously, (R3) all structural parameters $\theta_k = 0$,
 (R4) rationality $\beta \to \infty$ (greedy deterministic choice), and
 (R5) constant ministep rate. Under these conditions the choice rule
@@ -365,7 +365,7 @@ DV_NAME <- "self$bipartite_rsienaDV"
 ## Case 1: No Endogenous Effects (Pure Epistasis)
 
 When all structural effects are zero, actors search purely based on the
-exogenous epistasis matrix---mimicking the classical NK model:
+exogenous influence matrix---mimicking the classical NK model:
 
 ```{r case1-no-endogeneity}
 environ_params <- list(

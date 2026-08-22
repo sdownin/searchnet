@@ -89,3 +89,15 @@
 
 # --- Vignette build artifacts ---
 ^vignettes/.*\.txt$
+^inst/manim$
+^inst/scripts$
+^_pkgdown
+^\.claude$
+^tests/testthat/_.*\.html$
+^vignettes/_.*\.txt$
+^CLAUDE\.md$
+^HANDOFF_.*\.md$
+^JSS_SUBMISSION_PREP_.*\.md$
+^_debug_install\.R$
+^_jss_.*\.txt$
+^\.git$

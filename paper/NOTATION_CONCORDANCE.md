@@ -86,11 +86,11 @@ Both papers use identical {K} notation.
 
 This is the most important disambiguation between the two papers:
 
-- **E** (formal proofs): The N x N binary epistasis matrix encoding which components interact in the fitness function. E_{dd} = 1 for all d. This is the mathematical object in Definitions 1-5 of the CD2026 proofs.
+- **E** (formal proofs): The N x N binary influence matrix (the support of W) encoding which components interact in the fitness function. E_{dd} = 1 for all d. This is the mathematical object in Definitions 1-5 of the CD2026 proofs.
 
 - **W** (RSiena implementation): The N x N weight matrix supplied to RSiena's XWX bipartite effect. In practice, when encoding NK epistasis, W = E. But W can also encode continuous-valued complementarities (as in CD2026's simulation model, where W_{jk} represents synergy strength between activities j and k).
 
-- **A** (classical NK): The NK interaction matrix from Kauffman (1993). In the SAOM-NK reduction theorem, restriction (R2) sets E = A.
+- **A** (classical NK): The NK influence matrix (Kauffman's interaction matrix; Rivkin and Siggelkow 2007 use the name influence matrix). In the SAOM-NK reduction theorem, restriction (R2) sets E = A.
 
 Rule of thumb: Use **E** when writing formal mathematical statements about the SAOM-NK model. Use **W** when discussing RSiena implementation or empirical specifications. Use **A** when discussing the classical NK model specifically.
 
@@ -106,3 +106,39 @@ Rule of thumb: Use **E** when writing formal mathematical statements about the S
 8. Added cross-reference note: "Theorems 1-3 correspond to Theorems 1-3 in [CD2026]; Theorem 4 is specific to this paper"
 9. Changed NK $\subset$ SAOM to NK $\subsetneq$ SAOM-NK in feature comparison table
 10. Updated X'WX to B'WB in feature comparison table
+
+## Terminology concordance with Paper T (CD2026), recorded 2026-08-21
+
+Paper T (CD2026, commit 707f0b2, "TERMINOLOGY STANDARD") and searchnet 0.8.2
+share one standard: W is the influence matrix (the NK interaction matrix with
+real-valued entries giving the magnitude and sign of one activity's influence
+on another's fitness contribution); E is its binary influence pattern
+(support); A is the NK influence matrix; epistasis is the fitness
+interdependence W induces, reported as K_CC, which keeps the label
+"Epistasis". Theorem 1 (R2): E = A, the SAOM-NK influence matrix equals the NK
+influence matrix. The two documents are checked against each other so they
+cannot drift silently; these are the deliberate differences that remain:
+
+1. **Model name spelling.** The package, its proofs (`PROOF_TABLE.md`, the
+   equivalence proof tex) and the JSS paper write "SaoMNK" where Paper T
+   writes "SAOM-NK". Only the matrix term was swept; the name spelling is the
+   package's historical form and is left internally consistent. Paper T's R2
+   therefore reads "SAOM-NK influence matrix", the proof table's C2 "SaoMNK
+   influence matrix".
+2. **Where "interaction matrix" may still appear.** Paper T keeps one
+   definitional aside in Section 3.1 ("the NK interaction matrix with
+   real-valued entries"). searchnet keeps the same aside in exactly two
+   places: the `saomnk_model()` help for `influence_matrix` (and its generated
+   Rd) and the entry for A in this file ("Kauffman's interaction matrix"). The
+   README's "it is also called the interaction matrix" is the third, outside
+   the package sources. `tests/testthat/test-terminology.R` fails on any
+   other occurrence in R/, man/, vignettes/ or inst/proofs/.
+3. **Estimated influence matrices.** searchnet additionally names the
+   co-occurrence object built from observed data an *influence-matrix
+   estimate* (`saomnk_empirical_influence()`, and the bridge's W "estimated
+   from SIC co-occurrence"). Paper T has no corresponding object; this is an
+   extension of the standard, not a departure from it.
+4. **Scenario key.** `get_orm_scenarios()` keeps the list key
+   `epistasis_boost` ("What if component interdependencies doubled?"): it
+   doubles the XWX weight, i.e. the induced epistasis, so the name is correct
+   under the standard and it is a user-facing key.

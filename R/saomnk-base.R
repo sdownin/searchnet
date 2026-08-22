@@ -125,7 +125,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
     component_3_varCovar = NULL,
     component_4_varCovar = NULL,
     #
-    component_1_coDyadCovar = NULL,  ## constant interaction matrix covariate (NxN matrix)
+    component_1_coDyadCovar = NULL,  ## constant influence matrix covariate (NxN matrix)
     component_2_coDyadCovar = NULL,
     component_3_coDyadCovar = NULL,
     component_4_coDyadCovar = NULL,
@@ -146,7 +146,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
     component_19_coDyadCovar = NULL,
     component_20_coDyadCovar = NULL,
     #
-    component_1_varDyadCovar = NULL,  ## time varying interaction matrix covariate (NxNxT array) for T periods
+    component_1_varDyadCovar = NULL,  ## time-varying influence matrix covariate (NxNxT array) for T periods
     component_2_varDyadCovar = NULL,
     component_3_varDyadCovar = NULL,
     component_4_varDyadCovar = NULL,
@@ -171,7 +171,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
     #
     fitness_landscape = NULL, # Fitness landscape matrix
     progress_scores = c(),  # Track scores over iterations
-    P_change = NULL,          # Probability of changing the component interaction matrix
+    P_change = NULL,          # Probability of changing the component influence matrix
     #
     chain_stats = NULL,  ##
     #

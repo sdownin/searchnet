@@ -33,13 +33,6 @@ abstract: >
   researchers in strategic management, organizational theory, innovation
   economics, and computational social science who study search, adaptation,
   and competitive dynamics on complex landscapes.
-keywords:
-  - NK fitness landscape
-  - stochastic actor-oriented model
-  - bipartite network
-  - strategic search
-  - coupled degree
-  - R
 output:
   rmarkdown::pdf_document:
     keep_tex: true
@@ -79,6 +72,8 @@ library(ggplot2)
 library(Matrix)
 ```
 
+
+**Keywords**: NK fitness landscape, stochastic actor-oriented model, bipartite network, strategic search, coupled degree, R.
 
 # Introduction
 
@@ -152,6 +147,8 @@ estimated on empirical network panel data.
 \noindent A full-scale empirical application using eight data layers from the
 U.S.\ airline industry is reported in \citet{downing2026architecture}.
 
+![The $\K$ Interdependence System: four coupled degree dimensions emerging from the bipartite actor-component network. Adapted from Downing (2026a).](figures/cd2026_conceptual_architecture.png){width=85%}
+
 The package provides an \proglang{R6}-based simulation engine, a functional
 user API that abstracts away \pkg{RSiena}'s internal naming conventions,
 comprehensive visualization through the $\K$-4 panel and 3D phase space,
@@ -171,7 +168,8 @@ framework, the SAOM objective function, and the rationale for choosing SAOMs
 over ERGMs.  Section~4 describes the \pkg{searchnet} package architecture,
 user API, visualization tools, diagnostics, animation pipeline, interactive
 features, and proof registry.  Section~5
-provides three worked illustrations.  Section~6 presents computational
+provides three worked illustrations and introduces basin geometry analysis
+for the depth-width tradeoff.  Section~6 presents computational
 benchmarks and scalability analysis.  Section~7 concludes.
 
 
@@ -239,67 +237,6 @@ with respect to events, organizations, or other categorical entities.
 \pkg{searchnet} exploits this bipartite extension to model actors affiliating
 with components in a search environment.
 
-## Three foundations from one ancestor: McFadden, two branches, one CTMC {#sec:three-foundations}
-
-A central theoretical contribution of \pkg{searchnet} is that the same SAOM-NK
-Markov chain unifies two literatures of discrete choice that share
-\citet{McFadden1974}'s random-utility ancestor but evolved on parallel branches
-without cross-citation. The economics social-interactions branch
-\citep{BrockDurlauf2001, BlumeDurlauf2003, DurlaufIoannides2010} extends
-\citet{McFadden1974} by adding peer-coupling terms and characterising the
-equilibrium distribution via mean-field self-consistency
-$m^{*} = \tanh(\beta h + \beta J m^{*})$ with the multiplicity threshold
-$\beta J > 1$ \citep[Prop.\ 1]{BrockDurlauf2001}. The sociological
-network-dynamics branch \citep{Snijders1996, SnijdersSteglichSchweinberger2007,
-SnijdersVdBuntSteglich2010} extends \citet{McFadden1974} by embedding the logit
-choice in a continuous-time Markov ministep process over network-and-behaviour
-states, with method-of-moments estimation. \citet{PinkKretschmerLeszczensky2020}
-noted the absence of cross-citation between the two branches and bridged SAOM
-to baseline random utility maximisation, but did not connect SAOM to the
-equilibrium social-interactions branch. \pkg{searchnet}'s SAOM-NK model
-completes that bridge: the SAOM ministep dynamics provide the agent-level
-continuous-time process, and under rational expectations about peer behaviour
-the resulting stationary distribution coincides with the Brock--Durlauf
-mean-field equilibrium. The two literatures describe the same object, one as a
-dynamic process, the other as an equilibrium distribution.
-
-A statistical-mechanics analogy makes the duality precise: the SAOM ministep
-process is Glauber dynamics on the underlying Ising-like potential game
-\citep{Blume1993, MondererShapley1996}, and the Brock--Durlauf equilibrium is
-the thermodynamic free energy of that same potential. Same Hamiltonian, two
-views. Theorem 4 (SAOM--QRE Equivalence) formalises the dynamic-equilibrium
-correspondence: the SAOM CTMC's stationary distribution is a logit Quantal
-Response Equilibrium \citep{McKelveyPalfrey1995}. Theorem 5 (Brock--Durlauf
-Recovery) formalises the equilibrium-economic correspondence: in the
-$M \to \infty$, congestion-only, mean-field limit, that same stationary
-distribution reduces (componentwise) to the canonical \citet{BrockDurlauf2001}
-binary-choice equilibrium with $\beta J > 1$ multiplicity threshold. Theorem 5
-is the \emph{complementary} reduction to Theorem 1 (NK Reduction), which takes
-the single-actor / greedy / no-network limit. Together, Theorems 1 and 5
-establish that \pkg{searchnet} contains both \citet{Kauffman1993} NK landscape
-search and \citet{BrockDurlauf2001} discrete choice with social interactions
-as degenerate special cases of a single CTMC.
-
-\noindent The three foundations are detailed in Appendix~H of the Online
-Appendix and formally verified in PROOF\_TABLE.md (Part L, rows L1--L18).
-This triangulation -- with \citet{McFadden1974} as common ancestor and the
-SAOM-Brock--Durlauf duality as formal bridge -- is what allows \pkg{searchnet}
-to serve as a unified simulation and inference engine across strategy research,
-sociology of organisations, and discrete-choice econometrics. We use the
-modifier \emph{parallel non-cross-citing} advisedly: each branch cites
-\citet{McFadden1974} but rarely the other branch's downstream literature.
-\citet{PinkKretschmerLeszczensky2020} bridged SAOM to baseline RUM in one
-direction (SAOM $\to$ RUM); \pkg{searchnet}'s Theorems~4 and~5 extend that
-bridge to SAOM $\leftrightarrow$ RUM-with-social-interactions, closing the
-triangle. Reciprocal-citation status of all three lineage references is
-documented in PROOF\_TABLE.md row L18. The identification challenge raised by
-\citet{Manski1993} for linear peer-effects regressions (the ``reflection
-problem'') is resolved in \pkg{searchnet} by the logit nonlinearity, following
-\citet[Sec.\ 4]{BrockDurlauf2001}; this identification result extends to the
-bipartite case, providing the econometric foundation for the airline-rivalry
-application in our companion Management Science paper
-\citep{downing2026architecture}.
-
 ## Positioning \pkg{searchnet}
 
 No existing \proglang{R} package provides the capability that \pkg{searchnet}
@@ -322,6 +259,8 @@ NK configuration vector for a single agent is $\mathbf{x} \in \{0,1\}^N$; the
 influence matrix is $\mathbf{E}$ (implemented in \pkg{RSiena} as the weight
 matrix $\mathbf{W}$ of the \code{XWX} effect); component payoff functions are
 $f_d$; and the logit precision parameter is $\beta > 0$.
+
+A terminological note is warranted here, because the two ideas are routinely conflated.  The matrix $\mathbf{E}$ is an *influence matrix* in the sense of \citet{RivkinSiggelkow2007}: it states which components interact and with what sign, and it is an *input* supplied by the analyst.  *Epistasis* is the *consequence* -- the dependence of one component's fitness contribution on the states of others, which arises when a portfolio is evaluated through $\mathbf{E}$ as $\mathbf{x}^{\top}\mathbf{E}\mathbf{x}$.  The distinction matters in \pkg{searchnet} because the realised epistasis of a simulated system is measured separately, as the component-component degree $K_{CC}$, and generally differs from the influence structure that generated it.  Accordingly the package argument is named \code{influence\_matrix}; \code{epistasis\_matrix} is retained as a deprecated alias.
 
 ## Bipartite network formulation {#sec:bipartite}
 
@@ -369,6 +308,8 @@ Component epistasis & $K_{CC}$ & Co-occurring components per component & Compone
 \bottomrule
 \end{tabular}
 \end{table}
+
+![Empirical validation: $K_{AA}$ (competitive overlap) among U.S.\ domestic airlines, 1993--2025 (Downing 2026a). The 4.8-fold increase in pairwise overlap demonstrates the $\K$ system's capacity to track competitive convergence dynamics using real network panel data.](figures/cd2026_kaa_trajectory.png){width=80%}
 
 The classical NK parameter $K$ maps directly onto $K_{CC}$---the degree of a
 node in the component--component projection network.  Two components share a
@@ -545,7 +486,7 @@ in the package; access via \code{searchnet\_proof()}).
 of the SAOM-NK model.  Specifically, the NK landscape and its adaptive walk are
 recovered exactly under five restrictions: (R1)~$M = 1$ (single actor);
 (R2)~$\mathbf{E} = \mathbf{A}$ (SAOM-NK influence matrix equals the NK
-interaction matrix); (R3)~$\boldsymbol{\theta} = \mathbf{0}$ (all SAOM
+influence matrix); (R3)~$\boldsymbol{\theta} = \mathbf{0}$ (all SAOM
 parameters zero); (R4)~$\beta \to \infty$ (deterministic greedy choice);
 (R5)~uniform component selection probability.
 
@@ -762,6 +703,9 @@ expand scope ($K_{AC}$), they mechanically increase component popularity
 component epistasis ($K_{CC}$).  This coupling is the core mechanism through
 which individual search decisions endogenize the fitness landscape.
 
+![Application breadth: (left) Startup workforce $\K$-4 panel showing scope, popularity, sociality, and epistasis dynamics for 8 startups across 12 skill categories; (right) Phase space trajectory showing startup evolution through Network $\times$ Behavior $\times$ Fitness space.](figures/bort_k4_panel.png){width=45%}
+![](figures/bort_phase_space.png){width=45%}
+
 ### Network snapshots
 
 The \code{saomnk\_plot\_snapshots()} function renders the bipartite
@@ -883,6 +827,9 @@ diagnostics).  This pipeline is accessed through the
 \code{saomnk\_export\_manim()} method on the environment object and the
 \code{searchnet\_export\_phase\_space()} function for phase space data.
 
+![Manim animation capabilities: (a) Basin geometry narrative showing 4 policy types diverging to different basins on a 3D NK landscape; (b) Convergence climb showing airline agents ascending a rugged fitness surface; (c) Blume Ising logit clustering; (d) ELO tournament rating evolution.](figures/manim_basin_narrative.png){width=45%}
+![](figures/manim_convergence_climb.png){width=45%}
+
 ## Interactive features {#sec:interactive}
 
 \pkg{searchnet} includes two interactive modules that extend the simulation
@@ -938,15 +885,26 @@ theoretical claims summarized in Section~\ref{sec:formal-properties}.
 
 The first illustration establishes that \pkg{searchnet} can reproduce the
 core dynamics of the classical NK model under appropriate parameter settings.
-We configure a single-agent environment with no endogenous network effects,
-leaving only the exogenous influence matrix active.  This setting strips away
-all SAOM-specific mechanisms, reducing the model to a single searcher navigating
-a landscape whose ruggedness is determined solely by the exogenous coupling
-matrix---the functional equivalent of the classical NK search process.
+We configure an environment with no endogenous network effects, leaving only
+the exogenous influence matrix active.  Setting both \code{popularity} and
+\code{scope} to zero removes every term through which one actor's state can
+enter another's objective function, so the actors search *independently*: the
+model reduces to parallel single-searcher processes on a landscape whose
+ruggedness is determined solely by the exogenous coupling matrix, which is the
+functional equivalent of the classical NK search process.  We use $M = 2$ rather
+than $M = 1$ because \code{search\_rsiena()} requires at least two actors ---
+\pkg{RSiena}'s \code{sienaDataCreate()} does not accept a single-actor
+bipartite network.  For genuinely single-actor work the landscape methods
+(\code{compute\_fitness\_landscape}, \code{verify\_nk\_equivalence}) accept
+$M = 1$ directly, and Section~
+ef{sec:validation} uses them for exactly that.
 
 ```{r levinthal-setup, cache=TRUE}
-## Single agent, 12 components, empty start
-env_nk <- saomnk_env(M = 1, N = 12, density = 0, seed = 1234)
+## Two INDEPENDENT searchers (popularity = scope = 0 removes all coupling),
+## 12 components, empty start.  M >= 2 is required by RSiena's bipartite
+## data constructor; with the interaction terms zeroed the actors do not
+## influence one another, so each is a classical NK searcher.
+env_nk <- saomnk_env(M = 2, N = 12, density = 0, seed = 1234)
 
 ## Block-diagonal epistasis: 3 modules of 4 components (K ~ 3)
 K_levinthal <- saomnk_block_diagonal(12, 3)
@@ -967,11 +925,12 @@ Under this parameterization, the agent's search trajectory exhibits the
 signature features of NK dynamics: rapid initial improvement as the agent
 discovers complementary component clusters, followed by convergence to a
 local optimum where no single-component change improves utility.  The K-4
-panel (not shown for $M = 1$) reduces to the $K_{AC}$ trajectory (actor
-scope) and the $K_{CC}$ trajectory (epistasis), with the latter reflecting
-the fixed block-diagonal structure.
+panel reduces to the $K_{AC}$ trajectory (actor scope) and the $K_{CC}$
+trajectory (epistasis), with the latter reflecting the fixed block-diagonal
+structure; the $K_{CA}$ and $K_{AA}$ channels are flat by construction, since
+nothing couples the two searchers.
 
-```{r levinthal-degrees, fig.height=3.5, fig.width=6, fig.cap="Actor scope ($K_{AC}$) trajectory for a single agent searching on a block-diagonal epistasis landscape.  The trajectory shows rapid scope expansion followed by stabilization---the SAOM equivalent of convergence to a local optimum on a rugged NK landscape."}
+```{r levinthal-degrees, fig.height=3.5, fig.width=6, fig.cap="Actor scope ($K_{AC}$) trajectory for independent agents searching on a block-diagonal epistasis landscape.  The trajectory shows rapid scope expansion followed by stabilization---the SAOM equivalent of convergence to a local optimum on a rugged NK landscape."}
 env_nk$plot_actor_degrees(loess_span = 0.5)
 ```
 
@@ -1093,6 +1052,8 @@ with and without a parameter intervention---is the basis for difference-in-diffe
 \pkg{searchnet} supports natively through its shock infrastructure and
 multi-wave simulation capabilities.
 
+![Empirical shock analysis: COVID-19 impact on airline route competition. Pre-shock overlap does not predict recovery ($r = 0.18$, $p = 0.672$, n.s.). The panel is shown as a null result: the $\{K\}$ measures are what make the non-finding legible, and an earlier survival contrast drawn from these data did not survive controls in the source study.](figures/cd2026_covid_shock.png){width=80%}
+
 
 ## From shocks to causal inference {#sec:causal}
 
@@ -1153,6 +1114,8 @@ if (!is.null(panel) && requireNamespace("did", quietly = TRUE)) {
 }
 ```
 
+![Causal inference application: Difference-in-differences analysis of subsidy effects on firm exploration behavior, showing treated firms shift toward risk-taking after policy intervention.](figures/amr_did_analysis.png){width=80%}
+
 The connection between simulation shocks and causal inference is not merely
 a convenience.  In empirical strategy research, difference-in-differences
 designs require a credible source of exogenous variation and a parallel trends
@@ -1168,6 +1131,196 @@ those estimated from observational data.
 For a complete treatment of the causal inference workflow, including staggered
 adoption designs, sensitivity analysis, and integration with empirical panel
 data, see the \code{vignette("causal-inference", package = "searchnet")}.
+
+
+## Basin geometry and the depth-width tradeoff {#sec:basins}
+
+The \pkg{searchnet} package provides tools for analyzing the geometry of
+fitness landscape basins---regions of the configuration space that converge
+to local optima under gradient ascent.  Basin analysis quantifies two
+fundamental properties of competitive positions.
+
+**Basin depth** measures the fitness gap between a local peak and its basin
+boundary:
+\begin{equation}\label{eq:basin-depth}
+  \text{Depth}(p) = F(p) - \frac{1}{|\partial B(p)|} \sum_{x \in \partial B(p)} F(x),
+\end{equation}
+where $\partial B(p)$ is the boundary of basin $B(p)$.  Depth corresponds
+to the resource-based view's concept of competitive advantage sustainability
+\citep{barney1991firm}.
+
+**Basin width** measures the mean Hamming distance of basin members from the
+peak:
+\begin{equation}\label{eq:basin-width}
+  \text{Width}(p) = \frac{1}{|B(p)|} \sum_{x \in B(p)} d_H(x, p).
+\end{equation}
+Width captures strategic flexibility---the number of distinct configurations
+that converge to the same competitive outcome.
+
+### Computing basin geometry
+
+The \code{compute\_fitness\_landscape()} method enumerates configurations
+and identifies local peaks:
+
+```{r basin-landscape, eval=FALSE}
+env <- SaomNkRSienaBiEnv$new(list(M = 8, N = 8, BI_PROB = 0.4, rand_seed = 42))
+env$compute_fitness_landscape(n_landscapes = 1)
+
+## Extract landscape data
+landscape <- env$fitness_landscape[1,,]
+N <- env$N
+configs  <- landscape[, 1:N]
+fitness  <- landscape[, 2*N + 1]
+is_peak  <- landscape[, 2*N + 2] == 1
+```
+
+Basin assignment proceeds by mapping each configuration to its nearest peak
+via Hamming distance, then computing depth and width for each basin.
+
+### The depth-width tradeoff
+
+A key theoretical result emerges from varying epistasis (the NK parameter
+$K$).  As $K$ increases, the landscape becomes more rugged: basins
+proliferate, deepen, and narrow.  This creates a fundamental tradeoff:
+
+\begin{itemize}
+\item High $K$: deep, narrow basins---strong competitive moats but limited
+  strategic flexibility.
+\item Low $K$: shallow, wide basins---weak moats but high adaptability.
+\end{itemize}
+
+\noindent The following code plots the tradeoff once the basin statistics have been computed.  Each
+point represents a basin; size encodes population.  The diagonal separates
+exploitation-dominant positions (upper-left) from exploration-dominant
+positions (lower-right).
+
+```{r depth-width, eval=FALSE, fig.cap="Depth-width scatter for fitness landscape basins.  Each point is a basin; marker size is proportional to the number of configurations in the basin.  The diagonal separates exploitation-dominant (upper-left) from exploration-dominant (lower-right) positions."}
+par(mar = c(5, 5, 3, 2))
+plot(basin_width, basin_depth,
+     pch = 19, cex = sqrt(basin_pop),
+     col = adjustcolor("steelblue", 0.7),
+     xlab = "Basin Width (mean Hamming distance)",
+     ylab = "Basin Depth (fitness gap to rim)")
+abline(a = 0, b = 1, lty = 2, col = "gray50")
+```
+
+### Landscape erosion under shocks
+
+When shocks modify the influence matrix $\mathbf{W}$, the landscape
+reshapes.  The \pkg{searchnet} shock infrastructure enables systematic
+measurement of **landscape erosion**:
+\begin{equation}\label{eq:erosion}
+  \text{Erosion}(p) = \text{Depth}_{\mathbf{W}_0}(p) - \text{Depth}_{\mathbf{W}_1}(p).
+\end{equation}
+
+\noindent Positive erosion indicates VRIO advantage degradation.  The
+\code{shock\_theta\_matrix()} function implements regime changes at
+designated iterations, enabling pre- vs.\ post-shock basin comparison
+within a single simulation run.
+
+### Connection to strategic management theory
+
+Basin geometry bridges two dominant theories:
+
+\begin{itemize}
+\item The \emph{resource-based view} \citep{barney1991firm} predicts that
+  deep basins sustain competitive advantage---partial imitation yields much
+  lower fitness.
+\item \emph{Dynamic capabilities} \citep{teece1997dynamic} become necessary
+  when landscape erosion reduces basin depth below a viability threshold.
+\end{itemize}
+
+\noindent The depth-width ratio $\text{Depth}(p) / \text{Width}(p)$
+operationalizes the exploitation--exploration tradeoff at the landscape
+level: high ratios favor exploitation (strong position, stay put), low
+ratios favor exploration (weak position, search for new peaks).
+
+
+## Empirical calibration via SAOM parameter bridge {#sec:calibration}
+
+The \pkg{searchnet} package includes a calibration bridge that converts
+fitted SAOM parameters from empirical network panel data into calibrated
+SaoMNK simulation environments.  This enables researchers to run validated
+counterfactual simulations using empirically grounded parameter estimates
+rather than ad hoc parameter choices.
+
+### Parameter mapping
+
+Both frameworks use the actor-oriented conditional logit utility
+\begin{equation}\label{eq:calibration-utility}
+  U_i(x) = \sum_k \theta_k \, s_{ik}(x),
+\end{equation}
+where $s_{ik}(x)$ is the network statistic for effect $k$.  The bridge
+maps \pkg{RSiena}'s $\hat{\theta}$ vector to \pkg{searchnet}'s structure
+model effects.  For shared effects the mapping is direct:
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{llc}
+\toprule
+SAOM Effect & SaoMNK Effect & Transformation \\
+\midrule
+\code{density}   & \code{density}    & $\beta = \theta \cdot \alpha$ \\
+\code{inPopSqrt} & \code{inPop}      & $\beta = \theta \cdot \alpha$ \\
+\code{gwespFF}   & \code{transTriads} & $\beta = \theta \cdot \alpha$ \\
+\code{simX}      & \code{egoX}       & $\beta = \theta \cdot \alpha$ \\
+\code{cycle3}    & \code{cycle4}     & $\beta = \theta \cdot \alpha$ (bipartite analog) \\
+\bottomrule
+\end{tabular}
+\caption{Parameter mapping between RSiena and \pkg{searchnet}. $\alpha$ is
+an optional scale factor applied during calibration.}
+\label{tab:param-mapping}
+\end{table}
+
+### Code example
+
+The calibration workflow involves three steps: parameter conversion,
+environment initialization from empirical data, and counterfactual
+execution.
+
+```{r calibration-example, eval=FALSE}
+## Convert fitted SAOM parameters to SaoMNK
+bridge <- saom_to_saomnk(saom_fit, scale_factor = 1.0)
+print(bridge$mapping_table)
+
+## Initialize environment from empirical data
+env_data <- empirical_to_saomnk_env(mi_data, wave = 5)
+
+## Run calibrated counterfactual
+result <- run_calibrated_counterfactual(
+  env_data, bridge,
+  scenario = list(name = "double_closure",
+                  modify = list(transTriads = 2.0)),
+  iterations = 50
+)
+cat(sprintf("K_AC change: %.3f\n", result$comparison$delta_K_AC))
+```
+
+### Predefined counterfactual scenarios
+
+The package includes six predefined scenarios relevant to the ORM
+comparison study \citep{downing2026architecture}:
+
+\begin{enumerate}
+\item \textbf{Density shock}: Exogenous reduction in network density
+  (e.g., deregulation increasing market access).
+\item \textbf{Double closure}: Doubling the transitive triad parameter to
+  simulate increased alliance clustering.
+\item \textbf{Popularity concentration}: Amplifying preferential attachment
+  to model winner-take-all dynamics.
+\item \textbf{Scope expansion}: Increasing actor scope to simulate
+  diversification strategies.
+\item \textbf{Epistasis rewiring}: Modifying the component interaction
+  matrix to simulate modular-to-integral design shifts.
+\item \textbf{Attribute homophily}: Strengthening similarity-based
+  affiliation to model industry convergence.
+\end{enumerate}
+
+\noindent Each scenario modifies the calibrated parameter vector and
+re-runs the simulation, yielding a comparison structure with changes in
+all four $\K$ dimensions, basin geometry, and fitness distributions.  For
+a full worked example see \code{vignette("saomnk-calibration", package =
+"searchnet")}.
 
 
 # Computational performance {#sec:performance}
@@ -1203,7 +1356,10 @@ time_rsiena <- system.time({
   net_end   <- matrix(0L, nrow = 4, ncol = 6)
   dep_var   <- RSiena::sienaDependent(
     array(c(net_start, net_end), dim = c(4, 6, 2)),
-    type = "bipartite", nodeSet = c("actors", "components")
+    type = "bipartite", nodeSet = c("actors", "components"),
+    ## Both waves are empty, so without allowOnly = FALSE RSiena infers that no
+    ## change is admissible and siena07 rejects the model as having no effects.
+    allowOnly = FALSE
   )
   actors_set <- RSiena::sienaNodeSet(4, nodeSetName = "actors")
   comp_set   <- RSiena::sienaNodeSet(6, nodeSetName = "components")
@@ -1211,6 +1367,8 @@ time_rsiena <- system.time({
     dep_var,
     nodeSets = list(actors_set, comp_set)
   )
+  ## getEffects() already includes the rate and density terms for a bipartite
+  ## dependent variable, which is the specification being timed.
   eff_raw <- RSiena::getEffects(dat_raw)
   alg_raw <- RSiena::sienaAlgorithmCreate(
     projname = "bench_raw",
@@ -1399,6 +1557,468 @@ In summary, \pkg{nkmodel} provides NK landscapes without networks,
 neither natively.  \pkg{searchnet} bridges both traditions, adding the $\K$
 interpretive framework and a causal inference pipeline that none of the
 alternatives offer.
+
+## Applications {#sec:applications}
+
+The $\K$ formulation is currently exercised by eight independent research
+programs.  They differ in how much of \pkg{searchnet} they use, and the
+distinction matters for a software paper: a package can be used as a simulation
+engine, as a post-estimation layer over \pkg{RSiena}, or as a reference
+implementation to check an independent one against.  All three modes appear
+below, and we label each rather than presenting a uniform façade.  Each vignette states a
+problematization, the specification that answers it, and a takeaway, so that a
+reader can find the closest case to their own problem quickly.  We separate two
+groups: applications that run \pkg{searchnet} today, and *refactor candidates*
+--- studies built on the same $\K$ formulation with bespoke code, for which we
+name the specific capability that would let the package absorb them.  The second
+group is included deliberately: the gap between a framework and a package is
+most visible where a user would currently have to write their own engine.
+
+| Application | Domain | Mode of use | $\K$ channels driven |
+|---|---|---|---|
+| Competitive convergence | U.S. airlines, 1993--2025 | Reference implementation, conformance-checked | $K_{AC}$, $K_{CC}$, $K_{CA}$, $K_{AA}$ |
+| Architectural shocks | Repositioning under innovation | Simulation engine | $K_{CC}$, $K_{AA}$, rate |
+| Workforce formation | Startup hiring | Simulation engine, calibrated | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
+| Policy shocks | Subsidies and risk-taking | Simulation engine, shock schedule | $K_{AC}$, $K_{CC}$, covariate |
+| Firm vs.\ industry effects | Variance decomposition | Simulation engine | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
+| Market-access institutions | Cross-border expansion | Post-estimation layer | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
+| Evaluator discipline | Venture capital | Bespoke code; time-varying $W$ added in 0.7.0 | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
+| Basin geometry | Industrial policy | Refactor candidate (tournament driver) | $K_{AC}$, $K_{CC}$, $K_{AA}$ |
+
+Two channels deserve a warning that applies throughout.  First, $K_{CA}$ is
+driven by \code{inPop} (degree popularity), not by similarity-weighted
+imitation.  \pkg{RSiena}'s effect set for a bipartite dependent variable
+contains no similarity effect: \code{simEgoInDist2} is defined for one-mode
+networks only.  \pkg{searchnet} supplies the statistic for post-hoc computation
+but cannot make it a simulable evaluation term, and no application below uses it
+as one.  Second, $K_{AA}$ is a *projection*, so it is frequently measured as an
+outcome rather than entered as an effect; the table records what is driven, not
+what is reported.
+
+### Competitive convergence in U.S.\ airlines {#sec:app-airlines}
+
+**Research question.**  Rival firms often come to resemble one another, and the
+resemblance is routinely read as evidence of imitation.  Does it license that
+inference?  Between 1993 and 2025 pairwise route overlap among U.S.\ carriers
+rose 4.8-fold (mean pairwise Jaccard $0.0076 \rightarrow 0.0364$) while
+concentration on contested routes *declined* --- a pattern imitation accounts
+do not predict.
+
+**Construct and channels.**  The claim under test is *architectural channeling*:
+that shared activity-system structure alone funnels independent, boundedly
+rational search into overlapping configurations, so convergence arises with no
+firm copying another.  This is a statement about $K_{CC}$ (the interaction
+matrix $W$) producing $K_{AA}$ (pairwise overlap) without $K_{CA}$ (imitation)
+doing any work, and it is testable only counterfactually --- by deleting
+channels one at a time and re-running the same seeds.
+
+**Design.**  $M = 30$ firms, $N = 256$ activities, 100 rounds; $W$
+parameterised by pattern (random, modular, hierarchical) crossed with epistatic
+density; the main sweep crosses 2 densities $\times$ 8 rivalry $\times$ 8
+imitation values, 10 replications each, for 1{,}280 runs.
+
+**Results.**  Deleting channels from the calibrated model separates them
+cleanly.  Terminal $\bar K_{AA}$ at round 100, ten replications per scenario:
+
+| Scenario | $\bar K_{AA}$ | 95\% interval | Fold |
+|---|---|---|---|
+| Baseline (calibrated) | 0.034 | 0.020--0.052 | 1.00 |
+| Imitation removed ($K_{CA} = 0$) | 0.108 | 0.086--0.128 | **3.2** |
+| Epistasis removed ($K_{CC} = 0$) | 0.010 | 0.007--0.017 | 0.29 |
+| All competition removed | 0.399 | 0.322--0.543 | 11.7 |
+
+Removing imitation *raises* convergence 3.2-fold, and removing epistasis
+collapses it by 71 percent.  Under similarity-weighted imitation firms chase
+whichever peers resemble them, which disperses them across the space; shared
+structure is what concentrates them.  A 54-cell robustness sweep finds the
+ordering holds in 27 of 27 hierarchical cells and 17 of 27 modular cells, which
+scopes the claim to architectural regime rather than asserting it universally.
+
+![Industry trajectory. Mean pairwise route overlap among U.S. carriers 1993--2025 with era shading and merger markers, the empirical series the simulation is calibrated against.\label{fig:kaatraj}](figures/cd2026_kaa_trajectory.png){width=100%}
+
+**Mode of use, stated plainly.**  This application predates the package.  Its
+simulation results come from an independent procedural implementation, and
+\pkg{searchnet} enters as a second implementation checked against it.  That
+arrangement is worth describing because it is how the package is validated in
+practice.  A conformance harness runs nine parameter cells $\times$ three seeds
+through both implementations and compares them on three layers: structural
+agreement, trajectory hashes, and *invariants* --- the NK reduction of
+Theorem 1 (Reduction) and monotonicity of crowding in the rivalry
+parameter.  Its design note states the discipline that makes such a comparison
+meaningful:
+
+> \pkg{searchnet} is R6 over \pkg{RSiena} and the reference engine is
+> procedural, so bit-identical trajectories are *not* expected: the random
+> number stream is consumed in a different order.  Reporting a cross-paradigm
+> trajectory mismatch as a defect would be a category error.
+
+Structural and invariant layers must agree; trajectory hashes need not.  We
+recommend this three-layer split to anyone validating a simulation package
+against an existing implementation.
+
+A second discipline this application enforces is worth transferring.  The
+potential-game property of Section~\ref{sec:formal-properties} was tested *on
+the simulation code* rather than on a reduced model: add an activity, then drop
+it, and net utility must return to zero.  It does, to machine precision, for the
+core specification.  The same probe *locates* the boundary --- with
+similarity-weighted imitation active the path integral deviates by 2.68 at
+calibrated coefficients, because that term depends on rivals' performances,
+which move when the focal firm moves.  The formal guarantees are therefore
+claimed for the core specification only, and the probe is what draws the line.
+
+
+
+**Takeaway.**  Convergence is produced by shared structure, not by copying: the
+channel whose removal *raises* overlap cannot be the channel generating it.  For
+package users, the transferable practice is the three-layer conformance split and
+the path-integral probe that marks where a formal guarantee stops.
+
+### Architectural shocks and the rate--evaluation split {#sec:app-shocks}
+
+**Research question.**  When an innovation reshapes which activities complement
+which, firms differ in how fast they can respond.  Can the *cost of effecting*
+a repositioning be separated from the *value of the destination* using
+observational data?  Archival panels record the option taken and never the
+options declined, so "did not reposition" is equally consistent with *could not
+afford to* and *did not want to*.
+
+**Construct and channels.**  This is the application that exploits the SAOM's
+distinctive factorisation.  The rate function $\lambda_i$ governs *how often*
+an actor gets to move; the evaluation function $f_i$ governs *where* it moves.
+Adjustment cost is a rate quantity and destination value is an evaluation
+quantity, so a model that separates them can identify what a single-equation
+model cannot.  The design manipulates \code{RateX} alone and holds the
+evaluation function *identical* across arms --- the covariate effect is declared
+with \code{parameter = 0} precisely so that it is inert.
+
+**Design.**  $M = 12$ actors, $N = 12$ components, 30 iterations per actor (360
+ministeps), 20 seed pairs.  $K_{CC}$ shifts mid-run: two \code{XWX} dyadic
+covariates carry $W_{\text{pre}}$ and $W_{\text{post}}$, and \code{theta\_shocks}
+flips their weights from $(1,0)$ to $(0,1)$ at the midpoint, so the firm's
+position carries across the switch and is re-scored under the new structure.
+
+![The $K_{CC}$ switch. Left, the pre-shock influence matrix $W_{\text{pre}}$; centre, the post-shock $W_{\text{post}}$; right, their difference. The shock schedule flips the weights of two \code{XWX} covariates at the midpoint, so actors carry their positions across a change in which components complement which.\label{fig:wswitch}](figures/ishock_w_switch.png){width=100%}
+
+```r
+Wpre  <- create_block_diag(N, 2)
+Wpost <- create_block_diag(N, 3)
+
+mkm <- function(rateX) {
+  rts <- if (rateX == 0) list() else list(
+    list(effect = "RateX", parameter = rateX, dv_name = DV, fix = TRUE,
+         interaction1 = "self$strat_1_coCovar"))
+  list(dv_bipartite = list(name = DV, rates = rts,
+    effects = list(
+      list(effect = "density", parameter = -0.6, dv_name = DV, fix = TRUE),
+      list(effect = "inPop",   parameter = -0.4, dv_name = DV, fix = TRUE)),
+    coCovars = list(
+      list(effect = "egoX", parameter = 0, dv_name = DV, fix = TRUE,
+           interaction1 = "self$strat_1_coCovar", x = grp)),
+    coDyadCovars = list(
+      list(effect = "XWX", parameter = 1, dv_name = DV, fix = TRUE,
+           nodeSet = c("COMPONENTS", "COMPONENTS"),
+           interaction1 = "self$component_1_coDyadCovar", x = Wpre),
+      list(effect = "XWX", parameter = 0, dv_name = DV, fix = TRUE,
+           nodeSet = c("COMPONENTS", "COMPONENTS"),
+           interaction1 = "self$component_2_coDyadCovar", x = Wpost))))
+}
+
+shocks <- list(
+  list(effect_level = c("XWX_1", "XWX_2"), parameter = c(1, 0), portion = 1, shock_on = 0),
+  list(effect_level = c("XWX_1", "XWX_2"), parameter = c(0, 1), portion = 1, shock_on = 1))
+
+env <- SaomNkRSienaBiEnv$new(list(M = M, N = N, BI_PROB = 0.3, rand_seed = 7000 + s))
+env$search_rsiena(structure_model = mkm(rateX), iterations_per_actor = 30,
+                  run_seed = 7000 + s, theta_shocks = shocks)
+```
+
+**Results.**  The rate manipulation separates cleanly: with \code{RateX = 2},
+quick-to-act actors make 51.0 tie changes against 6.7 for slow-to-act, a ratio
+of 7.6, while the control arm sits at 1.05.  Every one of 40 runs shows a
+post-shock fitness valley.  Two results are reported as null and should be:
+neither valley depth ($p = 0.18$) nor time to trough ($p = 0.50$) differs
+between arms.
+
+The substantive finding is a selection wedge.  Comparing movers to
+non-movers in the same treated world gives $-0.054$; comparing each mover to its
+own matched counterfactual gives $-0.032$; the difference, $-0.022$
+($t = -2.46$, $p = 0.015$), is what the observational comparison attributes to
+repositioning that is in fact selection.  Notably, applying the *airline*
+project's decomposition to the same runs gives a mean wedge of $-0.002$ ---
+degenerate, exactly as that decomposition's algebraic identity requires.  Two
+conventions, one dataset, opposite informativeness: a reminder that a
+decomposition's benchmark determines what it can detect.
+
+
+![Rate separation. With \code{RateX} active, quick-to-act actors make 51.0 tie changes against 6.7 for slow-to-act (ratio 7.6) while the control arm sits at 1.05, with evaluation functions held identical across arms.\label{fig:rateseparation}](figures/ishock_rate_separation.png){width=100%}
+
+**Takeaway.**  Separating the rate function from the evaluation function turns an
+unidentified question --- was the firm unwilling or unable? --- into two estimable
+quantities.  A decomposition's benchmark determines what it can detect: the same
+runs yield a significant wedge under one convention and a degenerate zero under
+another.
+
+### Startup workforce formation {#sec:app-workforce}
+
+**Research question.**  Startups hire to build capability, but breadth carries a
+coordination cost.  When does successful co-construction foreclose its own
+continuation?  The Penrose Effect predicts an inverted-U between workforce
+breadth and performance.
+
+**Construct and channels.**  Actors are startups, components are skills.
+Workforce breadth is $K_{AC}$ (\code{outAct}); competition for the same scarce
+skills is $K_{CA}$ (\code{inPop}); skill complementarity within a team is
+$K_{CC}$, entered as an empirically estimated $W$.  Labour-market overlap
+between startups is $K_{AA}$ and is *measured but not driven* --- a good
+illustration of the projection channel used as an outcome.
+
+**Design and calibration.**  $M = 50$ startups, $N = 12$ skills, 20 steps per
+actor.  The parameters are not chosen; they are \pkg{RSiena} point estimates
+from a fitted bipartite SAOM on Crunchbase founding cohorts
+(\code{density} $= -1.756$, \code{inPop} $= 0.022$, \code{outAct} $= 0.089$),
+carried into simulation through the functional API:
+
+```r
+env <- saomnk_env(M = 50, N = 12, density = 0.3, seed = seed)
+
+mod <- saomnk_model(
+  density          = -1.756,   # fitted
+  popularity       =  0.022,   # fitted (K_CA)
+  scope            =  0.089,   # fitted (K_AC)
+  influence_matrix = W_emp,    # empirical epistasis (K_CC)
+  influence_weight = -0.062)
+
+saomnk_run(env, mod, steps_per_actor = 20L, seed = seed + 7L)
+degs <- saomnk_get_degrees(env)   # K_AC, K_CA, K_AA, K_CC read out together
+```
+
+![Utility decomposition for the workforce application, separating each actor's objective into its density, scope and epistasis contributions. The scope term is positive at the fitted parameters, which is why no inverted U appears.\label{fig:bortwaterfall}](figures/bort_utility_waterfall.png){width=85%}
+
+**Results, including a negative one.**  Under the calibrated specification the
+inverted-U *does not appear*: the quadratic coefficient is positive in all seven
+conditions.  The diagnosis is transparent rather than mysterious --- the fitted
+\code{outAct} is $+0.089$, so the estimated model contains no scope-cost term,
+and a curve with no cost cannot bend down.  Re-specifying with \code{scope} $< 0$
+recovers the inverted-U in 8 of 27 cells, and every one of those 8 sits at the
+empirical popularity value.  A further design lets the scope cost regenerate
+from the realised landscape each wave; the inverted-U appears, but the
+emergence ratio is $\approx 0.99$, meaning the curvature passes through from the
+imposed cost rather than being generated by feedback.  We report this because it
+is the kind of result a simulation package should make easy to obtain and hard
+to overstate: the mechanism was not found, and the reason it was not found is
+legible in the fitted parameters.
+
+
+![Workforce application. Left, the $\K$-4 panel for 50 startups over 250 steps, showing all four channels read out together. Right, breadth ($K_{AC}$) against utility; the relationship is monotone and concave, that is diminishing returns, not the inverted U the Penrose Effect predicts.\label{fig:workforce}](figures/bort_k4_panel.png){width=49%}
+![](figures/bort_phase_space.png){width=49%}
+
+**Takeaway.**  Calibrating to fitted coefficients rather than to chosen ones makes
+a simulation falsifiable, and here it falsified the expected result: no inverted U
+appears because the fitted scope term is positive, so the model contains no
+coordination cost to bend the curve.
+
+### Policy shocks and risk-taking {#sec:app-policy}
+
+**Research question.**  When a government subsidy arrives and later withdraws,
+do treated firms shift toward exploratory activity, and does the shift persist
+once the support is removed?
+
+**Construct and channels.**  A subsidy is modelled as a timed change in an
+actor-covariate effect rather than as a change in the landscape: eligible firms
+receive a positive \code{egoX} weight, together with interactions on scope
+(\code{outAct|egoX}) that make the subsidy's effect depend on how broad the
+firm already is.  $K_{CC}$ carries the exploration structure through \code{XWX}
+with a component risk matrix.  The design exercises \pkg{searchnet}'s shock
+schedule in its three-regime form --- pre-policy, policy, post-policy --- which
+is the natural way to represent a temporary intervention:
+
+```r
+theta_shocks <- list(
+  list(effect_level = c("egoX", "outAct|egoX_1", "outActSqrt|egoX_2"),
+       parameter = c(0, 0, 0),             portion = pre_portion,    shock_on = 0),
+  list(effect_level = c("egoX", "outAct|egoX_1", "outActSqrt|egoX_2"),
+       parameter = c(1, h1_val, h2_val),   portion = policy_portion, shock_on = 1),
+  list(effect_level = c("egoX", "outAct|egoX_1", "outActSqrt|egoX_2"),
+       parameter = c(0, 0, 0),             portion = post_portion,   shock_on = 0))
+
+env <- SaoMNK$new(list(M = M, N = N, init_matrix = init_matrix))
+env$search_rsiena(structure_model = structure_model,
+                  theta_shocks    = theta_shocks,
+                  iterations_per_actor = n_iterations_per_actor * env$N,
+                  run_seed = run_seed)
+```
+
+**Design.**  $M = 18$ firms, $N = 16$ components, 64 iterations per actor; a
+$6 \times 5 \times 4 \times 3$ parameter grid of 360 cells at five seeds each,
+for 1{,}800 simulations.
+
+**What the package supplies.**  The risk-taking trajectory and
+exploration--exploitation plots are produced by \pkg{searchnet}'s own plotting
+layer from the simulated chain, not by bespoke code, which is the intended
+division of labour: the package computes the actor-level series and the analyst
+supplies the contrast.  We show the trajectory panel rather than the
+difference-in-differences panel, because the latter's period axis is ordered
+lexically rather than temporally --- a reminder that a plot returned by a
+package is still the analyst's responsibility to read.
+
+
+![Policy shock. Actor-level risk-taking trajectories for subsidised and control firms across the three-regime shock schedule, plotted by \pkg{searchnet} from the simulated chain; the vertical line marks the policy onset.\label{fig:policyshock}](figures/amr_risk_trajectories.png){width=100%}
+
+**Takeaway.**  A temporary intervention is naturally expressed as a three-regime
+shock schedule, and the package's plotting layer returns actor-level series ready
+for the contrast the analyst chooses.
+
+### Firm and industry effects {#sec:app-variance}
+
+The variance-decomposition literature asks whether firm or industry effects
+explain more of the variance in profitability.  If firms are competitively
+coupled, the two are not separable in principle, and a simulation in which the
+data-generating process is known can show what a decomposition recovers.
+
+This application is the cleanest illustration of the minimal functional
+pipeline, and we present it as such:
+
+```r
+env <- saomnk_env(M = M, N = N, density = 0.2, seed = seed)
+K   <- make_influence_matrix(N, arch_type)      # modular | hierarchical | random
+
+mod <- saomnk_model(density = -0.5, popularity = coupling,
+                    scope = 0.05, influence_matrix = K, influence_weight = 0.1)
+
+saomnk_run(env, mod, steps_per_actor = 15L, seed = seed + 1L)
+bi_mat <- saomnk_get_bipartite(env)
+```
+
+Coupling strength enters through \code{popularity}, sweeping $\{0, 0.1, 0.3,
+0.5, 0.8\}$ across three architectures.  We report the pipeline, not a bias
+estimate: in the present implementation the "true" effects are re-derived from
+the same realised performance the estimator sees, so the recovered bias is zero
+by construction.  Establishing a bias requires taking the truth from the
+generating parameters instead, and that work is ongoing.  We state this because
+a software paper is the wrong place to launder an unfinished result, and because
+the pipeline above is genuinely the shortest path from a specification to a
+simulated bipartite panel.
+
+**Takeaway.**  The shortest path from specification to simulated panel is four
+calls.  The vignette also shows what a simulation cannot do for you: if the
+"true" effects are re-derived from the same realised outcome the estimator sees,
+recovered bias is zero by construction, whatever the coupling.
+
+### Market-access institutions {#sec:app-international}
+
+**Research question.**  Do institutional distances between countries act as
+tolls on entry, or as topology that reshapes which markets are complementary?
+A toll shifts the cost of a market; topology changes what a market is worth
+*given what else the firm holds* --- and the two are separable, because the
+first is a main effect on the component and the second is $K_{CC}$.
+
+**Design.**  A bipartite firm-by-market panel: 534 firms $\times$ 63 markets
+$\times$ 4 waves, 8{,}023 ties, with nine coupling matrices built from CEPII
+gravity data and United Nations voting-similarity scores.  Each matrix enters
+*twice* --- once as a component main effect and once as \code{XWX} --- so the
+two mechanisms compete for the same variance in one model.
+
+![Post-estimation use. Left, a geographic network view produced by \code{saomnk\_plot\_geo\_network()}. Right, a specification curve built with \pkg{searchnet}'s estimate-extraction and scaled-autocorrelation helpers over \pkg{RSiena} fits; these functions existed but were unreachable without \code{:::} until the \code{NAMESPACE} was corrected in 0.6.0.\label{fig:intl}](figures/intl_geo_network.png){width=49%}
+![](figures/intl_spec_curve.png){width=49%}
+
+**Mode of use and result.**  Estimation runs through \pkg{RSiena} directly;
+\pkg{searchnet} is used for the specification curve and network visualisation.
+Both channels operate: a block Wald test gives $\chi^2 = 169.4$ for coupling
+against $143.9$ for the main effects, both on 10 degrees of freedom.  An
+earlier and stronger claim --- that institutions are topology *rather than*
+toll --- was withdrawn after review found the cost-shifting term had been
+operationalised as a country-constant row mean while coupling was firm-varying,
+which is not a fair contest.  The surviving claim is the weaker and better
+supported one, that the distance literature is incomplete rather than
+misspecified.
+
+**Takeaway.**  Entering each matrix twice, as a component main effect and as a
+coupling term, lets two rival mechanisms compete for the same variance in one
+model instead of being compared across models.
+
+### Refactor candidates {#sec:app-refactor}
+
+Two further studies are built on the $\K$ formulation but implement it in bespoke
+code.  We include them because the capability each would need is specific and
+short, and naming it is more useful to a prospective user than omitting the case.
+
+**Evaluator discipline under capital abundance.**  *Problematization:* when
+capital becomes abundant, which margins of organizational evaluation adjust, and
+what insulates the rest?  Investors are actors and technology categories are
+components, so an investor's portfolio is a bipartite row and complementarity
+between categories is exactly $K_{CC}$.  *Methods:* a bipartite SAOM on 368
+investors $\times$ 45 categories over six waves, with \code{outActSqrt},
+\code{inPopSqrt} and \code{cycle4}, plus complementarity entering as a
+*time-varying actor-by-component* covariate interacted with a policy-regime
+indicator.  The regime interaction is strongly negative, indicating that
+complementarity weighs less in commitment decisions when capital is cheap.
+*Takeaway:* the substantive finding is a $K_{CC}$ result, but it is not currently
+expressed as one.  *Capability required:* the study needs a **time-varying $W$**
+--- \code{varDyadCovar} rather than \code{coDyadCovar} --- so that epistasis can
+shift across waves.  Version 0.7.0 supplies this as the \code{influence\_arrays}
+argument to \code{saomnk\_model}, covering specification and simulation;
+estimation and visualisation of a time-varying $W$ remain open.  The analysis
+reported here predates that release and uses hand-built covariate arrays.
+
+**Basin geometry under policy regimes.**  *Problematization:* policy archetypes
+that produce indistinguishable average fitness may still leave firms in very
+differently shaped basins, and it is the shape, not the height, that determines
+what a shock does.  *Methods:* 20 firms and 16 activities across 27 conditions
+crossing epistatic density, interaction pattern and erosion, with a ten-term
+utility whose scope, synergy, herding and congestion terms are $\K$ channels
+written out longhand, and \pkg{RSiena} estimates supplying the coefficients.
+*Takeaway:* archetypes converge on fitness --- a spread of 0.18 percent across
+four archetypes --- while diverging by roughly an order of magnitude on
+hysteresis area.  Fitness parity conceals geometric divergence, which is an
+argument for reporting basin shape alongside performance.  *Capability required:*
+\pkg{searchnet} already computes fitness landscapes and basin statistics
+(Section~\ref{sec:basins}); what is missing is a **tournament driver** that runs
+heterogeneous strategy populations against one another and returns ranked
+outcomes.  With that, the ten-term utility collapses into a \code{saomnk\_model}
+call plus a scoring function.
+
+We flag one caution these two cases share.  Both were written before the package
+matured, and both re-implement channels the package now provides.  A reader
+adopting \pkg{searchnet} should expect the reverse migration to be the common
+case: the framework is easier to express in the package than to re-derive, and
+the value of doing so is that the $\K$ channels then carry their standard
+meanings rather than local ones.
+
+### Failure modes inherited from \pkg{RSiena} {#sec:app-failures}
+
+Because \pkg{searchnet} delegates estimation to \code{siena07}, it inherits that
+estimator's failure modes, and users should know two of them.
+
+The first is provable.  Under method-of-moments estimation, no effect whose
+observed statistic lies exactly on the boundary of its attainable support can
+converge: the estimate diverges as $\theta \to \pm\infty$.  In a *balanced*
+bipartite panel every actor holds at least one component in every wave, so the
+isolate count is exactly zero and \code{outTrunc(1)} is exactly $M$ --- both
+saturated.  A demonstration on public data changes only the sampling rule: on a
+balanced construction \code{outIso} estimates $-18.65$ (SE $6.62$), a runaway;
+on an unbalanced construction of the same network, where 1{,}547 of 1{,}316
+actor-waves are isolates, it estimates $+3.29$ (SE $0.42$).  The screen is one
+line --- compute $(\text{observed} - \text{lo}) / (\text{hi} - \text{lo})$ and
+refuse exactly $0$ or $1$ --- and it costs nothing to run before estimating.  We
+note that a stronger version of this claim, covering *near*-boundary statistics,
+was tested and refuted: only exact saturation disqualifies.
+
+![Why an exactly saturated statistic cannot converge. In a balanced panel the observed isolate count sits on the boundary of its support, so method of moments can match it only as $\theta \to -\infty$; the same network sampled to permit entry and exit puts the statistic in the interior and the effect estimates cleanly.\label{fig:boundary}](figures/remedies_boundary.png){width=100%}
+
+The second is a silent-failure pattern rather than a theorem, and it bit this
+package.  \code{RSiena::includeEffects} matches effect names by non-standard
+evaluation, so passing a name held in a variable silently selects nothing.  A
+version of \pkg{searchnet} passed \code{shortName = eff\$effect} into \code{...},
+where the unevaluated expression was deparsed and no effect matched; because the
+call was wrapped in \code{tryCatch(..., error = function(e) warning(...))}, the
+simulation continued with the covariate effect *absent*.  Every actor-covariate
+effect was affected, so results labelled "heterogeneous strategies" were in fact
+homogeneous-actor results.  The package now ships a regression test asserting
+that every effect declared in a \code{structure\_model} appears with
+\code{include == TRUE} in the fitted effects object.  The design lesson
+generalises beyond this package: \code{tryCatch}-to-warning is right for
+interactive exploration and wrong for a simulation engine whose output gets
+published.
 
 
 # Summary and future directions {#sec:conclusion}

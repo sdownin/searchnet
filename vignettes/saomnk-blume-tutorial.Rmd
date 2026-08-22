@@ -346,7 +346,7 @@ environment and verify that it predicts the simulation's behavior.
 # ── Tiny environment: M=3 actors, N=4 components ──────────────────
 # With only density and epistasis effects, the potential function is:
 #   Phi(B) = theta_dens * sum(B) + theta_epist * sum(B' * W * B)
-# where W is the component interaction matrix.
+# where W is the component influence matrix.
 
 M_pot <- 3
 N_pot <- 4

@@ -1388,7 +1388,7 @@ SaomNkRSienaBiEnv <- R6Class(
       new_components <- which( colSums(self$bipartite_matrix_init) == 0 )
       component_actor_strats <- sapply(1:self$N, function(x)ifelse(x %in% new_components, "NEW", "OLD"))
       ####----------------
-      ##**TODO: CHANGE COMPONENT GROUPING TO COMPONENT INTERACTION MATRIX BLOCKS (or clusters if not block diagonal)**
+      ##**TODO: CHANGE COMPONENT GROUPING TO COMPONENT INFLUENCE MATRIX BLOCKS (or clusters if not block diagonal)**
       ## clustering is generalization of (full) modularity
       ## - Blondel et al 2008 Louvain clustering is modularity maximzed as the objective of the clustering algorithm 
       ## user actor strategy for color group loess curve
@@ -2823,7 +2823,7 @@ SaomNkRSienaBiEnv <- R6Class(
         sim_title_str <- self$get_structure_model_param_str()
         
         nstrats <- length(levels(self$get_actor_strategies()))
-        color_manual <- hue_pal()(nstrats)[2:nstrats]
+        color_manual <- scales::hue_pal()(nstrats)[2:nstrats]
         
         
         ##------------------- Plot 1 --------------------------------------------
@@ -2975,7 +2975,7 @@ SaomNkRSienaBiEnv <- R6Class(
         sim_title_str <- self$get_structure_model_param_str()
         
         nstrats <- length(levels(self$get_actor_strategies()))
-        color_manual <- hue_pal()(nstrats)[2:nstrats]
+        color_manual <- scales::hue_pal()(nstrats)[2:nstrats]
         
         
         ##------------------- Plot 1 --------------------------------------------
@@ -3116,7 +3116,7 @@ SaomNkRSienaBiEnv <- R6Class(
         sim_title_str <- self$get_structure_model_param_str()
         
         nstrats <- length(levels(self$get_actor_strategies()))
-        color_manual <- hue_pal()(nstrats)[2:nstrats]
+        color_manual <- scales::hue_pal()(nstrats)[2:nstrats]
         
         
         ##------------------- Plot 1 --------------------------------------------
@@ -3453,7 +3453,7 @@ SaomNkRSienaBiEnv <- R6Class(
     #'
     #' @description
     #' Enumerates (or samples) the full fitness landscape implied by the
-    #' current interaction matrix. The landscape has 2^N configurations,
+    #' current influence matrix. The landscape has 2^N configurations,
     #' so computational cost is exponential in N. For N > 20 the full
     #' enumeration requires over one million configurations per landscape
     #' and becomes prohibitively slow; use the \code{sample_size} argument
@@ -3465,7 +3465,7 @@ SaomNkRSienaBiEnv <- R6Class(
     #'   covariate stored in the object. If NULL, uniform random values
     #'   are used.
     #' @param normalize_int_mat Logical. Whether to normalize and binarize
-    #'   the interaction matrix (default TRUE).
+    #'   the influence matrix (default TRUE).
     #' @param project_int_mat Logical. Use the projected search matrix
     #'   instead of the exogenous covariate matrix (default FALSE).
     #' @param component_value_sd Numeric. Standard deviation for Gaussian
@@ -3548,7 +3548,7 @@ SaomNkRSienaBiEnv <- R6Class(
             return(Int_matrix[i, ])
           return( Int_matrix[i, ] / max(Int_matrix) )
         })
-        ## make binary to match traditional interaction matrices
+        ## make binary: the binary influence pattern (support of W), as in the classical NK influence matrix
         Int_matrix[ Int_matrix < 0.5 ] <- 0
         Int_matrix[ Int_matrix >=0.5 ] <- 1
       }
@@ -3592,7 +3592,7 @@ SaomNkRSienaBiEnv <- R6Class(
         # Row index convention for Comb_and_value follows expand.grid(), in
         # which the FIRST variable varies fastest (bit 1 = least significant).
         # The MSB-first Power_key (2^((N-1):0)) used by calc_fit() to mask the
-        # interaction matrix does NOT match this row ordering, so neighbour
+        # influence matrix does NOT match this row ordering, so neighbour
         # lookups must use the matching LSB-first key. Using Power_key here was
         # a bug: it retrieved the wrong row, corrupting the local-peak flags
         # (e.g. a K=0 additive landscape reported ~1000 peaks instead of 1).
@@ -3719,8 +3719,9 @@ SaomNkRSienaBiEnv <- R6Class(
     #'
     #' @param b_i Binary vector of length N (actor's activity configuration).
     #' @param d   Integer, the focal dimension (1..N).
-    #' @param E   Optional N x N epistasis matrix.  Defaults to the stored
-    #'   interaction matrix (\code{component_1_coDyadCovar}) or identity.
+    #' @param E   Optional N x N influence matrix (binary influence pattern).
+    #'   Defaults to the stored influence matrix (\code{component_1_coDyadCovar})
+    #'   or identity.
     #' @return Integer row index (1-based) into the NK fitness table.
     power_key_index = function(b_i, d, E = NULL) {
       if (is.null(E)) {
@@ -3787,7 +3788,7 @@ SaomNkRSienaBiEnv <- R6Class(
         bi_mat <- self$bi_env_arr[,,step]
       }
 
-      # -- Epistasis / interaction matrix W --
+      # -- Influence matrix W --
       W <- if (!is.null(self$component_1_coDyadCovar) &&
                all(dim(as.matrix(self$component_1_coDyadCovar)) == self$N)) {
         as.matrix(self$component_1_coDyadCovar)
@@ -4011,7 +4012,7 @@ SaomNkRSienaBiEnv <- R6Class(
       n_configs <- 2^N
       PK <- 2^((N - 1):0)
 
-      # Interaction / epistasis matrix
+      # Influence matrix (binary influence pattern E)
       E <- if (!is.null(self$component_1_coDyadCovar) &&
                all(dim(as.matrix(self$component_1_coDyadCovar)) == N)) {
         as.matrix(self$component_1_coDyadCovar)
@@ -5666,7 +5667,7 @@ SaomNkRSienaBiEnv <- R6Class(
         scale_fill_cyclical(
           breaks = strat_break,
           labels = strat_labs,
-          values = hue_pal()(length(levels(actor_strat))), # c("#ff0000", "#0000ff", "#ff8080", "#8080ff"),
+          values = scales::hue_pal()(length(levels(actor_strat))), # c("#ff0000", "#0000ff", "#ff8080", "#8080ff"),
           guide = "legend"
         ) +
         labs(
@@ -6813,7 +6814,7 @@ SaomNkRSienaBiEnv <- R6Class(
 
       n_strat_levels <- length(levels(actor_strategies))
       if (n_strat_levels == 0) n_strat_levels <- 1
-      actor_colors <- hue_pal()(n_strat_levels)
+      actor_colors <- scales::hue_pal()(n_strat_levels)
       
       # Map normalized strategies to colors
       
@@ -6901,7 +6902,7 @@ SaomNkRSienaBiEnv <- R6Class(
           size = guide_legend(order = 2, nrow = 2)
         )
       
-      # 3. Component interaction matrix heatmap
+      # 3. Component influence matrix heatmap
       component_matrix <- igraph::as_adjacency_matrix(ig_component, type = 'both', sparse = F, attr = 'weight')
       
       component_df <- melt(component_matrix)
@@ -7890,7 +7891,7 @@ SaomNkRSienaBiEnv <- R6Class(
 
   plot_bipartite_ring_markets = function(step_ids = c(),
                                          component_groups = NULL,
-                                         epistatic_int_mat = NULL,
+                                         influence_matrix = NULL,
                                          actor_strategies = NULL,
                                          component_labels = NULL,
                                          actor_labels = NULL,
@@ -7901,7 +7902,8 @@ SaomNkRSienaBiEnv <- R6Class(
                                          path_linewidth = 0.8,
                                          ring_radius = 11,
                                          center_radius = 4,
-                                         market_alpha = 0.2) {
+                                         market_alpha = 0.2,
+                                         epistatic_int_mat = NULL) {
 
     affiliation_array <- self$bi_env_arr
 
@@ -7922,11 +7924,18 @@ SaomNkRSienaBiEnv <- R6Class(
     S <- dims[3]  # Number of steps in decision chain
 
 
-    # Set default epistatic interaction matrix if not provided
-    if (is.null(epistatic_int_mat) && is.null(component_groups) && 
+    if (!is.null(epistatic_int_mat)) {
+      warning("`epistatic_int_mat` is deprecated as of searchnet 0.8.2; use ",
+              "`influence_matrix` instead. W is the influence matrix, the model ",
+              "INPUT; epistasis is the resulting fitness coupling, reported as K_CC.",
+              call. = FALSE)
+      if (is.null(influence_matrix)) influence_matrix <- epistatic_int_mat
+    }
+    # Set default influence matrix if not provided
+    if (is.null(influence_matrix) && is.null(component_groups) && 
         (is.null(self$markets) || is.null(self$markets$component_groups) ) 
         ) {
-      stop("Either epistatic_int_mat or component_groups must be provided")
+      stop("Either influence_matrix or component_groups must be provided")
     }
     
     ## use markets$component_groups if set during environment init
@@ -7934,11 +7943,11 @@ SaomNkRSienaBiEnv <- R6Class(
       component_groups <- self$markets[['component_groups']]
     }
       
-    # If epistatic_int_mat is provided but component_groups is not, generate groups
-    if (is.null(component_groups) && !is.null(epistatic_int_mat)) {
-      # Convert interaction matrix to graph
+    # If influence_matrix is provided but component_groups is not, generate groups
+    if (is.null(component_groups) && !is.null(influence_matrix)) {
+      # Convert influence matrix to graph
       g <- graph_from_adjacency_matrix(
-        epistatic_int_mat,
+        influence_matrix,
         mode = "undirected",
         weighted = TRUE,
         diag = FALSE
@@ -8362,7 +8371,7 @@ SaomNkRSienaBiEnv <- R6Class(
   
   plot_bipartite_ring_markets_animation = function(step_ids = c(),
                                                    component_groups = NULL,
-                                                   epistatic_int_mat = NULL,
+                                                   influence_matrix = NULL,
                                                    actor_strategies = NULL,
                                                    component_labels = NULL,
                                                    actor_labels = NULL,
@@ -8375,7 +8384,8 @@ SaomNkRSienaBiEnv <- R6Class(
                                                    center_radius = 4,
                                                    market_alpha = 0.2,
                                                    animation_fps = 10,
-                                                   animation_duration = 10) {
+                                                   animation_duration = 10,
+                                                   epistatic_int_mat = NULL) {
     
     # Load required libraries if not already loaded
     if (!requireNamespace("gganimate", quietly = TRUE)) {
@@ -8401,16 +8411,23 @@ SaomNkRSienaBiEnv <- R6Class(
     S <- dims[3]  # Number of steps in decision chain
     
     
-    # Set default epistatic interaction matrix if not provided
-    if (is.null(epistatic_int_mat) && is.null(component_groups) && !is.null(self$markets)) {
+    if (!is.null(epistatic_int_mat)) {
+      warning("`epistatic_int_mat` is deprecated as of searchnet 0.8.2; use ",
+              "`influence_matrix` instead. W is the influence matrix, the model ",
+              "INPUT; epistasis is the resulting fitness coupling, reported as K_CC.",
+              call. = FALSE)
+      if (is.null(influence_matrix)) influence_matrix <- epistatic_int_mat
+    }
+    # Set default influence matrix if not provided
+    if (is.null(influence_matrix) && is.null(component_groups) && !is.null(self$markets)) {
       component_groups <- self$markets$component_groups
     }
     
-    # If epistatic_int_mat is provided but component_groups is not, generate groups
-    if (is.null(component_groups) && !is.null(epistatic_int_mat)) {
-      # Convert interaction matrix to graph
+    # If influence_matrix is provided but component_groups is not, generate groups
+    if (is.null(component_groups) && !is.null(influence_matrix)) {
+      # Convert influence matrix to graph
       g <- graph_from_adjacency_matrix(
-        epistatic_int_mat,
+        influence_matrix,
         mode = "undirected",
         weighted = TRUE,
         diag = FALSE
@@ -8885,13 +8902,20 @@ SaomNkRSienaBiEnv <- R6Class(
   },
   
   
-  get_component_groups_list = function(component_groups=NULL, epistatic_int_mat=NULL) {
+  get_component_groups_list = function(component_groups=NULL, influence_matrix=NULL, epistatic_int_mat = NULL) {
     
-    # If epistatic_int_mat is provided but component_groups is not, generate groups
-    if (is.null(component_groups) && !is.null(epistatic_int_mat)) {
-      # Convert interaction matrix to graph
+    if (!is.null(epistatic_int_mat)) {
+      warning("`epistatic_int_mat` is deprecated as of searchnet 0.8.2; use ",
+              "`influence_matrix` instead. W is the influence matrix, the model ",
+              "INPUT; epistasis is the resulting fitness coupling, reported as K_CC.",
+              call. = FALSE)
+      if (is.null(influence_matrix)) influence_matrix <- epistatic_int_mat
+    }
+    # If influence_matrix is provided but component_groups is not, generate groups
+    if (is.null(component_groups) && !is.null(influence_matrix)) {
+      # Convert influence matrix to graph
       g <- graph_from_adjacency_matrix(
-        epistatic_int_mat,
+        influence_matrix,
         mode = "undirected",
         weighted = TRUE,
         diag = FALSE
@@ -8944,7 +8968,7 @@ SaomNkRSienaBiEnv <- R6Class(
     
     # Fix component indices to ensure they're within range 1:N
     for (g in 1:length(component_groups)) {
-      component_groups[[g]] <- component_groups[[g]][component_groups[[g]] > 0 & component_groups[[g]] <= N]
+      component_groups[[g]] <- component_groups[[g]][component_groups[[g]] > 0 & component_groups[[g]] <= self$N]
     }
     
     # Get the number of groups
@@ -8952,15 +8976,15 @@ SaomNkRSienaBiEnv <- R6Class(
     
     
     # Create component-to-groups mapping (initializing with empty lists)
-    component_to_groups <- vector("list", N)
-    for (i in 1:N) {
+    component_to_groups <- vector("list", self$N)
+    for (i in 1:self$N) {
       component_to_groups[[i]] <- integer(0)
     }
     
     # Map groups to components (using safer variable names)
     for (group_idx in 1:num_groups) {
       for (comp_idx in component_groups[[group_idx]]) {
-        if (comp_idx > 0 && comp_idx <= N) {  # Extra safety check
+        if (comp_idx > 0 && comp_idx <= self$N) {  # Extra safety check
           component_to_groups[[comp_idx]] <- unique(append(component_to_groups[[comp_idx]], group_idx))
         }
       }

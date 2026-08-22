@@ -251,7 +251,7 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0, verbose = TRUE) {
 #'   \describe{
 #'     \item{\code{env}}{A \code{SaomNkRSienaBiEnv} object with the bipartite
 #'       matrix set to the empirical data.}
-#'     \item{\code{W}}{An \eqn{N \times N}{N x N} epistasis matrix built from
+#'     \item{\code{W}}{An \eqn{N \times N}{N x N} influence matrix estimated from
 #'       SIC co-occurrence in supply chains (normalized to [0,1]).}
 #'     \item{\code{actor_attrs}}{A \code{data.frame} of actor (firm) covariates.}
 #'     \item{\code{component_attrs}}{A \code{data.frame} of component (SIC
@@ -266,7 +266,7 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0, verbose = TRUE) {
 #' mi_data <- readRDS("path/to/mi_data.rds")
 #' bridge_env <- empirical_to_saomnk_env(mi_data, wave = 3)
 #' bridge_env$env  # the SaomNkRSienaBiEnv object
-#' bridge_env$W    # epistasis matrix
+#' bridge_env$W    # influence matrix (estimated from co-occurrence)
 #' }
 empirical_to_saomnk_env <- function(mi_data, wave = 1, imputation = 1,
                                      min_firms_per_sic = 2) {
@@ -331,7 +331,7 @@ empirical_to_saomnk_env <- function(mi_data, wave = 1, imputation = 1,
 
   bi_prob <- sum(bi_matrix) / (M * N)
 
-  ## -- Build epistasis matrix W from SIC co-occurrence ---------------------- ##
+  ## -- Build influence matrix W from SIC co-occurrence ---------------------- ##
   ## W[j,k] = frequency that SIC j and SIC k appear in the same firm's
   ## bipartite row.  This captures empirical component complementarity.
 
@@ -393,7 +393,7 @@ empirical_to_saomnk_env <- function(mi_data, wave = 1, imputation = 1,
     stringsAsFactors = FALSE
   )
 
-  cat(sprintf("Bipartite density: %.3f, Epistasis matrix density: %.3f\n",
+  cat(sprintf("Bipartite density: %.3f, Influence matrix density: %.3f\n",
               bi_prob, sum(W > 0) / (N * N)))
   cat(sprintf("Actor covariates: %s\n", paste(names(actor_attrs), collapse = ", ")))
 
