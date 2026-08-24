@@ -158,67 +158,63 @@ Let us create a tiny searchnet environment and run it from two different
 starting points. If Blume's result holds, the long-run behavior should
 be similar regardless of where we start.
 
-```{r novice-convergence, fig.height=6, fig.width=7}
-set.seed(42)
+Before running it, notice what a *convincing* version of this demonstration
+would need. It is tempting to run the model once from each starting point and
+observe that the two final densities come out close. But "close" means nothing
+unless we said how close counts before looking; one run per starting point gives
+us no way to tell convergence from a lucky pair of draws; and the interesting
+part of Blume's result is not that the chain forgets where it started, but that
+it forgets *at a rate*. Two endpoints throw that rate away.
 
-# ── Shared model parameters ────────────────────────────────────────
-M_demo <- 4
-N_demo <- 5
-iters  <- 50  # ministeps per actor
+So instead of two runs, we sweep the run length. `searchnet_ergodicity_sweep()`
+runs both arms at several chain lengths with several replicates each, and
+measures how fast the gap between them closes:
 
-component_int_mat <- create_block_diag(N_demo, round(N_demo / 2))
-
-structure_model <- list(
-  dv_bipartite = list(
-    name = DV_NAME,
-    effects = list(
-      list(effect = "density", parameter = -0.5, dv_name = DV_NAME, fix = TRUE),
-      list(effect = "inPop",   parameter = 0.15, dv_name = DV_NAME, fix = TRUE)
-    ),
-    coDyadCovars = list(
-      list(
-        effect = "XWX", parameter = 0.2, dv_name = DV_NAME, fix = TRUE,
-        nodeSet = c("COMPONENTS", "COMPONENTS"),
-        interaction1 = "self$component_1_coDyadCovar",
-        x = component_int_mat
-      )
-    )
-  )
+```{r novice-convergence, fig.height=5.5, fig.width=11}
+erg <- searchnet_ergodicity_sweep(
+  M = 12, N = 15,                    # 180 cells, so one tie moves density by 0.006
+  start_densities = c(0.1, 0.8),     # a gap of 0.70 to erase
+  run_lengths = c(15, 30, 60, 120, 240),
+  replicates = 6,
+  equivalence_margin = 0.05,         # we declare this BEFORE looking
+  seed = 42
 )
 
-# ── Run from SPARSE start (BI_PROB = 0.1) ──────────────────────────
-env_sparse <- SaomNkRSienaBiEnv$new(list(
-  M = M_demo, N = N_demo, BI_PROB = 0.1,
-  rand_seed = 100, name = "_sparse_start_"
-))
-env_sparse$search_rsiena(structure_model,
-  iterations_per_actor = iters, run_seed = 200
-)
-
-# ── Run from DENSE start (BI_PROB = 0.8) ───────────────────────────
-env_dense <- SaomNkRSienaBiEnv$new(list(
-  M = M_demo, N = N_demo, BI_PROB = 0.8,
-  rand_seed = 101, name = "_dense_start_"
-))
-env_dense$search_rsiena(structure_model,
-  iterations_per_actor = iters, run_seed = 201
-)
-
-# ── Compare final densities ────────────────────────────────────────
-dens_sparse <- sum(env_sparse$bipartite_matrix) / (M_demo * N_demo)
-dens_dense  <- sum(env_dense$bipartite_matrix) / (M_demo * N_demo)
-
-cat("Starting density (sparse): 0.10 --> Final density:", round(dens_sparse, 3), "\n")
-cat("Starting density (dense):  0.80 --> Final density:", round(dens_dense, 3), "\n")
-cat("\nBoth converge toward a similar equilibrium density,\n")
-cat("regardless of where they started. This is Blume's result in action.\n")
+erg
+plot(erg)
 ```
 
-> **Key takeaway:** The two simulations started from opposite extremes
-> (nearly empty vs. nearly full) but converged toward similar
-> configurations. The final distribution depends on the model parameters
-> ($\theta$, $\beta$), not on the initial conditions. This is the Gibbs
-> measure at work.
+> **Key takeaway:** Two arms that started 0.70 apart in density end up
+> statistically indistinguishable, and the gap between them shrinks as a
+> power of run length --- roughly halving each time the chain runs twice as
+> long. The equilibrium depends on the model parameters ($\theta$, $\beta$),
+> not on where the simulation started. That is the Gibbs measure at work.
+
+Three things about this output are worth pointing out, because they are what
+separate a measurement from an illustration.
+
+**The verdict can come out "no."** At the longest run length the two arms are
+compared by an equivalence test against the margin we declared in the call. If
+the interval had not fitted inside that margin, the function would have said so.
+Look at the shorter run lengths: it does say so there. A demonstration that
+could only ever print "converged" would not be telling us anything.
+
+**The gap stops falling at the Monte Carlo floor**, drawn as the shaded band in
+panel B. Once the arms genuinely agree, the *measured* gap does not go to zero
+--- it settles at the typical difference between two sample averages taken from
+the same distribution. Those points are measuring our replicate count, not the
+chain, so they are left out of the fitted decay slope.
+
+**The grid size is doing real work.** On a 4 $\times$ 5 grid --- which is what
+earlier versions of this tutorial used --- a single tie changes the density by
+0.05, so an equivalence margin of 0.05 is asking the grid to resolve one tie.
+At 12 $\times$ 15 a tie is worth 0.006, and the margin means something.
+
+A practical trap, since it cost real debugging time: if you write your own
+version of this, do not pass `process_chain = FALSE` to `search_rsiena()` to
+speed it up. That setting skips writing the simulated end state back to
+`$bipartite_matrix`, so your "final" density is silently the *starting* density
+and the chain looks like it never mixes at all.
 
 ---
 

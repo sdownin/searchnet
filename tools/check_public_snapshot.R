@@ -1,0 +1,99 @@
+#!/usr/bin/env Rscript
+###############################################################################
+## check_public_snapshot.R
+##
+## Release gate. Fails if a snapshot about to be published carries any path
+## listed in .public-exclude, or any path matching the internal-artifact
+## patterns that reached the public repo before 2026-08-24.
+##
+## Usage, from inside the snapshot worktree (checked out on public-release,
+## tree already loaded via `git read-tree --reset -u <tag>`):
+##
+##     Rscript tools/check_public_snapshot.R [<worktree-path>] [<exclude-file>]
+##
+## Exit status 0 = safe to publish. Exit status 1 = do not publish.
+##
+## THIS CHECK BLOCKS, AND THAT IS DELIBERATE.
+## It is a prevention guard on outbound publication, not a measurement of the
+## author's own work: it owns no work product, it evaluates an action in
+## flight rather than something already delivered, and it proposes undoing
+## nothing. It has one determinate fix -- remove the file from the snapshot.
+###############################################################################
+
+args    <- commandArgs(trailingOnly = TRUE)
+wt      <- if (length(args) >= 1) args[[1]] else "."
+exclude <- if (length(args) >= 2) args[[2]] else file.path(wt, ".public-exclude")
+
+## ---------------------------------------------------------------------------
+## Patterns for content that must never ship, independent of the list file.
+## The list file covers files we chose to keep private; these patterns catch
+## files nobody remembered to list. Both failed once, so both are checked.
+## ---------------------------------------------------------------------------
+ARTIFACT_PATTERNS <- c(
+  "^R/smj_saomnk",          # another paper's simulation outputs, misfiled in R/
+  "^R/survfitfix",
+  "^_jss_r1_review_",       # AI-generated mock referee reports
+  "^_jss_proposal_text",
+  "^_run_jss_reviews",
+  "^_debug_install",
+  "^HANDOFF_",              # the original two internal patterns
+  "^JSS_SUBMISSION_PREP_",
+  "^SESSION_STATE",
+  "_internal/"
+)
+
+## Non-code files under R/ are both an internal-leak smell and an R CMD check
+## failure; R/ should contain only R sources.
+NONCODE_IN_R <- "^R/.*\\.(rds|RData|docx|xlsx|pptx|csv|txt|log)$"
+
+fail <- function(...) { cat("\n[FAIL] ", ..., "\n", sep = ""); quit(status = 1) }
+
+if (!dir.exists(wt)) fail("worktree not found: ", wt)
+
+tracked <- system2("git", c("-C", shQuote(wt), "ls-files"), stdout = TRUE)
+if (!length(tracked)) fail("no tracked files found in ", wt, " -- wrong path?")
+
+problems <- list()
+
+## -- 1. explicit exclusion list --------------------------------------------- #
+if (file.exists(exclude)) {
+  lines <- readLines(exclude, warn = FALSE)
+  lines <- trimws(lines)
+  listed <- lines[nzchar(lines) & !startsWith(lines, "#")]
+  hit <- intersect(listed, tracked)
+  if (length(hit))
+    problems[["listed in .public-exclude"]] <- hit
+} else {
+  cat("[warn] no .public-exclude found at ", exclude,
+      " -- pattern checks still apply\n", sep = "")
+}
+
+## -- 2. artifact patterns ---------------------------------------------------- #
+for (p in ARTIFACT_PATTERNS) {
+  hit <- grep(p, tracked, value = TRUE)
+  if (length(hit))
+    problems[[paste0("matches internal pattern ", p)]] <- hit
+}
+
+## -- 3. non-code files under R/ ---------------------------------------------- #
+hit <- grep(NONCODE_IN_R, tracked, value = TRUE, ignore.case = TRUE)
+if (length(hit))
+  problems[["non-code file under R/"]] <- hit
+
+## -- report ------------------------------------------------------------------ #
+if (length(problems)) {
+  cat("\nRefusing to publish: ", sum(lengths(problems)),
+      " path(s) must not reach the public repository.\n\n", sep = "")
+  for (why in names(problems)) {
+    cat("  ", why, ":\n", sep = "")
+    for (f in problems[[why]]) cat("      ", f, "\n", sep = "")
+  }
+  cat("\nFix: remove them from the snapshot worktree before committing, e.g.\n")
+  cat("     git -C <worktree> rm --cached -- <path>...\n")
+  cat("Then re-run this check. Do not push until it exits 0.\n")
+  quit(status = 1)
+}
+
+cat("[ok] snapshot is clean: ", length(tracked),
+    " tracked paths, none excluded or internal.\n", sep = "")
+quit(status = 0)

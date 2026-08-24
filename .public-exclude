@@ -1,0 +1,40 @@
+# Files tracked on dev that must NEVER reach the public repo.
+#
+# One path per line, relative to the repository root. Blank lines and lines
+# beginning with '#' are ignored. Paths are matched exactly, not as globs --
+# a glob would make it too easy to exclude something by accident.
+#
+# WHY THIS FILE EXISTS
+# --------------------
+# The two-remote split assumed a simple invariant: anything tracked on `dev`
+# becomes public at the next release, so internal files are never tracked on
+# dev. That invariant failed. On 2026-08-24 the public repo was found to be
+# carrying, on all 20 refs back to v0.2.0:
+#
+#   - three AI-generated mock JSS referee reports, formatted as genuine
+#     correspondence from "The Editors, Journal of Statistical Software";
+#   - docs/CROSS_PROJECT_SYNC.md, which publishes the lab's venue pipeline --
+#     papers, target journals, status and deadlines -- for papers bound for
+#     blind review, and which CLAUDE.md's own labgraph block withholds
+#     precisely because this repository is public;
+#   - docs/COMMERCIALIZATION_BRAINSTORM.md, covering commercialization and
+#     university IP;
+#   - 28 SMJ-paper simulation artifacts sitting inside R/, including a .docx.
+#
+# Public history was rewritten to remove them. The artifacts were untracked
+# from dev outright. The files listed below are different: they are worth
+# versioning privately but must not ship, so they stay tracked on dev and are
+# dropped at snapshot time instead.
+#
+# The invariant is no longer "trust that nobody tracked the wrong thing". It
+# is checked: tools/check_public_snapshot.R fails the release if any path here
+# survives into a snapshot, and CLAUDE.md's release recipe runs it at step 3.
+#
+# Adding a path here is a deliberate act. If a file is not worth versioning at
+# all, gitignore it instead -- this list is only for content that has private
+# value.
+
+CLAUDE.md
+docs/CROSS_PROJECT_SYNC.md
+docs/COMMERCIALIZATION_BRAINSTORM.md
+docs/FEATURE_ROADMAP.md

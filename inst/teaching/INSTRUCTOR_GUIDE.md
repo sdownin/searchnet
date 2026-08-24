@@ -145,6 +145,45 @@ High scope costs reflect capital intensity. Good for healthcare strategy and R&D
 8. **Architecture vs. Content:** Two firms can have the same scope (K_AC) but very different competitive positions. How does the *pattern* of activities matter beyond their *number*?
 9. **Shock Response:** If a shock hit (e.g., demand collapse on popular routes), which firms survived best -- the diversified ones or the focused ones? Why?
 10. **Counterfactual Thinking:** The AI firms followed a logit choice rule (bounded rationality). If you could see the AI's "thought process," would it help or hurt your strategy?
+11. **Did the Starting Position Decide It?** Students who drew a crowded opening portfolio often believe they were dealt a losing hand. Run the ergodicity demonstration live (below) and ask them to reconcile it with their experience: if the long-run distribution does not depend on the starting configuration, why did the opening position feel decisive within the rounds you played?
+
+---
+
+## Live Demonstration: Does the Starting Position Matter?
+
+A five-minute demonstration that reliably changes how students read their own
+results. It answers the objection that the simulation just rewards a lucky
+opening draw.
+
+```r
+erg <- searchnet_ergodicity_sweep(
+  M = 12, N = 15, start_densities = c(0.1, 0.8),
+  run_lengths = c(15, 30, 60, 120, 240),
+  replicates = 6, equivalence_margin = 0.05, seed = 42
+)
+erg          # printed verdict
+plot(erg)    # two panels: arms converging, gap decaying
+```
+
+Two portfolios start at opposite extremes --- one nearly empty, one nearly
+full --- and end up statistically indistinguishable, with the gap between them
+shrinking as a power of the number of decisions made.
+
+**The teaching point is the reconciliation, not the result.** Both things are
+true at once: the long-run equilibrium does not depend on the starting
+position, *and* the starting position dominates within any short run. A
+typical class plays 10 rounds. The sweep shows the arms are still clearly
+apart at 15 iterations per actor. So students are right that their opening
+mattered --- for the horizon they actually played --- and also wrong to
+conclude the game was decided at the draw. That gap between the short-run and
+long-run answer is the substantive lesson, and it maps directly onto how long
+a firm has to reposition before its starting configuration stops explaining
+its performance.
+
+**If you want to make it fail on purpose,** pass `run_lengths = 5` and the
+function reports NOT EQUIVALENT. Showing students a demonstration that can
+come out the other way is worth the extra minute: it is the difference
+between a result and a slogan.
 
 ---
 

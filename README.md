@@ -8,37 +8,6 @@
 
 **Network-Embedded Search Simulation Engine**
 
-> [!CAUTION]
-> **Upgrade notice: a simulation defect affects every release up to and
-> including v0.8.3.**
->
-> Effect coefficients were stored in RSiena's `parm` column. That column is the
-> *internal effect parameter* — the `#` substitution in an effect's name — not a
-> coefficient. Three consequences, all silent:
->
-> * **`influence_weight` had no effect.** Every
->   `saomnk_model(influence_matrix = , influence_weight = )` simulation ran with
->   the weight at **0**, so the influence matrix did nothing.
-> * **`cycle4` was simulated at 1**, whatever you declared. Two runs differing
->   only in the `cycle4` coefficient produced bit-identical results.
-> * **`inPopX`, `outActX` and `homXOutAct` computed a different statistic** than
->   their name says, because those effects carry a `#` too. A coefficient of 0.5
->   on `inPopX` computed indegree-popularity *squared*.
->
-> **Estimation is unaffected.** If you fit models with `RSiena::siena07()` and
-> `includeEffects()`, `parm` sat at its default and your coefficients were
-> estimated normally. Only *simulation* through `saomnk_model()` is affected.
->
-> **If you have simulation results from v0.8.3 or earlier that declared
-> `influence_weight`, `cycle4`, `XWX`, `X`, `inPopX`, `outActX` or
-> `homXOutAct`, re-run them.** Theta-shock and theta-ramp runs wrote the theta
-> matrix directly, so their *shocked* segments were correct; their baseline arms
-> were not.
->
-> Fixed in v0.9.0. Coefficients are now carried in `initialValue`; the public
-> `parameter` argument still means the coefficient, and a genuine internal
-> parameter is requested explicitly with `internal_parameter`.
-
 > [!WARNING]
 > **Development status: experimental pre-release (v0.9.x).**
 > This is a research release of a new package: the API is still
@@ -46,8 +15,13 @@
 > to be expected. The companion methods paper is under review and has
 > not yet been peer-reviewed; results should be treated accordingly.
 > For reproducibility, install a pinned tag rather than the moving branch:
-> `devtools::install_github("sdownin/searchnet@v0.9.0")`.
-> **Do not pin v0.8.3 or earlier for new work** — see the upgrade notice above.
+> `devtools::install_github("sdownin/searchnet@v0.9.2")`.
+> **v0.8.3 and earlier:** `saomnk_model()` simulations that declared
+> `influence_weight`, `cycle4`, `XWX`, `X`, `inPopX`, `outActX` or
+> `homXOutAct` did not simulate the declared coefficient (estimation via
+> `siena07()` was unaffected); fixed in v0.9.0. Do not pin v0.8.3 or
+> earlier for new work — full detail in
+> [NEWS.md](NEWS.md#searchnet-090).
 > A stable API will be declared at v1.0.0. Bug reports with reproducible
 > examples are very welcome via
 > [GitHub Issues](https://github.com/sdownin/searchnet/issues).
@@ -377,6 +351,7 @@ history jumps from v0.4.1 to v0.7.0 — NEWS.md records why.
 
 | Version | Highlights |
 |---|---|
+| **v0.9.2** | `searchnet_ergodicity_sweep()` (with `print()`/`plot()`): the Theorem 4 independence-from-initial-conditions demonstration is now a measurement rather than an assertion. It sweeps run length, reports how fast the between-arm gap decays, and ends in a TOST equivalence verdict against a margin declared in the call — so it can, and at short run lengths does, return "not equivalent". The Monte Carlo floor is computed and excluded from the decay fit. Also: `searchnet_did()` now pre-flights `did::att_gt()`'s minimum group size instead of passing through an opaque error; `saomnk-basins` vignette repaired (it had `eval = FALSE`, so nothing in it had ever run, and its erosion demo never applied its influence matrices); JSS paper and appendix re-rendered. Version 0.9.1 was skipped — see the note at the top of NEWS.md. Suite: 46 files, 747 tests, 4108 passing, 0 failures, 2 skips. |
 | **v0.9.0** | **Theta-storage repair: coefficients were stored in RSiena's internal-parameter column, so `influence_weight` simulated at 0, `cycle4` at 1, and `inPopX`/`outActX`/`homXOutAct` computed a different statistic. Simulations from v0.8.3 and earlier that declared those must be re-run; estimation is unaffected.** Plus ministep-chain event statistics (`searchnet_chain_stats`, `_from_fit`, `_compare`, `_gap`, `_null_model`, `_calibrate`), behavioural repertoires (`searchnet_repertoire`, `_null`, `_stability`), one-mode component coevolution (`searchnet_coevolve*`), time-varying influence slots raised 4 to 20, and a corrected `scope_confound_screen()` that no longer inverts banding on a sparse directed W. Suite: 44 files, 738 tests, 4075 passing, 0 failures, 2 skips. |
 | **v0.8.3** | JSS preparation: `T`/`F` shorthand removed from package code (290 sites), `print()` methods for `saomnk_model`, `saomnk_shock`, `saomnk_assent` and `saomnk_summary`, and examples on every user-facing help page (134 of 165). |
 | **v0.8.2** | Terminology release: W is the influence matrix throughout and epistasis is the fitness outcome, in roxygen, help pages, vignettes, proofs, the JSS paper and its appendix; `saomnk_empirical_epistasis()` deprecated for `saomnk_empirical_influence()`; a terminology gate in the test suite; `get_component_groups_list()` fix. Suite: 1667 passing, 0 failures, 0 skips. |
@@ -391,7 +366,7 @@ Development happens on `dev`; this branch (`public-release`) carries squashed
 release snapshots. Network–behaviour coevolution, two-sided tie formation
 (`saomnk_assent`/`saomnk_confirm`), and continuous parameter ramps
 (`saomnk_theta_ramp`/`saomnk_theta_drift`) shipped in the 0.5–0.6 development
-line and are exercised by the v0.9.0 test suite.
+line and are exercised by the v0.9.2 test suite.
 
 ## Citation
 
@@ -400,7 +375,7 @@ line and are exercised by the v0.9.0 test suite.
   title  = {searchnet: Network-Embedded Search Simulation Engine},
   author = {Stephen Downing},
   year   = {2026},
-  note   = {R package version 0.9.0},
+  note   = {R package version 0.9.2},
   url    = {https://github.com/sdownin/searchnet}
 }
 ```

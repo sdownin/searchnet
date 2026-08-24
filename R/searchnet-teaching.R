@@ -167,11 +167,20 @@ searchnet_classroom_init <- function(n_students, n_rounds = 10, N = 12,
   W <- saomnk_block_diagonal(N_actual, n_blocks)
 
   # ---- Build model ----
+  ## The shipped preset JSONs (inst/teaching/presets/*.json) use the key
+  ## `epistasis_weight`, the pre-0.4.0 name, not `influence_weight`. Before the
+  ## v0.9.0 theta-storage repair this silently didn't matter -- the influence
+  ## weight simulated at 0 regardless of what was declared -- so the mismatch
+  ## was harmless. Now that the weight genuinely drives behaviour, reading the
+  ## wrong key flattens every preset onto the 0.4 fallback and erases the
+  ## intended pedagogical contrast across industries (airline 0.4, tech 0.5,
+  ## pharma 0.45). Check both keys; `influence_weight` wins if a preset is ever
+  ## updated to the current name.
   model <- saomnk_model(
     density          = preset$density_param %||% -0.5,
     popularity       = preset$popularity %||% 0.3,
     influence_matrix = W,
-    influence_weight = preset$influence_weight %||% 0.4
+    influence_weight = preset$influence_weight %||% preset$epistasis_weight %||% 0.4
   )
 
   # ---- Student roster ----

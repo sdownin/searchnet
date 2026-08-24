@@ -446,6 +446,66 @@ their parameter values:
 saomnk_summary(env1)
 ```
 
+## Does Where You Start Matter?
+
+This is the first question a skeptical reader asks about any simulation, and
+it deserves a real answer rather than a reassurance. If results depend on the
+initial configuration, the simulation is describing your setup choices rather
+than the model.
+
+For the SAOM-NK choice rule the answer is known analytically --- the chain is
+ergodic, so it converges to a unique stationary distribution regardless of
+where it starts (Theorem 4; see `vignette("saomnk-blume-tutorial")`). But
+"known analytically" is not the same as "true of the code you just ran," and
+the interesting part of the theorem is not *that* the chain forgets its
+starting point but *how fast*.
+
+`searchnet_ergodicity_sweep()` measures it. Two arms are started at opposite
+extremes --- 10% and 80% of ties present --- and run at a range of chain
+lengths, several replicates each:
+
+```{r ergodicity-demo, fig.height=5, fig.width=10}
+erg <- searchnet_ergodicity_sweep(
+  M = 12, N = 15, start_densities = c(0.1, 0.8),
+  run_lengths = c(15, 30, 60, 120, 240),
+  replicates = 6, equivalence_margin = 0.05, seed = 42
+)
+
+erg
+plot(erg)
+```
+
+A starting gap of 0.70 is erased to under 0.01, and the gap decays as a power
+of run length --- roughly halving each time the chain runs twice as long.
+
+**Why this is worth showing in a methods session.** The version of this
+demonstration that circulated in earlier releases ran the model once from each
+starting point on a 4 $\times$ 5 grid and then printed the sentence "Both
+converge toward a similar equilibrium density" regardless of what the numbers
+were. It printed that sentence under a gap of 0.10 and under a gap of 0.20. It
+was not wrong about the theorem --- the theorem is true --- but it was not
+evidence for it either, and the distinction is exactly what we ask of empirical
+work.
+
+Three things make the replacement a measurement:
+
+| Feature | Why it matters |
+|---|---|
+| The margin is declared **in the call**, before the run | "Close" is meaningless if the threshold is chosen after seeing the gap |
+| The verdict is an **equivalence test**, not a difference test | Failing to reject a difference is not evidence of sameness; TOST requires the whole interval inside the margin |
+| The **Monte Carlo floor** is drawn and excluded from the fit | Once the arms agree, the measured gap settles at replicate noise, not zero; fitting through it overstates the decay rate |
+
+> **Discussion prompt.** The sweep reports *not* equivalent at 15 and 30
+> iterations per actor. Is that a failure of the model, or a fact about the
+> model? What would you conclude if it never reached equivalence at any run
+> length you could afford?
+
+> **A trap worth knowing.** `search_rsiena(process_chain = FALSE)` skips
+> writing the simulated end state back to `$bipartite_matrix`. Compute a
+> "final" density after that call and you silently get the *starting* density
+> --- the chain looks like it never mixed. `searchnet_ergodicity_sweep()`
+> forces `process_chain = TRUE` for exactly this reason.
+
 ## Adding Actor Heterogeneity (Strategies)
 
 Not all firms are alike. Some are aggressive diversifiers; others are

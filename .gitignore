@@ -189,3 +189,18 @@ tests/testthat/*.txt
 !tests/testthat/_*.txt
 nul
 nul.txt
+
+# ---------------------------------------------------------------------------
+# Internal artifacts, untracked 2026-08-24 during the public-history purge.
+#
+# These were tracked and therefore reached the PUBLIC repo on every release
+# snapshot from v0.2.0 to v0.9.0. They are working artifacts of other papers
+# and of the JSS submission process, not package content, and several would
+# not survive R CMD check inside R/ anyway.
+# ---------------------------------------------------------------------------
+R/smj_saomnk_5*
+R/survfitfix*
+_debug_install.R
+_jss_proposal_text.txt
+_jss_r1_review_*.txt
+_run_jss_reviews.py

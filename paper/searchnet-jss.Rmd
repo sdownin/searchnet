@@ -944,9 +944,53 @@ A deeper convergence analysis is provided in the Blume tutorial vignette
 (\code{vignette("saomnk-blume-tutorial")}), which establishes the
 statistical-mechanical foundations of the SAOM-NK choice rule by connecting it
 to the Blume--Capel model \citep{Blume1993}, Gibbs measures, and the
-Ising--logit correspondence.  The tutorial provides computational verification that the
-SAOM Markov chain satisfies detailed balance with respect to the Gibbs
-distribution, confirming convergence to the correct stationary distribution.
+Ising--logit correspondence.
+
+### Ergodicity: forgetting the initial condition {#sec:ergodicity}
+
+Theorem~4 asserts that the chain's stationary distribution is unique and
+independent of where the simulation starts.  That property is easy to
+illustrate badly.  Running the model once from a sparse start and once from a
+dense start, then observing that the two final densities are close, establishes
+very little: no threshold was declared in advance, a single run per arm supplies
+no sampling distribution, and---most importantly---an ergodic chain forgets its
+initial condition *at a rate*, which a pair of endpoints discards.
+
+\pkg{searchnet} therefore ships the demonstration as a measurement.
+\code{searchnet\_ergodicity\_sweep()} runs the same fixed-coefficient model from
+two contrasting starting densities across a range of chain lengths, with
+independent replicates at each, and reports how fast the between-arm gap decays:
+
+```{r ergodicity, cache=TRUE, fig.height=5, fig.width=10, fig.cap="Independence from initial conditions, measured rather than asserted. (a) Two arms starting at density 0.10 and 0.80 converge as run length grows; points are replicates. (b) The between-arm gap decays as a power of run length on log--log axes. The dashed line is the declared equivalence margin; the shaded band is the Monte Carlo floor, below which the measured gap reflects replicate noise rather than mixing, and which is excluded from the fitted slope."}
+erg <- searchnet_ergodicity_sweep(
+  M = 12, N = 15, start_densities = c(0.1, 0.8),
+  run_lengths = c(15, 30, 60, 120, 240),
+  replicates = 10, equivalence_margin = 0.05, seed = 42
+)
+erg
+plot(erg)
+```
+
+Two arms separated by a starting gap of 0.70 close to within 0.01 by 240
+iterations per actor, a collapse of more than 99\%, and the gap decays as a
+power of run length with slope near $-1$ and $R^2 > 0.9$.  The verdict is
+computed rather than printed: at the longest run length the arms are compared by
+a two-one-sided-tests equivalence procedure against a margin fixed in the call,
+so the function is able to report *non*-equivalence, and does so at the shorter
+run lengths.  This is what makes the sweep evidence rather than illustration.
+
+Two details matter for anyone reproducing this.  The Monte Carlo floor is drawn
+explicitly, because once the arms are genuinely equivalent the measured gap
+settles at the expected difference between two sample means from the same
+distribution rather than falling to zero; fitting a decay slope through those
+points would overstate the rate.  And the grid is sized so that density has
+resolution: on the 4 $\times$ 5 grid used in earlier versions of this
+demonstration a single tie moved the density by 0.05, which is coarser than any
+equivalence margin worth declaring.
+
+The vignette also provides computational verification that the SAOM Markov chain
+satisfies detailed balance with respect to the Gibbs distribution, which is the
+mechanism underlying the convergence measured here.
 
 ## Endogenous landscape with heterogeneous strategies {#sec:endogenous}
 

@@ -1,3 +1,82 @@
+# searchnet 0.9.2
+
+Version 0.9.1 was never released: a concurrent session tagged a
+documentation-only commit as `v0.9.1` and pushed the tag, and the number was
+skipped rather than reclaimed by force-pushing over a published tag. Nothing
+described under 0.9.1 anywhere is missing here.
+
+## New: the Theorem 4 demonstration is now a measurement
+
+* **`searchnet_ergodicity_sweep()`** (new, exported, with `print()` and
+  `plot()` methods) measures independence from initial conditions rather
+  than asserting it. It runs the same fixed-coefficient model from two
+  contrasting starting densities across a range of chain lengths, with
+  replicates at each, and reports how fast the between-arm gap decays,
+  ending in a two-one-sided-tests equivalence verdict against a margin
+  declared in the call.
+
+  **Why this replaced what was there.** Four documents -- the JSS paper, its
+  online appendix, the Blume tutorial vignette, and the proof registry --
+  illustrated Blume's ergodicity result the same way: one run from a sparse
+  start, one from a dense start, on a 4 x 5 = 20-cell matrix, followed by an
+  unconditional `cat()` asserting that the two "converge toward a similar
+  equilibrium density." That illustration could not fail. It printed its
+  conclusion regardless of the numbers; a single tie moved the density by
+  0.05, coarser than any threshold worth declaring; and one draw per arm gave
+  no sampling distribution. The same sentence was printed under a gap of 0.10
+  in one document and 0.20 in another.
+
+  The replacement is capable of returning "not equivalent," and does so at
+  short run lengths. At the default configuration a starting gap of 0.70
+  collapses by over 99% and decays as a power of run length with slope near
+  -1 (R^2 > 0.9). The proof registry's F5 check, previously
+  `density_gap < 0.5` on a pair of runs that started 0.70 apart, now requires
+  both decay and equivalence.
+
+  Two methodological details are surfaced rather than hidden: the Monte Carlo
+  floor (once the arms genuinely agree, the measured gap settles at the
+  expected difference of two sample means, not zero) is drawn on the plot and
+  excluded from the decay fit; and an equivalence margin finer than the grid's
+  density resolution is a hard error, since it asks the grid to resolve less
+  than one tie.
+
+* **The `process_chain` trap is now documented in five places.**
+  `search_rsiena(process_chain = FALSE)` does not write the simulated end
+  state back to `$bipartite_matrix`, so a final density computed after such a
+  call silently returns the *starting* density and the chain appears never to
+  mix. `searchnet_ergodicity_sweep()` forces `process_chain = TRUE`.
+
+## Fixes
+
+Two follow-on fixes surfaced by re-rendering the vignettes against the fixed
+v0.9.0 engine -- both were reachable only because the theta-storage repair
+made previously-inert code paths active for the first time.
+
+* **README callout restructured** (`ccbab70`, documentation only). The v0.9.0
+  upgrade notice was a separate red `[!CAUTION]` block above the standing
+  `[!WARNING]` development-status block. With no external stars or followers
+  yet, a severe red callout for a pre-adoption package overstated the
+  audience; the necessary facts -- what broke, that estimation was
+  unaffected, that it is fixed in v0.9.0 -- now sit briefly inside the one
+  `[!WARNING]` block, with a link to this file's v0.9.0 entry for the full
+  technical detail. No code change.
+
+* **`searchnet_synth()`** now detects a pre-treatment predictor with zero
+  variance across control units before calling `Synth::dataprep()`, drops it
+  with a named warning, and only refuses outright below 2 usable predictors.
+  Previously such a call died inside `Synth` with "At least one predictor in
+  X0 has no variation across control units," naming none of the offending
+  steps. A genuinely coupled process (the kind v0.9.0 now actually simulates)
+  can legitimately pin every control actor to the same value at an early
+  step; that is a property of the DGP, not a data error.
+* **Teaching presets** (`inst/teaching/presets/*.json`) declare their
+  coupling weight under the key `epistasis_weight`, the pre-0.4.0 name;
+  `searchnet_classroom_init()` read `influence_weight`. Before v0.9.0 this
+  was harmless -- the weight didn't simulate regardless of its value -- and
+  after the fix it silently flattened all three presets onto the 0.4
+  fallback, erasing their declared pedagogical contrast (airline 0.4, tech
+  0.5, pharma 0.45). Now checks both keys.
+
 # searchnet 0.9.0
 
 ## Theta-storage repair (2026-08-23): `parm` is NOT theta

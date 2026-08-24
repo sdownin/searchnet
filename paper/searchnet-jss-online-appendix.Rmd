@@ -403,14 +403,71 @@ Quantal Response Equilibrium (QRE).*
   Nash equilibria; as $\beta \to 0$, $\pi_\beta$ approaches the uniform
   distribution.
 
-**Convergence demonstration.** We run the same model from opposite starting
-densities and verify convergence toward similar equilibrium configurations:
+**Convergence demonstration.** The property worth demonstrating is the third
+one: independence from initial conditions. The naive way to show it is to run
+the model once from a sparse start and once from a dense start and observe that
+the two final densities are close. That demonstration is weak in three
+separate ways, and versions of it circulated in this package's documentation
+until v0.9.1.
 
-```{r thm4-convergence, fig.height=6, fig.width=9}
-set.seed(42)
+First, closeness is not a result unless a threshold was declared beforehand;
+otherwise any pair of numbers can be described as "similar." Second, one run per
+arm gives no sampling distribution, so there is no way to distinguish
+convergence from a coincidence of two draws. Third, and most basic, an ergodic
+chain forgets its initial condition *at a rate*. The rate is the content of the
+theorem, and a single pair of endpoints discards it.
 
-M_conv <- 4; N_conv <- 5; iters_conv <- 30
+We therefore sweep run length. The same fixed-coefficient model is run from
+both starting densities at a range of chain lengths, with independent
+replicates at each, and we measure how the between-arm gap decays:
 
+```{r thm4-convergence, fig.height=5.5, fig.width=11}
+erg <- searchnet_ergodicity_sweep(
+  M = 12, N = 15,                          # 180 cells: one tie = 0.006 density
+  start_densities = c(0.1, 0.8),           # a 0.70 gap to erase
+  run_lengths = c(15, 30, 60, 120, 240),
+  replicates = 10,
+  equivalence_margin = 0.05,               # declared in advance
+  seed = 42
+)
+
+erg
+plot(erg)
+```
+
+Three features of this output do work that the old two-point comparison could
+not.
+
+The **gap decays as a power of run length** with a slope near $-1$ and
+$R^2 > 0.9$ (panel B, log--log axes). This is the theorem's actual claim: the
+chain is forgetting where it started, steadily, at a measurable rate.
+
+The **verdict is computed, not asserted.** At the longest run length the two
+arms are compared by a two-one-sided-tests equivalence procedure against the
+margin declared in the call above. Equivalence requires the whole confidence
+interval to sit inside that margin, so the demonstration is capable of
+returning "not equivalent" --- and it does exactly that at the shorter run
+lengths, which is why the sweep is informative rather than decorative.
+
+The **Monte Carlo floor is drawn explicitly** (panel B, shaded). Once the arms
+are genuinely equivalent, the measured gap does not fall to zero: it settles at
+the expected absolute difference between two sample means drawn from the same
+distribution. Points at that level are measuring replicate noise, not mixing,
+and are excluded from the decay fit. Reporting a steep slope obtained by
+fitting through the noise floor would overstate the rate.
+
+A practical note that cost us real debugging time, recorded here because it is
+invisible until it bites: `search_rsiena(process_chain = FALSE)` does not write
+the simulated end state back to `$bipartite_matrix`. A final density computed
+after such a call silently returns the *starting* density, and the chain appears
+not to mix at all. `searchnet_ergodicity_sweep()` forces `process_chain = TRUE`
+for this reason.
+
+For the degree-distribution comparison in Appendix G we retain one
+representative pair of environments, run at the converged length rather than
+the short length used previously:
+
+```{r thm4-endpoints}
 sm_conv <- list(
   dv_bipartite = list(
     name = DV_NAME,
@@ -423,35 +480,34 @@ sm_conv <- list(
         effect = "XWX", parameter = 0.2, dv_name = DV_NAME, fix = TRUE,
         nodeSet = c("COMPONENTS", "COMPONENTS"),
         interaction1 = "self$component_1_coDyadCovar",
-        x = create_block_diag(N_conv, round(N_conv / 2))
+        x = create_block_diag(15, 5)
       )
     )
   )
 )
 
-## Sparse start (BI_PROB = 0.1)
 env_sparse <- SaomNkRSienaBiEnv$new(list(
-  M = M_conv, N = N_conv, BI_PROB = 0.1,
-  rand_seed = 100, name = "_sparse_start_"
+  M = 12, N = 15, BI_PROB = 0.1, rand_seed = 100, name = "_sparse_start_"
 ))
-env_sparse$search_rsiena(sm_conv, iterations_per_actor = iters_conv, run_seed = 200)
+env_sparse$search_rsiena(sm_conv, iterations_per_actor = 240, run_seed = 200)
 
-## Dense start (BI_PROB = 0.8)
 env_dense <- SaomNkRSienaBiEnv$new(list(
-  M = M_conv, N = N_conv, BI_PROB = 0.8,
-  rand_seed = 101, name = "_dense_start_"
+  M = 12, N = 15, BI_PROB = 0.8, rand_seed = 101, name = "_dense_start_"
 ))
-env_dense$search_rsiena(sm_conv, iterations_per_actor = iters_conv, run_seed = 201)
+env_dense$search_rsiena(sm_conv, iterations_per_actor = 240, run_seed = 201)
 
-## Compare final densities
-dens_sparse <- sum(env_sparse$bipartite_matrix) / (M_conv * N_conv)
-dens_dense  <- sum(env_dense$bipartite_matrix)  / (M_conv * N_conv)
-
-cat("Sparse start (0.10) --> Final density:", round(dens_sparse, 3), "\n")
-cat("Dense  start (0.80) --> Final density:", round(dens_dense, 3), "\n")
-cat("\nBoth converge toward a similar equilibrium density,\n")
-cat("regardless of initial conditions. This is Blume's result in action.\n")
+cat(sprintf("Sparse start (0.10) --> final density %.4f\n",
+            sum(env_sparse$bipartite_matrix) / (12 * 15)))
+cat(sprintf("Dense  start (0.80) --> final density %.4f\n",
+            sum(env_dense$bipartite_matrix) / (12 * 15)))
 ```
+
+**Scope of the claim.** Density is a scalar summary of a configuration, so what
+the equivalence test establishes is that the two arms agree *on that summary*.
+The theorem is a statement about the full distribution $\pi_\beta$ over
+configurations. The degree distributions in Appendix G provide a second,
+independent summary; agreement on both is stronger evidence than agreement on
+either, and neither is a proof of distributional identity.
 
 ### Bounded Rationality Spectrum
 
@@ -862,9 +918,13 @@ par(mfrow = c(1, 1))
 ```
 
 Both simulations---starting from nearly empty (density 0.10) and nearly full
-(density 0.80) bipartite networks---converge toward similar degree
-distributions, confirming the independence from initial conditions predicted by
-Blume's theorem.
+(density 0.80) bipartite networks---reach similar degree distributions. This is
+a second summary statistic agreeing where the density agreed, on runs long
+enough (240 iterations per actor) for the sweep in Appendix C to have shown the
+arms statistically equivalent. Read it as corroboration of that result rather
+than as an independent confirmation of Blume's theorem: these are two summaries
+of the same pair of runs, and the theorem concerns the whole distribution over
+configurations.
 
 
 # Appendix H: Economic Foundations --- Brock & Durlauf Mean-Field

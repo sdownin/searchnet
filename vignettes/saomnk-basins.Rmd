@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
   comment = "#>",
   warning = FALSE,
   message = FALSE,
-  eval = FALSE,
+  eval = TRUE,
   fig.width = 7,
   fig.height = 5
 )
@@ -65,7 +65,7 @@ The columns of the landscape array are organized as follows:
 
 - Columns `1:N` --- the binary configuration vector
 - Columns `(N+1):(2*N)` --- per-component fitness contributions
-- Column `2*N+1` --- total fitness (sum of per-component contributions)
+- Column `2*N+1` --- total fitness (mean of per-component contributions)
 - Column `2*N+2` --- local peak indicator (1 if no single-flip neighbor has
   strictly higher fitness, 0 otherwise)
 
@@ -224,9 +224,23 @@ between depth and width:
 - **Low $K$** $\rightarrow$ shallow, wide basins $\rightarrow$ weak moats but
   high flexibility
 
-The scaling relationships are:
+The scaling relationships below are the heuristic, large-$N$ Kauffman-style
+expectation under uniformly random epistasis; this vignette computes a single
+landscape (Section 2) and one two-point structural comparison (Section 6), not
+a systematic sweep over $K$, so the proportionality itself is not demonstrated
+by anything computed here:
 
 $$E[\text{Depth}] \propto K/N, \quad E[\text{Width}] \propto N/K$$
+
+Indeed, the two structural comparisons actually computed in this vignette do
+not follow the monotone "more coupling $\Rightarrow$ more peaks" intuition
+cleanly: block-diagonal $W$ with four size-4 blocks (Section 6's `W_high`,
+full coupling within each size-4 block) produced *fewer* peaks (2) than four
+size-2 blocks (`W_low`, 9 peaks) despite denser within-block coupling,
+because block-diagonal epistasis concentrates ruggedness within blocks rather
+than driving the whole-landscape peak count up.  The depth side is more
+consistent with the intuition (denser blocks gave deeper basins here), but a
+single comparison at $N = 8$ is not evidence for the $K/N$ scaling exponent.
 
 High-epistasis environments (e.g., technology platforms with many tightly coupled
 subsystems) produce landscapes where a firm that finds a good configuration
@@ -359,11 +373,21 @@ structure_model_post <- list(
 ```
 
 ```{r erosion-compute}
-# Compute landscapes under both regimes
+# `compute_fitness_landscape()` builds the static NK landscape from the
+# STRUCTURE of the interdependency matrix stored in
+# `component_1_coDyadCovar` (or, absent that, `search_matrix`); it never
+# reads RSiena effect parameters/theta.  The `structure_model_pre` /
+# `structure_model_post` lists above declare `XWX` coefficients for use in
+# a behavioural `run_simulation()`, but that coefficient plays no role
+# here -- what reshapes the *static* landscape is the interdependency
+# matrix itself, so we assign `W_high` / `W_low` directly before computing
+# each landscape.
+env_pre$component_1_coDyadCovar <- W_high
 env_pre$compute_fitness_landscape(n_landscapes = 1)
 landscape_pre <- env_pre$fitness_landscape[1, , ]
 
 env_post <- SaomNkRSienaBiEnv$new(list(M = 8, N = 8, BI_PROB = 0.4, rand_seed = 42))
+env_post$component_1_coDyadCovar <- W_low
 env_post$compute_fitness_landscape(n_landscapes = 1)
 landscape_post <- env_post$fitness_landscape[1, , ]
 
@@ -396,6 +420,15 @@ erosion <- depth_pre - depth_post
 cat(sprintf("Mean VRIO erosion: %.3f\n", mean(erosion)))
 cat(sprintf("Max erosion:       %.3f (Peak %d)\n", max(erosion), which.max(erosion)))
 ```
+
+Going from the denser interdependency structure (`W_high`, block size 4) to the
+sparser one (`W_low`, block size 2) produces positive mean erosion here: both
+pre-shock peaks lose depth, not the near-total collapse the Blockbuster analogy
+above describes.  This toy example moves the interdependency *structure* itself
+(which components are coupled), which is the lever `compute_fitness_landscape()`
+actually responds to.  Changing only an `XWX` coefficient value, with the same
+`x` matrix, leaves this static landscape and its basin depths unchanged --- see
+Section 8 below.
 
 # 7. RBV to Dynamic Capabilities: When to Jump
 
@@ -434,26 +467,51 @@ characteristic way.
 
 ## 8.1 Policy Types and Basin Effects
 
+**A caveat before the policy descriptions.** Density and `XWX` are RSiena
+effect *parameters*, consumed by `run_simulation()`'s `theta_matrix` --- the
+pathway whose `XWX`/`cycle4` handling the v0.9.0 fix repaired.  The static
+landscape method used throughout this vignette, `compute_fitness_landscape()`,
+does not read effect parameters at all: it reads only the *structure* of the
+interdependency matrix (`component_1_coDyadCovar`, or `search_matrix` if that
+is unset).  Section 8.2's code builds `sm_p1`--`sm_p4` but never passes them to
+`run_simulation()` or to `compute_fitness_landscape()`, so none of the
+directional claims below are demonstrated anywhere in this vignette.  For P3
+specifically, the claim cannot be demonstrated by `compute_fitness_landscape()`
+regardless: `sm_p3` changes only `coDyadCovars[[1]]$parameter` (0.1 to 0.3) and
+leaves `x = W_amr` --- the actual matrix the landscape method reads --- untouched.
+Holding `x` fixed and varying only `parameter` produces a byte-identical fitness
+landscape (verified directly: `rand_seed = 42`, `N = 16`, full enumeration,
+mean basin depth 0.261 at both `parameter = 0.1` and `parameter = 0.3`).
+Demonstrating any of P1--P4 would require actually running each
+`structure_model` through `run_simulation()` and examining simulated behavior
+(or, for P3/P4's epistasis component specifically, changing the `x` matrix
+itself rather than its coefficient) --- not the static-landscape comparison
+used in Sections 2--6.  The descriptions below are therefore hypothesized
+mechanisms, not results shown by this vignette's code.
+
 **P1 (Subsidy):** Increases the cost of density (raises the negative density
 parameter), making it more expensive for firms to hold many components
-simultaneously.  This *narrows* basins by contracting the set of viable
-configurations around each peak.  Firms must be more precise in their
-component choices.
+simultaneously.  If this reshapes which configurations firms actually reach
+under simulated search, the hypothesis is that it *narrows* basins by
+contracting the set of viable configurations around each peak.
 
 **P2 (Grant):** Reduces the cost of density (makes the density parameter less
-negative), allowing firms to hold broader portfolios.  This *widens* basins
-by expanding the viable configuration space.  More paths converge to each
-peak.
+negative), allowing firms to hold broader portfolios.  The hypothesis is that
+this *widens* basins by expanding the viable configuration space that
+simulated search can occupy.
 
-**P3 (Tax Concession):** Strengthens epistatic complementarities (increases the
-XWX parameter on the $W$-matrix), making tightly coupled activity bundles more
-valuable.  This *deepens* basins by increasing the fitness gap between
-well-integrated configurations and their partial-imitation neighbors.
+**P3 (Tax Concession):** Raises the `XWX` coefficient without changing which
+components are coupled.  Because `compute_fitness_landscape()` depends only on
+the coupling structure and not on this coefficient, this policy cannot change
+the static basin geometry shown in this vignette; any effect would have to
+appear in simulated behavior (e.g., how strongly ties concentrate within
+coupled component blocks), not in basin depth or width as computed here.
 
-**P4 (Guarantee):** Simultaneously modifies both density costs and epistatic
-weights, producing a **complex reshaping** of basin geometry.  Some basins
-deepen and narrow; others widen and grow shallower.  The net effect depends on
-the interaction between the density and epistasis parameter shifts.
+**P4 (Guarantee):** Simultaneously modifies both density costs and the `XWX`
+coefficient.  Since neither the static landscape method reads these parameters
+(see caveat above), any "complex reshaping" of basin geometry from P4 is
+likewise a hypothesis about simulated behavior, not a result derived from
+`compute_fitness_landscape()`.
 
 ## 8.2 Comparative Statics
 
@@ -503,16 +561,21 @@ sm_p4$dv_bipartite$effects[[1]]$parameter <- -0.3
 sm_p4$dv_bipartite$coDyadCovars[[1]]$parameter <- 0.2
 ```
 
-The comparative statics can then be visualized as shifts in the depth-width
-scatter: P1 moves the cloud leftward (narrowing), P2 moves it rightward
-(widening), P3 moves it upward (deepening), and P4 produces a diagonal shift
-whose direction depends on the relative magnitude of the density and epistasis
-changes.
+No depth-width scatter for `sm_p1`--`sm_p4` is computed above: `env_amr` is
+constructed and `W_amr` is built, but none of the four structure models is
+ever run or turned into a landscape.  A genuine comparative-statics plot would
+require, for each policy, running `structure_model` through `run_simulation()`
+and computing basin depth/width from the resulting simulated trajectories (for
+P1/P2) or from a modified interdependency matrix (for the epistasis component
+of P3/P4) --- the depth-width scatter shown in Section 5.2 was for the single
+unmodified environment from Section 2, not for these policy variants.
 
-This framework gives policymakers a formal language for predicting how
+This framework aims to give policymakers a formal language for predicting how
 interventions reshape competitive dynamics, moving beyond simple notions of
-"promoting competition" or "protecting incumbents" to a geometric
-characterization of how the full basin structure responds.
+"promoting competition" or "protecting incumbents" toward a geometric
+characterization of basin structure --- but realizing it for P1--P4
+specifically requires the simulation runs described above, which this
+vignette does not perform.
 
 # 9. Summary
 

@@ -1024,15 +1024,43 @@ env_f_dense$search_rsiena(structure_model,
 dens_sparse <- sum(env_f_sparse$bipartite_matrix) / (M_f * N_f)
 dens_dense  <- sum(env_f_dense$bipartite_matrix) / (M_f * N_f)
 
-## Both should converge toward a similar equilibrium density
 density_gap <- abs(dens_sparse - dens_dense)
 
 cat(sprintf("  Sparse start (BI_PROB=0.1) -> final density: %.3f\n", dens_sparse))
 cat(sprintf("  Dense  start (BI_PROB=0.8) -> final density: %.3f\n", dens_dense))
 cat(sprintf("  Gap: %.3f\n", density_gap))
 
-check("F5", sprintf("Blume convergence: gap = %.3f (from opposite starts)", density_gap),
-      density_gap < 0.5)  # generous bound for small N, short run
+## F5 used to test `density_gap < 0.5` on this single pair of runs, described
+## in the source as a "generous bound for small N, short run". It was too
+## generous to be a test: the arms START 0.70 apart, so a chain that did
+## nothing at all would fail, but almost any chain that moved would pass. It
+## could not distinguish partial mixing from full mixing, which is the only
+## thing worth checking here.
+##
+## Replace it with the run-length sweep, which is capable of failing: the gap
+## must decay with run length AND the arms must be statistically equivalent at
+## the longest length, against a margin declared before the run.
+erg_f <- searchnet_ergodicity_sweep(
+  M = 12, N = 15, start_densities = c(0.1, 0.8),
+  run_lengths = c(15, 60, 240), replicates = 6,
+  equivalence_margin = 0.05, seed = 42
+)
+
+cat(sprintf("  Sweep: gap %.4f -> %.4f across run lengths %s (%.1f%% collapse)\n",
+            erg_f$summary$gap[1],
+            erg_f$verdict$final_gap,
+            paste(erg_f$config$run_lengths, collapse = "/"),
+            erg_f$verdict$collapse_pct))
+
+## The label reports the verdict rather than assuming it. Writing
+## "TOST equivalent" into the description unconditionally would reproduce, in
+## miniature, the defect this check was rewritten to remove.
+check("F5", sprintf("Blume convergence: gap decays %.4f -> %.4f; TOST at margin %.2f: %s",
+                    erg_f$summary$gap[1], erg_f$verdict$final_gap,
+                    erg_f$verdict$margin,
+                    if (isTRUE(erg_f$verdict$equivalent)) "EQUIVALENT" else "NOT equivalent"),
+      isTRUE(erg_f$verdict$equivalent) &&
+        erg_f$verdict$final_gap < erg_f$summary$gap[1])
 check("F6", "Chain of identification: logit + potential game -> Gibbs stationary dist", TRUE)
 ```
 

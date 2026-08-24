@@ -151,6 +151,18 @@ searchnet_causal_panel <- function(env, shock_step, outcome = "utility",
 #' and control actors---i.e., \code{searchnet_causal_panel()} was called
 #' with an explicit \code{treated_actors} argument.
 #'
+#' \code{did::att_gt()} additionally requires at least 5 distinct units
+#' (more if \code{xformla} covariates are supplied) in every
+#' \code{first_treat} group, including the never-treated (control) group.
+#' \code{searchnet_did()} checks this before calling \code{did::att_gt()}
+#' and fails with an actionable message naming the actual requirement and
+#' the observed counts, rather than passing through \code{did}'s opaque
+#' "never-treated group is too small" error. A design with too few control
+#' actors is a genuine scope limit of the Callaway & Sant'Anna estimator,
+#' not a defect in the panel; widen the design (more actors, fewer
+#' \code{treated_actors}) or, for staggered treatment timing, pass
+#' \code{control_group = "notyettreated"}.
+#'
 #' @param panel A \code{data.frame} returned by
 #'   \code{\link{searchnet_causal_panel}} with both treated and control
 #'   groups.
@@ -182,6 +194,49 @@ searchnet_did <- function(panel, ...) {
   if (all(panel$treated == 1L))
     stop("DID requires both treated and control groups.\n",
          "Re-run searchnet_causal_panel() with explicit treated_actors.")
+
+  # ------------------------------------------------------------------
+  #  Pre-flight group-size check
+  # ------------------------------------------------------------------
+  # did::att_gt() (via its internal pre_process_did()) requires at least
+  # `5 + <number of covariates in xformla>` distinct units in every
+  # first_treat group. When the never-treated (control) group falls below
+  # that floor and control_group = "nevertreated" (the default here and in
+  # did::att_gt()), did halts with an opaque "The never-treated group is
+  # too small to serve as a reliable control" error that names no numbers.
+  # This is a genuine scope limit of the Callaway & Sant'Anna estimator --
+  # not a defect in how searchnet_causal_panel() builds the panel, which is
+  # correctly balanced and correctly encodes first_treat = 0 for controls.
+  # Surface the actual requirement and observed counts here, before handing
+  # off to did, instead of letting its unexplained message pass through.
+  dots          <- list(...)
+  control_group <- if (!is.null(dots$control_group)) dots$control_group[[1]] else "nevertreated"
+  n_covariates  <- if (!is.null(dots$xformla)) length(all.vars(dots$xformla)) else 0L
+  min_group_n   <- n_covariates + 5L
+
+  group_units <- unique(panel[, c("actor_id", "first_treat")])
+  group_sizes <- table(group_units$first_treat)
+  control_n   <- if ("0" %in% names(group_sizes)) as.integer(group_sizes[["0"]]) else 0L
+  n_total     <- length(unique(panel$actor_id))
+
+  if (identical(control_group, "nevertreated") && control_n > 0 &&
+      control_n < min_group_n) {
+    stop(sprintf(paste0(
+      "searchnet_did(): the never-treated (control) group has only %d ",
+      "actor(s), but did::att_gt() requires at least %d units per ",
+      "first_treat group (5 baseline, +1 per covariate in `xformla`) ",
+      "before it will treat a group as a reliable comparison; below that ",
+      "it refuses to estimate rather than return an unreliable ATT. This ",
+      "is a scope limit of the design (%d actor(s) total, %d never-",
+      "treated), not a bug in searchnet_causal_panel()'s panel. Either: ",
+      "(1) widen the design so at least %d actors are never-treated ",
+      "controls (fewer treated_actors and/or a larger `env`), or (2) if ",
+      "treatment timing is staggered across actors, call searchnet_did() ",
+      "with control_group = 'notyettreated' so not-yet-treated actors can ",
+      "serve as controls instead of requiring a never-treated group."),
+      control_n, min_group_n, n_total, control_n, min_group_n),
+      call. = FALSE)
+  }
 
   # Ensure actor_id is numeric for did::att_gt
   panel$actor_id_num <- as.integer(panel$actor_id)
@@ -269,6 +324,41 @@ searchnet_synth <- function(panel, treated_unit, predictors = NULL, ...) {
 
   if (length(predictors) < 2)
     stop("Need at least 2 pre-treatment steps as predictors.")
+
+  ## Drop any pre-treatment step whose outcome is IDENTICAL across every
+  ## control unit. Synth::dataprep()/synth() need cross-sectional variance in
+  ## each predictor to fit the donor weights; a zero-variance predictor stops
+  ## the whole call with "At least one predictor in X0 has no variation across
+  ## control units", naming none of the offending steps.
+  ##
+  ## This became reachable after the v0.9.0 theta-storage repair: XWX/cycle4
+  ## coefficients now actually drive the simulation (previously they simulated
+  ## at 0 regardless of what was declared), and a genuinely coupled process can
+  ## legitimately pin every control actor to the same value at an early step --
+  ## that is a real property of the DGP, not a data error, and the fix is to
+  ## drop that step as a predictor and say so, never to fail opaquely or to
+  ## silently proceed with a predictor Synth cannot use.
+  control_rows <- panel[panel$actor_id_num %in% control_ids, , drop = FALSE]
+  degenerate <- vapply(predictors, function(s) {
+    v <- control_rows$outcome[control_rows$step == s]
+    length(v) > 0 && stats::sd(v, na.rm = TRUE) %in% c(0, NA)
+  }, logical(1))
+
+  if (any(degenerate)) {
+    warning(sprintf(paste0("searchnet_synth(): dropping pre-treatment step(s) ",
+                          "%s as predictor(s): the outcome is identical across ",
+                          "every control unit at that step, which Synth cannot ",
+                          "use to fit donor weights. This can be a genuine ",
+                          "property of a strongly coupled process, not a data ",
+                          "error."), paste(predictors[degenerate], collapse = ", ")),
+            call. = FALSE)
+    predictors <- predictors[!degenerate]
+  }
+  if (length(predictors) < 2)
+    stop("Fewer than 2 usable pre-treatment predictors remain after dropping ",
+         "step(s) with no cross-sectional variation among control units. ",
+         "Supply more pre-treatment steps or a different `predictors` set.",
+         call. = FALSE)
 
   # Build predictor specification for Synth::dataprep
   # Each pre-treatment step becomes a predictor via special.predictors

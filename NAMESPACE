@@ -222,6 +222,13 @@ export(searchnet_rd)
 export(searchnet_causal_plot)
 
 # ---------------------------------------------------------------------------
+# Ergodicity demonstration -- searchnet-ergodicity.R
+# ---------------------------------------------------------------------------
+export(searchnet_ergodicity_sweep)
+S3method(print, searchnet_ergodicity)
+S3method(plot, searchnet_ergodicity)
+
+# ---------------------------------------------------------------------------
 # Teaching module -- searchnet-teaching.R
 # ---------------------------------------------------------------------------
 export(searchnet_classroom_init)
