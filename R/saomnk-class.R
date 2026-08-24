@@ -73,10 +73,23 @@ SaomNkRSienaBiEnv <- R6Class(
           self$set_behavior_rsienaDV(structure_model, verbose = verbose)
         .behavior_varlist[[ structure_model$dv_behavior$name ]] <- self$behavior_rsienaDV
       }
-      ## Check if any covariates are actually provided (not just empty lists)
-      has_coCovars     <- 'coCovars' %in% names(structure_model$dv_bipartite) && length(structure_model$dv_bipartite$coCovars) > 0
-      has_coDyadCovars <- 'coDyadCovars' %in% names(structure_model$dv_bipartite) && length(structure_model$dv_bipartite$coDyadCovars) > 0
-      if (!has_coCovars && !has_coDyadCovars) {
+      ## Check if any covariates are actually provided (not just empty lists).
+      ##
+      ## The TIME-VARYING kinds must be counted here too. This gate previously
+      ## tested only `coCovars` and `coDyadCovars`, so a structure model
+      ## declaring ONLY `varCovars` or ONLY `varDyadCovars` took the early
+      ## return below and registered nothing -- silently. That is exactly the
+      ## shape of a multi-W horserace built from `influence_arrays` with no
+      ## static `influence_matrix`: every coupling would be dropped and the
+      ## model would estimate without them, reporting nothing amiss.
+      .has <- function(k) k %in% names(structure_model$dv_bipartite) &&
+        length(structure_model$dv_bipartite[[k]]) > 0
+      has_coCovars      <- .has('coCovars')
+      has_coDyadCovars  <- .has('coDyadCovars')
+      has_varCovars     <- .has('varCovars')
+      has_varDyadCovars <- .has('varDyadCovars')
+      if (!has_coCovars && !has_coDyadCovars &&
+          !has_varCovars && !has_varDyadCovars) {
         ## No covariates -- return simple RSiena data with only bipartite DV.
         ## CRITICAL: sienaDataCreate() picks up the dependent-variable name from
         ## the NAMES OF THE `...` ARGUMENTS, not from the names of a list passed
@@ -155,7 +168,11 @@ SaomNkRSienaBiEnv <- R6Class(
       }
       if (ncompo_varCovar) {
         for (i in 1:ncompo_varCovar) {
-          property <- sprintf('component_%s_coCovar', i)
+          ## Slot name must carry the _varCovar suffix: it is what the R6 field is
+          ## called in saomnk-base.R, and it is what an effect's interaction1
+          ## ("self$component_1_varCovar") addresses. Writing _coCovar here both
+          ## clobbered the coCovar slot and left the varCovar reference unresolved.
+          property <- sprintf('component_%s_varCovar', i)
           eff <- structure_model$dv_bipartite$varCovars[[ component_varCovar_ids[i] ]]
           self[[property]] <- varCovar(eff$x, nodeSet = c('COMPONENTS'))
           input_varlist[[sprintf('self$%s',property)]] <-  self[[property]]
@@ -164,14 +181,28 @@ SaomNkRSienaBiEnv <- R6Class(
       if (ncompo_coDyadCovar) {
         for (i in 1:ncompo_coDyadCovar) {
           property <- sprintf('component_%s_coDyadCovar', i)
-          eff <- structure_model$dv_bipartite$coDyadCovar[[ component_coDyadCovar_ids[i] ]]
+          ## Exact [[ ]] rather than $coDyadCovar: `$` partial-matches, so the
+          ## singular name silently resolved to the plural key producers emit.
+          ## Adding a real `coDyadCovar` key would flip the match, and an
+          ## ambiguous prefix returns NULL -- after which NULL[[1]] is NULL, not
+          ## an error, and the failure surfaces far away as "argument is of
+          ## length zero". [[ ]] fails here instead, at the line that is wrong.
+          eff <- structure_model$dv_bipartite[["coDyadCovars"]][[ component_coDyadCovar_ids[i] ]]
+          eff_dim <- dim(eff$x)
           if ( !is.null(eff$nodeSet) ) {
             ## A. user provides nodeSet
             nodeSet <- eff$nodeSet
-          } else if ( self$M != self$N  &  all(c(self$M, self$N) == dim(eff$x)) ) {
-            ## B. different M,N dimensions reveals nodeSet
-            nodeSet <- if (dim(eff$x)[1]==self$M & dim(eff$x)[2]==self$N){c('ACTORS','COMPONENTS')} else {c('COMPONENTS','COMPONENTS')}
+          } else if ( self$M != self$N  &&  length(eff_dim) == 2L  &&
+                      eff_dim[1] == self$M  &&  eff_dim[2] == self$N ) {
+            ## B. M x N with M != N: an actor-by-component covariate
+            nodeSet <- c('ACTORS','COMPONENTS')
+          } else if ( self$M != self$N  &&  length(eff_dim) == 2L  &&
+                      eff_dim[1] == self$N  &&  eff_dim[2] == self$N ) {
+            ## C. N x N with M != N: a component-by-component covariate
+            nodeSet <- c('COMPONENTS','COMPONENTS')
           } else {
+            ## D. M == N, or dimensions matching neither shape. When M == N the
+            ## two shapes above are identical and genuinely ambiguous.
             stop(sprintf('Cannot distinguish actors from components for dimensions M=%s,N=%s; provide nodeSet for effect %s.',
                          self$M, self$N, eff$effect))
           }
@@ -182,7 +213,8 @@ SaomNkRSienaBiEnv <- R6Class(
       if (ncompo_varDyadCovar) {
         for (i in 1:ncompo_varDyadCovar) {
           property <- sprintf('component_%s_varDyadCovar', i)
-          eff <- structure_model$dv_bipartite$varDyadCovar[[ component_varDyadCovar_ids[i] ]]
+          ## Exact [[ ]] for the same reason as coDyadCovars above.
+          eff <- structure_model$dv_bipartite[["varDyadCovars"]][[ component_varDyadCovar_ids[i] ]]
           self[[property]] <- varDyadCovar(eff$x, nodeSet = c('COMPONENTS','COMPONENTS'))
           input_varlist[[sprintf('self$%s',property)]] <-  self[[property]]
         }
@@ -205,7 +237,8 @@ SaomNkRSienaBiEnv <- R6Class(
       }
       if (nstrat_varCovar) {
         for (i in 1:nstrat_varCovar) {
-          property <- sprintf('strat_%s_coCovar', i)
+          ## _varCovar suffix, not _coCovar -- see the component varCovar loop above.
+          property <- sprintf('strat_%s_varCovar', i)
           eff <- structure_model$dv_bipartite$varCovars[[ strat_varCovar_ids[i] ]]
           self[[property]] <- varCovar(eff$x, nodeSet = c('ACTORS'))
           input_varlist[[sprintf('self$%s',property)]] <-  self[[property]]
@@ -214,14 +247,24 @@ SaomNkRSienaBiEnv <- R6Class(
       if (nstrat_coDyadCovar) {
         for (i in 1:nstrat_coDyadCovar) {
           property <- sprintf('strat_%s_coDyadCovar', i)
-          eff <- structure_model$dv_bipartite$coDyadCovar[[ component_coDyadCovar_ids[i] ]]
+          ## strat_, not component_: indexing the component id vector here made a
+          ## strategy dyadic covariate fetch the component one whenever both were
+          ## present. Exact [[ ]] for the reason given in the component loop above.
+          eff <- structure_model$dv_bipartite[["coDyadCovars"]][[ strat_coDyadCovar_ids[i] ]]
+          eff_dim <- dim(eff$x)
           if ( !is.null(eff$nodeSet) ) {
             ## A. user provides nodeSet
             nodeSet <- eff$nodeSet
-          } else if ( self$M != self$N  &  all(c(self$M, self$N) == dim(eff$x)) ) {
-            ## B. different M,N dimensions reveals nodeSet
-            nodeSet <- if (dim(eff$x)[1]==self$M & dim(eff$x)[2]==self$N){c('ACTORS','COMPONENTS')} else {c('ACTORS','ACTORS')}
+          } else if ( self$M != self$N  &&  length(eff_dim) == 2L  &&
+                      eff_dim[1] == self$M  &&  eff_dim[2] == self$N ) {
+            ## B. M x N with M != N: an actor-by-component covariate
+            nodeSet <- c('ACTORS','COMPONENTS')
+          } else if ( self$M != self$N  &&  length(eff_dim) == 2L  &&
+                      eff_dim[1] == self$M  &&  eff_dim[2] == self$M ) {
+            ## C. M x M with M != N: an actor-by-actor covariate
+            nodeSet <- c('ACTORS','ACTORS')
           } else {
+            ## D. M == N, or dimensions matching neither shape.
             stop(sprintf('Cannot distinguish actors from components for dimensions M=%s,N=%s; provide nodeSet for effect %s.',
                          self$M, self$N, eff$effect))
           }
@@ -232,7 +275,8 @@ SaomNkRSienaBiEnv <- R6Class(
       if (nstrat_varDyadCovar) {
         for (i in 1:nstrat_varDyadCovar) {
           property <- sprintf('strat_%s_varDyadCovar', i)
-          eff <- structure_model$dv_bipartite$varDyadCovar[[ strat_varDyadCovar_ids[i] ]]
+          ## Exact [[ ]] for the same reason as coDyadCovars above.
+          eff <- structure_model$dv_bipartite[["varDyadCovars"]][[ strat_varDyadCovar_ids[i] ]]
           self[[property]] <- varDyadCovar(eff$x, nodeSet = c('ACTORS','ACTORS'))
           input_varlist[[sprintf('self$%s',property)]] <-  self[[property]]
         }
@@ -322,7 +366,10 @@ SaomNkRSienaBiEnv <- R6Class(
       }
       if (ncompo_varCovar) {
         for (i in 1:ncompo_varCovar) {
-          property <- sprintf('component_%s_coCovar', i)
+          ## _varCovar suffix, not _coCovar: with _coCovar a varCovar overwrote the
+          ## coCovar entry of the same index in input_varlist, and no variable
+          ## answered to interaction1 = "self$component_i_varCovar".
+          property <- sprintf('component_%s_varCovar', i)
           eff <- structure_model$dv_bipartite$varCovars[[ component_varCovar_ids[i] ]]
           input_varlist[[sprintf('%s',property)]] <- varCovar(eff$x, nodeSet = c('COMPONENTS'))
         }
@@ -330,14 +377,28 @@ SaomNkRSienaBiEnv <- R6Class(
       if (ncompo_coDyadCovar) {
         for (i in 1:ncompo_coDyadCovar) {
           property <- sprintf('component_%s_coDyadCovar', i)
-          eff <- structure_model$dv_bipartite$coDyadCovar[[ component_coDyadCovar_ids[i] ]]
+          ## Exact [[ ]] rather than $coDyadCovar: `$` partial-matches, so the
+          ## singular name silently resolved to the plural key producers emit.
+          ## Adding a real `coDyadCovar` key would flip the match, and an
+          ## ambiguous prefix returns NULL -- after which NULL[[1]] is NULL, not
+          ## an error, and the failure surfaces far away as "argument is of
+          ## length zero". [[ ]] fails here instead, at the line that is wrong.
+          eff <- structure_model$dv_bipartite[["coDyadCovars"]][[ component_coDyadCovar_ids[i] ]]
+          eff_dim <- dim(eff$x)
           if ( !is.null(eff$nodeSet) ) {
             ## A. user provides nodeSet
             nodeSet <- eff$nodeSet
-          } else if ( self$M != self$N  &  all(c(self$M, self$N) == dim(eff$x)) ) {
-            ## B. different M,N dimensions reveals nodeSet
-            nodeSet <- if (dim(eff$x)[1]==self$M & dim(eff$x)[2]==self$N){c('ACTORS','COMPONENTS')} else {c('COMPONENTS','COMPONENTS')}
+          } else if ( self$M != self$N  &&  length(eff_dim) == 2L  &&
+                      eff_dim[1] == self$M  &&  eff_dim[2] == self$N ) {
+            ## B. M x N with M != N: an actor-by-component covariate
+            nodeSet <- c('ACTORS','COMPONENTS')
+          } else if ( self$M != self$N  &&  length(eff_dim) == 2L  &&
+                      eff_dim[1] == self$N  &&  eff_dim[2] == self$N ) {
+            ## C. N x N with M != N: a component-by-component covariate
+            nodeSet <- c('COMPONENTS','COMPONENTS')
           } else {
+            ## D. M == N, or dimensions matching neither shape. When M == N the
+            ## two shapes above are identical and genuinely ambiguous.
             stop(sprintf('Cannot distinguish actors from components for dimensions M=%s,N=%s; provide nodeSet for effect %s.',
                          self$M, self$N, eff$effect))
           }
@@ -347,7 +408,8 @@ SaomNkRSienaBiEnv <- R6Class(
       if (ncompo_varDyadCovar) {
         for (i in 1:ncompo_varDyadCovar) {
           property <- sprintf('component_%s_varDyadCovar', i)
-          eff <- structure_model$dv_bipartite$varDyadCovar[[ component_varDyadCovar_ids[i] ]]
+          ## Exact [[ ]] for the same reason as coDyadCovars above.
+          eff <- structure_model$dv_bipartite[["varDyadCovars"]][[ component_varDyadCovar_ids[i] ]]
           input_varlist[[sprintf('%s',property)]] <-  varDyadCovar(eff$x, nodeSet = c('COMPONENTS','COMPONENTS'))
         }
       }
@@ -361,7 +423,8 @@ SaomNkRSienaBiEnv <- R6Class(
       }
       if (nstrat_varCovar) {
         for (i in 1:nstrat_varCovar) {
-          property <- sprintf('strat_%s_coCovar', i)
+          ## _varCovar suffix, not _coCovar -- see the component varCovar loop above.
+          property <- sprintf('strat_%s_varCovar', i)
           eff <- structure_model$dv_bipartite$varCovars[[ strat_varCovar_ids[i] ]]
           input_varlist[[sprintf('%s',property)]] <- varCovar(eff$x, nodeSet = c('ACTORS'))
         }
@@ -369,14 +432,24 @@ SaomNkRSienaBiEnv <- R6Class(
       if (nstrat_coDyadCovar) {
         for (i in 1:nstrat_coDyadCovar) {
           property <- sprintf('strat_%s_coDyadCovar', i)
-          eff <- structure_model$dv_bipartite$coDyadCovar[[ component_coDyadCovar_ids[i] ]]
+          ## strat_, not component_: indexing the component id vector here made a
+          ## strategy dyadic covariate fetch the component one whenever both were
+          ## present. Exact [[ ]] for the reason given in the component loop above.
+          eff <- structure_model$dv_bipartite[["coDyadCovars"]][[ strat_coDyadCovar_ids[i] ]]
+          eff_dim <- dim(eff$x)
           if ( !is.null(eff$nodeSet) ) {
             ## A. user provides nodeSet
             nodeSet <- eff$nodeSet
-          } else if ( self$M != self$N  &  all(c(self$M, self$N) == dim(eff$x)) ) {
-            ## B. different M,N dimensions reveals nodeSet
-            nodeSet <- if (dim(eff$x)[1]==self$M & dim(eff$x)[2]==self$N){c('ACTORS','COMPONENTS')} else {c('ACTORS','ACTORS')}
+          } else if ( self$M != self$N  &&  length(eff_dim) == 2L  &&
+                      eff_dim[1] == self$M  &&  eff_dim[2] == self$N ) {
+            ## B. M x N with M != N: an actor-by-component covariate
+            nodeSet <- c('ACTORS','COMPONENTS')
+          } else if ( self$M != self$N  &&  length(eff_dim) == 2L  &&
+                      eff_dim[1] == self$M  &&  eff_dim[2] == self$M ) {
+            ## C. M x M with M != N: an actor-by-actor covariate
+            nodeSet <- c('ACTORS','ACTORS')
           } else {
+            ## D. M == N, or dimensions matching neither shape.
             stop(sprintf('Cannot distinguish actors from components for dimensions M=%s,N=%s; provide nodeSet for effect %s.',
                          self$M, self$N, eff$effect))
           }
@@ -386,7 +459,8 @@ SaomNkRSienaBiEnv <- R6Class(
       if (nstrat_varDyadCovar) {
         for (i in 1:nstrat_varDyadCovar) {
           property <- sprintf('strat_%s_varDyadCovar', i)
-          eff <- structure_model$dv_bipartite$varDyadCovar[[ strat_varDyadCovar_ids[i] ]]
+          ## Exact [[ ]] for the same reason as coDyadCovars above.
+          eff <- structure_model$dv_bipartite[["varDyadCovars"]][[ strat_varDyadCovar_ids[i] ]]
           input_varlist[[sprintf('%s',property)]] <-  varDyadCovar(eff$x, nodeSet = c('ACTORS','ACTORS'))
         }
       }
@@ -814,7 +888,8 @@ SaomNkRSienaBiEnv <- R6Class(
       ##-----------------------------
       ## RSiena Algorithm
       self$rsiena_run_seed <- run_seed
-      self$rsiena_algorithm <- sienaAlgorithmCreate(projname=sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP),
+      self$rsiena_algorithm <- sienaAlgorithmCreate(projname=file.path(self$DIR_OUTPUT,
+                                                              sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP)),
                                                     simOnly = TRUE,
                                                     nsub = 0,
                                                     n3 = iterations,
@@ -970,22 +1045,43 @@ SaomNkRSienaBiEnv <- R6Class(
         .keep <- .keep | (effs$shortName == 'Rate' & effs$type == 'rate')
       }
       effs <- effs[ .keep , ]
-      theta_in        <- effs$parm
+      ## ---- Theta-storage convention (2026-08-23) --------------------------
+      ## The coefficient lives in `initialValue`, which every branch of
+      ## include_rsiena_effect_from_eff_list() writes via setEffect(). It must
+      ## NOT be read from `parm`: `parm` is RSiena's internal effect parameter
+      ## (the '#' substitution -- a root exponent for cycle4/inPopX/outActX),
+      ## and reading it here is the defect that simulated cycle4 at its parm
+      ## default (1) and XWX/X at 0 regardless of the declared coefficient.
+      theta_in        <- effs$initialValue
       names(theta_in) <- effs$effect_level
       if (.uncond) {
         ## A basic rate of 0 freezes its dependent variable for the whole
         ## simulation -- no ministeps, no change, ever. That is never what a
-        ## caller means; it is what an undeclared rate looks like, because
-        ## RSiena's `parm` column defaults to 0 for basic rates. Substitute 1
-        ## and say so, rather than silently simulating a frozen DV.
-        .basic <- (effs$shortName == 'Rate' & effs$type == 'rate' &
-                     (is.na(theta_in) | theta_in <= 0))
+        ## caller means. Two cases get the substitute value 1, with a message:
+        ##   (a) a rate the structure model never DECLARED -- its initialValue
+        ##       is whatever getEffects() derived from the (degenerate,
+        ##       two-identical-wave) data, not a caller's choice; before the
+        ##       theta-storage repair this row read parm = 0 and was
+        ##       substituted, so forcing 1 preserves that behaviour exactly;
+        ##   (b) a declared rate of NA or <= 0, which would freeze the DV.
+        .basic <- (effs$shortName == 'Rate' & effs$type == 'rate')
+        .declared <- rep(TRUE, nrow(effs))
         if (any(.basic)) {
+          .declared[.basic] <- vapply(which(.basic), function(i) {
+            if ('dv_name' %in% names(input_effs))
+              any(input_effs$effect == 'Rate' & input_effs$dv_name == effs$name[i])
+            else
+              'Rate' %in% input_effs$effect
+          }, logical(1))
+        }
+        .subst <- .basic & (!.declared | is.na(theta_in) | theta_in <= 0)
+        if (any(.subst)) {
           message(sprintf(
             "searchnet: basic rate for %s was %s; using 1.0. Declare a `rates` entry to control it.",
-            paste(effs$name[.basic], collapse = ', '),
-            paste(ifelse(is.na(theta_in[.basic]), 'NA', '0'), collapse = ', ')))
-          theta_in[.basic] <- 1
+            paste(effs$name[.subst], collapse = ', '),
+            paste(ifelse(!.declared[.subst], 'undeclared',
+                         ifelse(is.na(theta_in[.subst]), 'NA', '<= 0')), collapse = ', ')))
+          theta_in[.subst] <- 1
         }
       }
       nthetas <- length(theta_in)
@@ -4277,7 +4373,8 @@ SaomNkRSienaBiEnv <- R6Class(
 
       ##-----------------------------
       ## RSiena Algorithm
-      self$rsiena_algorithm <- sienaAlgorithmCreate(projname=sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP),
+      self$rsiena_algorithm <- sienaAlgorithmCreate(projname=file.path(self$DIR_OUTPUT,
+                                                              sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP)),
                                                     simOnly = TRUE,
                                                     nsub = rsiena_phase2_nsub,
                                                     n2start = rsiena_n2start_scale * 2.52 * (7+sum(self$rsiena_effects$include)),
@@ -4410,7 +4507,8 @@ SaomNkRSienaBiEnv <- R6Class(
         ##  3. Add effects from model objective function list
         self$add_rsiena_effects(structure_model)
         ##  4. RSiena Algorithm
-        self$rsiena_algorithm <- sienaAlgorithmCreate(projname=sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP),
+        self$rsiena_algorithm <- sienaAlgorithmCreate(projname=file.path(self$DIR_OUTPUT,
+                                                              sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP)),
                                                       simOnly = TRUE,
                                                       nsub = rsiena_phase2_nsub,
                                                       n3 = iterations,
@@ -4519,7 +4617,8 @@ SaomNkRSienaBiEnv <- R6Class(
                                                digits=3,
                                                rand_seed=123) {
       ##  4. RSiena Algorithm 
-      self$rsiena_algorithm <- sienaAlgorithmCreate(projname=sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP),
+      self$rsiena_algorithm <- sienaAlgorithmCreate(projname=file.path(self$DIR_OUTPUT,
+                                                              sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP)),
                                                     simOnly = TRUE,
                                                     nsub = rsiena_phase2_nsub,
                                                     n3 = iterations,
@@ -4670,8 +4769,10 @@ SaomNkRSienaBiEnv <- R6Class(
       theta_names_norate <-  theta_df_norates$shortName
       theta_levels_norates <- theta_df_norates$effect_level
       if(is.null(self$rsiena_model$thetaUsed)){
-        ## Get theta in the order of rsiena_effect object
-        theta <- theta_df_norates$parm
+        ## Get theta in the order of rsiena_effect object.
+        ## Theta-storage convention (2026-08-23): the coefficient lives in
+        ## `initialValue`, never in `parm` (RSiena's internal '#' parameter).
+        theta <- theta_df_norates$initialValue
         names(theta) <- theta_df_norates$shortName
         ## simOnly mode: theta is constant across all ministeps -- replicate for nchains rows
         theta_mat <- matrix(rep(theta, nchains), byrow = TRUE, nrow = nchains)
@@ -7737,7 +7838,9 @@ SaomNkRSienaBiEnv <- R6Class(
     strat_type_ids <- params$strat_type_ids
     interact_type_ids <- params$interact_type_ids
     inputeffs <- c(structeffs, covs)
-    modeleffs <- self$rsiena_effects$parm[self$rsiena_effects$include]
+    ## Theta-storage convention (2026-08-23): coefficients live in
+    ## `initialValue`, never in `parm` (RSiena's internal '#' parameter).
+    modeleffs <- self$rsiena_effects$initialValue[self$rsiena_effects$include]
     names(modeleffs) <-  self$rsiena_effects$shortName[self$rsiena_effects$include]
     sim_title_str <- self$get_structure_model_param_str(params)
     efflvls <- c('utility', 

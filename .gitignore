@@ -176,3 +176,16 @@ tests/testthat/_problems/
 paper/searchnet-jss.tex
 paper/bench_raw.*
 paper/_local/
+
+# --- internal working files: never in the package or a public snapshot (2026-08-21) ---
+HANDOFF_*.md
+JSS_SUBMISSION_PREP_*.md
+
+# RSiena writes a report file per algorithm object. `projname` resolves against
+# DIR_OUTPUT, which defaults to getwd(), so a test that does not pass
+# `dir_output` leaves its report next to the test file. Ignore the litter so it
+# can never be committed; the real fix is for tests to pass dir_output.
+tests/testthat/*.txt
+!tests/testthat/_*.txt
+nul
+nul.txt

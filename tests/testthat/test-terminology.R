@@ -39,6 +39,34 @@ ALLOW <- list(
                recursive = TRUE, full.names = TRUE)))
   ## R/_dev* subdirectories are not package code
   files <- files[!grepl("/R/_dev", files)]
+
+  ## Nor is anything git ignores. Added 2026-08-23: this gate was failing on 330
+  ## occurrences across 112 `R/*.Rmd` illustration notebooks, which `.gitignore`
+  ## line 139 excludes from the repository entirely. They are local scratch --
+  ## absent from a fresh clone, absent from every release snapshot, and never
+  ## read by anyone but their author. A terminology rule for PACKAGE CONTENT
+  ## should not be enforced against files that are not package content.
+  ##
+  ## This matters beyond tidiness. A check that fails on work it does not own,
+  ## every run, teaches the reader to ignore it -- and this one exists precisely
+  ## because a note about the rename decayed and a failing test was supposed to
+  ## be the thing that held. A gate nobody trusts is worse than the note it
+  ## replaced.
+  ##
+  ## `git ls-files` is the authority on what is package content. If git is
+  ## unavailable the scan falls back to the full file list, which fails loudly
+  ## rather than passing vacuously.
+  tracked <- tryCatch({
+    out <- suppressWarnings(system2("git", c("-C", shQuote(pkg_root), "ls-files"),
+                                    stdout = TRUE, stderr = FALSE))
+    if (length(out) && !is.null(attr(out, "status"))) character(0) else out
+  }, error = function(e) character(0))
+
+  if (length(tracked)) {
+    rel_all <- sub(paste0("^", pkg_root, "/"), "", files)
+    files <- files[rel_all %in% tracked]
+  }
+
   hits <- list()
   for (f in files) {
     l <- readLines(f, warn = FALSE, encoding = "UTF-8")

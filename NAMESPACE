@@ -65,7 +65,8 @@ importFrom(visNetwork, visNetwork, visNodes, visEdges, visOptions,
            visLayout, visIgraph)
 importFrom(stats, qnorm, aggregate, setNames, pnorm, median, coef,
            sd, var, quantile, cor, lm, predict, residuals, fitted,
-           dnorm, runif, rnorm, rbinom, na.omit, loess, uniroot, optim)
+           dnorm, runif, rnorm, rbinom, na.omit, loess, uniroot, optim,
+           kmeans, dist)
 importFrom(utils, txtProgressBar, setTxtProgressBar, packageVersion,
            write.csv, read.csv, str)
 importFrom(grDevices, hcl, rgb, col2rgb, colorRampPalette)
@@ -348,3 +349,36 @@ export(boundary_screen)
 export(gof_battery)
 export(rate_ladder)
 export(scope_confound_screen)
+
+# ---------------------------------------------------------------------------
+# Ministep-chain event statistics and behavioural repertoires (0.9.0)
+#
+# NAMESPACE is MANUALLY maintained in this package -- a roxygen @export tag on
+# its own is inert. Anything added to R/ must be listed here by hand or it will
+# not be exported, and the failure is silent. This is entry SF10 of the
+# package's own silent-failure catalogue.
+# ---------------------------------------------------------------------------
+export(searchnet_chain_stats)
+export(searchnet_chain_compare)
+export(searchnet_chain_from_fit)
+export(searchnet_chain_null_model)
+export(searchnet_chain_gap)
+export(searchnet_chain_calibrate)
+S3method(print, searchnet_chain_compare)
+S3method(print, searchnet_chain_gap)
+S3method(print, searchnet_chain_calibrate)
+
+export(searchnet_repertoire)
+export(searchnet_repertoire_null)
+export(searchnet_repertoire_ri)
+export(searchnet_repertoire_stability)
+S3method(print, searchnet_repertoire)
+S3method(print, searchnet_repertoire_null)
+S3method(print, searchnet_repertoire_stability)
+
+# Multivariate coevolution: a one-mode COMPONENT network as a second dependent
+# variable alongside the bipartite actor-by-component network.
+export(searchnet_coevolve)
+export(searchnet_coevolve_data)
+export(searchnet_coevolve_effects)
+export(searchnet_coevolve_available_effects)

@@ -168,8 +168,9 @@ test_that("behaviour effects are registered against the behaviour DV by name", {
   ## The influence effect is bound to the bipartite network, not left dangling.
   expect_equal(beh$interaction1[beh$shortName == "avInSimDist2"],
                "self$bipartite_rsienaDV")
-  ## Parameters carried through.
-  expect_equal(beh$parm[beh$shortName == "avInSimDist2"], 0.5)
+  ## Parameters carried through -- into `initialValue`, the column
+  ## get_theta_matrix() reads (theta-storage convention, 2026-08-23).
+  expect_equal(beh$initialValue[beh$shortName == "avInSimDist2"], 0.5)
 })
 
 

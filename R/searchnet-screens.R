@@ -226,8 +226,38 @@ boundary_screen <- function(x) {
     ## it. This reinterprets the construct: a banded tension matrix means
     ## estranged pairs, not degrees of estrangement, and a paper using one
     ## should say so.
-    v <- W[upper.tri(W)]
-    thr <- as.numeric(stats::quantile(v, probs = band_quantile, names = FALSE))
+    ##
+    ## Two corrections, 2026-08-23, both found by running this on a real
+    ## directed dependency matrix:
+    ##
+    ## 1. ALL off-diagonal cells, not `upper.tri`. W is not necessarily
+    ##    symmetric -- a module import graph is directed -- and taking the
+    ##    upper triangle silently discarded every edge below the diagonal.
+    ##
+    ## 2. The quantile is taken over POSITIVE entries. On a matrix sparser
+    ##    than `1 - band_quantile`, the band_quantile-th percentile of all
+    ##    off-diagonal cells is 0, and `W >= 0` then bands the matrix to a
+    ##    COMPLETE one. Measured: nonzero share 0.0076 -> 1.0 and the
+    ##    scope correlation -> 0.99. The screen then reported that banding
+    ##    fails to fix the confound, when what had actually happened is that
+    ##    banding inverted. A diagnostic that returns the opposite of the
+    ##    truth is worse than no diagnostic.
+    off <- W[row(W) != col(W)]
+    pos <- off[is.finite(off) & off > 0]
+    if (!length(pos)) {
+      warning("band: W has no positive off-diagonal entries; returning it ",
+              "unbanded (all zero).", call. = FALSE)
+      B <- matrix(0, nrow(W), ncol(W), dimnames = dimnames(W))
+      return(B)
+    }
+    thr <- as.numeric(stats::quantile(pos, probs = band_quantile,
+                                      names = FALSE))
+    if (!is.finite(thr) || thr <= 0) {
+      thr <- min(pos)
+      warning("band: the requested quantile of the positive entries is not ",
+              "positive; falling back to the smallest positive weight so ",
+              "banding cannot invert to a complete matrix.", call. = FALSE)
+    }
     B <- matrix(0, nrow(W), ncol(W), dimnames = dimnames(W))
     B[W >= thr] <- 1
     diag(B) <- 0
@@ -324,8 +354,13 @@ scope_confound_screen <- function(x, W,
     raw_r <- NA_real_
     for (tr in treatments) {
       Wt <- .searchnet_treat_W(Wm, tr, band_quantile)
-      offdiag <- Wt[upper.tri(Wt)]
+      ## ALL off-diagonal cells, not the upper triangle. W may be directed --
+      ## a module import graph is -- and an upper-triangle share reported
+      ## 0.0000 for a matrix whose every edge happened to sit below the
+      ## diagonal. Corrected 2026-08-23; see .searchnet_treat_W().
+      offdiag <- Wt[row(Wt) != col(Wt)]
       share <- mean(abs(offdiag) > 1e-12)
+      asym <- mean(abs(Wt - t(Wt)) > 1e-12)
       stat <- unlist(lapply(waves, function(t)
         as.numeric(arr[, , t, drop = TRUE] %*% t(Wt))))
       r <- suppressWarnings(stats::cor(stat, scope_vec))
@@ -333,9 +368,15 @@ scope_confound_screen <- function(x, W,
       rows[[length(rows) + 1L]] <- data.frame(
         matrix = nm, treatment = tr,
         nonzero_share = round(share, 4),
+        asymmetry = round(asym, 4),
         r_scope = round(r, 4),
         delta_vs_raw = if (is.na(raw_r)) NA_real_ else round(r - raw_r, 4),
+        ## A banded matrix that came back COMPLETE has not been banded, it has
+        ## been inverted, and its r_scope says nothing about the confound.
+        ## Flag it rather than letting a 0.99 read as "banding does not help".
         verdict = if (is.na(r)) "degenerate: statistic has no variance"
+                  else if (identical(tr, "band") && share > 0.99)
+                    "BANDING INVERTED: W too sparse; result not interpretable"
                   else if (abs(r) >= threshold) "confounded with actor scope"
                   else "carries pairwise structure",
         stringsAsFactors = FALSE)

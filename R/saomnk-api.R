@@ -84,6 +84,13 @@ NULL
 ## The canonical RSiena DV reference used throughout the structure model.
 .DV_NAME <- "self$bipartite_rsienaDV"
 
+## How many influence matrices a single model may carry, static or time-varying.
+## This is NOT a modelling limit; it is the number of `component_<k>_coDyadCovar`
+## and `component_<k>_varDyadCovar` public fields declared on the R6 engine in
+## R/saomnk-base.R. R6 refuses assignment to an undeclared field, so the two
+## ladders must be kept in step with this constant. Raise all three together.
+.SEARCHNET_MAX_W_SLOTS <- 20L
+
 ## Map user-friendly effect names to RSiena shortcodes
 .EFFECT_MAP <- c(
 
@@ -424,6 +431,18 @@ saomnk_model <- function(density            = -0.5,
   if (!is.null(influence_matrices)) {
     ## Multiple W-matrices: influence_matrices is a named list
     stopifnot(is.list(influence_matrices), !is.null(names(influence_matrices)))
+    ## Fail loudly rather than silently dropping a coupling. The engine assigns
+    ## each matrix to a declared R6 field `self$component_<k>_coDyadCovar`; past
+    ## the declared ladder that assignment errors deep inside the run with a
+    ## message that does not name the cause. Entry SF10 of the package's own
+    ## silent-failure catalogue is exactly this class of defect.
+    if (length(influence_matrices) > .SEARCHNET_MAX_W_SLOTS)
+      stop(sprintf(paste0("`influence_matrices` has %d entries but only %d ",
+                          "`component_<k>_coDyadCovar` slots are declared in the ",
+                          "engine. Declare more slots in R/saomnk-base.R, or ",
+                          "reduce the horserace."),
+                   length(influence_matrices), .SEARCHNET_MAX_W_SLOTS),
+           call. = FALSE)
     for (nm in names(influence_matrices)) {
       w_mat <- influence_matrices[[nm]]
       stopifnot(is.matrix(w_mat) || inherits(w_mat, "Matrix"))
@@ -473,6 +492,13 @@ saomnk_model <- function(density            = -0.5,
   if (!is.null(influence_arrays)) {
     stopifnot(is.list(influence_arrays), !is.null(names(influence_arrays)),
               all(nzchar(names(influence_arrays))))
+    if (length(influence_arrays) > .SEARCHNET_MAX_W_SLOTS)
+      stop(sprintf(paste0("`influence_arrays` has %d entries but only %d ",
+                          "`component_<k>_varDyadCovar` slots are declared in ",
+                          "the engine. Declare more slots in R/saomnk-base.R, ",
+                          "or reduce the horserace."),
+                   length(influence_arrays), .SEARCHNET_MAX_W_SLOTS),
+           call. = FALSE)
     if (!is.null(influence_array_weights) &&
         !all(names(influence_array_weights) %in% names(influence_arrays)))
       warning("`influence_array_weights` carries names absent from ",

@@ -6,8 +6,12 @@
 ##
 ## Two invariants are asserted here:
 ##   R1  every effect declared in a structure_model is actually INCLUDED
-##   R2  its declared `parameter` reaches the `parm` column, which is what
-##       get_theta_matrix() reads (`theta_in <- effs$parm`) to drive the simulation
+##   R2  its declared `parameter` reaches the `initialValue` column, which is
+##       what get_theta_matrix() reads (`theta_in <- effs$initialValue`) to
+##       drive the simulation. (Until the 2026-08-23 theta-storage repair this
+##       invariant was stated on `parm`; that convention corrupted the
+##       statistic of '#'-carrying effects and left cycle4/XWX/X inert --
+##       see test-theta-storage.R.)
 ##
 ## A third, behavioural check (R3) confirms the effect is not merely registered but live.
 
@@ -58,15 +62,18 @@ test_that("R1: monadic covariate effects are not silently dropped", {
 })
 
 
-test_that("R2: declared parameter reaches the `parm` column that drives the theta matrix", {
+test_that("R2: declared parameter reaches the `initialValue` column that drives the theta matrix", {
   env <- .mk_env()
   suppressWarnings(env$search_rsiena(structure_model = .mk_model(egoX_par = 0.7),
                                      iterations_per_actor = 5, run_seed = 999))
   inc <- .included(env)
   ego <- inc[inc$shortName == "egoX", , drop = FALSE]
   expect_equal(nrow(ego), 1L)
-  ## `parm`, not `initialValue`, is what get_theta_matrix() reads.
-  expect_equal(unname(ego$parm[1]), 0.7)
+  ## `initialValue`, not `parm`, is what get_theta_matrix() reads
+  ## (theta-storage convention, 2026-08-23).
+  expect_equal(unname(ego$initialValue[1]), 0.7)
+  ## and `parm` stays at RSiena's default, so the STATISTIC is untouched.
+  expect_equal(unname(ego$parm[1]), 0)
 })
 
 
@@ -95,7 +102,9 @@ test_that("heterogeneous rate effects (RateX) register with their covariate", {
   expect_equal(nrow(rx), 1L)
   expect_equal(rx$type[1], "rate")
   expect_equal(rx$interaction1[1], "self$strat_1_coCovar")
-  expect_equal(unname(rx$parm[1]), 0.8)
+  ## theta-storage convention (2026-08-23): the coefficient lives in
+  ## `initialValue`, and get_theta_matrix() reads it from there.
+  expect_equal(unname(rx$initialValue[1]), 0.8)
 })
 
 

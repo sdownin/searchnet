@@ -1,3 +1,190 @@
+# searchnet 0.9.0
+
+## Theta-storage repair (2026-08-23): `parm` is NOT theta
+
+* **Defect.** `get_theta_matrix()` built the simulated theta vector from the
+  effects table's `parm` column, while the `cycle4`, `XWX` and `X` branches of
+  `include_rsiena_effect_from_eff_list()` wrote the declared coefficient into
+  `initialValue`. RSiena's `parm` is the *internal effect parameter* -- the `#`
+  substitution in effect and function names, a root exponent for `cycle4`
+  (`(count)^(1/#)`), `inPopX` and `outActX` -- not a coefficient. Consequences,
+  all silent: `cycle4` was always simulated at `parm`'s default **1**, and
+  `XWX` / `X` at **0**, whatever the caller declared; the sixteen branches that
+  wrote coefficients into `parm` worked only because their effects carry no
+  `#`; and for `inPopX` / `outActX` / `homXOutAct` (which do carry `#`) the
+  declared coefficient also **changed which statistic was computed**.
+* **Repair.** Theta is carried in `initialValue` throughout: every effect
+  branch (including the static estimation path) writes the coefficient with
+  `setEffect(initialValue = )`, and `get_theta_matrix()` reads
+  `initialValue`. `setEffect(parameter = )` is reserved for genuine internal
+  parameters, requested explicitly with a new `internal_parameter` key in a
+  structure-model effect entry (e.g. `cycle4` with `internal_parameter = 2`
+  for the square-root form), so a coefficient and an internal parameter cannot
+  be confused at the call site. The public `parameter` key keeps meaning the
+  coefficient. Verified behaviourally in
+  `tests/testthat/test-theta-storage.R`: pre-repair, simulations with `cycle4`
+  at -2 and +2 were bit-identical; post-repair the 4-cycle statistic responds
+  monotonically (60 / 688 / 2559 at theta -2 / 0 / +2 on the seeded fixture).
+* **Invalidated prior results.** Any *simulation* that declared a `cycle4`,
+  `XWX` or `X` coefficient and expected it to matter -- including every
+  `saomnk_model(influence_matrix = , influence_weight = )` run, whose
+  influence weight silently simulated at 0 (the theta-shock and theta-ramp
+  paths, which write the theta matrix directly, were unaffected in their
+  shocked/ramped segments). *Empirical estimation* through plain
+  `includeEffects()` + `siena07()` is unaffected: there `parm` stays at its
+  default and theta is estimated.
+
+Event-level statistics on the ministep chain, behavioural repertoires, and a
+larger time-varying influence-matrix ladder. Motivated by a design that needs to
+compare a fitted SAOM's *latent* event sequence against an *observed* event log,
+which is possible whenever both are recorded (a code repository gives a commit
+log and a repository state at every release tag).
+
+## Ministep-chain event statistics
+
+* **`searchnet_chain_stats()`** computes, for every tie-change event, the four
+  attention micro-mechanism statistics of Tonellato, Tasselli, Conaldi, Lerner
+  and Lomi (2024, *Organization Science* 35(2): 496-524) -- focusing,
+  reinforcing, mixing and clustering -- each evaluated on the network state
+  immediately *before* the event. It accepts either a simulated environment,
+  whose latent chain it reads, or an observed event log, and returns identical
+  columns for both so the two can be compared without reshaping.
+
+  The clustering statistic is the number of bipartite four-cycles the event
+  would close, which is the same quantity RSiena's `cycle4` targets. It is
+  computed in `O(MN)` per event from one row of the co-membership matrix rather
+  than by forming `BB'B`. The arithmetic is cross-checked against an independent
+  brute-force transcription of the definition over random and adversarial
+  fixtures in `tests/testthat/test-chain-stats.R`.
+
+* **`searchnet_chain_from_fit()`** is the supported route from an *empirical*
+  fit to the many chains a comparison needs: it pulls the latent ministep chains
+  out of a `sienaFit` estimated with `returnChains = TRUE`, one chain per
+  (phase-3 run, period), each replayed from the observed wave at the start of
+  its period.
+
+  Two things had to be got right. Fields are read by **declared index**: a
+  ministep declares 13 elements of which 10 and 11 are zero-length, so
+  `unlist()` silently shifts everything after position 9 by two, and the
+  stability flag in particular is misread. And each period restarts from its own
+  observed wave, so `chain_id` is unique per (run, period) rather than per run --
+  pooling two periods would concatenate incomparable event histories.
+
+  **A correction to this file's own earlier documentation.** Phase-3 chains under
+  method-of-moments are *not* conditioned on the observed endpoints; each run
+  simulates forward from the period's starting wave and does not arrive at its
+  end state (verified: replaying one chain from wave 1 left 21 cells differing
+  from the observed wave 2 on a 12 x 8 panel). Endpoint conditioning is a
+  property of likelihood-based augmented chains. This makes the comparison
+  stronger rather than weaker -- only the starting state is pinned, so an
+  event-ordering statistic is a genuine forward prediction.
+
+* **`searchnet_chain_stats()` refuses a `SaomNkRSienaBiEnv` whose `$chain_stats`
+  concatenates several phase-3 runs.** That frame replays all runs cumulatively
+  from the initial matrix, but RSiena restarts each run from the observed wave,
+  so the concatenation is a sequence of independent draws replayed as though
+  sequential. Demonstrated with one tie at `density = -8`: a genuine path deletes
+  it once and never recreates it, while the composite frame toggled the same
+  dyad eight times and ended still holding it. The inflation falls hardest on
+  `focusing`. Use `searchnet_chain_from_fit()` instead.
+
+## The null arm, without which coverage means nothing
+
+Coverage of an observed log by a fitted model's chains is uninformative unless a
+null model *fails* the same test. The evidential quantity is the gap.
+
+* **`searchnet_chain_null_model()`** fits the rate-and-density-only arm on the
+  same data with chains returned, switching off every other effect explicitly
+  rather than trusting a default, and using `cond = FALSE` because conditional
+  estimation derives the rate parameters rather than estimating them.
+
+* **`searchnet_chain_gap()`** compares focal and null against the same log on
+  identical terms and returns a per-statistic verdict. Only `informative` (null
+  fails, focal covers) supports a sufficiency claim. `undiscriminating` means
+  rate and density alone reproduce the statistic, so the focal model reproducing
+  it is not evidence -- report it, do not count it.
+
+* **`searchnet_chain_calibrate()`** is a leave-one-out size check on the test
+  itself: each chain is held out as a pseudo-observed log, so the null is true
+  by construction and rejection should sit near nominal. It needs no
+  re-estimation, and a test that over-rejects on its own data cannot support a
+  claim about anyone else's.
+
+  Its first run earned its keep. Rejection sat at 0.04-0.08 against a nominal
+  0.05 on a synthetic panel, but `focusing` came back with a Kolmogorov-Smirnov
+  p of 0.0015 -- caused by ties, not miscalibration: the statistic was **zero
+  for 92.9 per cent of events**, giving 14 distinct p-values out of 25. `ks_p`
+  is now withheld when the p-values are too tied for a continuous reference to
+  mean anything, and `zero_frac`, `distinct_p` and `ks_valid` are reported so
+  the reason is visible. The scope condition is worth stating plainly:
+  `focusing` is the statistic furthest from what method of moments targets and
+  therefore the natural one to lead a sufficiency claim on, and also the one
+  that goes degenerate when there is little repeat attention to count.
+
+* **Per-statistic scaling in the normalisation.** These are running counters but
+  they do not all grow at the same rate: `focusing`, `reinforcing` and
+  `activity` scale with the event count, while `mixing` is their product and
+  scales with its square. Dividing everything by `n` left `mixing` still scaling
+  with `n`. `clustering` is normalised at `n^1` as an acknowledged
+  approximation -- its growth depends on the density trajectory and is not a
+  clean power, which is why the length-ratio warning exists.
+
+* **`searchnet_chain_compare()`** tests whether the distribution of those
+  statistics across simulated chains covers the values computed on an observed
+  log. Two guards are deliberate and load-bearing:
+
+  - It **refuses a single chain**. The ministep chain is a draw from a
+    distribution over sequences consistent with the observed panel endpoints,
+    not a reconstruction of what happened, so one chain is a sample of size one
+    and licenses no comparison.
+  - Passing `fitted_effects` turns on a **circularity guard**. `cycle4` *is* the
+    clustering statistic and `inPop` is monotone in reinforcing; a model carrying
+    those effects has been fitted toward the quantity being tested, and
+    reproducing it is not a free prediction. Affected rows are flagged and a
+    warning is raised.
+
+## Behavioural repertoires
+
+* **`searchnet_repertoire()`** partitions actors into behaviour types from the
+  profile of their realised moves. This is a property of what actors *did*, as
+  distinct from `sienaRI`'s decomposition of effect importance in the fitted
+  model at an actor's position; the two are different objects and the package no
+  longer needs the second to provide the first. `k` is chosen by maximum average
+  silhouette width when not supplied, and the full criterion path is returned so
+  the choice is auditable. Actors below the event threshold are reported in
+  `$dropped`, never silently discarded.
+
+* **`searchnet_repertoire_null()`** permutes actor labels across events and
+  re-clusters, holding the event set, the statistics and the algorithm fixed and
+  breaking only the actor-to-behaviour association. k-means returns k clusters
+  whether or not there is structure; this is how you find out which.
+
+* **`searchnet_repertoire_ri()`** is an optional bridge to `RSiena::sienaRI()`.
+  If the call fails it reports the failure and names the cause rather than
+  substituting a degraded quantity. Whether `sienaRI` accepts a two-mode
+  dependent variable is a property of the installed RSiena; a capability the
+  software does not offer is a non-implementation and says nothing about the
+  world.
+
+## Influence matrices
+
+* **Time-varying influence-matrix slots extended from 4 to 20**, matching the
+  static `component_<k>_coDyadCovar` ladder. A multi-W horserace enters each
+  coupling as its own `XWX` term and four was below what such a design needs.
+  These are R6 public fields and must be declared: the engine assigns by name
+  and R6 errors on assignment to an undeclared field rather than creating it.
+
+* `saomnk_model()` now **fails loudly** when `influence_matrices` or
+  `influence_arrays` exceeds the declared ladder (`.SEARCHNET_MAX_W_SLOTS`),
+  naming the count and the ceiling, instead of erroring deep inside a run with a
+  message that does not identify the cause.
+
+## Packaging
+
+* `stats`, `utils` and `grDevices` were imported in `NAMESPACE` but absent from
+  `DESCRIPTION`'s `Imports:` field -- an `R CMD check` failure that would surface
+  at JSS review. Added, along with `kmeans` and `dist` to the `stats` import.
+
 # searchnet 0.8.3
 
 JSS submission preparation, Phase 1 (items b, c, d of JSS_SUBMISSION_PREP_2026-08-15.md),

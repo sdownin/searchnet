@@ -150,6 +150,28 @@ SaomNkRSienaBiEnv_base <- R6Class(
     component_2_varDyadCovar = NULL,
     component_3_varDyadCovar = NULL,
     component_4_varDyadCovar = NULL,
+    ## Slots 5-20 added 2026-08-23 to match the static `component_*_coDyadCovar`
+    ## ladder, which has run to 20 since 0.6.0. A multi-W horserace enters each
+    ## coupling as its own XWX term, and four is below what such a design needs.
+    ## These are R6 public fields and MUST be declared: the engine assigns by
+    ## `self[[sprintf('component_%s_varDyadCovar', i)]] <- ...`, and R6 errors on
+    ## assignment to an undeclared field rather than creating it.
+    component_5_varDyadCovar = NULL,
+    component_6_varDyadCovar = NULL,
+    component_7_varDyadCovar = NULL,
+    component_8_varDyadCovar = NULL,
+    component_9_varDyadCovar = NULL,
+    component_10_varDyadCovar = NULL,
+    component_11_varDyadCovar = NULL,
+    component_12_varDyadCovar = NULL,
+    component_13_varDyadCovar = NULL,
+    component_14_varDyadCovar = NULL,
+    component_15_varDyadCovar = NULL,
+    component_16_varDyadCovar = NULL,
+    component_17_varDyadCovar = NULL,
+    component_18_varDyadCovar = NULL,
+    component_19_varDyadCovar = NULL,
+    component_20_varDyadCovar = NULL,
     #
     component_1_interaction = NULL,
     component_2_interaction = NULL,
@@ -495,15 +517,47 @@ SaomNkRSienaBiEnv_base <- R6Class(
       #   
       #   return(NULL)
       # }
+
+      ## ---- Theta-storage convention (2026-08-23) ---------------------------
+      ## The coefficient (theta) is carried in the effects table's
+      ## `initialValue` column, which get_theta_matrix() reads and hands to
+      ## siena07(thetaValues=). RSiena's `setEffect(parameter=)` writes the
+      ## `parm` column -- the INTERNAL effect parameter, i.e. the `#`
+      ## substitution in effect and function names (a root exponent for
+      ## cycle4, inPopX, outActX, and ~100 other effects). Writing a
+      ## coefficient there does not set a coefficient: it changes WHICH
+      ## statistic is computed (cycle4 at "coefficient" 0.3 becomes
+      ## count^(1/0.3) = count^3.33). `parameter=` is therefore passed ONLY
+      ## when the caller explicitly requests it via the `internal_parameter`
+      ## key of the effect entry (e.g. cycle4 with internal_parameter = 2 for
+      ## the square-root form). The public structure-model key `parameter`
+      ## keeps meaning the coefficient; it lands in `initialValue`.
+      ##
+      ## `.set_theta()` is the single place this convention is applied, so the
+      ## nineteen effect branches below cannot drift apart again.
+      .set_theta <- function(short, ..., type = NULL, required = TRUE) {
+        th <- eff$parameter %||% eff$initialValue
+        if (is.null(th) && required)
+          stop(sprintf(paste0("Effect '%s' declares no coefficient. Set `parameter=` ",
+                              "in its structure-model entry (use `internal_parameter=` ",
+                              "only for RSiena's internal '#' parameter)."),
+                       eff$effect), call. = FALSE)
+        args <- list(self$rsiena_effects, shortName = short, character = TRUE,
+                     name = eff$dv_name, fix = fix, verbose = verbose, ...)
+        if (!is.null(type))                    args$type         <- type
+        if (!is.null(th))                      args$initialValue <- th
+        if (!is.null(eff$internal_parameter))  args$parameter    <- eff$internal_parameter
+        do.call(setEffect, args)
+      }
+
       ##---------- 1 Efect --------------------------
-      if (eff$effect == 'Rate') 
+      if (eff$effect == 'Rate')
       {
         self$rsiena_effects <- includeEffects(self$rsiena_effects,  Rate, ## get network statistic function from effect name (character)
                                               name = eff$dv_name,  # interaction1 = eff$interaction1,
-                                              fix = fix, 
+                                              fix = fix,
                                               type='rate', verbose = verbose)
-        self$rsiena_effects <- setEffect(self$rsiena_effects,  Rate,
-                                         name = eff$dv_name, parameter = eff$parameter,  fix = fix, type='rate', verbose = verbose)
+        self$rsiena_effects <- .set_theta('Rate', type = 'rate')
       }
       ## HETEROGENEOUS / STRUCTURAL RATE EFFECTS
       ## RateX  : rate depends on an actor covariate  (RSiena group `covarBipartiteRate`)
@@ -525,14 +579,12 @@ SaomNkRSienaBiEnv_base <- R6Class(
             if (.needs_cov) .args_inc$interaction1 <- eff$interaction1
             self$rsiena_effects <- do.call(includeEffects, .args_inc)
 
-            ## `parameter=` populates the `parm` column that get_theta_matrix() reads.
-            .args_set <- list(self$rsiena_effects, shortName = eff$effect, character = TRUE,
-                              name = eff$dv_name, type = 'rate',
-                              parameter = eff$parameter,
-                              fix = fix, verbose = verbose)
-            if (!is.null(eff$initialValue)) .args_set$initialValue <- eff$initialValue
-            if (.needs_cov) .args_set$interaction1 <- eff$interaction1
-            self$rsiena_effects <- do.call(setEffect, .args_set)
+            ## Coefficient -> `initialValue` (see the theta-storage note above).
+            self$rsiena_effects <- if (.needs_cov) {
+              .set_theta(eff$effect, type = 'rate', interaction1 = eff$interaction1)
+            } else {
+              .set_theta(eff$effect, type = 'rate')
+            }
           }, error = function(e) {
             warning(sprintf("'%s' rate effect failed: %s (is covariate '%s' registered?)",
                             eff$effect, e$message,
@@ -557,8 +609,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
           self$rsiena_effects <- includeEffects(self$rsiena_effects,  density,
                                                name = eff$dv_name,
                                                fix = fix, verbose = verbose)
-          self$rsiena_effects <- setEffect(self$rsiena_effects,  density,
-                                           name = eff$dv_name, parameter = eff$parameter,  fix = fix, verbose = verbose)
+          self$rsiena_effects <- .set_theta('density')
         } else {
           ## bipartite case — substitute 'outAct' (outdegree activity), which
           ## plays the same role as the structural intercept in bipartite SAOMs.
@@ -568,54 +619,47 @@ SaomNkRSienaBiEnv_base <- R6Class(
           self$rsiena_effects <- includeEffects(self$rsiena_effects,  outAct,
                                                name = eff$dv_name,
                                                fix = fix, verbose = verbose)
-          self$rsiena_effects <- setEffect(self$rsiena_effects,  outAct,
-                                           name = eff$dv_name, parameter = eff$parameter,  fix = fix, verbose = verbose)
+          self$rsiena_effects <- .set_theta('outAct')
         }
       }
-      else if (eff$effect == 'inPop') 
+      else if (eff$effect == 'inPop')
       {
         self$rsiena_effects <- includeEffects(self$rsiena_effects, inPop, ## get network statistic function from effect name (character)
                                              name = eff$dv_name, # interaction1 = eff$interaction1,
                                              fix = fix, verbose = verbose)
-        self$rsiena_effects <- setEffect(self$rsiena_effects,  inPop, 
-                                          name = eff$dv_name, parameter = eff$parameter,  fix = fix, verbose = verbose)
+        self$rsiena_effects <- .set_theta('inPop')
       }
-      else if (eff$effect == 'outAct') 
+      else if (eff$effect == 'outAct')
       {
         self$rsiena_effects <- includeEffects(self$rsiena_effects, outAct, ## get network statistic function from effect name (character)
                                              name = eff$dv_name, # interaction1 = eff$interaction1,
                                              fix = fix, verbose = verbose)
-        self$rsiena_effects <- setEffect(self$rsiena_effects,  outAct, 
-                                          name = eff$dv_name, parameter = eff$parameter,  fix = fix, verbose = verbose)
+        self$rsiena_effects <- .set_theta('outAct')
       }
-      else if (eff$effect == 'outActSqrt') 
+      else if (eff$effect == 'outActSqrt')
       {
         self$rsiena_effects <- includeEffects(self$rsiena_effects, outActSqrt, ## get network statistic function from effect name (character)
                                               name = eff$dv_name, # interaction1 = eff$interaction1,
                                               fix = fix, verbose = verbose)
-        self$rsiena_effects <- setEffect(self$rsiena_effects,  outActSqrt, 
-                                         name = eff$dv_name, parameter = eff$parameter,  fix = fix, verbose = verbose)
+        self$rsiena_effects <- .set_theta('outActSqrt')
       }
-      else if (eff$effect == 'cycle4') 
+      else if (eff$effect == 'cycle4')
       {
+        ## cycle4 is a '#'-carrying effect: its `parm` is a ROOT EXPONENT
+        ## ((4-cycle count)^(1/parm)), NOT a coefficient. The coefficient goes
+        ## to `initialValue` via .set_theta(); a caller who wants the
+        ## square-root form asks for it with `internal_parameter = 2`.
         self$rsiena_effects <- includeEffects(self$rsiena_effects, cycle4, ## get network statistic function from effect name (character)
                                              name = eff$dv_name, # interaction1 = eff$interaction1,
-                                             # parameter = eff$parameter,  
-                                             # initialValue = eff$parameter,
                                              fix = fix, verbose = verbose)
-        self$rsiena_effects <- setEffect(self$rsiena_effects,  cycle4,
-                                          name = eff$dv_name, 
-                                         initialValue = eff$initialValue,
-                                         # parameter = eff$parameter, 
-                                         fix = fix, verbose = verbose)
+        self$rsiena_effects <- .set_theta('cycle4')
       }
-      else if (eff$effect == 'transTriads') 
+      else if (eff$effect == 'transTriads')
       {
         self$rsiena_effects <- includeEffects(self$rsiena_effects,  transTriads, ## get network statistic function from effect name (character)
                                               name = eff$dv_name, # interaction1 = eff$interaction1,
                                               fix = fix, verbose = verbose)
-        self$rsiena_effects <- setEffect(self$rsiena_effects,  transTriads, 
-                                         name = eff$dv_name, parameter = eff$parameter,  fix = fix, verbose = verbose)
+        self$rsiena_effects <- .set_theta('transTriads')
       }
       # else if (eff$effect == 'cycle4ND') 
       # {
@@ -637,14 +681,11 @@ SaomNkRSienaBiEnv_base <- R6Class(
         resuse_int_eff <- seteffs[which(seteffs$interaction1 == eff$reuse_interaction1), ]
         
         self$rsiena_effects <- includeEffects(self$rsiena_effects,  totInDist2, ## get network statistic function from effect name (character)
-                                              name = eff$dv_name, 
+                                              name = eff$dv_name,
                                               interaction1 = resuse_int_eff$interaction1,
                                               fix = fix, verbose = verbose)
-        self$rsiena_effects <- setEffect(self$rsiena_effects,  totInDist2, 
-                                         name = eff$dv_name, 
-                                         interaction1 = resuse_int_eff$interaction1,
-                                         parameter = eff$parameter,  
-                                         fix = fix, verbose = verbose)
+        self$rsiena_effects <- .set_theta('totInDist2',
+                                          interaction1 = resuse_int_eff$interaction1)
       }
       
       else if (eff$effect == 'simEgoInDist2') 
@@ -658,14 +699,11 @@ SaomNkRSienaBiEnv_base <- R6Class(
         resuse_int_eff <- seteffs[which(seteffs$interaction1 == eff$reuse_interaction1), ]
         
         self$rsiena_effects <- includeEffects(self$rsiena_effects,  simEgoInDist2, ## get network statistic function from effect name (character)
-                                              name = eff$dv_name, 
+                                              name = eff$dv_name,
                                               interaction1 = resuse_int_eff$interaction1,
                                               fix = fix, verbose = verbose)
-        self$rsiena_effects <- setEffect(self$rsiena_effects,  simEgoInDist2, 
-                                         name = eff$dv_name, 
-                                         interaction1 = resuse_int_eff$interaction1,
-                                         parameter = eff$parameter,  
-                                         fix = fix, verbose = verbose)
+        self$rsiena_effects <- .set_theta('simEgoInDist2',
+                                          interaction1 = resuse_int_eff$interaction1)
       }
       
       else if (eff$effect %in% c('egoX', 'altX', 'outActX', 'altXOutAct', 'homXOutAct', 'inPopX'))
@@ -680,25 +718,20 @@ SaomNkRSienaBiEnv_base <- R6Class(
             ## effect literally named "eff$effect". Pass the name as the first `...` argument
             ## with character=TRUE instead. setEffect() DOES take shortName, but likewise
             ## deparses it unless character=TRUE.
-            ## NOTE 2: the theta values that drive the simulation are read from the `parm`
-            ## column (`get_theta_matrix()`: `theta_in <- effs$parm`), populated by
-            ## setEffect(parameter=). Writing `initialValue=` instead registers the effect
-            ## but leaves its coefficient out of the theta matrix, so the effect is INERT.
-            ## `parameter` and `initialValue` are different things -- pass both when supplied.
+            ## NOTE 2: the coefficient goes to `initialValue` (see the theta-storage
+            ## note at the top of this function). This matters doubly here because
+            ## inPopX, outActX and homXOutAct are '#'-carrying effects: writing the
+            ## coefficient into `parm` would not only misroute theta, it would
+            ## change the statistic itself (e.g. inPopX becomes
+            ## indegree-pop.^(1/parm)).
             self$rsiena_effects <- includeEffects(self$rsiena_effects,
                                                   eff$effect,
                                                   character = TRUE,
                                                   name = eff$dv_name,
                                                   interaction1 = eff$interaction1,
                                                   fix = fix, verbose = verbose)
-            .args_set <- list(self$rsiena_effects,
-                              shortName = eff$effect, character = TRUE,
-                              interaction1 = eff$interaction1,
-                              name = eff$dv_name,
-                              parameter = eff$parameter,
-                              fix = fix, verbose = verbose)
-            if (!is.null(eff$initialValue)) .args_set$initialValue <- eff$initialValue
-            self$rsiena_effects <- do.call(setEffect, .args_set)
+            self$rsiena_effects <- .set_theta(eff$effect,
+                                              interaction1 = eff$interaction1)
           }, error = function(e) {
             warning(sprintf("'%s' effect failed: %s (is covariate '%s' registered?)",
                             eff$effect, e$message, eff$interaction1))
@@ -717,11 +750,8 @@ SaomNkRSienaBiEnv_base <- R6Class(
                                                   name = eff$dv_name,
                                                   interaction1 = eff$interaction1,
                                                   fix = fix, verbose = verbose)
-            self$rsiena_effects <- setEffect(self$rsiena_effects,  XWX,
-                                             interaction1 = eff$interaction1,
-                                             name = eff$dv_name,
-                                             initialValue = eff$initialValue %||% eff$parameter,
-                                             fix = fix, verbose = verbose)
+            self$rsiena_effects <- .set_theta('XWX',
+                                              interaction1 = eff$interaction1)
           }, error = function(e) {
             warning(sprintf("XWX effect failed: %s (is the W-matrix registered as a coDyadCovar?)", e$message))
           })
@@ -737,11 +767,8 @@ SaomNkRSienaBiEnv_base <- R6Class(
                                                   name = eff$dv_name,
                                                   interaction1 = eff$interaction1,
                                                   fix = fix, verbose = verbose)
-            self$rsiena_effects <- setEffect(self$rsiena_effects,  X,
-                                             interaction1 = eff$interaction1,
-                                             name = eff$dv_name,
-                                             initialValue = eff$initialValue %||% eff$parameter,
-                                             fix = fix, verbose = verbose)
+            self$rsiena_effects <- .set_theta('X',
+                                              interaction1 = eff$interaction1)
           }, error = function(e) {
             warning(sprintf("X effect failed: %s", e$message))
           })
@@ -791,19 +818,18 @@ SaomNkRSienaBiEnv_base <- R6Class(
           if (!is.null(eff$interaction2) && nzchar(as.character(eff$interaction2)))
             .args_inc$interaction2 <- eff$interaction2
           self$rsiena_effects <- do.call(includeEffects, .args_inc)
-          if (!is.null(eff$parameter) || !is.null(eff$initialValue)) {
-            ## `parameter=` populates the `parm` column that get_theta_matrix() reads;
-            ## `initialValue=` is RSiena's estimation start value. They are not the same.
-            .args_set <- list(self$rsiena_effects, shortName = eff$effect, character = TRUE,
-                              name = eff$dv_name, type = .type,
-                              fix = fix, verbose = verbose)
-            if (!is.null(eff$parameter))    .args_set$parameter    <- eff$parameter
-            if (!is.null(eff$initialValue)) .args_set$initialValue <- eff$initialValue
+          if (!is.null(eff$parameter) || !is.null(eff$initialValue) ||
+              !is.null(eff$internal_parameter)) {
+            ## Coefficient -> `initialValue`; `internal_parameter` (if any) ->
+            ## RSiena's `parm`. See the theta-storage note at the top of this
+            ## function: many generic effects carry '#' in their functionName,
+            ## for which `parm` selects the statistic rather than scaling it.
+            .args_extra <- list(type = .type, required = FALSE)
             if (!is.null(eff$interaction1) && nzchar(as.character(eff$interaction1)))
-              .args_set$interaction1 <- eff$interaction1
+              .args_extra$interaction1 <- eff$interaction1
             if (!is.null(eff$interaction2) && nzchar(as.character(eff$interaction2)))
-              .args_set$interaction2 <- eff$interaction2
-            self$rsiena_effects <- do.call(setEffect, .args_set)
+              .args_extra$interaction2 <- eff$interaction2
+            self$rsiena_effects <- do.call(.set_theta, c(list(eff$effect), .args_extra))
           }
           if (verbose) cat(sprintf("  [generic] Included effect '%s'\n", eff$effect))
         }, error = function(e2) {
@@ -879,29 +905,38 @@ SaomNkRSienaBiEnv_base <- R6Class(
       #
       dv_name <- gsub('self\\$','',eff$dv_name, ignore.case = TRUE)
       #
+      ## Theta-storage convention (2026-08-23): the declared coefficient goes
+      ## to `initialValue` -- here, on the ESTIMATION path, it serves as the
+      ## warm-start value for siena07. `parameter=` (RSiena's internal '#'
+      ## parameter, which for '#'-carrying effects such as cycle4 / inPopX /
+      ## outActX selects WHICH statistic is computed) is passed only when the
+      ## caller explicitly sets `internal_parameter`. The previous code wrote
+      ## the coefficient into `parameter=`, which for those effects estimated
+      ## a transformed statistic (e.g. count^(1/coefficient)) without saying so.
+      .fix_arg <- ifelse(unfix_all, FALSE, eff$fix)
+      .args_set <- list(rsiena_effects, shortName = eff$effect, character = TRUE,
+                        name = dv_name, fix = .fix_arg, verbose = verbose)
+      if (!is.null(eff$parameter %||% eff$initialValue))
+        .args_set$initialValue <- eff$parameter %||% eff$initialValue
+      if (!is.null(eff$internal_parameter))
+        .args_set$parameter <- eff$internal_parameter
       if (is.null(eff$interaction1)) {
-        rsiena_effects <- includeEffects(rsiena_effects,  eff$effect, 
+        rsiena_effects <- includeEffects(rsiena_effects,  eff$effect,
                                          name = dv_name,  # interaction1 = eff$interaction1,
-                                         fix = ifelse(unfix_all, FALSE, eff$fix), 
+                                         fix = .fix_arg,
                                          character = TRUE, verbose=verbose)
-        rsiena_effects <- setEffect(rsiena_effects,  eff$effect,
-                                    name = dv_name, 
-                                    parameter = eff$parameter,  
-                                    fix = ifelse(unfix_all, FALSE, eff$fix), 
-                                    character = TRUE, verbose=verbose)
       } else {
         interact1 <- gsub('self\\$','',eff$interaction1, ignore.case = TRUE)
-        rsiena_effects <- includeEffects(rsiena_effects,  eff$effect, 
+        rsiena_effects <- includeEffects(rsiena_effects,  eff$effect,
                                          name = dv_name,  # interaction1 = eff$interaction1,
-                                         fix = ifelse(unfix_all, FALSE, eff$fix), 
+                                         fix = .fix_arg,
                                          interaction1 = interact1,
                                          character = TRUE, verbose=verbose)
-        rsiena_effects <- setEffect(rsiena_effects,  eff$effect,
-                                    name = dv_name, 
-                                    parameter = eff$parameter,  
-                                    fix = ifelse(unfix_all, FALSE, eff$fix),
-                                    interaction1 = interact1,
-                                    character = TRUE, verbose=verbose)
+        .args_set$interaction1 <- interact1
+      }
+      if (!is.null(.args_set$initialValue) || !is.null(.args_set$parameter)) {
+        .args_set[[1]] <- rsiena_effects
+        rsiena_effects <- do.call(setEffect, .args_set)
       }
 
       return(rsiena_effects)
@@ -1413,7 +1448,9 @@ SaomNkRSienaBiEnv_base <- R6Class(
       neffs <- nrow(theta_df_norates)
       ### empty matrix to hold actor network statistics
       effnames <- theta_df_norates$shortName ## sapply(efflist, function(x) x$effect, simplify = T)
-      effparams <- theta_df_norates$parm ##sapply(efflist, function(x) x$parameter, simplify = T)
+      ## Theta-storage convention (2026-08-23): coefficients live in
+      ## `initialValue`, never in `parm` (RSiena's internal '#' parameter).
+      effparams <- theta_df_norates$initialValue ##sapply(efflist, function(x) x$parameter, simplify = T)
       #
       mat <- matrix(rep(0, self$M * neffs ), nrow=self$M, ncol=neffs )
       colnames(mat) <- theta_df_norates$effect_level
