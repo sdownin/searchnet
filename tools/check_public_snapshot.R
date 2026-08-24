@@ -28,23 +28,36 @@ exclude <- if (length(args) >= 2) args[[2]] else file.path(wt, ".public-exclude"
 ## Patterns for content that must never ship, independent of the list file.
 ## The list file covers files we chose to keep private; these patterns catch
 ## files nobody remembered to list. Both failed once, so both are checked.
+##
+## Read from tools/internal-file-patterns.txt, which the pre-commit hook reads
+## too. One list, deliberately: two copies of a pattern set drift, and a guard
+## that has drifted still reports success.
 ## ---------------------------------------------------------------------------
-ARTIFACT_PATTERNS <- c(
-  "^R/smj_saomnk",          # another paper's simulation outputs, misfiled in R/
-  "^R/survfitfix",
-  "^_jss_r1_review_",       # AI-generated mock referee reports
-  "^_jss_proposal_text",
-  "^_run_jss_reviews",
-  "^_debug_install",
-  "^HANDOFF_",              # the original two internal patterns
-  "^JSS_SUBMISSION_PREP_",
-  "^SESSION_STATE",
-  "_internal/"
-)
+.read_patterns <- function(path) {
+  if (!file.exists(path)) return(NULL)
+  p <- trimws(readLines(path, warn = FALSE))
+  p[nzchar(p) & !startsWith(p, "#")]
+}
 
-## Non-code files under R/ are both an internal-leak smell and an R CMD check
-## failure; R/ should contain only R sources.
-NONCODE_IN_R <- "^R/.*\\.(rds|RData|docx|xlsx|pptx|csv|txt|log)$"
+## Look next to this script first, then in the worktree being checked.
+.self_dir <- tryCatch({
+  a <- commandArgs(trailingOnly = FALSE)
+  f <- sub("^--file=", "", a[grep("^--file=", a)])
+  if (length(f)) dirname(normalizePath(f[1])) else NA_character_
+}, error = function(e) NA_character_)
+
+PATTERN_FILE <- NULL
+for (cand in c(if (!is.na(.self_dir)) file.path(.self_dir, "internal-file-patterns.txt"),
+               file.path(wt, "tools", "internal-file-patterns.txt"),
+               "tools/internal-file-patterns.txt")) {
+  if (!is.null(cand) && file.exists(cand)) { PATTERN_FILE <- cand; break }
+}
+
+ARTIFACT_PATTERNS <- .read_patterns(PATTERN_FILE)
+if (is.null(ARTIFACT_PATTERNS) || !length(ARTIFACT_PATTERNS))
+  stop("cannot read internal-file-patterns.txt; refusing to certify a ",
+       "snapshot with no pattern list. Looked next to this script and under ",
+       wt, "/tools/.", call. = FALSE)
 
 fail <- function(...) { cat("\n[FAIL] ", ..., "\n", sep = ""); quit(status = 1) }
 
@@ -74,11 +87,6 @@ for (p in ARTIFACT_PATTERNS) {
   if (length(hit))
     problems[[paste0("matches internal pattern ", p)]] <- hit
 }
-
-## -- 3. non-code files under R/ ---------------------------------------------- #
-hit <- grep(NONCODE_IN_R, tracked, value = TRUE, ignore.case = TRUE)
-if (length(hit))
-  problems[["non-code file under R/"]] <- hit
 
 ## -- report ------------------------------------------------------------------ #
 if (length(problems)) {

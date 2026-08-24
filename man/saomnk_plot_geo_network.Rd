@@ -33,14 +33,14 @@ keeps a dense W legible (default 250). Set \code{NULL} for all non-zero.}
 
 \item{node_value}{Named numeric or factor vector mapped to node fill.}
 
-\item{edge_color, node_color, bg, land}{Colours.}
+\item{edge_color, node_color, bg, land}{Colors.}
 
 \item{label}{Character vector of component ids to label, or \code{NULL}.}
 
 \item{title, subtitle}{Character.}
 
 \item{negative}{Logical. If \code{TRUE}, treat W as a dissociative coupling
-(conflict, distance, sanction) and colour edges accordingly.}
+(conflict, distance, sanction) and color edges accordingly.}
 }
 \value{
 A ggplot object.

@@ -1,7 +1,7 @@
 ###############################################################################
 ## test-behavior-coevolution.R
 ##
-## Network--behaviour coevolution for a BIPARTITE network dependent variable.
+## Network--behavior coevolution for a BIPARTITE network dependent variable.
 ##
 ## The first block of tests asserts what RSiena itself offers, by inspecting a
 ## live getEffects() object rather than by trusting documentation. If a future
@@ -35,7 +35,7 @@ make_behavior_fixture <- function(M = 5L, N = 6L, seed = 1234L,
 #  What RSiena actually supports
 # --------------------------------------------------------------------------- #
 
-test_that("RSiena accepts a behaviour DV alongside a bipartite network DV", {
+test_that("RSiena accepts a behavior DV alongside a bipartite network DV", {
   eff <- saomnk_behavior_effects(M = 8L, N = 5L, direction = "influence")
   expect_s3_class(eff, "data.frame")
   expect_gt(nrow(eff), 0L)
@@ -44,8 +44,8 @@ test_that("RSiena accepts a behaviour DV alongside a bipartite network DV", {
 
 test_that("the one-mode influence effects are NOT available for a bipartite network", {
   ## avAlt / totAlt / avSim / totSim require ego's DIRECT alters to have a
-  ## behaviour. In a bipartite network ego's direct alters are components, and
-  ## components have no behaviour. This is a property of the model, not a gap in
+  ## behavior. In a bipartite network ego's direct alters are components, and
+  ## components have no behavior. This is a property of the model, not a gap in
   ## searchnet, and it cannot be worked around at the R level.
   inf <- saomnk_behavior_effects(M = 8L, N = 5L, direction = "influence")
   for (nm in c("avAlt", "totAlt", "avSim", "totSim")) {
@@ -65,16 +65,16 @@ test_that("the distance-2 influence effects ARE available for a bipartite networ
     expect_true(nm %in% inf$shortName,
                 label = sprintf("distance-2 influence effect '%s' missing", nm))
   }
-  ## Shape, degree and covariate effects on behaviour.
+  ## Shape, degree and covariate effects on behavior.
   for (nm in c("linear", "quad", "outdeg", "outIsolate", "popAlt",
                "effFrom", "avXAlt", "totXAlt", "avGroup")) {
     expect_true(nm %in% inf$shortName,
-                label = sprintf("behaviour effect '%s' missing", nm))
+                label = sprintf("behavior effect '%s' missing", nm))
   }
 })
 
 
-test_that("selection effects (behaviour -> network) are available", {
+test_that("selection effects (behavior -> network) are available", {
   sel <- saomnk_behavior_effects(M = 8L, N = 5L, direction = "selection")
   expect_gt(nrow(sel), 0L)
   for (nm in c("egoX", "altInDist2", "simEgoInDist2", "inPopX", "sameXCycle4")) {
@@ -99,7 +99,7 @@ test_that("network_only filtering keeps only network-dependent influence effects
 #  saomnk_behavior() constructor
 # --------------------------------------------------------------------------- #
 
-test_that("saomnk_behavior normalises values to an M x waves integer matrix", {
+test_that("saomnk_behavior normalizes values to an M x waves integer matrix", {
   b <- saomnk_behavior(values = c(1, 2, 3, 1, 2))
   expect_s3_class(b, "saomnk_behavior")
   expect_true(is.matrix(b$values))
@@ -120,7 +120,7 @@ test_that("saomnk_behavior shifts values to start at 1 and reports the shift", {
 })
 
 
-test_that("saomnk_behavior rejects a constant behaviour", {
+test_that("saomnk_behavior rejects a constant behavior", {
   expect_error(saomnk_behavior(values = rep(2, 6)), "at least\\s+two distinct")
 })
 
@@ -137,7 +137,7 @@ test_that("saomnk_behavior stamps dv_name onto every effect spec", {
 #  Engine plumbing
 # --------------------------------------------------------------------------- #
 
-test_that("the behaviour DV is actually present in the constructed siena data object", {
+test_that("the behavior DV is actually present in the constructed siena data object", {
   fx <- make_behavior_fixture()
   suppressMessages(fx$env$prepare_theta_scaffold(fx$mod, iterations = 20L))
 
@@ -146,12 +146,12 @@ test_that("the behaviour DV is actually present in the constructed siena data ob
   expect_true("self$behavior_rsienaDV" %in% names(dvs))
   expect_equal(unname(attr(dvs[["self$behavior_rsienaDV"]], "type")), "behavior")
   expect_equal(unname(attr(dvs[["self$bipartite_rsienaDV"]], "type")), "bipartite")
-  ## The behaviour DV lives on the ACTORS node set.
+  ## The behavior DV lives on the ACTORS node set.
   expect_equal(unname(attr(dvs[["self$behavior_rsienaDV"]], "nodeSet")), "ACTORS")
 })
 
 
-test_that("behaviour effects are registered against the behaviour DV by name", {
+test_that("behavior effects are registered against the behavior DV by name", {
   fx <- make_behavior_fixture(effects = list(
     list(effect = "linear", parameter = 0.1),
     list(effect = "quad",   parameter = -0.2),
@@ -174,7 +174,7 @@ test_that("behaviour effects are registered against the behaviour DV by name", {
 })
 
 
-test_that("a behaviour DV widens the theta matrix to include both basic rates", {
+test_that("a behavior DV widens the theta matrix to include both basic rates", {
   ## Two dependent variables force UNCONDITIONAL estimation, under which every
   ## basic rate occupies a theta column. Getting the width wrong makes siena07()
   ## refuse the matrix outright, so this is the load-bearing invariant.
@@ -189,7 +189,7 @@ test_that("a behaviour DV widens the theta matrix to include both basic rates", 
 })
 
 
-test_that("a model with no behaviour DV keeps the narrow, conditional theta width", {
+test_that("a model with no behavior DV keeps the narrow, conditional theta width", {
   ## Regression guard: the single-DV path must be untouched.
   env <- saomnk_env(M = 5L, N = 6L, seed = 1234L)
   mod <- saomnk_model(density = -0.5,
@@ -202,7 +202,7 @@ test_that("a model with no behaviour DV keeps the narrow, conditional theta widt
 })
 
 
-test_that("an environment reused across models does not carry a stale behaviour DV", {
+test_that("an environment reused across models does not carry a stale behavior DV", {
   fx <- make_behavior_fixture()
   suppressMessages(fx$env$prepare_theta_scaffold(fx$mod, iterations = 20L))
   expect_false(is.null(fx$env$behavior_rsienaDV))
@@ -215,13 +215,13 @@ test_that("an environment reused across models does not carry a stale behaviour 
 })
 
 
-test_that("behaviour values must be one per actor", {
+test_that("behavior values must be one per actor", {
   env <- saomnk_env(M = 5L, N = 6L, seed = 1234L)
   mod <- saomnk_model(density = -0.5,
                       influence_matrix = saomnk_block_diagonal(6, 2))
   mod$dv_behavior <- saomnk_behavior(values = c(1, 2, 3))  ## only 3, need 5
   expect_error(env$prepare_theta_scaffold(mod, iterations = 20L),
-               "Behaviour values must be one per node")
+               "Behavior values must be one per node")
 })
 
 
@@ -248,14 +248,14 @@ test_that("a coevolution run completes and both DVs actually move", {
   ## Both dependent variables produced ministeps.
   expect_true("self$behavior_rsienaDV" %in% cs$dv_varname)
   expect_true("self$bipartite_rsienaDV" %in% cs$dv_varname)
-  ## Some behaviour ministeps changed the behaviour.
+  ## Some behavior ministeps changed the behavior.
   beh <- cs$dv_varname == "self$behavior_rsienaDV"
   expect_gt(sum(cs$beh_difference[beh] != 0), 0L)
 })
 
 
-test_that("behaviour ministeps never mutate the bipartite state trajectory", {
-  ## A behaviour ministep's `id_to` is a behaviour value, not a component id.
+test_that("behavior ministeps never mutate the bipartite state trajectory", {
+  ## A behavior ministep's `id_to` is a behavior value, not a component id.
   ## Toggling on it would silently corrupt every downstream network statistic.
   fx <- make_behavior_fixture(M = 5L, N = 6L, rate = 0.5)
   suppressMessages(saomnk_run(fx$env, fx$mod, steps_per_actor = 10L, seed = 7L))
@@ -271,17 +271,17 @@ test_that("behaviour ministeps never mutate the bipartite state trajectory", {
   expect_false(any(changed & is_beh[-1L]))
   ## And the network did move on network ministeps, so the test is not vacuous.
   expect_gt(sum(changed & !is_beh[-1L]), 0L)
-  ## tie_change is FALSE on every behaviour ministep.
+  ## tie_change is FALSE on every behavior ministep.
   expect_false(any(cs$tie_change[is_beh]))
 })
 
 
-test_that("post-run statistics processing survives a coevolving behaviour DV", {
+test_that("post-run statistics processing survives a coevolving behavior DV", {
   fx <- make_behavior_fixture(M = 5L, N = 6L, rate = 0.3)
   suppressMessages(saomnk_run(fx$env, fx$mod, steps_per_actor = 8L, seed = 42L))
 
   ## The utility / K-4 decomposition is defined over the BIPARTITE evaluation
-  ## function only; behaviour effects are excluded rather than fabricated.
+  ## function only; behavior effects are excluded rather than fabricated.
   expect_silent(invisible(capture.output(fx$env$search_rsiena_process_stats())))
   expect_false(is.null(fx$env$actor_stats_df))
   expect_gt(nrow(fx$env$actor_stats_df), 0L)
@@ -289,7 +289,7 @@ test_that("post-run statistics processing survives a coevolving behaviour DV", {
 })
 
 
-test_that("saomnk_get_behavior recovers the simulated behaviour trajectory", {
+test_that("saomnk_get_behavior recovers the simulated behavior trajectory", {
   fx <- make_behavior_fixture(M = 5L, N = 6L, rate = 0.5)
   suppressMessages(saomnk_run(fx$env, fx$mod, steps_per_actor = 10L, seed = 42L))
 
@@ -302,12 +302,12 @@ test_that("saomnk_get_behavior recovers the simulated behaviour trajectory", {
   expect_true(is.matrix(wide))
   expect_equal(ncol(wide), 5L)
   expect_equal(nrow(wide) * ncol(wide), nrow(long))
-  ## The behaviour is not frozen.
+  ## The behavior is not frozen.
   expect_gt(length(unique(as.vector(wide))), 1L)
 })
 
 
-test_that("saomnk_get_behavior errors clearly when there is no behaviour DV", {
+test_that("saomnk_get_behavior errors clearly when there is no behavior DV", {
   env <- saomnk_env(M = 4L, N = 6L, seed = 1234L)
   mod <- saomnk_model(density = -0.5,
                       influence_matrix = saomnk_block_diagonal(6, 2))
@@ -318,9 +318,9 @@ test_that("saomnk_get_behavior errors clearly when there is no behaviour DV", {
 })
 
 
-test_that("a ramp composes with a coevolving behaviour DV", {
+test_that("a ramp composes with a coevolving behavior DV", {
   ## The two new capabilities are independent, and must remain so: a ramp on a
-  ## network parameter has to work in a model that also evolves a behaviour.
+  ## network parameter has to work in a model that also evolves a behavior.
   fx <- make_behavior_fixture(M = 5L, N = 6L, rate = 0.3)
   n <- 40L
   tm <- suppressMessages(

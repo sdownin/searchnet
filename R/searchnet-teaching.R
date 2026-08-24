@@ -171,7 +171,7 @@ searchnet_classroom_init <- function(n_students, n_rounds = 10, N = 12,
   ## `epistasis_weight`, the pre-0.4.0 name, not `influence_weight`. Before the
   ## v0.9.0 theta-storage repair this silently didn't matter -- the influence
   ## weight simulated at 0 regardless of what was declared -- so the mismatch
-  ## was harmless. Now that the weight genuinely drives behaviour, reading the
+  ## was harmless. Now that the weight genuinely drives behavior, reading the
   ## wrong key flattens every preset onto the 0.4 fallback and erases the
   ## intended pedagogical contrast across industries (airline 0.4, tech 0.5,
   ## pharma 0.45). Check both keys; `influence_weight` wins if a preset is ever
@@ -609,7 +609,7 @@ searchnet_classroom_leaderboard <- function(classroom, history = FALSE) {
 
 #' Generate Debrief Materials After the Game Ends
 #'
-#' Produces a suite of reports and visualisations summarising the classroom
+#' Produces a suite of reports and visualizations summarizing the classroom
 #' simulation session. Output includes a final leaderboard CSV, per-student
 #' trajectory reports, a class-wide K-4 animation data export, phase space
 #' comparison data, and AI counterfactual analysis.

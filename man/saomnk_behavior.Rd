@@ -2,7 +2,7 @@
 % Please edit documentation in R/searchnet-behavior.R
 \name{saomnk_behavior}
 \alias{saomnk_behavior}
-\title{Declare a Coevolving Behaviour Dependent Variable}
+\title{Declare a Coevolving Behavior Dependent Variable}
 \usage{
 saomnk_behavior(
   values,
@@ -16,22 +16,22 @@ saomnk_behavior(
 }
 \arguments{
 \item{values}{Numeric. Either a length-\code{M} vector (replicated across
-waves) or an \code{M x waves} matrix of behaviour values. RSiena requires
-behaviour to be integer-valued with a modest number of categories; values
+waves) or an \code{M x waves} matrix of behavior values. RSiena requires
+behavior to be integer-valued with a modest number of categories; values
 are rounded and shifted to start at 1, and the mapping is reported when
 \code{verbose = TRUE}.}
 
-\item{effects}{A list of effect specifications for the behaviour evaluation
+\item{effects}{A list of effect specifications for the behavior evaluation
 function. Each is a list with \code{effect} (RSiena shortName),
 \code{parameter}, and optionally \code{interaction1} / \code{interaction2}.
 For network-dependent effects set
 \code{interaction1 = "self$bipartite_rsienaDV"}. Defaults to a
 \code{linear} + \code{quad} shape, which is the minimum RSiena needs to
-identify a behaviour process.}
+identify a behavior process.}
 
 \item{rates}{A list of rate-effect specifications. Defaults to a single basic
 \code{Rate} effect, which sets how often actors get the opportunity to
-change their behaviour relative to their network ties.}
+change their behavior relative to their network ties.}
 
 \item{name}{Character. DV name. Leave at the default unless you know why you
 are changing it --- the engine addresses this DV by name throughout.}
@@ -49,24 +49,24 @@ structure model under the name \code{dv_behavior}.
 }
 \description{
 Builds a \code{dv_behavior} block for a searchnet structure model. Adding it
-to a structure model makes an actor-level behaviour (performance,
+to a structure model makes an actor-level behavior (performance,
 aspiration, capability, absorptive capacity -- whatever the attribute is
-theorised to be) a second dependent variable that evolves jointly with the
+theorized to be) a second dependent variable that evolves jointly with the
 bipartite actor-component network, rather than being a fixed covariate.
 }
 \details{
 Coevolution means both directions are live at once. The network shapes the
-behaviour through the distance-2 influence effects (an actor is pulled
-towards the behaviour of the actors it shares components with), and the
-behaviour shapes the network through selection effects declared on
+behavior through the distance-2 influence effects (an actor is pulled
+towards the behavior of the actors it shares components with), and the
+behavior shapes the network through selection effects declared on
 \code{dv_bipartite} with \code{interaction1} set to this DV's name.
 }
 \section{Which effects are available}{
 
-For a behaviour attached to a BIPARTITE network, RSiena does \strong{not}
+For a behavior attached to a BIPARTITE network, RSiena does \strong{not}
 provide the one-mode influence effects \code{avAlt}, \code{totAlt},
 \code{avSim} or \code{totSim}. In a bipartite network an actor's direct
-alters are components, which have no behaviour to average. The available
+alters are components, which have no behavior to average. The available
 influence effects are the distance-2 family --- \code{avInAltDist2},
 \code{totInAltDist2}, \code{avTInAltDist2}, \code{totAInAltDist2},
 \code{avInSimDist2}, \code{totInSimDist2} --- where two actors are

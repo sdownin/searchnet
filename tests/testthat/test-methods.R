@@ -94,7 +94,7 @@ test_that("print.saomnk_model() reports an attached dv_behavior block", {
   mod$dv_behavior <- saomnk_behavior(values = c(1, 2, 1, 3))
   out <- capture.output(print(mod))
   expect_true(any(grepl("dv_behavior.*present", out)))
-  ## default behaviour spec: linear + quad, 2 waves
+  ## default behavior spec: linear + quad, 2 waves
   expect_true(any(grepl("2 effect\\(s\\), 2 wave", out)))
 })
 

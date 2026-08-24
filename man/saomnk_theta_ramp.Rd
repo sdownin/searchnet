@@ -44,7 +44,7 @@ argument.}
 \item{easing}{Character. Shape of the trajectory, one of \code{"linear"}
 (constant rate of change), \code{"sigmoid"} (slow-fast-slow; a tipping
 point) or \code{"exponential"} (accelerating; compounding erosion).
-All three are normalised to land exactly on \code{from} and \code{to}.}
+All three are normalized to land exactly on \code{from} and \code{to}.}
 
 \item{k}{Numeric. Curvature of the \code{"exponential"} easing (default
 \code{3}); larger \code{k} defers more of the change to the end of the

@@ -35,7 +35,7 @@ test_that("local optima increase with K", {
   expect_true(all(diff(counts) > 0))
 })
 
-test_that("epistasis matrix has K+1 dependencies per locus", {
+test_that("influence matrix has K+1 dependencies per locus", {
   for (k in c(0, 2, 5)) {
     nk <- nk_landscape(N = 9, K = k, model = "adjacent", seed = 3)
     expect_true(all(rowSums(nk$influence_matrix) == k + 1),

@@ -180,7 +180,7 @@
 #' @param easing Character. Shape of the trajectory, one of \code{"linear"}
 #'   (constant rate of change), \code{"sigmoid"} (slow-fast-slow; a tipping
 #'   point) or \code{"exponential"} (accelerating; compounding erosion).
-#'   All three are normalised to land exactly on \code{from} and \code{to}.
+#'   All three are normalized to land exactly on \code{from} and \code{to}.
 #' @param k Numeric. Curvature of the \code{"exponential"} easing (default
 #'   \code{3}); larger \code{k} defers more of the change to the end of the
 #'   window. \code{k -> 0} degenerates to linear.
@@ -342,7 +342,7 @@ saomnk_theta_ramp <- function(env, structure_model, iterations, changes,
 #'   theoretically meaningful range.
 #' @param theta_matrix Optional numeric matrix to modify instead of building a
 #'   fresh one, so drift composes with \code{\link{saomnk_theta_ramp}}.
-#' @param verbose Logical. Print a summary of the realised walk.
+#' @param verbose Logical. Print a summary of the realized walk.
 #'
 #' @return A numeric matrix with \code{iterations} rows and one column per
 #'   simulated parameter.

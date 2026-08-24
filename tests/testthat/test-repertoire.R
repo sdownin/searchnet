@@ -219,7 +219,7 @@ test_that("a cluster of coincident points has a = 0 and silhouette 1 there", {
   expect_equal(.searchnet_silhouette(stats::dist(X), cl), bf_silhouette(X, cl))
 })
 
-test_that("the value does not depend on how the clusters are labelled", {
+test_that("the value does not depend on how the clusters are labeled", {
   set.seed(11223)
   X <- matrix(stats::rnorm(30), ncol = 3)
   cl <- c(1L, 1L, 2L, 2L, 3L, 3L, 1L, 3L, 2L, 1L)
@@ -535,10 +535,10 @@ test_that("the two planted groups are recovered as the two repertoires", {
   expect_gt(res$silhouette, 0.7)
 })
 
-test_that("cluster profiles are on the ORIGINAL, unstandardised scale", {
+test_that("cluster profiles are on the ORIGINAL, unstandardized scale", {
   ## Group A (actors 1,2,3): every feature 0, 1, 2  -> mean 1;   create_share 1
   ## Group B (actors 4,5):   every feature 100, 102 -> mean 101; create_share 0
-  ## Standardised centres would sit near +/-1, so these assertions distinguish
+  ## Standardized centers would sit near +/-1, so these assertions distinguish
   ## the two scales rather than merely checking the arithmetic.
   res <- searchnet_repertoire(two_group_stats(), k = 2, seed = 1)
   prof <- res$profiles
@@ -647,7 +647,7 @@ test_that("scale = TRUE and scale = FALSE are genuinely different computations",
   cs <- make_repertoire_stats(spec, n_events = 6L)
   scaled <- searchnet_repertoire(cs, k = 2, scale = TRUE,  seed = 3)
   raw    <- searchnet_repertoire(cs, k = 2, scale = FALSE, seed = 3)
-  ## Compare partitions up to relabelling, via the "same cluster?" relation.
+  ## Compare partitions up to relabeling, via the "same cluster?" relation.
   same <- function(g) outer(g, g, "==")
   expect_false(identical(same(scaled$assignment$repertoire),
                          same(raw$assignment$repertoire)))
@@ -801,7 +801,7 @@ test_that("an unknown feature names it and lists what is available", {
 })
 
 test_that("`actor` and `n_events` are rejected as features", {
-  ## They are identifiers, not behaviour. This test previously DOCUMENTED a bug:
+  ## They are identifiers, not behavior. This test previously DOCUMENTED a bug:
   ## validation ran `setdiff(features, names(profiles))` over the whole profile
   ## frame while the error message advertised that set minus the two identifier
   ## columns, so `features = "actor"` passed validation and ran, partitioning
@@ -812,7 +812,7 @@ test_that("`actor` and `n_events` are rejected as features", {
     "unknown feature(s): actor", fixed = TRUE)
   expect_error(
     searchnet_repertoire(two_group_stats(), k = 2, features = "actor", seed = 1),
-    "identifiers, not behaviour", fixed = TRUE)
+    "identifiers, not behavior", fixed = TRUE)
 
   ## `n_events` took the same path and used to die later with a message about
   ## variance, naming the wrong problem. It is now refused up front.
@@ -977,7 +977,7 @@ structured_stats <- local({
 })
 
 ## Unstructured: the same event set, but each event's statistics are drawn
-## independently of who did it, so the observed labelling is exchangeable with
+## independently of who did it, so the observed labeling is exchangeable with
 ## any permutation of it.
 unstructured_stats <- local({
   set.seed(2002)
@@ -1000,7 +1000,7 @@ test_that("with k = NULL every permutation re-selects k over the same k_range", 
   ## a single draw, and a maximum over several candidates beats a single draw on
   ## average even under the null. The default is now `k_selection = "reselect"`:
   ## each permutation maximises over the same k_range, so the comparison is
-  ## maximum against maximum. The older behaviour is still reachable and is
+  ## maximum against maximum. The older behavior is still reachable and is
   ## asserted in the next test, together with the reason it is not the default.
   r <- record_repertoire_k(
     searchnet_repertoire_null(structured_stats, n_perm = 5L, k = NULL,
@@ -1013,14 +1013,14 @@ test_that("with k = NULL every permutation re-selects k over the same k_range", 
   ## The chosen k is reported, and it is not the trivially-smallest value.
   expect_equal(r$value$k, 3L)
   ## The k each permutation actually landed on is returned, one per permutation,
-  ## so the granularity concern that motivated the old behaviour is visible
+  ## so the granularity concern that motivated the old behavior is visible
   ## rather than hidden.
   expect_equal(length(r$value$k_permuted), r$value$n_perm)
   expect_true(all(r$value$k_permuted >= 2L & r$value$k_permuted <= 5L))
   expect_equal(r$value$k_selection, "reselect")
 })
 
-test_that("k_selection = 'fixed' restores the older, anticonservative behaviour", {
+test_that("k_selection = 'fixed' restores the older, anticonservative behavior", {
   r <- record_repertoire_k(
     searchnet_repertoire_null(structured_stats, n_perm = 5L, k = NULL,
                               k_range = 2:5, k_selection = "fixed", seed = 3))
@@ -1035,7 +1035,7 @@ test_that("k_selection = 'fixed' restores the older, anticonservative behaviour"
 })
 
 test_that("the honest default is not more likely to reject than the fixed-k one", {
-  ## The direction the asymmetry predicts, on data with no actor-to-behaviour
+  ## The direction the asymmetry predicts, on data with no actor-to-behavior
   ## association: letting the permutations maximise too can only raise their
   ## silhouettes, so p can only rise. Asserted as a weak inequality on the
   ## permuted distribution rather than on p, which is a coarser quantity.
@@ -1108,7 +1108,7 @@ test_that("n_perm reports the number of permutations actually used", {
 
 test_that("observed separation sits above the permuted distribution when actors differ", {
   ## Direction only, not a specific p: the fixture plants three actor types, so
-  ## breaking the actor-to-behaviour association must cost separation.
+  ## breaking the actor-to-behavior association must cost separation.
   res <- searchnet_repertoire_null(structured_stats, n_perm = 49L, k = 3,
                                    seed = 13)
   expect_gt(res$observed, max(res$permuted))
@@ -1203,7 +1203,7 @@ test_that("searchnet_repertoire_ri() names the cause when it cannot run", {
 test_that("print.searchnet_repertoire reports k, features, silhouette and profiles", {
   res <- searchnet_repertoire(two_group_stats(), k = 2, seed = 1)
   txt <- capture.output(print(res))
-  expect_true(any(grepl("Behavioural repertoires: k = 2 over 5 actors", txt)))
+  expect_true(any(grepl("Behavioral repertoires: k = 2 over 5 actors", txt)))
   expect_true(any(grepl("Features: focusing, reinforcing, mixing, clustering, create_share",
                         txt, fixed = TRUE)))
   expect_true(any(grepl("Average silhouette width", txt)))
@@ -1434,7 +1434,7 @@ test_that("a single block consumes the same RNG as a free permutation", {
 test_that("a singleton block is left alone rather than mangled", {
   ## `sample(idx)` on a length-1 idx would permute seq_len(idx) instead. The
   ## guard makes the single-actor stratum a no-op, which is also the honest
-  ## behaviour: there is no one to swap with.
+  ## behavior: there is no one to swap with.
   v <- c(4L, 4L, 9L)
   set.seed(2)
   out <- .searchnet_permute_within(v, c(1L, 1L, 2L))
@@ -1454,7 +1454,7 @@ test_that("a singleton block is left alone rather than mangled", {
 # permuted profiles lose the volume-driven spread that the real ones keep.
 # ===========================================================================
 
-## No behavioural types whatsoever: every actor draws its component uniformly at
+## No behavioral types whatsoever: every actor draws its component uniformly at
 ## random from the same distribution. The ONLY heterogeneity is volume -- three
 ## tiers of 20, 120 and 400 events. Built through the real
 ## `searchnet_chain_stats()` so the mechanical dependence is the genuine one and
@@ -1470,7 +1470,7 @@ volume_only_stats <- function(seed = 22L, M = 18L, N = 7L,
   searchnet_chain_stats(log, B0 = matrix(0L, M, N))
 }
 
-test_that("the volume fixture really has the confound and no behaviour types", {
+test_that("the volume fixture really has the confound and no behavior types", {
   skip_if_not(exists("searchnet_chain_stats", mode = "function"))
   ap <- .searchnet_actor_profiles(volume_only_stats(), min_events = 5L)$profiles
   ## Three volume tiers, six actors each.
@@ -1485,7 +1485,7 @@ test_that("the volume fixture really has the confound and no behaviour types", {
 })
 
 test_that("the free null rejects, and the stratified null does not, on volume alone", {
-  ## THE TEST THE `strata` ARGUMENT EXISTS FOR. There are no behavioural types
+  ## THE TEST THE `strata` ARGUMENT EXISTS FOR. There are no behavioral types
   ## in this fixture at all. A procedure that reports p < 0.05 here is reporting
   ## that actors differ in HOW MUCH they do, dressed up as a claim that they
   ## differ in WHAT they do.
@@ -1542,7 +1542,7 @@ test_that("OBSERVATION: with the default feature set the free null is not fooled
   ## Recorded rather than demanded, and deliberately not tuned away. With all
   ## five default features the free null gives a LARGE p on the volume-only
   ## fixture, so the confound's severity depends on the feature set: three of
-  ## the five defaults carry no volume signal, and their standardised noise
+  ## the five defaults carry no volume signal, and their standardized noise
   ## dilutes the two that do. The free permutation also preserves each actor's
   ## own event count, so a low-volume pseudo-actor's profile stays noisy while a
   ## high-volume one's is tight, and k-means can score that heteroscedastic
@@ -1583,7 +1583,7 @@ test_that("the equal-count fixtures are unaffected by stratification", {
 
 test_that("a mostly-singleton stratification warns that it has no power", {
   ## 12 actors with 12 distinct counts and 10 strata: most actors end up alone
-  ## and frozen at their observed labelling, so the null degenerates towards the
+  ## and frozen at their observed labeling, so the null degenerates towards the
   ## identity. That must be said out loud rather than reported as p = 1.
   skip_if_not(exists("searchnet_chain_stats", mode = "function"))
   set.seed(555)
@@ -1712,7 +1712,7 @@ test_that("REPORTED: residualising on log(n_events) does NOT fix this fixture", 
 test_that("the adjusted Rand index is 1 for identical partitions up to labels", {
   a <- c(1L, 1L, 2L, 2L, 3L, 3L)
   expect_equal(.searchnet_ari(a, a), 1)
-  ## Relabelled, non-contiguous, out of order: the same partition.
+  ## Relabeled, non-contiguous, out of order: the same partition.
   expect_equal(.searchnet_ari(a, c(40L, 40L, 7L, 7L, -1L, -1L)), 1)
   expect_equal(.searchnet_ari(a, c("x", "x", "y", "y", "z", "z")), 1)
 })

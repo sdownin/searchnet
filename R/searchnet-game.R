@@ -255,7 +255,7 @@ searchnet_game_step <- function(game, action, activity_id) {
 
 #' Get Current Game Scoreboard
 #'
-#' Returns a data frame summarising each firm's current state including
+#' Returns a data frame summarizing each firm's current state including
 #' utility, K-4 degrees, rank, and whether the firm is the player.
 #'
 #' @param game A \code{searchnet_game} object.

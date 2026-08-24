@@ -4,7 +4,7 @@
 \alias{mean-field-solver}
 \title{Mean-Field Equilibrium Solver for the SaoMNK Brock-Durlauf Reduction}
 \description{
-Standalone helper operationalising Theorem~4 of the SaoMNK
+Standalone helper operationalizing Theorem~4 of the SaoMNK
 proof set (the Gibbs/Brock-Durlauf equivalence): the mean-field
 self-consistency equation
 \deqn{m^{*} = \tanh\!\left(\frac{\beta_{\mathrm{eff}}\, m^{*}}{2T}\right)}{
@@ -34,7 +34,7 @@ threshold. It is \emph{not} the stationary law of a simulation run with
 RSiena's \code{inPop}, whose evaluation delta is sqrt-form; that law is
 the Option B fixed point, \code{\link{saomnk_inpop_self_consistency}}.
 Treating these roots as the prediction for a supercritical \code{inPop}
-run overstates the coupling (the linearised slope at the realised
+run overstates the coupling (the linearised slope at the realized
 equilibrium is the correct local coupling, not
 \eqn{0.5 (M-1) \theta}) and was the source of a persistent spurious
 discrepancy of \eqn{\approx 0.38} in the Theorem 4 empirical check,

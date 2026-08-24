@@ -13,9 +13,9 @@
 ## the coefficient into `initialValue`. Consequence: cycle4 was ALWAYS simulated
 ## at its parm default (1), and XWX / X at 0, whatever the caller asked for.
 ##
-## These are BEHAVIOURAL tests where possible: the package's own history
+## These are BEHAVIORAL tests where possible: the package's own history
 ## records an effect that "registered but was inert", caught only because a
-## test checked behaviour rather than registration.
+## test checked behavior rather than registration.
 ###############################################################################
 
 DV_NAME <- "self$bipartite_rsienaDV"

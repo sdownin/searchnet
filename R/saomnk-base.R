@@ -63,8 +63,8 @@ SaomNkRSienaBiEnv_base <- R6Class(
     bipartite_rsienaDV = NULL,
     social_rsienaDV = NULL,
     search_rsienaDV = NULL,
-    behavior_rsienaDV = NULL,   ## behaviour / performance DV coevolving with the bipartite net
-    behavior_values = NULL,     ## the M x waves matrix the behaviour DV was built from
+    behavior_rsienaDV = NULL,   ## behavior / performance DV coevolving with the bipartite net
+    behavior_values = NULL,     ## the M x waves matrix the behavior DV was built from
     #
     theta_shocks = NULL,
     theta_matrix = NULL,
@@ -563,7 +563,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
       ## RateX  : rate depends on an actor covariate  (RSiena group `covarBipartiteRate`)
       ## outRate*/inRate* : rate depends on the actor's own degree (`bipartiteRate`)
       ## These make the FREQUENCY of change actor-specific, as distinct from the evaluation
-      ## function, which governs WHICH change is preferred. Required for modelling
+      ## function, which governs WHICH change is preferred. Required for modeling
       ## heterogeneous adjustment / repositioning costs.
       else if (eff$effect %in% c('RateX', 'outRate', 'outRateInv', 'outRateLog',
                                  'inRateInv', 'inRateLog'))
@@ -808,12 +808,12 @@ SaomNkRSienaBiEnv_base <- R6Class(
                             fix = fix, verbose = verbose)
           if (!is.null(eff$interaction1) && nzchar(as.character(eff$interaction1)))
             .args_inc$interaction1 <- eff$interaction1
-          ## Two-slot effects. Behaviour effects such as `avXAlt` / `totXAlt`
+          ## Two-slot effects. Behavior effects such as `avXAlt` / `totXAlt`
           ## and the covariate distance-2 family (`avXInAltDist2`, ...) are
           ## identified by BOTH a covariate (interaction1) and the network
           ## through which it reaches ego (interaction2); without
           ## interaction2 RSiena cannot resolve them. No structure model
-          ## predating behaviour coevolution sets interaction2 on this path,
+          ## predating behavior coevolution sets interaction2 on this path,
           ## so this is inert for them.
           if (!is.null(eff$interaction2) && nzchar(as.character(eff$interaction2)))
             .args_inc$interaction2 <- eff$interaction2
@@ -853,7 +853,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
           ##
           ## Default is therefore to STOP. Set
           ##   options(saomnk.skip_missing_effects = TRUE)
-          ## to restore the old permissive behaviour for exploratory work.
+          ## to restore the old permissive behavior for exploratory work.
           msg <- sprintf("Effect '%s' could not be included: %s%s",
                          eff$effect, e2$message, available_msg)
           if (isTRUE(getOption("saomnk.skip_missing_effects", FALSE))) {
@@ -1308,8 +1308,8 @@ SaomNkRSienaBiEnv_base <- R6Class(
     ## The subset of theta columns that belong to the BIPARTITE network's
     ## evaluation function: the effects whose per-actor statistics the utility
     ## and K-4 decompositions know how to compute. Excludes basic rates and,
-    ## when a behaviour DV coevolves, that DV's effects -- `linear`, `quad`,
-    ## `avInSimDist2` and the rest are statistics of the behaviour, not of the
+    ## when a behavior DV coevolves, that DV's effects -- `linear`, `quad`,
+    ## `avInSimDist2` and the rest are statistics of the behavior, not of the
     ## bipartite matrix, and have no decomposition on this path.
     ##
     ## For a single-DV model this returns exactly what
@@ -1413,7 +1413,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
     get_struct_mod_stats_mat_from_bi_mat = function(bi_env_mat, type='all', .cache=NULL) {
       #
       ## Bipartite-network effects only: this function computes statistics OF
-      ## bi_env_mat, and a coevolving behaviour DV's effects are not statistics
+      ## bi_env_mat, and a coevolving behavior DV's effects are not statistics
       ## of it. Identical to the previous call for single-DV models.
       theta_df_norates <- self$get_bipartite_effects_theta_df()
       theta_df_norates$effect <-  theta_df_norates$shortName

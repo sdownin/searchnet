@@ -115,7 +115,7 @@ saomnk_plot_strategy_utility <- function(env,
 
 # -- plot_utility_contributions_basic ------------------------------------------
 
-#' Plot basic utility contributions (statistic decomposition) without strategy colouring
+#' Plot basic utility contributions (statistic decomposition) without strategy coloring
 #'
 #' @param env SaomNkRSienaBiEnv object
 #' @param use_thetas Logical; multiply statistics by theta weights
@@ -207,7 +207,7 @@ saomnk_plot_utility_contributions_basic <- function(env,
 
 # -- plot_utility_contributions ------------------------------------------------
 
-#' Plot utility contributions with strategy colouring and optional experiment data
+#' Plot utility contributions with strategy coloring and optional experiment data
 #'
 #' @param env SaomNkRSienaBiEnv object
 #' @param use_thetas Logical; multiply statistics by theta weights

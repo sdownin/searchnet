@@ -58,7 +58,7 @@ suppressPackageStartupMessages({
 ##
 ## This used to hand-list four files. That is the same defect NEWS records fixing
 ## in the loader at v0.3.3, where sourcing 11 of 28 files left whole modules
-## absent -- and the second copy of the list drifted the same way: when behaviour
+## absent -- and the second copy of the list drifted the same way: when behavior
 ## coevolution added a `.searchnet_has_behavior()` call inside saomnk-class.R,
 ## searchnet-behavior.R was not on this list, so EVERY simulation-dependent test
 ## died with "could not find function" and the surrounding tryCatch turned that

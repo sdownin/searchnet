@@ -183,7 +183,7 @@ test_that("the fast path agrees with brute force on random matrices", {
       M <- sh[1]; N <- sh[2]
       B <- matrix(as.integer(stats::runif(M * N) < p), M, N)
       expect_three_paths_agree(
-        B, sprintf("random %dx%d at density %.2f (realised %.2f)",
+        B, sprintf("random %dx%d at density %.2f (realized %.2f)",
                    M, N, p, mean(B)))
     }
   }
@@ -418,7 +418,7 @@ make_log_fixture <- function() {
   list(B0 = B0, int_log = int_log, chr_log = chr_log)
 }
 
-test_that("an integer event log replays and is labelled 'observed'", {
+test_that("an integer event log replays and is labeled 'observed'", {
   f <- make_log_fixture()
   out <- searchnet_chain_stats(f$int_log, B0 = f$B0)
 
@@ -611,7 +611,7 @@ test_that("an observed value outside the percentile range is not covered", {
                                       stats = "clustering")$covered)
   expect_true(searchnet_chain_compare(sim, make_obs_frame(4.9),
                                       stats = "clustering")$covered)
-  ## z is the standardised deviation from the simulated mean
+  ## z is the standardized deviation from the simulated mean
   res <- searchnet_chain_compare(sim, make_obs_frame(5), stats = "clustering")
   expect_equal(res$z, (5 - 3) / sqrt(2.5))
 })
@@ -627,7 +627,7 @@ test_that("`fun` summarises within a chain before the comparison", {
   ## Two chains, several rows each; with fun = mean the per-chain values are
   ## 2 and 8, with fun = max they are 3 and 9.
   ## normalize = FALSE isolates what this test is about (the within-chain
-  ## summary) from the per-event normalisation tested separately below.
+  ## summary) from the per-event normalization tested separately below.
   sim <- data.frame(chain_id   = c(1L, 1L, 1L, 2L, 2L, 2L),
                     clustering = c(1, 2, 3, 7, 8, 9))
   obs <- data.frame(clustering = c(4, 6))
@@ -659,7 +659,7 @@ test_that("normalize divides each summary by that chain's event count", {
 
 test_that("normalize = FALSE warns when simulated and observed lengths differ", {
   ## These statistics are running counters, so their means scale with chain
-  ## length. Comparing unnormalised means across differently-sized chains is
+  ## length. Comparing unnormalized means across differently-sized chains is
   ## partly a test of event counts, which is not the hypothesis.
   sim <- data.frame(chain_id   = rep(1:2, each = 10),
                     clustering = as.numeric(1:20))

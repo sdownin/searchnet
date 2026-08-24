@@ -19,7 +19,7 @@ binary matrix. Used when \code{env} is \code{NULL}.}
 \item{entry_log}{Optional data.frame with columns \code{firm},
 \code{activity}, \code{n_rivals_present}, \code{was_competitive} (as
 produced by the CD4 forbearance experiment). Passed through with
-standardised column names.}
+standardized column names.}
 }
 \value{
 A \code{data.frame} with columns:

@@ -209,7 +209,7 @@ searchnet_ergodicity_sweep <- function(M = 12L, N = 15L,
   runs <- do.call(rbind, rows)
 
   ## ------------------------------------------------------------------ ##
-  ##  Summarise: per run length, the mean per arm and the max between-arm
+  ##  Summarize: per run length, the mean per arm and the max between-arm
   ##  gap. With two arms the max gap is just |mean_1 - mean_2|.
   ## ------------------------------------------------------------------ ##
   summ <- do.call(rbind, lapply(run_lengths, function(L) {
@@ -269,7 +269,7 @@ searchnet_ergodicity_sweep <- function(M = 12L, N = 15L,
   ##  Verdict at the longest run length: TOST equivalence. NOTE the logic
   ##  -- equivalence requires the WHOLE interval inside the margin. A
   ##  non-significant difference is not evidence of sameness, which is
-  ##  exactly the error the old unconditional cat() institutionalised.
+  ##  exactly the error the old unconditional cat() institutionalized.
   ## ------------------------------------------------------------------ ##
   L_max <- max(run_lengths)
   sub   <- runs[runs$run_length == L_max, , drop = FALSE]

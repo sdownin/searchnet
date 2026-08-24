@@ -17,7 +17,7 @@ test_that("verify_nk_equivalence with N=4 identity E: max difference < 1e-10", {
   env <- SaomNkRSienaBiEnv$new(make_small_environ_params(M = M, N = N,
                                                          rand_seed = 600))
 
-  ## Set epistasis matrix to identity (K=0 in NK terms)
+  ## Set influence matrix to identity (K=0 in NK terms)
   env$component_1_coDyadCovar <- diag(N)
   env$search_matrix <- diag(N)
 

@@ -19,9 +19,9 @@
 ## graph of an operating routine -- a thing developers refactor, not a thing
 ## they are handed.
 ##
-## The payoff is that "does the organisation reorganise to fit the
+## The payoff is that "does the organization reorganize to fit the
 ## architecture, or does the architecture get refactored to fit the
-## organisation" stops being a static congruence correlation and becomes a
+## organization" stops being a static congruence correlation and becomes a
 ## selection-versus-influence question with two separately signed, separately
 ## tested coefficients estimated from the same panel.
 ##
@@ -36,18 +36,18 @@
 ## Exactly TWO cross-network channels exist between the two dependent
 ## networks, and they are asymmetric:
 ##
-##   (1) ARCHITECTURE <- ORGANISATION.  On the one-mode component DV:
+##   (1) ARCHITECTURE <- ORGANIZATION.  On the one-mode component DV:
 ##         from.w.ind   interaction1 = <bipartite DV>, interaction2 = <bipartite DV>
 ##       "architecture: from memberships agr. weighted by memberships indegree".
 ##       This is the ONLY effect the component DV gains from the presence of
 ##       the bipartite DV. It is the refactoring channel: component-to-component
 ##       ties form along lines of shared occupancy.
 ##
-##   (2) ORGANISATION <- ARCHITECTURE.  On the bipartite DV:
+##   (2) ORGANIZATION <- ARCHITECTURE.  On the bipartite DV:
 ##         sameWXClosure  interaction1 = <component DV>, interaction2 = <a covariate>
 ##       "memberships: mixed <architecture> closure same <covariate>".
 ##       This one is CONDITIONAL: it appears only when some actor covariate or
-##       behaviour DV is present to serve as interaction2. With no covariate in
+##       behavior DV is present to serve as interaction2. With no covariate in
 ##       the data object, the bipartite DV gains NOTHING AT ALL from the
 ##       presence of the component DV.
 ##
@@ -75,7 +75,7 @@
 ## architecture on tie formation in the bipartite network. It cannot absorb
 ## simultaneous feedback, and a coefficient on it must not be reported as if it
 ## were a coevolution parameter. It is offered because it is the only route to
-## the XW=>X closure mechanism, and it is labelled everywhere it appears.
+## the XW=>X closure mechanism, and it is labeled everywhere it appears.
 ##
 ## Registering that covariate also brings in a further set of rows that pair a
 ## dependent network with it, verified present in the smoke test:
@@ -217,21 +217,21 @@
 #'
 #' Assembles an RSiena data object in which the actor-by-component bipartite
 #' network and the component-by-component architecture are BOTH dependent
-#' variables, optionally alongside an actor behaviour.
+#' variables, optionally alongside an actor behavior.
 #'
 #' @section Why this changes the question:
 #' With the architecture entered as a fixed covariate, congruence between
-#' structure and organisation can only be described. With it entered as a
+#' structure and organization can only be described. With it entered as a
 #' dependent network, the two directions are separately parameterised: the
-#' architecture can be shown to move towards the organisation, the organisation
+#' architecture can be shown to move towards the organization, the organization
 #' towards the architecture, both, or neither.
 #'
 #' @section What RSiena offers, and what it does not:
 #' Verified against RSiena 1.5.0. Between these two dependent networks exactly
 #' one cross-network effect exists, \code{from.w.ind} on the component DV
-#' (architecture follows organisation). In the other direction only
+#' (architecture follows organization). In the other direction only
 #' \code{sameWXClosure} is available on the bipartite DV, and only when a
-#' covariate or behaviour is present to serve as its \code{interaction2}. The
+#' covariate or behavior is present to serve as its \code{interaction2}. The
 #' classic multivariate family --- \code{crprod}, \code{from}, \code{to},
 #' \code{toBack}, \code{mixedInXW}, \code{sharedTo} --- is a
 #' \strong{non-implementation} for a one-mode network on the bipartite
@@ -255,7 +255,7 @@
 #'   each \code{N x N}: the directed component-to-component architecture.
 #'   Diagonals are forced to zero, with a message if any were non-zero.
 #' @param behavior Optional. A length-\code{M} vector (replicated across waves)
-#'   or an \code{M x W} matrix of integer-valued actor behaviour. Becomes a
+#'   or an \code{M x W} matrix of integer-valued actor behavior. Becomes a
 #'   third dependent variable on the ACTORS node set.
 #' @param actor_covars Optional named list of actor covariates. A length-\code{M}
 #'   vector becomes a \code{coCovar}; an \code{M x W} matrix a \code{varCovar}.
@@ -272,8 +272,8 @@
 #'   \code{component} and \code{behavior} giving the DV names used throughout.
 #'   Change these only with reason: every downstream \code{name =} lookup uses
 #'   them, and a mismatch fails silently in RSiena.
-#' @param allow_only Logical, passed to \code{sienaDependent} for the behaviour
-#'   DV as \code{allowOnly}. \code{FALSE} lets the simulation move behaviour in
+#' @param allow_only Logical, passed to \code{sienaDependent} for the behavior
+#'   DV as \code{allowOnly}. \code{FALSE} lets the simulation move behavior in
 #'   both directions even when the observed panel only ever increases.
 #' @param verbose Logical. Report the assembled dimensions and node sets.
 #'
@@ -486,7 +486,7 @@ searchnet_coevolve_data <- function(bipartite,
     cat(sprintf("  DV one-mode     : '%s'   (%d x %d x %d, directed on COMPONENTS)\n",
                 nm[["component"]], N, N, W))
     if (!is.null(behavior))
-      cat(sprintf("  DV behaviour    : '%s'   (%d x %d, on ACTORS)\n",
+      cat(sprintf("  DV behavior    : '%s'   (%d x %d, on ACTORS)\n",
                   nm[["behavior"]], M, W))
     if (!is.na(lag_name))
       cat(sprintf("  dyadic covar    : '%s'  (lagged architecture; unlocks XWX,\n",
@@ -621,12 +621,12 @@ searchnet_coevolve_available_effects <- function(dat,
 #' On the component (architecture) DV: \code{density}, \code{recip},
 #' \code{transTrip}. On the bipartite DV: \code{density} (auto-included by
 #' \code{getEffects}), \code{inPop}, \code{outAct}, \code{cycle4}. On the
-#' behaviour DV, if present: \code{linear}, \code{quad}.
+#' behavior DV, if present: \code{linear}, \code{quad}.
 #'
 #' The cross-network requests are governed separately, because they are the
 #' scientific point and because they are the ones that may not exist:
-#' \code{architecture_from_organisation} adds \code{from.w.ind}, and
-#' \code{organisation_from_architecture} adds \code{XWX} on the lagged
+#' \code{architecture_from_organization} adds \code{from.w.ind}, and
+#' \code{organization_from_architecture} adds \code{XWX} on the lagged
 #' architecture covariate --- a lagged exogenous estimand, NOT a coevolution
 #' parameter. See the file header.
 #'
@@ -635,13 +635,13 @@ searchnet_coevolve_available_effects <- function(dat,
 #'   or \code{NULL} for the default set.
 #' @param component_effects Character vector of shortNames for the component DV,
 #'   or \code{NULL} for the default set.
-#' @param behavior_effects Character vector of shortNames for the behaviour DV,
-#'   or \code{NULL} for the default set. Ignored when there is no behaviour DV.
-#' @param architecture_from_organisation Logical. Include \code{from.w.ind} on
+#' @param behavior_effects Character vector of shortNames for the behavior DV,
+#'   or \code{NULL} for the default set. Ignored when there is no behavior DV.
+#' @param architecture_from_organization Logical. Include \code{from.w.ind} on
 #'   the component DV: architecture ties form along lines of shared occupancy.
 #'   This is the only genuine cross-network effect between the two dependent
 #'   networks. Default \code{TRUE}.
-#' @param organisation_from_architecture Logical. Include \code{XWX} on the
+#' @param organization_from_architecture Logical. Include \code{XWX} on the
 #'   bipartite DV using the lagged architecture covariate. Requires
 #'   \code{architecture_lag = TRUE} at data-build time. Default \code{TRUE}
 #'   when that covariate exists, and silently skipped when it does not unless
@@ -664,15 +664,15 @@ searchnet_coevolve_available_effects <- function(dat,
 #' eff <- searchnet_coevolve_effects(dat)
 #' ## architecture structure only, no cross-network claim:
 #' eff0 <- searchnet_coevolve_effects(dat,
-#'           architecture_from_organisation = FALSE,
-#'           organisation_from_architecture = FALSE)
+#'           architecture_from_organization = FALSE,
+#'           organization_from_architecture = FALSE)
 #' }
 searchnet_coevolve_effects <- function(dat,
                                        bipartite_effects = NULL,
                                        component_effects = NULL,
                                        behavior_effects  = NULL,
-                                       architecture_from_organisation = TRUE,
-                                       organisation_from_architecture = TRUE,
+                                       architecture_from_organization = TRUE,
+                                       organization_from_architecture = TRUE,
                                        extra   = NULL,
                                        strict  = TRUE,
                                        verbose = TRUE) {
@@ -704,17 +704,17 @@ searchnet_coevolve_effects <- function(dat,
     for (s in behavior_effects)
       requests[[length(requests) + 1L]] <- list(name = bhn, shortName = s)
 
-  ## ---- cross-network channel 1: architecture <- organisation --------------
-  if (isTRUE(architecture_from_organisation))
+  ## ---- cross-network channel 1: architecture <- organization --------------
+  if (isTRUE(architecture_from_organization))
     requests[[length(requests) + 1L]] <- list(
       name = cpn, shortName = "from.w.ind",
       interaction1 = bpn, interaction2 = bpn)
 
-  ## ---- cross-network channel 2: organisation <- architecture (LAGGED) -----
-  if (isTRUE(organisation_from_architecture)) {
+  ## ---- cross-network channel 2: organization <- architecture (LAGGED) -----
+  if (isTRUE(organization_from_architecture)) {
     if (is.na(meta$lag_name)) {
       msg <- paste0(
-        "organisation_from_architecture = TRUE requires the lagged ",
+        "organization_from_architecture = TRUE requires the lagged ",
         "architecture covariate, which this data object does not carry ",
         "(architecture_lag was FALSE). Between two DEPENDENT networks in this ",
         "node-set pairing, RSiena 1.5.0 implements no effect for this ",
@@ -805,11 +805,11 @@ searchnet_coevolve_effects <- function(dat,
 #'
 #' @section The two convergence quantities are not the same thing:
 #' The manual's guidance for publishable results is \strong{overall maximum
-#' convergence ratio < 0.25}, a single number summarising the whole fit
+#' convergence ratio < 0.25}, a single number summarizing the whole fit
 #' (\code{fit$tconv.max}). The \strong{per-parameter t-ratios for deviations
 #' from targets} (\code{fit$tconv}) are a vector, conventionally required below
 #' 0.10 in absolute value. They answer different questions, and reporting one
-#' under the other's threshold is loose. Both are printed, labelled, and
+#' under the other's threshold is loose. Both are printed, labeled, and
 #' returned.
 #'
 #' @section Non-identification is not a fit:

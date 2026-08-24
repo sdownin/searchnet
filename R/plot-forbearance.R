@@ -1,6 +1,6 @@
 #' Standalone forbearance plot functions for SaoMNK.
 #'
-#' Visualisations of competitive entry/exit behaviour derived from the
+#' Visualizations of competitive entry/exit behavior derived from the
 #' entry tracking in \code{track-entries.R}. Each function follows the
 #' package convention: takes an \code{env} (SaomNkRSienaBiEnv) object or
 #' a pre-computed data.frame as its first argument.
@@ -77,7 +77,7 @@ saomnk_plot_forbearance <- function(env = NULL,
 
 #' Plot forbearance spectrum analysis (multi-panel)
 #'
-#' Creates a 2x2 panel figure showing competitive entry behaviour across
+#' Creates a 2x2 panel figure showing competitive entry behavior across
 #' a range of theta_inPop values, following the design from the CD2026
 #' forbearance spectrum experiment (script 54).
 #'
@@ -113,7 +113,7 @@ saomnk_plot_forbearance_spectrum <- function(forbearance_sweep_results,
 
   z <- qnorm(1 - (1 - ci) / 2)
 
-  # Summarise by theta_inPop
+  # Summarize by theta_inPop
   summ <- df %>%
     group_by(theta_inPop) %>%
     summarise(

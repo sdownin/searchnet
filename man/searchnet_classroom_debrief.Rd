@@ -25,7 +25,7 @@ Includes:
 }
 }
 \description{
-Produces a suite of reports and visualisations summarising the classroom
+Produces a suite of reports and visualizations summarizing the classroom
 simulation session. Output includes a final leaderboard CSV, per-student
 trajectory reports, a class-wide K-4 animation data export, phase space
 comparison data, and AI counterfactual analysis.

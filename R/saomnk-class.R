@@ -39,8 +39,8 @@ SaomNkRSienaBiEnv <- R6Class(
     ## set_behavior_rsienaDV()
     ## ------------------------------------------------------------------------
     ## Build self$behavior_rsienaDV from structure_model$dv_behavior, or clear it
-    ## when the structure model declares no behaviour DV. Clearing matters: an
-    ## environment reused across models must not silently carry a behaviour DV
+    ## when the structure model declares no behavior DV. Clearing matters: an
+    ## environment reused across models must not silently carry a behavior DV
     ## from a previous run into a model that does not declare one.
     ## No-op in effect for every structure model that has no dv_behavior block,
     ## which is every structure model built before this feature existed.
@@ -54,7 +54,7 @@ SaomNkRSienaBiEnv <- R6Class(
       self$behavior_rsienaDV <- .searchnet_build_behavior_dv(self, dvb)
       self$behavior_values   <- dvb$values
       if (verbose)
-        cat(sprintf("behaviour DV '%s' set: %d nodes x %d waves, values in [%d, %d]\n",
+        cat(sprintf("behavior DV '%s' set: %d nodes x %d waves, values in [%d, %d]\n",
                     dvb$name, nrow(self$behavior_values), ncol(self$behavior_values),
                     min(self$behavior_values), max(self$behavior_values)))
       invisible(self$behavior_rsienaDV)
@@ -63,7 +63,7 @@ SaomNkRSienaBiEnv <- R6Class(
     get_rsiena_data_from_structure_model = function(structure_model, verbose=FALSE) {
       ACTORS     <- sienaNodeSet(self$M, nodeSetName="ACTORS")
       COMPONENTS <- sienaNodeSet(self$N, nodeSetName="COMPONENTS")
-      ## Behaviour coevolution DV, added to input_varlist alongside the
+      ## Behavior coevolution DV, added to input_varlist alongside the
       ## bipartite DV in both construction branches below. NULL when the
       ## structure model declares no dv_behavior block, in which case every
       ## line touching it is inert.
@@ -523,7 +523,7 @@ SaomNkRSienaBiEnv <- R6Class(
       if ('dv_bipartite' %in% structure_model_dvs) {
         self$bipartite_rsienaDV <- sienaDependent(array_bi_net, type='bipartite', nodeSet =c('ACTORS', 'COMPONENTS'), allowOnly = FALSE)
       }
-      ## Behaviour co-evolution DV; no-op when structure_model has no dv_behavior.
+      ## Behavior co-evolution DV; no-op when structure_model has no dv_behavior.
       self$set_behavior_rsienaDV(structure_model)
       ##---------------------------------------------
 
@@ -798,8 +798,8 @@ SaomNkRSienaBiEnv <- R6Class(
                                                 type='bipartite',
                                                 nodeSet =c('ACTORS', 'COMPONENTS'),
                                                 allowOnly = FALSE)
-      ## Behaviour co-evolution DV (structure_model$dv_behavior). Also CLEARS a
-      ## behaviour DV left over from a previous model when none is declared, so
+      ## Behavior co-evolution DV (structure_model$dv_behavior). Also CLEARS a
+      ## behavior DV left over from a previous model when none is declared, so
       ## an environment reused across models cannot carry one over silently.
       self$set_behavior_rsienaDV(structure_model, verbose = verbose)
 
@@ -965,14 +965,14 @@ SaomNkRSienaBiEnv <- R6Class(
               interaction1 = paste(interaction1, collapse  = '|')
             )
       }
-      ## ---- Behaviour co-evolution DV -------------------------------------
+      ## ---- Behavior co-evolution DV -------------------------------------
       ## get_theta_matrix() filters the RSiena effects table down to effects
-      ## whose shortName appears in THIS data frame. A behaviour DV's effects
+      ## whose shortName appears in THIS data frame. A behavior DV's effects
       ## are included in rsiena_effects but absent here, so without these rows
       ## the theta matrix would be built too narrow and siena07() would reject
       ## it ("thetaValues should have N columns"). Empty for every structure
       ## model with no dv_behavior block.
-      behaviour_rows <- data.frame()
+      behavior_rows <- data.frame()
       if (.searchnet_has_behavior(structure_model)) {
         .beh_df <- function(lst) {
           if (!length(lst)) return(data.frame())
@@ -986,7 +986,7 @@ SaomNkRSienaBiEnv <- R6Class(
             stringsAsFactors = FALSE
           )))
         }
-        behaviour_rows <- bind_rows(.beh_df(structure_model$dv_behavior$rates),
+        behavior_rows <- bind_rows(.beh_df(structure_model$dv_behavior$rates),
                                     .beh_df(structure_model$dv_behavior$effects))
       }
 
@@ -995,7 +995,7 @@ SaomNkRSienaBiEnv <- R6Class(
         bind_rows(coCovars) %>%
         bind_rows(coDyadCovars) %>%
         bind_rows(interactions) %>%
-        bind_rows(behaviour_rows), stringsAsFactors = FALSE)
+        bind_rows(behavior_rows), stringsAsFactors = FALSE)
       effects$effect_key <-  sapply(1:nrow(effects), function(i){
         paste(c(effects$dv_name[i], ## DV name
                 effects$effect[i],  ## effect name
@@ -1062,7 +1062,7 @@ SaomNkRSienaBiEnv <- R6Class(
         ##       is whatever getEffects() derived from the (degenerate,
         ##       two-identical-wave) data, not a caller's choice; before the
         ##       theta-storage repair this row read parm = 0 and was
-        ##       substituted, so forcing 1 preserves that behaviour exactly;
+        ##       substituted, so forcing 1 preserves that behavior exactly;
         ##   (b) a declared rate of NA or <= 0, which would freeze the DV.
         .basic <- (effs$shortName == 'Rate' & effs$type == 'rate')
         .declared <- rep(TRUE, nrow(effs))
@@ -1146,7 +1146,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                 type = 'bipartite',
                                                 nodeSet = c('ACTORS', 'COMPONENTS'),
                                                 allowOnly = FALSE)
-      ## Behaviour co-evolution DV, when the structure model declares one.
+      ## Behavior co-evolution DV, when the structure model declares one.
       self$set_behavior_rsienaDV(structure_model, verbose = verbose)
 
       self$config_structure_model <- structure_model
@@ -1305,8 +1305,8 @@ SaomNkRSienaBiEnv <- R6Class(
                                                 type='bipartite',
                                                 nodeSet =c('ACTORS', 'COMPONENTS'),
                                                 allowOnly = FALSE)
-      ## Behaviour co-evolution DV (structure_model$dv_behavior). Also CLEARS a
-      ## behaviour DV left over from a previous model when none is declared, so
+      ## Behavior co-evolution DV (structure_model$dv_behavior). Also CLEARS a
+      ## behavior DV left over from a previous model when none is declared, so
       ## an environment reused across models cannot carry one over silently.
       self$set_behavior_rsienaDV(structure_model, verbose = verbose)
 
@@ -1349,7 +1349,7 @@ SaomNkRSienaBiEnv <- R6Class(
       self$rsiena_run_seed <- run_seed
       ## `cond` is left at RSiena's default (NA -> TRUE for one dependent
       ## variable) for every single-DV model, i.e. every model that existed
-      ## before behaviour coevolution. With two DVs RSiena resolves NA to FALSE
+      ## before behavior coevolution. With two DVs RSiena resolves NA to FALSE
       ## anyway; stating it explicitly keeps the theta width computed in
       ## get_theta_matrix() and the width siena07() demands provably in step.
       .cond_arg <- if (self$get_n_rsiena_depvars() > 1L) list(cond = FALSE) else list()
@@ -3734,7 +3734,7 @@ SaomNkRSienaBiEnv <- R6Class(
 
         ## Approximate local-peak detection among sampled configs only:
         ## for each sampled config, check its N Hamming-1 neighbours.
-        ## A config is labelled a peak if no neighbour (computed on the
+        ## A config is labeled a peak if no neighbour (computed on the
         ## fly from NK_land) has strictly higher fitness.
         for (c3 in seq_len(sample_size)) {
           loc_p <- 1L
@@ -4755,11 +4755,11 @@ SaomNkRSienaBiEnv <- R6Class(
       ## then keep only the BIPARTITE network's non-rate effects.
       ##
       ## The utility decomposition below attributes each ministep to per-actor
-      ## contributions of the bipartite evaluation function. A behaviour DV's
+      ## contributions of the bipartite evaluation function. A behavior DV's
       ## effects (`linear`, `quad`, `avInSimDist2`, ...) are not statistics of
       ## the bipartite matrix and have no such decomposition here, so they are
-      ## dropped rather than fabricated. Behaviour trajectories are recovered
-      ## from the chain and the simulated behaviour arrays instead. For a
+      ## dropped rather than fabricated. Behavior trajectories are recovered
+      ## from the chain and the simulated behavior arrays instead. For a
       ## single-DV model this keeps every column it kept before.
       .theta_df_all <- self$get_rsiena_effects_theta_df(
         no_rates = !(self$get_n_rsiena_depvars() > 1L))
@@ -4975,9 +4975,9 @@ SaomNkRSienaBiEnv <- R6Class(
         }
         ## update bipartite environment matrix for one step (toggle one dyad)
 
-        ## Behaviour-DV ministeps change an actor attribute, not a tie: their
-        ## id_to is a behaviour value and must never be toggled as a component.
-        ## No-op for chains without a behaviour DV.
+        ## Behavior-DV ministeps change an actor attribute, not a tie: their
+        ## id_to is a behavior value and must never be toggled as a component.
+        ## No-op for chains without a behavior DV.
         if ( ! mstep$stability &&
              ! identical(as.character(mstep$dv_varname), .SEARCHNET_BEHAVIOR_DV_NAME) ) {
           actor_i <- mstep$id_from
@@ -5188,7 +5188,7 @@ SaomNkRSienaBiEnv <- R6Class(
         K_CA_grid$value <- as.integer(col_sums)
         K_CA_grid$stability <- mstep$stability
         K_CA_li[[i]] <- K_CA_grid
-        ## K_CC: component-component degree from epistasis projection
+        ## K_CC: component-component degree from the bipartite projection
         K_CC_grid <- tpl_comp_grid
         K_CC_grid$chain_step_id <- i
         K_CC_grid$value <- K_CC_vec + as.integer(col_sums > 0)
@@ -5396,10 +5396,10 @@ SaomNkRSienaBiEnv <- R6Class(
           ## bipartite network after oneIndexing the node ids:  id_to==id_from means no tie
           return(ifelse(id_from == id_to, FALSE, TRUE))
         } else if (dv_name == .SEARCHNET_BEHAVIOR_DV_NAME) {
-          ## A behaviour ministep changes an actor's ATTRIBUTE, never a tie.
+          ## A behavior ministep changes an actor's ATTRIBUTE, never a tie.
           ## Its `id_to` column carries no node id at all, so the bipartite
           ## rules above would misread it. tie_change is unambiguously FALSE;
-          ## the magnitude of the behaviour change lives in `beh_difference`.
+          ## the magnitude of the behavior change lives in `beh_difference`.
           return(FALSE)
         } else {
           stop(sprintf('dv_name %s not implemented in .getTieChange()', dv_name))
@@ -5429,9 +5429,9 @@ SaomNkRSienaBiEnv <- R6Class(
       ## Reduces memory from O(M*N*nchains) to O(nchains + M*N).
       bi_env_changes <- matrix(NA_integer_, nrow = nchains, ncol = 3)
       colnames(bi_env_changes) <- c("step", "actor_i", "comp_j")
-      ## A behaviour ministep is not a tie toggle. Its `id_to` is a behaviour
+      ## A behavior ministep is not a tie toggle. Its `id_to` is a behavior
       ## value, not a component id, so toggling on it would corrupt the state
-      ## trajectory. Skip those rows. Identical to the previous behaviour for
+      ## trajectory. Skip those rows. Identical to the previous behavior for
       ## every chain that contains only bipartite ministeps.
       .is_beh_step <- chainDat$dv_varname == .SEARCHNET_BEHAVIOR_DV_NAME
       for (.i in 1:nchains) {
@@ -8030,7 +8030,8 @@ SaomNkRSienaBiEnv <- R6Class(
     if (!is.null(epistatic_int_mat)) {
       warning("`epistatic_int_mat` is deprecated as of searchnet 0.8.2; use ",
               "`influence_matrix` instead. W is the influence matrix, the model ",
-              "INPUT; epistasis is the resulting fitness coupling, reported as K_CC.",
+              "INPUT; K_CC reports the realized inter-component structure it drives, ",
+              "and epistatic fitness is the XWX effect it carries.",
               call. = FALSE)
       if (is.null(influence_matrix)) influence_matrix <- epistatic_int_mat
     }
@@ -8517,7 +8518,8 @@ SaomNkRSienaBiEnv <- R6Class(
     if (!is.null(epistatic_int_mat)) {
       warning("`epistatic_int_mat` is deprecated as of searchnet 0.8.2; use ",
               "`influence_matrix` instead. W is the influence matrix, the model ",
-              "INPUT; epistasis is the resulting fitness coupling, reported as K_CC.",
+              "INPUT; K_CC reports the realized inter-component structure it drives, ",
+              "and epistatic fitness is the XWX effect it carries.",
               call. = FALSE)
       if (is.null(influence_matrix)) influence_matrix <- epistatic_int_mat
     }
@@ -9010,7 +9012,8 @@ SaomNkRSienaBiEnv <- R6Class(
     if (!is.null(epistatic_int_mat)) {
       warning("`epistatic_int_mat` is deprecated as of searchnet 0.8.2; use ",
               "`influence_matrix` instead. W is the influence matrix, the model ",
-              "INPUT; epistasis is the resulting fitness coupling, reported as K_CC.",
+              "INPUT; K_CC reports the realized inter-component structure it drives, ",
+              "and epistatic fitness is the XWX effect it carries.",
               call. = FALSE)
       if (is.null(influence_matrix)) influence_matrix <- epistatic_int_mat
     }
@@ -15044,7 +15047,7 @@ SaomNkRSienaBiEnv <- R6Class(
   # =========================================================================
   #
   # Compares the analytical mean-field fixed point m* of the SaoMNK ministep
-  # against the empirical population mean of the realised bipartite matrix.
+  # against the empirical population mean of the realized bipartite matrix.
   # Wraps `solve_mean_field()` (R/mean_field_solver.R) and reads theta_inPop
   # from the structure model used in the most recent run.  Discrepancy is the
   # gap |m_emp - m_star_closest| in spin form, with adoption-form analogues

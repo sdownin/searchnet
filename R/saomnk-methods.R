@@ -4,7 +4,7 @@
 #' \code{print.saomnk_model}, \code{print.saomnk_shock},
 #' \code{print.saomnk_assent}, and \code{print.saomnk_summary}.  Keeping them
 #' together (rather than next to the constructors that build the objects) means
-#' a reader auditing the console-facing behaviour of the package reads one
+#' a reader auditing the console-facing behavior of the package reads one
 #' file.
 #'
 #' NAMESPACE is manually maintained (see its header): each method here must
@@ -58,7 +58,7 @@ NULL
 #' \code{\link{saomnk_model}}: the effects with their parameter values and
 #' fixed/free status, any actor or component covariates, static influence
 #' matrices (\code{coDyadCovars}), time-varying influence arrays
-#' (\code{varDyadCovars}), and whether a coevolving behaviour DV
+#' (\code{varDyadCovars}), and whether a coevolving behavior DV
 #' (\code{dv_behavior}) is attached.  A reader typing the object at the
 #' console sees the specification, not a raw list dump.
 #'
@@ -133,7 +133,7 @@ print.saomnk_model <- function(x, ...) {
     n_eff  <- length(bh$effects)
     waves  <- if (!is.null(bh$waves)) bh$waves else NA_integer_
     cat(sprintf(
-      "Behaviour DV (dv_behavior): present -- %d effect(s), %s wave(s), nodeSet %s\n",
+      "Behavior DV (dv_behavior): present -- %d effect(s), %s wave(s), nodeSet %s\n",
       n_eff,
       ifelse(is.na(waves), "?", format(waves)),
       if (!is.null(bh$nodeSet)) bh$nodeSet else "?"))

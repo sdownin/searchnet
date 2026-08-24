@@ -33,7 +33,7 @@ right axis showing rivals-at-entry distribution. Default FALSE.}
 A ggplot object (if \code{plot_return} is TRUE).
 }
 \description{
-Visualisations of competitive entry/exit behaviour derived from the
+Visualizations of competitive entry/exit behavior derived from the
 entry tracking in \code{track-entries.R}. Each function follows the
 package convention: takes an \code{env} (SaomNkRSienaBiEnv) object or
 a pre-computed data.frame as its first argument.

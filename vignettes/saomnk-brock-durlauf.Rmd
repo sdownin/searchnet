@@ -70,7 +70,7 @@ Because they extended McFadden along different axes:
   *equilibrium distribution* the population settles into under rational
   expectations.
 - The **sociological** branch extended McFadden by embedding logit choice
-  in a *continuous-time Markov ministep process* over network-and-behaviour
+  in a *continuous-time Markov ministep process* over network-and-behavior
   states and asking how to *fit such a process* to longitudinal panel data.
 
 Pink, Kretschmer, and Leszczensky (2020) noted the absence of cross-citation
@@ -154,7 +154,7 @@ $\beta J$ is the only quantity that matters for multiplicity.
 # Theorem 5: Recovery via the Congestion Limit
 
 Theorem 5 establishes that the model just stated is a special case of
-SaoMNK. The reduction uses five restrictions, labelled Rb1--Rb5 in
+SaoMNK. The reduction uses five restrictions, labeled Rb1--Rb5 in
 the proof table (L3--L7).
 
 ## The five restrictions
@@ -309,9 +309,9 @@ bd_self_consistency(beta = 1, J = 2, h = 0.05, all_roots = TRUE)
 ```
 
 The qualitative shifts from the symmetric $h = 0$ case are: the
-stable roots become asymmetric (the upper root is favoured), and the
-unstable middle root shifts toward the disfavoured side. As
-$|h|$ grows, the disfavoured stable root and the unstable root
+stable roots become asymmetric (the upper root is favored), and the
+unstable middle root shifts toward the disfavored side. As
+$|h|$ grows, the disfavored stable root and the unstable root
 collide and annihilate in a saddle-node bifurcation, leaving a
 unique stable root (the spinodal transition).
 
@@ -415,7 +415,7 @@ saomnk_social_multiplier(beta = 1, J = 0.5, h = 0.1)
 
 The decomposition reads: the *direct effect*
 $\beta(1-(m^*)^2) \approx 0.96$ is what the response would be if
-peer behaviour were held fixed. The *multiplier* $\approx 2.08$ is the
+peer behavior were held fixed. The *multiplier* $\approx 2.08$ is the
 amplification produced by feedback through the rationally expected
 peer mean. Their product, $dm^*/dh \approx 2.0$, is the total
 equilibrium response.
@@ -451,7 +451,7 @@ as $|1 - \beta J|^{-1}$ exactly at the symmetric critical point); the
 biased curves diverge more slowly because a non-zero field pushes
 $m^*$ away from zero, reducing $1 - (m^*)^2$ and partly suppressing
 the singularity. This is the canonical mean-field susceptibility
-behaviour and is one of the empirically testable predictions of the
+behavior and is one of the empirically testable predictions of the
 Brock-Durlauf model (Glaeser & Scheinkman, 2003; Durlauf, 1999).
 
 ---
@@ -570,7 +570,7 @@ Two regimes can be visualised on top of this verification.
   directly.
 - **Biased regime ($h_\sigma \neq 0$, supercritical):** one stable
   root has higher Gibbs weight; empirical $\hat m$ concentrates near
-  it. Convergence to the favoured root is the Tier 1 claim; the
+  it. Convergence to the favored root is the Tier 1 claim; the
   rate is $\mathcal{O}(M^{-1/2})$ for the fluctuations and
   exponentially small in $M$ for tunnelling between roots.
 
@@ -642,7 +642,7 @@ results are classified by how they are established:
 
 Lemma 6 (L9, mean-field self-consistency) is **Tier 1**. The
 mean-field step is the equilibrium condition under rational
-expectations about peer behaviour, *not* an approximation: agents
+expectations about peer behavior, *not* an approximation: agents
 best-respond to the expected peer configuration, which *is* the
 order parameter (Brock & Durlauf, 2001; Durlauf, 1999). The
 $M \to \infty$ limit is exact in the same sense that the

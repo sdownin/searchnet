@@ -23,7 +23,7 @@ Each row represents one (theta_inPop, replicate) combination.}
 A ggplot object assembled via \code{cowplot::plot_grid()}.
 }
 \description{
-Creates a 2x2 panel figure showing competitive entry behaviour across
+Creates a 2x2 panel figure showing competitive entry behavior across
 a range of theta_inPop values, following the design from the CD2026
 forbearance spectrum experiment (script 54).
 }

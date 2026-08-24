@@ -378,7 +378,7 @@ structure_model_post <- list(
 # `component_1_coDyadCovar` (or, absent that, `search_matrix`); it never
 # reads RSiena effect parameters/theta.  The `structure_model_pre` /
 # `structure_model_post` lists above declare `XWX` coefficients for use in
-# a behavioural `run_simulation()`, but that coefficient plays no role
+# a behavioral `run_simulation()`, but that coefficient plays no role
 # here -- what reshapes the *static* landscape is the interdependency
 # matrix itself, so we assign `W_high` / `W_low` directly before computing
 # each landscape.

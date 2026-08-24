@@ -85,7 +85,7 @@ NULL
 .DV_NAME <- "self$bipartite_rsienaDV"
 
 ## How many influence matrices a single model may carry, static or time-varying.
-## This is NOT a modelling limit; it is the number of `component_<k>_coDyadCovar`
+## This is NOT a modeling limit; it is the number of `component_<k>_coDyadCovar`
 ## and `component_<k>_varDyadCovar` public fields declared on the R6 engine in
 ## R/saomnk-base.R. R6 refuses assignment to an undeclared field, so the two
 ## ladders must be kept in step with this constant. Raise all three together.
@@ -177,7 +177,7 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #' Define a SaoMNK Structure Model
 #'
 #' Builds the SAOM objective function specification that governs actor search
-#' behaviour.
+#' behavior.
 #' Users specify effect weights using plain-language parameters; the function
 #' assembles the nested list with internal RSiena naming conventions so that
 #' callers never need to write \code{"self$bipartite_rsienaDV"} or similar
@@ -200,11 +200,19 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #'   This is the \emph{input} to the model: the influence matrix in the sense
 #'   of Rivkin and Siggelkow (2007), that is, the NK interaction matrix with
 #'   real-valued entries giving the magnitude and sign of one component's
-#'   influence on another's fitness contribution.  It is distinct from
-#'   epistasis, which is
-#'   the \emph{consequence} -- a portfolio's fitness running through \eqn{W}
-#'   as \eqn{X'WX}.  The realised epistasis of a simulated system is reported
-#'   separately as \eqn{K_{CC}}; see \code{\link{saomnk_get_degrees}}.
+#'   influence on another's fitness contribution.
+#'
+#'   \emph{Epistasis} names three distinct things in this package, and W is
+#'   only the first.  W is the \emph{input}.  \eqn{K_{CC}} is the
+#'   \emph{realized structure}: the component-projection degree
+#'   \code{colSums((B'B) > 0)}, reported by
+#'   \code{\link{saomnk_get_degrees}}.  W does not appear in that formula, but
+#'   W drives the search that produces \eqn{B}, so \eqn{K_{CC}} evolves as a
+#'   consequence of W.  \emph{Epistatic fitness} is the \emph{outcome}: the
+#'   performance consequence of holding interdependent components, carried by
+#'   the \code{XWX} effect weighted by \code{influence_weight}.  A degree does
+#'   not measure a fitness consequence -- \eqn{K_{CC}} and epistatic fitness
+#'   co-evolve, and neither is a measurement of the other or of W.
 #' @param influence_weight Numeric. Weight on the XWX effect (default
 #'   \code{0.1}).  Ignored when \code{influence_matrix} is \code{NULL}.
 #' @param influence_matrices Named list of \eqn{N \times N}{N x N} numeric
@@ -330,14 +338,17 @@ saomnk_model <- function(density            = -0.5,
 
   ## -- 0. Deprecated arguments (renamed in 0.4.0) ------------------------- ##
   ## `epistasis_*` -> `influence_*`.  W is the influence matrix (the INPUT);
-  ## epistasis is the fitness coupling it produces (the EFFECT),
-  ## reported as K_CC.  Old names keep working, with a warning.
+  ## K_CC is the realized inter-component structure W drives (the STATE); and
+  ## epistatic fitness is the XWX effect W carries (the OUTCOME).  A degree
+  ## does not measure a fitness consequence.  Old names keep working, with a
+  ## warning.
   .dep <- function(old_val, old_nm, new_nm, new_val, default = NULL) {
     if (is.null(old_val)) return(new_val)
     warning("`", old_nm, "` is deprecated as of searchnet 0.4.0; use `",
             new_nm, "` instead. W is the influence matrix, ",
-            "the model INPUT; epistasis is the resulting fitness coupling, ",
-            "reported as K_CC.", call. = FALSE)
+            "the model INPUT; K_CC reports the realized inter-component ",
+            "structure it drives, and epistatic fitness is the XWX effect ",
+            "it carries.", call. = FALSE)
     if (identical(new_val, default)) old_val else new_val
   }
   influence_matrix   <- .dep(epistasis_matrix,   "epistasis_matrix",
@@ -785,7 +796,7 @@ saomnk_monte_carlo <- function(env, model, replications = 10, waves = 2,
 
 #' Plot the K-4 Coupled Degree Panel
 #'
-#' Visualises the four coupled degree processes---actor scope (\eqn{K_{AC}}),
+#' Visualizes the four coupled degree processes---actor scope (\eqn{K_{AC}}),
 #' component popularity (\eqn{K_{CA}}), actor sociality (\eqn{K_{AA}}), and
 #' component epistasis (\eqn{K_{CC}})---over the simulated decision chain.
 #'

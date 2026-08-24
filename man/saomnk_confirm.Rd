@@ -17,7 +17,7 @@ saomnk_confirm(env, assent, seed = NULL)
 A list with the \code{proposal} matrix, the \code{confirmed} matrix,
 and \code{diagnostics}. The environment's \code{bipartite_matrix} is
 replaced in place by the confirmed network so that downstream projections
-and plots operate on realised ties. The proposal network is returned rather
+and plots operate on realized ties. The proposal network is returned rather
 than attached to the environment, because the R6 environment is locked and
 will not accept new bindings.
 }
@@ -26,7 +26,7 @@ Treats the environment's current bipartite matrix as a matrix of
 \emph{proposals} and applies the confirmation rule to it. Both networks are
 retained: the proposal network is stored in \code{env$proposal_matrix} and
 the environment's \code{bipartite_matrix} becomes the confirmed network, so
-downstream projections and plots operate on the realised ties.
+downstream projections and plots operate on the realized ties.
 }
 \examples{
 \donttest{

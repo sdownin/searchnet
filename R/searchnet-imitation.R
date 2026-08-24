@@ -37,7 +37,7 @@ NULL
 #' and \eqn{\Delta} the range of performance across actors.
 #'
 #' Components with no co-holders contribute nothing: they are invisible rather
-#' than unattractive, which is the behaviour the CD4 engines implement and is
+#' than unattractive, which is the behavior the CD4 engines implement and is
 #' what distinguishes imitation from popularity. Centering follows the RSiena
 #' convention that evaluation effects carry no intercept.
 #'

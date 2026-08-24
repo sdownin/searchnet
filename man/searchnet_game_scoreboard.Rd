@@ -16,7 +16,7 @@ A \code{data.frame} with columns: \code{firm_id}, \code{scope}
 \code{is_player}.
 }
 \description{
-Returns a data frame summarising each firm's current state including
+Returns a data frame summarizing each firm's current state including
 utility, K-4 degrees, rank, and whether the firm is the player.
 }
 \examples{

@@ -1,21 +1,21 @@
 # ---------------------------------------------------------------------------- #
 #  searchnet-repertoire.R
 #
-#  Actor-level behavioural repertoires from a ministep chain.
+#  Actor-level behavioral repertoires from a ministep chain.
 #
 #  WHAT A REPERTOIRE IS HERE
 #  -------------------------
 #  A fitted SAOM reports one evaluation function for the whole population. Actor
-#  heterogeneity, if it is modelled at all, enters through covariate effects the
+#  heterogeneity, if it is modeled at all, enters through covariate effects the
 #  analyst chose in advance. But the chain records what each actor ACTUALLY did
-#  at every ministep, and actors who share one evaluation function still realise
+#  at every ministep, and actors who share one evaluation function still realize
 #  very different sequences of moves, because they occupy different positions.
 #
-#  A repertoire is the profile of an actor's realised moves over the event-level
+#  A repertoire is the profile of an actor's realized moves over the event-level
 #  statistics in `searchnet_chain_stats()`: how far an actor's changes run along
 #  familiarity (focusing), along popularity (reinforcing), along local closure
 #  (clustering), and how much it creates versus deletes. Clustering those
-#  profiles partitions actors into behaviour types -- an emergent typology rather
+#  profiles partitions actors into behavior types -- an emergent typology rather
 #  than an assumed one.
 #
 #  WHY NOT sienaRI
@@ -27,7 +27,7 @@
 #  nothing about the world, and building the construct on top of it would make
 #  the construct unavailable exactly where searchnet is used. Second, effect
 #  importance is a property of the MODEL evaluated at an actor's position, while
-#  what is wanted here is a property of the actor's REALISED behaviour. Those are
+#  what is wanted here is a property of the actor's REALIZED behavior. Those are
 #  different objects and the second is the one that answers "what did this actor
 #  do".
 #
@@ -53,7 +53,7 @@
 #  the actor's own event count; `mixing` is activity x reinforcing and grows
 #  faster still. A real actor with many events therefore has a high profile and
 #  one with few events a low profile, for arithmetic reasons, in a population
-#  with no behavioural types at all. Under a free permutation each pseudo-actor
+#  with no behavioral types at all. Under a free permutation each pseudo-actor
 #  receives a random mixture of events drawn from the whole pool, whose per-event
 #  mean converges on the population mean whatever the pseudo-actor's own count,
 #  so the permuted profiles collapse towards a point while the real ones stay
@@ -77,7 +77,7 @@
 #  The stratified permutation is the recommended default. It leaves the reported
 #  statistic exactly the one the observed run computed and changes only the
 #  reference distribution, whereas residualisation changes the construct itself
-#  -- the repertoires become "behaviour net of a linear-in-log volume trend",
+#  -- the repertoires become "behavior net of a linear-in-log volume trend",
 #  a different object, and one that inherits that functional form as an
 #  assumption. Residualisation is offered because it attacks the same confound
 #  from the other side and agreement between the two is worth more than either
@@ -90,7 +90,7 @@
 #  maximum over several candidates beats a single draw on average even under the
 #  null, so that comparison is anticonservative. `k_selection = "reselect"`
 #  (default) lets every permutation re-select over the same `k_range`, making it
-#  max against max. `k_selection = "fixed"` restores the older behaviour, whose
+#  max against max. `k_selection = "fixed"` restores the older behavior, whose
 #  motivation -- partitions of different granularity are not directly comparable
 #  -- is also real. Both concerns are genuine; the resolution is that the
 #  silhouette is scale-free and defined across k, so comparing maxima is
@@ -192,9 +192,9 @@
 }
 
 
-#' Behavioural Repertoires From a Ministep Chain
+#' Behavioral Repertoires From a Ministep Chain
 #'
-#' Partitions actors into behaviour types from the profile of their realised
+#' Partitions actors into behavior types from the profile of their realized
 #' moves, using the event-level statistics returned by
 #' \code{\link{searchnet_chain_stats}}.  A repertoire is an emergent typology of
 #' what actors DO, as distinct from the single evaluation function a stochastic
@@ -210,10 +210,10 @@
 #'   \code{k} is given.
 #' @param features Character vector of profile columns to cluster on.  Defaults
 #'   to the four attention micro-mechanisms plus the create/delete balance.
-#' @param min_events Minimum realised events an actor needs to be assigned a
+#' @param min_events Minimum realized events an actor needs to be assigned a
 #'   repertoire.  Actors below it are reported in \code{$dropped}, never
 #'   silently discarded.
-#' @param scale Logical; standardise features before clustering (default
+#' @param scale Logical; standardize features before clustering (default
 #'   \code{TRUE}).  With raw scales, \code{mixing} -- a product of two counts --
 #'   dominates every other feature.
 #' @param residualise Logical; if \code{TRUE}, each feature is regressed on
@@ -222,8 +222,8 @@
 #'   are mechanically increasing in an actor's own event count -- \code{focusing}
 #'   counts repeats of the actor's own prior pairs, \code{mixing} is activity
 #'   times popularity -- so without this the leading axis of the profile space
-#'   can be activity volume rather than behaviour.  Turning it on changes the
-#'   CONSTRUCT: the repertoires become behaviour net of a linear-in-log volume
+#'   can be activity volume rather than behavior.  Turning it on changes the
+#'   CONSTRUCT: the repertoires become behavior net of a linear-in-log volume
 #'   trend, and that functional form becomes an assumption.  \code{$profiles} are
 #'   reported on the original, un-residualised scale either way, so they remain
 #'   readable; only the geometry the clustering sees is changed.
@@ -277,7 +277,7 @@ searchnet_repertoire <- function(chain_stats,
   profiles <- ap$profiles
 
   ## Validate against the ADVERTISED set, not against every column. `actor` and
-  ## `n_events` are identifiers, not behaviour: validating with
+  ## `n_events` are identifiers, not behavior: validating with
   ## setdiff(features, names(profiles)) let `features = "actor"` through, and it
   ## ran, partitioning actors by the numeric value of their id.
   available <- setdiff(names(profiles), c("actor", "n_events"))
@@ -286,7 +286,7 @@ searchnet_repertoire <- function(chain_stats,
     stop("unknown feature(s): ", paste(miss, collapse = ", "),
          ". Available: ", paste(available, collapse = ", "),
          if (any(miss %in% c("actor", "n_events")))
-           ". `actor` and `n_events` are identifiers, not behaviour, and are "
+           ". `actor` and `n_events` are identifiers, not behavior, and are "
          else NULL,
          if (any(miss %in% c("actor", "n_events")))
            "deliberately not clusterable." else NULL,
@@ -294,7 +294,7 @@ searchnet_repertoire <- function(chain_stats,
 
   X <- as.matrix(profiles[, features, drop = FALSE])
 
-  ## Volume residualisation, BEFORE standardisation: the thing being removed is
+  ## Volume residualisation, BEFORE standardization: the thing being removed is
   ## a mechanical dependence on the actor's own event count, and it is present in
   ## the raw feature. Doing it after scaling would be the same linear operation
   ## up to a constant, but the diagnostic below (was there any volume variation
@@ -390,7 +390,7 @@ searchnet_repertoire <- function(chain_stats,
     stringsAsFactors = FALSE
   )
 
-  ## Cluster means on the ORIGINAL scale. Standardised centres are unreadable,
+  ## Cluster means on the ORIGINAL scale. Standardized centers are unreadable,
   ## and a typology nobody can read is a typology nobody will check.
   orig <- profiles[, features, drop = FALSE]
   prof <- do.call(rbind, lapply(sort(unique(km$cluster)), function(kk) {
@@ -477,7 +477,7 @@ searchnet_repertoire <- function(chain_stats,
 }
 
 
-#' Permutation Null for Behavioural Repertoires
+#' Permutation Null for Behavioral Repertoires
 #'
 #' Re-runs \code{\link{searchnet_repertoire}} on chains whose actor labels have
 #' been permuted across events.  This holds the event set, the statistics and the
@@ -535,14 +535,14 @@ searchnet_repertoire <- function(chain_stats,
 #' volume are distinguishable by what they do.  It no longer says merely that
 #' actors differ in how much they do, which a free permutation
 #' (\code{strata = "none"}) will report as significant in a population with no
-#' behavioural types at all, because \code{focusing} counts an actor's repeats of
+#' behavioral types at all, because \code{focusing} counts an actor's repeats of
 #' its own prior pairs and \code{mixing} is activity times popularity.
 #'
 #' Two costs, both of which should be reported rather than absorbed.  Bins are
 #' coarse, so within-bin count variation leaves some confounding behind; widen
 #' \code{n_strata} to reduce it, at the price of the second cost.  And a bin
 #' holding one actor admits no permutation at all, so that actor is frozen at its
-#' observed labelling; in the limit where every bin is a singleton the null
+#' observed labeling; in the limit where every bin is a singleton the null
 #' degenerates to the identity and p is 1 by construction.  \code{$strata_sizes}
 #' is returned so this is visible, and a warning fires when most actors sit
 #' alone.  Run \code{strata = "none"} alongside and report both: a result that is
@@ -561,7 +561,7 @@ searchnet_repertoire <- function(chain_stats,
 #' theory fixes \code{k}, pass it and neither issue arises.
 #'
 #' @section How to read it:
-#' A small p-value means the actor-to-behaviour association carries separation
+#' A small p-value means the actor-to-behavior association carries separation
 #' that permuted labels do not reproduce.  A large one means the partition is
 #' what k-means produces from this feature geometry regardless of who did what,
 #' and the repertoires should not be interpreted.  Report the value either way:
@@ -630,7 +630,7 @@ searchnet_repertoire_null <- function(chain_stats,
     if (sum(sizes == 1L) > 0.5 * length(bin_of_actor))
       warning(sprintf(paste0("%d of %d actors sit alone in their event-count ",
                              "stratum and are therefore frozen at their ",
-                             "observed labelling. The stratified null has ",
+                             "observed labeling. The stratified null has ",
                              "little or no power here; reduce `n_strata`, or ",
                              "report `strata = \"none\"` alongside and treat ",
                              "the difference as the volume effect."),
@@ -688,7 +688,7 @@ searchnet_repertoire_null <- function(chain_stats,
 #' a dependency for one number.
 #'
 #' @param a,b Cluster labels of the same objects, in the same order.
-#' @return Adjusted Rand index; 1 for identical partitions up to relabelling, 0
+#' @return Adjusted Rand index; 1 for identical partitions up to relabeling, 0
 #'   for the expected value of an unrelated pair.
 #' @keywords internal
 #' @noRd
@@ -716,7 +716,7 @@ searchnet_repertoire_null <- function(chain_stats,
 }
 
 
-#' Stability of Behavioural Repertoires Across Chains
+#' Stability of Behavioral Repertoires Across Chains
 #'
 #' A repertoire is computed from ONE ministep chain, which is a draw from a
 #' distribution over sequences consistent with the observed panel endpoints.  An
@@ -850,7 +850,7 @@ searchnet_repertoire_stability <- function(chain_stats_list,
 #' Optional bridge to \code{RSiena::sienaRI}, which decomposes the relative
 #' importance of EFFECTS in each actor's choice probabilities.  This is a
 #' property of the fitted model evaluated at an actor's position, and is a
-#' different object from the realised-behaviour repertoires of
+#' different object from the realized-behavior repertoires of
 #' \code{\link{searchnet_repertoire}}.  Provided for callers who want both.
 #'
 #' @param dat A \code{siena} data object.
@@ -877,7 +877,7 @@ searchnet_repertoire_stability <- function(chain_stats_list,
 #' rather than returning a degraded result.  A capability the software does not
 #' offer is a non-implementation: it says nothing about the world, and no
 #' substitute quantity should be reported in its place.
-#' \code{\link{searchnet_repertoire}} measures realised behaviour and is subject
+#' \code{\link{searchnet_repertoire}} measures realized behavior and is subject
 #' to none of the above.
 #'
 #' @seealso \code{\link{searchnet_repertoire}}
@@ -890,7 +890,7 @@ searchnet_repertoire_ri <- function(dat, ans, ...) {
          ") does not export `sienaRI`. It was withdrawn in 1.4.6 for a memory ",
          "leak and reinstated in 1.5.1; from 1.6 the entry point is renamed ",
          "`interpret_size()`. Use searchnet_repertoire() instead, which ",
-         "measures realised behaviour and needs none of this.", call. = FALSE)
+         "measures realized behavior and needs none of this.", call. = FALSE)
 
   ## Check the dimensional restriction BEFORE calling, so the failure names the
   ## real cause. RSiena stops with "interpret_size does not work for bipartite
@@ -918,7 +918,7 @@ searchnet_repertoire_ri <- function(dat, ans, ...) {
          "\nIf the dependent variable is two-mode, this may be a ",
          "non-implementation in RSiena rather than a problem with the fit. ",
          "Report it as such; do not substitute another quantity for it. ",
-         "`searchnet_repertoire()` measures realised behaviour instead and ",
+         "`searchnet_repertoire()` measures realized behavior instead and ",
          "does not depend on sienaRI.", call. = FALSE)
   out
 }
@@ -926,7 +926,7 @@ searchnet_repertoire_ri <- function(dat, ans, ...) {
 
 #' @export
 print.searchnet_repertoire <- function(x, ...) {
-  cat(sprintf("\nBehavioural repertoires: k = %d over %d actors\n",
+  cat(sprintf("\nBehavioral repertoires: k = %d over %d actors\n",
               x$k, x$n_actors))
   cat(sprintf("Features: %s%s\n", paste(x$features, collapse = ", "),
               if (isTRUE(x$residualise))

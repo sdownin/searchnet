@@ -1,0 +1,43 @@
+# Paths that must never be TRACKED in this repository at all.
+#
+# One POSIX extended regular expression per line, matched against
+# repository-relative paths. Blank lines and lines starting with '#' ignored.
+#
+# SINGLE SOURCE OF TRUTH. Read by both:
+#   tools/hooks/pre-commit          (blocks the commit, at staging time)
+#   tools/check_public_snapshot.R   (blocks the release, at snapshot time)
+#
+# Keeping one list is deliberate. Duplicating these patterns in two scripts
+# would let them drift, and a guard that has silently drifted is worse than
+# no guard because it still reports success.
+#
+# NOTE THE DISTINCTION from .public-exclude:
+#   - this file  = must never be tracked anywhere (junk, or another paper's
+#                  working artifacts). Fix: unstage and gitignore.
+#   - .public-exclude = worth versioning PRIVATELY on dev, but must never be
+#                  published. Fix: nothing, the snapshot step drops them.
+# A file belongs in exactly one of the two.
+
+# --- another paper's simulation artifacts, found misfiled in R/ 2026-08-24
+^R/smj_saomnk
+^R/survfitfix
+
+# --- JSS submission working material (AI-generated mock referee reports,
+#     the proposal text, and the script that produced them)
+^_jss_r1_review_
+^_jss_proposal_text
+^_run_jss_reviews
+
+# --- dev scratch
+^_debug_install
+
+# --- the original two internal patterns (gitignored since f6b9f7f; kept
+#     here so the guard states them rather than relying on .gitignore alone)
+^HANDOFF_
+^JSS_SUBMISSION_PREP_
+^SESSION_STATE
+_internal/
+
+# --- structural rule: R/ holds R sources only. A data or document file
+#     under R/ is both an internal-leak smell and an R CMD check failure.
+^R/.*\.(rds|RData|docx|xlsx|pptx|csv|txt|log)$

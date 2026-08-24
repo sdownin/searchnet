@@ -494,7 +494,7 @@ nk_sweep_K <- function(N = 12, K_values = 0:(N - 1),
 #' @param landscape An \code{"nk_landscape"} object.
 #' @param M Integer. Number of actors to place on the landscape. \code{M = 1}
 #'   gives the exact NK reduction; \code{M > 1} embeds the same landscape in a
-#'   multi-actor SaoMNK search (the generalisation direction).
+#'   multi-actor SaoMNK search (the generalization direction).
 #'
 #' @return A list with components \code{env_params} (arguments for
 #'   \code{\link{saomnk_env}}), \code{model_params} (arguments for

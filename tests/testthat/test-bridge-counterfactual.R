@@ -8,7 +8,7 @@
 ##
 ##   * `.draw_saom_theta()` turns an estimated covariance matrix into parameter
 ##     uncertainty. If the eigen-decomposition were wrong the draws would still
-##     look like draws -- centred, plausible, reproducible -- while carrying the
+##     look like draws -- centered, plausible, reproducible -- while carrying the
 ##     wrong dispersion. So it is checked against the DEFINITION: over many
 ##     draws the empirical first and second moments must recover theta and
 ##     covtheta. Its five refusals are checked one at a time, each by its own
@@ -436,7 +436,7 @@ test_that("the quantile interval is stats::quantile() at the stated conf_level",
   expect_gt(wide$q_upper - wide$q_lower, narrow$q_upper - narrow$q_lower)
 })
 
-test_that("n = 1 degrades to a single realisation without NaN", {
+test_that("n = 1 degrades to a single realization without NaN", {
   res <- expect_silent(.bridge_delta_summary("K_AC", 3, 4.25, 0.95))
 
   expect_equal(res$n_reps, 1L)
@@ -456,9 +456,9 @@ test_that("n = 1 degrades to a single realisation without NaN", {
   expect_equal(nrow(rbind(res, full)), 2L)
 })
 
-test_that("the single-realisation warning is raised by the caller, not here", {
+test_that("the single-realization warning is raised by the caller, not here", {
   ## `.bridge_delta_summary()` is deliberately silent at n = 1; the warning
-  ## about a single realisation lives in run_calibrated_counterfactual() at the
+  ## about a single realization lives in run_calibrated_counterfactual() at the
   ## `n_reps < 2L` check, which sits AFTER the replication loop and therefore
   ## after two full engine runs.
   expect_silent(.bridge_delta_summary("K_AC", 3, 4, 0.95))
@@ -504,7 +504,7 @@ test_that("the summary frame has stable columns and types across inputs", {
 
 # --- 3.1 metadata-driven recognition ----------------------------------------
 
-test_that("type == 'rate' in the metadata is recognised", {
+test_that("type == 'rate' in the metadata is recognized", {
   meta <- data.frame(
     effect_name = c("alpha", "beta", "gamma"),
     shortName   = c("density", "egoX", "transTrip"),
@@ -514,7 +514,7 @@ test_that("type == 'rate' in the metadata is recognised", {
   expect_equal(.is_rate_effect(meta$effect_name, meta), c(FALSE, TRUE, FALSE))
 })
 
-test_that("every documented rate shortName is recognised from the metadata", {
+test_that("every documented rate shortName is recognized from the metadata", {
   short <- c("Rate", "RateX", "outRate", "outRateInv", "outRateLog")
   meta <- data.frame(
     ## Deliberately opaque names: only the shortName can carry the decision.
@@ -543,7 +543,7 @@ test_that("metadata that cannot be aligned with theta is ignored", {
 
 # --- 3.2 name-based fallback, with and without adversaries -------------------
 
-test_that("rate shortNames are recognised from the name alone, with suffixes", {
+test_that("rate shortNames are recognized from the name alone, with suffixes", {
   nm <- c("Rate", "RateX", "outRate", "outRateInv", "outRateLog",
           "RateX.assets", "Rate.net", "outRateLog.wave2")
   expect_true(all(.is_rate_effect(nm)))
@@ -553,7 +553,7 @@ test_that("rate shortNames are recognised from the name alone, with suffixes", {
   expect_true(all(.is_rate_effect(c("  Rate  ", "\tRateX"))))
 })
 
-test_that("real RSiena rate effect names are recognised as rate effects", {
+test_that("real RSiena rate effect names are recognized as rate effects", {
   ## Verbatim from RSiena's allEffects table, with the xxxxxx placeholder
   ## filled in the way siena07() fills it.
   nm <- c("basic rate parameter net",
@@ -611,7 +611,7 @@ test_that("metadata that says 'eval' wins over a name containing the word rate",
   ##
   ## The roxygen for .is_rate_effect() states the contract explicitly:
   ##
-  ##   "Rate effects are recognised from RSiena metadata when it is available
+  ##   "Rate effects are recognized from RSiena metadata when it is available
   ##    (type == "rate", or a rate shortName), and OTHERWISE from the effect
   ##    name."
   ##
@@ -642,7 +642,7 @@ test_that("metadata that says 'eval' wins over a name containing the word rate",
   ##
   ## Deliberately NOT weakened to expect TRUE. Expecting TRUE would encode
   ## "an estimated effect may be dropped because of what a covariate is called"
-  ## as the intended behaviour of the bridge.
+  ## as the intended behavior of the bridge.
   meta <- data.frame(
     effect_name  = c("rate ego", "rate alter", "outdegree (density)"),
     shortName    = c("egoX", "altX", "density"),
@@ -1021,7 +1021,7 @@ test_that("a real sienaFit's effects reach the crosswalk", {
   ## "gwespFF", "egoX" -- after stripping a trailing ".suffix". A long
   ## effectName can never equal a shortName, so with a genuine fit EVERY
   ## evaluation effect falls through to `unmapped`, the effects list comes back
-  ## empty, and the "0 of N mapped" result is reported as a modelling fact
+  ## empty, and the "0 of N mapped" result is reported as a modeling fact
   ## rather than as a naming failure. The function's own @examples use
   ## shortName keys (`c(density = -1.2, gwespFF = 0.8, ...)`), which is what
   ## the crosswalk was written for.
@@ -1297,7 +1297,7 @@ test_that("actor deltas are tidy, correctly named, and cf minus baseline", {
   expect_equal(out$delta_K_AA, out$K_AA_counterfactual - out$K_AA_baseline)
 })
 
-test_that("component deltas are labelled by the component, not the actor", {
+test_that("component deltas are labeled by the component, not the actor", {
   k4_b <- make_k4(K_AC = c(1, 2, 3), K_CA = c(2, 4),
                   K_AA = c(0, 1, 2), K_CC = c(1, 1))
   k4_c <- make_k4(K_AC = c(2, 2, 5), K_CA = c(3, 4),
@@ -1467,7 +1467,7 @@ test_that("the matched-seed caveat says what matched seeds do NOT buy", {
   expect_length(.BRIDGE_MATCHED_SEED_CAVEAT, 1L)
   expect_true(grepl("INITIALISATION only", .BRIDGE_MATCHED_SEED_CAVEAT,
                     fixed = TRUE))
-  expect_true(grepl("do NOT share the realised", .BRIDGE_MATCHED_SEED_CAVEAT,
+  expect_true(grepl("do NOT share the realized", .BRIDGE_MATCHED_SEED_CAVEAT,
                     fixed = TRUE))
   expect_true(grepl("Monte Carlo error", .BRIDGE_MATCHED_SEED_CAVEAT,
                     fixed = TRUE))
@@ -1737,7 +1737,7 @@ test_that("the decomposition is exactly var_between = var_mc + var_parameter", {
 })
 
 test_that("Monte Carlo variance shrinks with n_reps and parameter variance does not", {
-  ## The behavioural difference between the two quantities, which is the reason
+  ## The behavioral difference between the two quantities, which is the reason
   ## they must not be added into one number and quoted as "the" standard error.
   means <- c(1.0, 1.4, 0.6, 1.2, 0.8)
   sds   <- rep(0.3, 5)

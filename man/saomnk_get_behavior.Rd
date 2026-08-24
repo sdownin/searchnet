@@ -2,7 +2,7 @@
 % Please edit documentation in R/searchnet-behavior.R
 \name{saomnk_get_behavior}
 \alias{saomnk_get_behavior}
-\title{Extract the Simulated Behaviour Trajectory}
+\title{Extract the Simulated Behavior Trajectory}
 \usage{
 saomnk_get_behavior(env, wide = FALSE, name = .SEARCHNET_BEHAVIOR_DV_NAME)
 }
@@ -13,7 +13,7 @@ model declared a \code{dv_behavior} block.}
 \item{wide}{Logical. Return a runs x actors matrix instead of a long data
 frame (default \code{FALSE}).}
 
-\item{name}{Character. DV name to extract (default: the standard behaviour
+\item{name}{Character. DV name to extract (default: the standard behavior
 DV name).}
 }
 \value{
@@ -21,8 +21,8 @@ A \code{data.frame} with columns \code{run}, \code{actor_id},
 \code{value}, or a numeric matrix when \code{wide = TRUE}.
 }
 \description{
-Recovers the coevolving behaviour dependent variable from a completed run.
-Without this the behaviour is write-only: it influences the simulated network
+Recovers the coevolving behavior dependent variable from a completed run.
+Without this the behavior is write-only: it influences the simulated network
 but its own path is buried in \code{env$rsiena_model$sims}.
 }
 \details{
@@ -32,10 +32,10 @@ simulation run per actor, which is what a plot or a panel regression wants.
 
 Note that a "run" is one row of the theta matrix, not one ministep. Under the
 unconditional estimation that a two-DV model forces, each run contains
-several ministeps, so the behaviour is observed at the end of each run rather
-than after every individual change. Per-ministep behaviour changes are in
+several ministeps, so the behavior is observed at the end of each run rather
+than after every individual change. Per-ministep behavior changes are in
 \code{env$chain_stats}, in the \code{beh_difference} column of the rows whose
-\code{dv_varname} is the behaviour DV.
+\code{dv_varname} is the behavior DV.
 }
 \examples{
 \donttest{

@@ -71,7 +71,7 @@
 .SEARCHNET_REM_STATS <- c("focusing", "reinforcing", "mixing", "clustering")
 
 ## How each statistic scales in the number of events, used by the per-event
-## normalisation in searchnet_chain_compare(). Measured, not assumed: doubling a
+## normalization in searchnet_chain_compare(). Measured, not assumed: doubling a
 ## chain's length roughly doubles `activity` and `reinforcing` and quadruples
 ## `mixing`, which is their product. `clustering` is listed at 1 as an
 ## approximation -- its growth depends on the density trajectory and is not a
@@ -271,9 +271,9 @@
 #' are therefore a sample of size one; see
 #' \code{\link{searchnet_chain_compare}}, which requires several.
 #'
-#' \strong{Behaviour ministeps are excluded.}  A behaviour ministep changes an
+#' \strong{Behavior ministeps are excluded.}  A behavior ministep changes an
 #' actor attribute rather than a tie, and its \code{id_to} column carries a
-#' behaviour value rather than a component id, so including it would corrupt the
+#' behavior value rather than a component id, so including it would corrupt the
 #' replayed state.
 #'
 #' @references
@@ -330,9 +330,9 @@ searchnet_chain_stats <- function(x,
         call. = FALSE)
 
     cs <- x$chain_stats
-    ## Realised BIPARTITE tie changes only, selected by a POSITIVE filter.
+    ## Realized BIPARTITE tie changes only, selected by a POSITIVE filter.
     ##
-    ## An earlier version excluded the behaviour DV by name and kept everything
+    ## An earlier version excluded the behavior DV by name and kept everything
     ## else. That is a blacklist, and the package also supports one-mode
     ## dependent variables on the actor set (`self$social_rsienaDV`) and on the
     ## component set (`self$search_rsienaDV`); see saomnk-class.R:444,447. Their
@@ -347,12 +347,12 @@ searchnet_chain_stats <- function(x,
     n_other <- sum(!cs$stability & cs$tie_change &
                      cs$dv_varname != .SEARCHNET_BIPARTITE_DV_NAME)
     if (n_other)
-      message(sprintf(paste0("searchnet_chain_stats(): ignoring %d realised ",
+      message(sprintf(paste0("searchnet_chain_stats(): ignoring %d realized ",
                              "ministep(s) on other dependent variables; only ",
                              "the bipartite DV is replayed."), n_other))
 
     if (!any(keep))
-      stop("The chain contains no realised bipartite tie changes; there is ",
+      stop("The chain contains no realized bipartite tie changes; there is ",
            "nothing to compute event statistics on.", call. = FALSE)
 
     events <- cbind(as.integer(cs$id_from[keep]), as.integer(cs$id_to[keep]))
@@ -567,7 +567,7 @@ searchnet_chain_from_fit <- function(fit, dat, dv_name = NULL,
       alt  <- vapply(ms, function(x) as.integer(x[[5]]),   integer(1))
       stab <- vapply(ms, function(x) as.logical(x[[13]]),  logical(1))
 
-      ## Realised changes on THIS dependent variable only. For a bipartite DV
+      ## Realized changes on THIS dependent variable only. For a bipartite DV
       ## RSiena encodes "the actor declined to change anything" as alter == N
       ## on the 0-indexed scale, which is one past the last component.
       keep <- nm == dv_name & !stab & alt != N
@@ -584,7 +584,7 @@ searchnet_chain_from_fit <- function(fit, dat, dv_name = NULL,
   }
 
   if (!length(out))
-    stop(sprintf(paste0("no realised tie changes found for '%s' in the ",
+    stop(sprintf(paste0("no realized tie changes found for '%s' in the ",
                         "selected runs and periods. Every ministep was a ",
                         "no-change, which is a statement about the fitted ",
                         "rate, not a failure here."), dv_name), call. = FALSE)
@@ -761,13 +761,13 @@ searchnet_chain_compare <- function(simulated,
     ##   focusing, reinforcing, activity  ~ n
     ##   mixing = activity * reinforcing  ~ n^2
     ## Dividing everything by n therefore leaves `mixing` still scaling with n,
-    ## which an earlier version of this function did. Normalising it by n^2 is
-    ## the same as taking the product of the two separately normalised parts.
+    ## which an earlier version of this function did. Normalizing it by n^2 is
+    ## the same as taking the product of the two separately normalized parts.
     ##
     ## `clustering` is the honest exception: its growth depends on the density
     ## trajectory and is not a clean power of n, so n^1 is an approximation.
     ## Where chain and log lengths differ materially, match event counts rather
-    ## than trusting normalisation to absorb it -- hence the ratio warning.
+    ## than trusting normalization to absorb it -- hence the ratio warning.
     pw <- .SEARCHNET_STAT_SCALING[[s]]
     if (is.null(pw)) pw <- 1
     per_chain <- vapply(seq_along(chains), function(j) {
@@ -783,7 +783,7 @@ searchnet_chain_compare <- function(simulated,
     sdv <- stats::sd(per_chain, na.rm = TRUE)
 
     ## Monte Carlo p-value in the style of sienaGOF: how extreme is the observed
-    ## deviation from the simulated centre, against the simulated chains' own
+    ## deviation from the simulated center, against the simulated chains' own
     ## deviations. The percentile interval below is reported alongside but is
     ## badly anti-conservative at small n -- at n = 2 a nominal 95 per cent
     ## interval covers a true null only about a third of the time -- so `p_mc`
@@ -975,7 +975,7 @@ searchnet_chain_gap <- function(focal, null, observed, alpha = 0.05, ...) {
 #' \code{alpha}.
 #'
 #' Run this before reporting any coverage result.  It validates the machinery
-#' and the per-event normalisation in one exercise, it needs no re-estimation,
+#' and the per-event normalization in one exercise, it needs no re-estimation,
 #' and a test that over-rejects on its own data cannot support a claim about
 #' someone else's.
 #'
@@ -1133,7 +1133,7 @@ print.searchnet_chain_compare <- function(x, ...) {
   cat("\nEvent-level comparison: simulated ministep chains vs observed log\n")
   cat(sprintf("Chains: %d.  Observed events: %d.  Simulated events (mean): %.0f.\n",
               x$n_chains[1], x$n_ev_obs[1], x$n_ev_sim[1]))
-  cat(sprintf("Per-event normalisation: %s.\n",
+  cat(sprintf("Per-event normalization: %s.\n",
               if (isTRUE(x$normalized[1])) "ON" else "OFF"))
   df <- as.data.frame(x)
   for (nm in c("observed", "sim_mean", "sim_sd", "sim_lo", "sim_hi"))

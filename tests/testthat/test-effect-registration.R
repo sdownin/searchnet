@@ -13,7 +13,7 @@
 ##       statistic of '#'-carrying effects and left cycle4/XWX/X inert --
 ##       see test-theta-storage.R.)
 ##
-## A third, behavioural check (R3) confirms the effect is not merely registered but live.
+## A third, behavioral check (R3) confirms the effect is not merely registered but live.
 
 DV_NAME <- "self$bipartite_rsienaDV"
 

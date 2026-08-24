@@ -195,9 +195,9 @@ between a result and a slogan.
 | Strategic groups | Caves & Porter (1977) | K_AA projection: firms clustered by activity overlap |
 | Diversification | Rumelt (1974) | K_AC (scope): number of activities held |
 | Competitive dynamics | Chen (1996) | Multimarket contact via bipartite overlap |
-| NK landscapes | Kauffman (1993) | Epistasis matrix (W): component interdependence |
+| NK landscapes | Kauffman (1993) | Influence matrix (W): component interdependence, the model input |
 | Bounded rationality | Simon (1955) | Beta parameter: rationality thermostat |
-| Resource complementarity | Milgrom & Roberts (1990) | Epistasis blocks: modular synergy structure |
+| Resource complementarity | Milgrom & Roberts (1990) | Block-diagonal W: modular synergy structure |
 | Red Queen competition | Barnett & Hansen (1996) | Co-evolutionary dynamics in K-4 trajectories |
 | Platform strategy | Gawer & Cusumano (2002) | Tech preset with strong complementarities |
 | Real options | McGrath (1999) | Sequential add/drop decisions under uncertainty |

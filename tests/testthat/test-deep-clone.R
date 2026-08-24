@@ -74,7 +74,7 @@ test_that("deep_clone leaves non-data.table fields untouched", {
   cl <- env$clone(deep = TRUE)
 
   ## A pass-through, not a transformation: the guard must not silently coerce
-  ## or drop anything it does not recognise.
+  ## or drop anything it does not recognize.
   expect_identical(cl$config_environ_params, env$config_environ_params)
   expect_identical(cl$M, env$M)
   expect_identical(cl$N, env$N)

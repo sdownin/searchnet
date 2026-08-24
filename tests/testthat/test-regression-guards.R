@@ -54,7 +54,7 @@ test_that("game_step scales sub-quadratically in M", {
   t_large <- timed(18, 10)   # 3x the actors
 
   # Under the old per-actor bug this ratio ran ~9x+ (quadratic). Allow generous
-  # headroom for timing noise but fail if quadratic behaviour returns.
+  # headroom for timing noise but fail if quadratic behavior returns.
   skip_if(t_small < 0.05, "timing resolution too coarse on this machine")
   expect_lt(t_large / t_small, 6)
 })

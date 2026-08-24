@@ -61,7 +61,7 @@ theoretically meaningful range.}
 \item{theta_matrix}{Optional numeric matrix to modify instead of building a
 fresh one, so drift composes with \code{\link{saomnk_theta_ramp}}.}
 
-\item{verbose}{Logical. Print a summary of the realised walk.}
+\item{verbose}{Logical. Print a summary of the realized walk.}
 }
 \value{
 A numeric matrix with \code{iterations} rows and one column per

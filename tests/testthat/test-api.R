@@ -133,7 +133,7 @@ test_that("saomnk_model() empty sections are lists", {
 
 
 # ===========================================================================
-# 3. saomnk_block_diagonal() -- epistasis matrix construction
+# 3. saomnk_block_diagonal() -- influence matrix construction
 # ===========================================================================
 test_that("saomnk_block_diagonal() produces correct dimensions", {
   mat <- saomnk_block_diagonal(12, 4)

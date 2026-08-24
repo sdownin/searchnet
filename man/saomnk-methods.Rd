@@ -8,7 +8,7 @@ Every S3 method on a user-facing constructor return lives in this file:
 \code{print.saomnk_model}, \code{print.saomnk_shock},
 \code{print.saomnk_assent}, and \code{print.saomnk_summary}.  Keeping them
 together (rather than next to the constructors that build the objects) means
-a reader auditing the console-facing behaviour of the package reads one
+a reader auditing the console-facing behavior of the package reads one
 file.
 
 NAMESPACE is manually maintained (see its header): each method here must

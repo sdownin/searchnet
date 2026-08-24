@@ -129,7 +129,7 @@ test_that("solve_mean_field validates its arguments", {
 # ===========================================================================
 ##
 ## This is the empirical validation of Theorem 4: when the SaoMNK ministep
-## is run with theta_inPop above the Curie--Weiss threshold, the realised
+## is run with theta_inPop above the Curie--Weiss threshold, the realized
 ## population mean must concentrate near one of the analytical mean-field
 ## fixed points.  We check |m_emp - m_star_closest| < 0.1 in spin form.
 ##

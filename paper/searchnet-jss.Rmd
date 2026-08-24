@@ -260,7 +260,7 @@ influence matrix is $\mathbf{E}$ (implemented in \pkg{RSiena} as the weight
 matrix $\mathbf{W}$ of the \code{XWX} effect); component payoff functions are
 $f_d$; and the logit precision parameter is $\beta > 0$.
 
-A terminological note is warranted here, because the two ideas are routinely conflated.  The matrix $\mathbf{E}$ is an *influence matrix* in the sense of \citet{RivkinSiggelkow2007}: it states which components interact and with what sign, and it is an *input* supplied by the analyst.  *Epistasis* is the *consequence* -- the dependence of one component's fitness contribution on the states of others, which arises when a portfolio is evaluated through $\mathbf{E}$ as $\mathbf{x}^{\top}\mathbf{E}\mathbf{x}$.  The distinction matters in \pkg{searchnet} because the realised epistasis of a simulated system is measured separately, as the component-component degree $K_{CC}$, and generally differs from the influence structure that generated it.  Accordingly the package argument is named \code{influence\_matrix}; \code{epistasis\_matrix} is retained as a deprecated alias.
+A terminological note is warranted here, because the two ideas are routinely conflated.  The matrix $\mathbf{E}$ is an *influence matrix* in the sense of \citet{RivkinSiggelkow2007}: it states which components interact and with what sign, and it is an *input* supplied by the analyst.  *Epistasis* is the *consequence* -- the dependence of one component's fitness contribution on the states of others, which arises when a portfolio is evaluated through $\mathbf{E}$ as $\mathbf{x}^{\top}\mathbf{E}\mathbf{x}$.  The distinction matters in \pkg{searchnet} because a third quantity sits between the two.  The component-component degree $K_{CC}$ records how far components are actually co-adopted at a given moment; it is computed from the realized affiliation matrix and does not read $\mathbf{E}$, yet it evolves as a *consequence* of $\mathbf{E}$, which drives the search that produces those affiliations.  $K_{CC}$ therefore indexes the coupling epistasis acts through, generally differs from the influence structure that generated it, and is not itself a measure of the fitness consequence.  Accordingly the package argument is named \code{influence\_matrix}; \code{epistasis\_matrix} is retained as a deprecated alias.
 
 ## Bipartite network formulation {#sec:bipartite}
 
@@ -1829,7 +1829,7 @@ mod <- saomnk_model(
   density          = -1.756,   # fitted
   popularity       =  0.022,   # fitted (K_CA)
   scope            =  0.089,   # fitted (K_AC)
-  influence_matrix = W_emp,    # empirical epistasis (K_CC)
+  influence_matrix = W_emp,    # empirical influence matrix (drives K_CC)
   influence_weight = -0.062)
 
 saomnk_run(env, mod, steps_per_actor = 20L, seed = seed + 7L)

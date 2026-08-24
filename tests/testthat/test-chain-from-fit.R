@@ -217,7 +217,7 @@ test_that("chain_id is unique per (run, period), in both directions", {
   per_cid <- tapply(key, res$chain_id, function(v) length(unique(v)))
   expect_true(all(per_cid == 1L))
   expect_equal(length(unique(res$chain_id)), length(unique(key)))
-  ## chain_id is a dense 1..k labelling of this call's chains.
+  ## chain_id is a dense 1..k labeling of this call's chains.
   expect_equal(sort(unique(res$chain_id)), seq_len(length(unique(key))))
   ## event_id restarts within each chain and is a complete run of 1..n_e.
   ids <- split(res$event_id, res$chain_id)
@@ -225,7 +225,7 @@ test_that("chain_id is unique per (run, period), in both directions", {
                          logical(1))))
 })
 
-test_that("the chain count equals (run, period) pairs with a realised change", {
+test_that("the chain count equals (run, period) pairs with a realized change", {
   f <- cff_fixture()
   res <- searchnet_chain_from_fit(f$fit, f$dat)
 
@@ -235,7 +235,7 @@ test_that("the chain count equals (run, period) pairs with a realised change", {
   expect_equal(n_per, f$W - 1L)
 
   ## Count, independently, the (run, period) pairs carrying at least one
-  ## realised change on this dependent variable.
+  ## realized change on this dependent variable.
   n_expected <- 0L
   for (r in seq_len(n_runs)) for (p in seq_len(n_per)) {
     e <- cff_extract(f$fit, r, p, "mynet", f$N)

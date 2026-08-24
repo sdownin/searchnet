@@ -77,11 +77,11 @@ saomnk_geo_arc <- function(lon1, lat1, lon2, lat2, n = 50) {
 #'   keeps a dense W legible (default 250). Set \code{NULL} for all non-zero.
 #' @param node_size Named numeric vector, or \code{NULL} for constant size.
 #' @param node_value Named numeric or factor vector mapped to node fill.
-#' @param edge_color,node_color,bg,land Colours.
+#' @param edge_color,node_color,bg,land Colors.
 #' @param label Character vector of component ids to label, or \code{NULL}.
 #' @param title,subtitle Character.
 #' @param negative Logical. If \code{TRUE}, treat W as a dissociative coupling
-#'   (conflict, distance, sanction) and colour edges accordingly.
+#'   (conflict, distance, sanction) and color edges accordingly.
 #'
 #' @return A ggplot object.
 #'

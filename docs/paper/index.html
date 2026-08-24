@@ -3114,12 +3114,17 @@ which components interact and with what sign, and it is an
 contribution on the states of others, which arises when a portfolio is
 evaluated through <span class="math inline">\(\mathbf{E}\)</span> as
 <span class="math inline">\(\mathbf{x}^{\top}\mathbf{E}\mathbf{x}\)</span>.
-The distinction matters in <strong>searchnet</strong> because the
-realised epistasis of a simulated system is measured separately, as the
-component-component degree <span class="math inline">\(K_{CC}\)</span>,
-and generally differs from the influence structure that generated it.
-Accordingly the package argument is named <code>influence_matrix</code>;
-<code>epistasis_matrix</code> is retained as a deprecated alias.</p>
+The distinction matters in <strong>searchnet</strong> because a third
+quantity sits between the two. The component-component degree <span class="math inline">\(K_{CC}\)</span> records how far components are
+actually co-adopted at a given moment; it is computed from the realized
+affiliation matrix and does not read <span class="math inline">\(\mathbf{E}\)</span>, yet it evolves as a
+<em>consequence</em> of <span class="math inline">\(\mathbf{E}\)</span>,
+which drives the search that produces those affiliations. <span class="math inline">\(K_{CC}\)</span> therefore indexes the coupling
+epistasis acts through, generally differs from the influence structure
+that generated it, and is not itself a measure of the fitness
+consequence. Accordingly the package argument is named
+<code>influence_matrix</code>; <code>epistasis_matrix</code> is retained
+as a deprecated alias.</p>
 <div id="sec:bipartite" class="section level2" number="3.1">
 <h2><span class="header-section-number">3.1</span> Bipartite network
 formulation</h2>

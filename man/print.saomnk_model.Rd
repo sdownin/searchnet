@@ -19,7 +19,7 @@ Compact console summary of a specification built by
 \code{\link{saomnk_model}}: the effects with their parameter values and
 fixed/free status, any actor or component covariates, static influence
 matrices (\code{coDyadCovars}), time-varying influence arrays
-(\code{varDyadCovars}), and whether a coevolving behaviour DV
+(\code{varDyadCovars}), and whether a coevolving behavior DV
 (\code{dv_behavior}) is attached.  A reader typing the object at the
 console sees the specification, not a raw list dump.
 }

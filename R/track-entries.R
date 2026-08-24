@@ -96,7 +96,7 @@ NULL
 #' @param entry_log Optional data.frame with columns \code{firm},
 #'   \code{activity}, \code{n_rivals_present}, \code{was_competitive} (as
 #'   produced by the CD4 forbearance experiment). Passed through with
-#'   standardised column names.
+#'   standardized column names.
 #' @return A \code{data.frame} with columns:
 #'   \describe{
 #'     \item{step}{Integer chain step or round index.}

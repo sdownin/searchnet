@@ -11,7 +11,7 @@ nk_to_saomnk(landscape, M = 1L)
 
 \item{M}{Integer. Number of actors to place on the landscape. \code{M = 1}
 gives the exact NK reduction; \code{M > 1} embeds the same landscape in a
-multi-actor SaoMNK search (the generalisation direction).}
+multi-actor SaoMNK search (the generalization direction).}
 }
 \value{
 A list with components \code{env_params} (arguments for

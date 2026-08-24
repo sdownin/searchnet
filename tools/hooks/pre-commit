@@ -1,0 +1,74 @@
+#!/bin/sh
+# pre-commit: refuse to track files that must never live in this repository.
+#
+# Install (once per clone):
+#     git config core.hooksPath tools/hooks
+#
+# WHY THIS RUNS AT COMMIT TIME.
+# The release gate (tools/check_public_snapshot.R) catches internal files at
+# snapshot time, which is correct but late: between v0.2.0 and v0.9.0 a set of
+# internal files sat tracked on dev for roughly six months and reached the
+# public repo on every single release before anyone noticed. The cost of
+# finding it late was a full public-history rewrite and a repository
+# recreation. The cost of finding it here is one `git restore --staged`.
+#
+# This hook BLOCKS, deliberately. It is a prevention guard on what enters the
+# repository, not a measurement of work already done: it owns no work product,
+# it evaluates an action in flight, it proposes undoing nothing that was
+# delivered, and it has one determinate fix. Those are the conditions under
+# which a check is allowed to be imperative.
+#
+# Escape hatch: `git commit --no-verify`. If you use it, you are asserting the
+# file is safe to publish. It will still be caught at release.
+
+# Resolve the pattern list relative to THIS SCRIPT first, then fall back to
+# the worktree. This is what lets `core.hooksPath` be an absolute path, which
+# in turn is what makes the guard cover linked worktrees.
+#
+# A relative core.hooksPath (`tools/hooks`) resolves against each worktree's
+# own root, so a worktree checked out at a commit predating this hook has the
+# setting but no hook file -- git finds nothing and commits proceed unguarded,
+# while `git config core.hooksPath` still reports it as configured. Configured
+# but inert is worse than unconfigured, because it reads as protected.
+HOOK_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)
+PATTERNS="$HOOK_DIR/../internal-file-patterns.txt"
+[ -f "$PATTERNS" ] || PATTERNS="tools/internal-file-patterns.txt"
+
+# Only inspect files being ADDED or MODIFIED in this commit.
+staged=$(git diff --cached --name-only --diff-filter=AM)
+[ -z "$staged" ] && exit 0
+
+if [ ! -f "$PATTERNS" ]; then
+  echo "pre-commit: $PATTERNS is missing; cannot verify. Restore it or"
+  echo "            commit with --no-verify if you know what you are doing."
+  exit 1
+fi
+
+hits=""
+while IFS= read -r pat; do
+  case "$pat" in ''|'#'*) continue ;; esac
+  m=$(printf '%s\n' "$staged" | grep -E "$pat")
+  [ -n "$m" ] && hits="$hits$m
+"
+done < "$PATTERNS"
+
+hits=$(printf '%s' "$hits" | grep -v '^$' | sort -u)
+[ -z "$hits" ] && exit 0
+
+n=$(printf '%s\n' "$hits" | wc -l | tr -d ' ')
+echo
+echo "COMMIT BLOCKED: $n path(s) must never be tracked in this repository."
+echo
+printf '%s\n' "$hits" | sed 's/^/      /'
+echo
+echo "  These patterns are listed in $PATTERNS."
+echo
+echo "  Fix:"
+echo "      git restore --staged <path>...        # unstage"
+echo "      echo '<path>' >> .gitignore           # and keep it out"
+echo
+echo "  If the file is worth versioning PRIVATELY but must not be published,"
+echo "  it belongs in .public-exclude instead, not here -- add it there and"
+echo "  remove the matching pattern from $PATTERNS."
+echo
+exit 1

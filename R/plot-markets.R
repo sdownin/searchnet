@@ -46,7 +46,8 @@ saomnk_plot_bipartite_ring_markets <- function(env,
   if (!is.null(epistatic_int_mat)) {
     warning("`epistatic_int_mat` is deprecated as of searchnet 0.8.2; use ",
             "`influence_matrix` instead. W is the influence matrix, the model ",
-            "INPUT; epistasis is the resulting fitness coupling, reported as K_CC.",
+            "INPUT; K_CC reports the realized inter-component structure it drives, ",
+            "and epistatic fitness is the XWX effect it carries.",
             call. = FALSE)
     if (is.null(influence_matrix)) influence_matrix <- epistatic_int_mat
   }
@@ -536,7 +537,8 @@ saomnk_plot_bipartite_ring_markets_animation <- function(env,
   if (!is.null(epistatic_int_mat)) {
     warning("`epistatic_int_mat` is deprecated as of searchnet 0.8.2; use ",
             "`influence_matrix` instead. W is the influence matrix, the model ",
-            "INPUT; epistasis is the resulting fitness coupling, reported as K_CC.",
+            "INPUT; K_CC reports the realized inter-component structure it drives, ",
+            "and epistatic fitness is the XWX effect it carries.",
             call. = FALSE)
     if (is.null(influence_matrix)) influence_matrix <- epistatic_int_mat
   }

@@ -72,9 +72,9 @@ NULL
 .BRIDGE_MATCHED_SEED_CAVEAT <- paste0(
   "Matched seeds fix INITIALISATION only. Both arms share the landscape, the W ",
   "matrix, the NK noise matrix and the initial holdings, so \"same actors, same ",
-  "landscape, same start\" holds exactly. They do NOT share the realised ",
+  "landscape, same start\" holds exactly. They do NOT share the realized ",
   "trajectory: after the first divergent ministep the two arms consume the RNG ",
-  "stream differently, so \"same realised path\" does not hold. A single ",
+  "stream differently, so \"same realized path\" does not hold. A single ",
   "baseline/counterfactual pair is therefore not a counterfactual; report the ",
   "delta as an average over replications with its Monte Carlo error, never as a ",
   "point counterfactual for a single run."
@@ -103,7 +103,7 @@ NULL
 #' @param scale_factor Numeric multiplier applied to all converted parameters
 #'   (default \code{1.0}).  Useful for sensitivity analysis.
 #' @param draw_theta Logical. If \code{FALSE} (the default, and the historical
-#'   behaviour) the point estimates are converted, so the counterfactual carries
+#'   behavior) the point estimates are converted, so the counterfactual carries
 #'   no parameter uncertainty.  If \code{TRUE}, one theta vector is drawn from
 #'   the estimated sampling distribution
 #'   \eqn{N(\hat\theta, \Sigma_\theta)}{N(thetahat, covtheta)} using
@@ -121,7 +121,7 @@ NULL
 #'   a DIFFERENT model from the one that was estimated.  With
 #'   \code{strict = TRUE} such an effect is refused, with a message naming each
 #'   one and the effect it would become.  \code{strict = FALSE} restores the
-#'   warn-and-proceed behaviour; the approximations are then listed in a
+#'   warn-and-proceed behavior; the approximations are then listed in a
 #'   \code{warning()} and in \code{$approximate}, and must be reported with any
 #'   result built from them.  \code{strict} does NOT relax a non-implementation:
 #'   an effect whose SaoMNK counterpart does not exist for a bipartite dependent
@@ -558,7 +558,7 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
 
     ## Align the effect rows with the estimated parameters.  RSiena normally
     ## returns one row per estimated parameter; if it does not, fall back to
-    ## name-based classification rather than mis-labelling rate effects.
+    ## name-based classification rather than mis-labeling rate effects.
     if (nrow(eff_df) != length(thetas) && !is.null(eff_df$include)) {
       eff_df <- eff_df[which(as.logical(eff_df$include)), , drop = FALSE]
     }
@@ -581,7 +581,7 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
       ## effectName ("outdegree (density)", "transitive triplets") meant a real
       ## sienaFit could never match a single crosswalk entry: every evaluation
       ## effect fell through to $unmapped and "0 of N mapped" was reported as a
-      ## modelling fact rather than the naming failure it was.
+      ## modeling fact rather than the naming failure it was.
       ##
       ## `interaction1` is appended as a `.suffix` so that several instances of
       ## one effect (an egoX per covariate) stay distinguishable; the crosswalk
@@ -633,7 +633,7 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
 
 #' Identify RSiena rate-function effects
 #'
-#' Rate effects are recognised from RSiena metadata when it is available
+#' Rate effects are recognized from RSiena metadata when it is available
 #' (\code{type == "rate"}, or a rate \code{shortName}), and otherwise from the
 #' effect name.
 #'
@@ -1019,9 +1019,9 @@ empirical_to_saomnk_env <- function(mi_data, wave = 1, imputation = 1,
 #' Within a replication both arms are constructed and run at the same seed, so
 #' the landscape, the W matrix, the NK noise matrix and the initial holdings are
 #' bit-identical across arms.  This fixes INITIALISATION only.  It does not fix
-#' the realised trajectory: after the first divergent ministep the two arms
+#' the realized trajectory: after the first divergent ministep the two arms
 #' consume the RNG stream differently, so \dQuote{same actors, same landscape,
-#' same start} holds exactly while \dQuote{same realised path} does not.  A
+#' same start} holds exactly while \dQuote{same realized path} does not.  A
 #' single baseline/counterfactual pair is therefore not a counterfactual; the
 #' delta must be reported as an average over replications with its Monte Carlo
 #' error.  (This mirrors the disclosure in
@@ -1444,7 +1444,7 @@ run_calibrated_counterfactual <- function(bridge_env, bridge_params,
 
   if (n_reps < 2L) {
     warning(paste0("run_calibrated_counterfactual(): n_reps = 1, so no Monte Carlo ",
-                   "error is available and the reported delta is a single realisation, ",
+                   "error is available and the reported delta is a single realization, ",
                    "not an estimate. ", .BRIDGE_MATCHED_SEED_CAVEAT),
             call. = FALSE)
   }
@@ -1547,7 +1547,7 @@ run_calibrated_counterfactual <- function(bridge_env, bridge_params,
              "simulated at the parameter they were given:\n  %s\n",
              "The counterfactual is therefore not calibrated in those effects, and a ",
              "scenario multiplying one of them will move nothing. This is an engine ",
-             "defect, not a modelling result: the declared coefficient must reach ",
+             "defect, not a modeling result: the declared coefficient must reach ",
              "the effects table's `initialValue` column, which get_theta_matrix() ",
              "reads (theta-storage convention, 2026-08-23). Report the affected ",
              "effects as NOT SIMULATED; do not report their deltas as effects of ",
@@ -1691,7 +1691,7 @@ run_calibrated_counterfactual <- function(bridge_env, bridge_params,
 }
 
 
-#' Summarise the paired deltas for one measure across replications
+#' Summarize the paired deltas for one measure across replications
 #'
 #' @param measure Character measure name.
 #' @param base_vals Numeric vector of baseline values, one per replication.
@@ -1876,7 +1876,7 @@ get_orm_scenarios <- function() {
 #' \describe{
 #'   \item{Monte Carlo variance}{Within a draw, across replications.  It is a
 #'     property of the SIMULATION: the same parameters, run again, give a
-#'     different realised path.  It shrinks like \eqn{1/n\_reps} and can be made
+#'     different realized path.  It shrinks like \eqn{1/n\_reps} and can be made
 #'     arbitrarily small by running the simulation longer.  It says nothing
 #'     about how well the parameters are known.}
 #'   \item{Parameter variance}{Between draws.  It is a property of the

@@ -2,7 +2,7 @@
 % Please edit documentation in R/searchnet-behavior.R
 \name{saomnk_behavior_effects}
 \alias{saomnk_behavior_effects}
-\title{Report the Behaviour Effects RSiena Offers for a Bipartite Network}
+\title{Report the Behavior Effects RSiena Offers for a Bipartite Network}
 \usage{
 saomnk_behavior_effects(
   M = 10L,
@@ -16,9 +16,9 @@ saomnk_behavior_effects(
 
 \item{N}{Integer. Number of components in the probe object (default \code{6}).}
 
-\item{direction}{Character. \code{"influence"} lists effects on the BEHAVIOUR
-DV (network shapes behaviour); \code{"selection"} lists effects on the
-NETWORK DV that reference the behaviour (behaviour shapes network);
+\item{direction}{Character. \code{"influence"} lists effects on the BEHAVIOR
+DV (network shapes behavior); \code{"selection"} lists effects on the
+NETWORK DV that reference the behavior (behavior shapes network);
 \code{"both"} returns both, tagged.}
 
 \item{network_only}{Logical. If \code{TRUE} (default \code{FALSE}), restrict
@@ -29,8 +29,8 @@ A \code{data.frame} with columns \code{direction}, \code{shortName},
 \code{effectName}, \code{interaction1}, \code{interaction2}, \code{type}.
 }
 \description{
-Constructs a minimal bipartite-plus-behaviour \code{sienaData} object of the
-requested size and returns the effect table RSiena reports for the behaviour
+Constructs a minimal bipartite-plus-behavior \code{sienaData} object of the
+requested size and returns the effect table RSiena reports for the behavior
 dependent variable. Use this instead of trusting documentation --- including
 searchnet's own --- about which influence effects exist.
 }
@@ -38,13 +38,13 @@ searchnet's own --- about which influence effects exist.
 The distinction that matters most: the one-mode influence effects
 \code{avAlt}, \code{totAlt}, \code{avSim} and \code{totSim} are absent for a
 bipartite network, because direct alters are components and components have
-no behaviour. Their bipartite counterparts are the distance-2 effects
+no behavior. Their bipartite counterparts are the distance-2 effects
 (\code{avInAltDist2}, \code{avInSimDist2}, ...), where two actors are
 neighbours when they hold a component in common.
 }
 \examples{
 \dontrun{
-## Which influence effects can a bipartite network exert on behaviour?
+## Which influence effects can a bipartite network exert on behavior?
 saomnk_behavior_effects(direction = "influence", network_only = TRUE)
 
 ## Confirm for yourself that avSim is not among them:

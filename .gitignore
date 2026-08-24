@@ -164,8 +164,10 @@ simulations/
 docs/animation_gallery_files/
 vignettes/*.html
 
-# web-paper build intermediate
-paper/_searchnet-jss-web.Rmd
+# NOTE: paper/_searchnet-jss-web.Rmd was ignored here until 2026-08-24. It is
+# the ONLY source of docs/paper/index.html, which is served live on the GitHub
+# Pages site, so ignoring it meant the published page was unregenerable if the
+# file were ever lost. It is tracked now. Do not re-add it.
 
 # testthat auto-generated problem artifacts
 tests/testthat/_problems/

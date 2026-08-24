@@ -1,3 +1,68 @@
+# searchnet 0.9.3
+
+Documentation and terminology release. No behavioral change to the engine;
+no result from 0.9.2 is invalidated.
+
+## Terminology: "epistasis" names three things, not two
+
+The v0.8.2 entry below states that "epistasis (K_CC) is the fitness
+interdependence W induces, indexed by the density and pattern of W."
+**That claim is corrected here**, and the earlier entry is left standing as
+the dated record of what v0.8.2 said rather than rewritten.
+
+Two things were wrong with it. First, `K_CC` is
+`colSums((B'B) > 0)` --- a degree of the realized bipartite projection, in
+which `W` does not appear. A degree cannot *measure* a fitness consequence;
+the two are different kinds of quantity. Second, and less obviously, the
+claim was false of the running code at the time it was written: until the
+theta repair in v0.9.0 the declared `XWX` coefficient was never simulated, so
+`W` could not influence `K_CC` at all in v0.8.3 and earlier.
+
+The distinction now stated throughout the package, the README, and the JSS
+manuscript:
+
+| | | |
+|---|---|---|
+| **`W`** | the **input** | an N x N matrix, set by the analyst |
+| **`K_CC`** | the **realized structure** | `colSums((B'B) > 0)`; `W` is absent from the formula, but drives the search that produces `B`, so `K_CC` evolves as a consequence of `W` |
+| **epistatic fitness** | the **outcome** | the `XWX` effect weighted by `influence_weight`, plus the `synergy` term `b_i' W b_i / N^2` |
+
+`K_CC` keeps its label *Component Epistasis*, per the v0.8.2 decision. No
+argument, effect, or column name changes.
+
+That `W` drives `K_CC` is now demonstrated rather than asserted: holding
+seeds and every other parameter fixed and varying only `W`, mean `K_CC` moves
+from 13.95 (no influence) to 16.40 (block-diagonal `W`) to 20.00 (its
+complement), and zeroing the matrix gives a run bit-identical to zeroing
+`influence_weight`.
+
+## Fixes
+
+* **`man/saomnk_model.Rd` documented the pre-0.4.0 API.** It listed
+  `epistasis_matrix` and `epistasis_weight` as the argument names and
+  described `W` as "the epistasis effect", unchanged since v0.2.0 --- so
+  `?saomnk_model` had contradicted the package for two years of releases.
+  Note for maintainers: this file is **not roxygen-owned**, and
+  `roxygenise()` silently *skips* files without the roxygen header, so it
+  would never have been regenerated. 45 of 165 `man/` files are in that
+  state.
+
+* **`paper/_searchnet-jss-web.Rmd` is now tracked.** It was gitignored while
+  being the only source of `docs/paper/index.html`, which is served on the
+  project's GitHub Pages site --- so the published page was unregenerable if
+  that file were lost. It also shared `cache.path` with
+  `paper/searchnet-jss.Rmd`, polluting the manuscript's knitr cache; it now
+  has its own.
+
+* **American English throughout**, per the project's style rule, including
+  code comments: roughly 200 sites across 68 files. `summarise()` (dplyr) and
+  `colour=` (ggplot2) are API names and were changed only where they appear
+  in prose.
+
+* The JSS manuscript's terminological note is rewritten and all four PDF
+  artifacts re-rendered; `docs/paper/index.html` and the PDW slide deck are
+  regenerated.
+
 # searchnet 0.9.2
 
 Version 0.9.1 was never released: a concurrent session tagged a
@@ -100,7 +165,7 @@ made previously-inert code paths active for the first time.
   structure-model effect entry (e.g. `cycle4` with `internal_parameter = 2`
   for the square-root form), so a coefficient and an internal parameter cannot
   be confused at the call site. The public `parameter` key keeps meaning the
-  coefficient. Verified behaviourally in
+  coefficient. Verified behaviorally in
   `tests/testthat/test-theta-storage.R`: pre-repair, simulations with `cycle4`
   at -2 and +2 were bit-identical; post-repair the 4-cycle statistic responds
   monotonically (60 / 688 / 2559 at theta -2 / 0 / +2 on the seeded fixture).
@@ -113,7 +178,7 @@ made previously-inert code paths active for the first time.
   `includeEffects()` + `siena07()` is unaffected: there `parm` stays at its
   default and theta is estimated.
 
-Event-level statistics on the ministep chain, behavioural repertoires, and a
+Event-level statistics on the ministep chain, behavioral repertoires, and a
 larger time-varying influence-matrix ladder. Motivated by a design that needs to
 compare a fitted SAOM's *latent* event sequence against an *observed* event log,
 which is possible whenever both are recorded (a code repository gives a commit
@@ -200,11 +265,11 @@ null model *fails* the same test. The evidential quantity is the gap.
   therefore the natural one to lead a sufficiency claim on, and also the one
   that goes degenerate when there is little repeat attention to count.
 
-* **Per-statistic scaling in the normalisation.** These are running counters but
+* **Per-statistic scaling in the normalization.** These are running counters but
   they do not all grow at the same rate: `focusing`, `reinforcing` and
   `activity` scale with the event count, while `mixing` is their product and
   scales with its square. Dividing everything by `n` left `mixing` still scaling
-  with `n`. `clustering` is normalised at `n^1` as an acknowledged
+  with `n`. `clustering` is normalized at `n^1` as an acknowledged
   approximation -- its growth depends on the density trajectory and is not a
   clean power, which is why the length-ratio warning exists.
 
@@ -222,10 +287,10 @@ null model *fails* the same test. The evidential quantity is the gap.
     reproducing it is not a free prediction. Affected rows are flagged and a
     warning is raised.
 
-## Behavioural repertoires
+## Behavioral repertoires
 
-* **`searchnet_repertoire()`** partitions actors into behaviour types from the
-  profile of their realised moves. This is a property of what actors *did*, as
+* **`searchnet_repertoire()`** partitions actors into behavior types from the
+  profile of their realized moves. This is a property of what actors *did*, as
   distinct from `sienaRI`'s decomposition of effect importance in the fitted
   model at an actor's position; the two are different objects and the package no
   longer needs the second to provide the first. `k` is chosen by maximum average
@@ -235,7 +300,7 @@ null model *fails* the same test. The evidential quantity is the gap.
 
 * **`searchnet_repertoire_null()`** permutes actor labels across events and
   re-clusters, holding the event set, the statistics and the algorithm fixed and
-  breaking only the actor-to-behaviour association. k-means returns k clusters
+  breaking only the actor-to-behavior association. k-means returns k clusters
   whether or not there is structure; this is how you find out which.
 
 * **`searchnet_repertoire_ri()`** is an optional bridge to `RSiena::sienaRI()`.
@@ -285,7 +350,7 @@ merged onto the 0.8.2 terminology sweep.
 * **`print()` methods for the user-facing returns**, in `R/saomnk-methods.R`:
   `print.saomnk_model()` (effects with thetas and fixed/free flags, covariates,
   static influence matrices with dimensions, time-varying influence arrays with
-  period counts, behaviour DV presence), `print.saomnk_shock()`,
+  period counts, behavior DV presence), `print.saomnk_shock()`,
   `print.saomnk_assent()`, and `print.saomnk_summary()`. JSS's minimum
   expectation is that R's class and method systems are leveraged on returns;
   typing a model object at the console now shows its specification instead of
@@ -339,14 +404,14 @@ merged onto the 0.8.2 terminology sweep.
   `influence_matrix`, so a reader arriving from the NK literature can find the
   object.
 
-* `saomnk_empirical_epistasis()` is deprecated in favour of
+* `saomnk_empirical_epistasis()` is deprecated in favor of
   `saomnk_empirical_influence()`; it returns an influence-matrix estimate
   built from realized co-holding, not epistasis. Same arguments, same return;
   the old name warns once per session and then calls the new function.
 
 * `epistatic_int_mat` on `saomnk_plot_bipartite_ring_markets()`,
   `saomnk_plot_bipartite_ring_markets_animation()`, their R6 method twins and
-  `get_component_groups_list()` is deprecated in favour of `influence_matrix`.
+  `get_component_groups_list()` is deprecated in favor of `influence_matrix`.
   The new name takes the old argument's position, so positional calls are
   unaffected; the old name is kept as a trailing formal with a warning, and
   the new name wins if both are supplied.
@@ -473,7 +538,7 @@ them.
 ## Testing
 
 * **The test harness was sourcing 4 of 34 files in `R/`, and had been since
-  network--behaviour coevolution landed.** `helper-setup.R` hand-listed
+  network--behavior coevolution landed.** `helper-setup.R` hand-listed
   `utils.R`, `saomnk-base.R`, `saomnk-class.R` and `mean_field_solver.R`. When a
   `.searchnet_has_behavior()` call was added inside `saomnk-class.R`, the file
   defining it was not on that list, so every simulation-dependent test died with
@@ -602,27 +667,27 @@ reconstruct.
   cannot silently disagree.
 
 * **`saomnk_behavior()`, `saomnk_behavior_effects()`, `saomnk_get_behavior()`:
-  network--behaviour coevolution.** A structure model may now carry a
+  network--behavior coevolution.** A structure model may now carry a
   `dv_behavior` block, making an actor-level attribute (performance,
   aspiration, capability) a second dependent variable that evolves jointly with
   the bipartite network instead of sitting fixed as a covariate. Both directions
-  are live: the network shapes the behaviour through influence effects, and the
-  behaviour shapes the network through selection effects declared on
-  `dv_bipartite` with `interaction1` pointing at the behaviour DV.
+  are live: the network shapes the behavior through influence effects, and the
+  behavior shapes the network through selection effects declared on
+  `dv_bipartite` with `interaction1` pointing at the behavior DV.
 
 ## What RSiena can and cannot do here, stated plainly
 
-* **RSiena 1.5.0 does support bipartite + behaviour coevolution.** This was
+* **RSiena 1.5.0 does support bipartite + behavior coevolution.** This was
   verified against a live `getEffects()` object, not recalled. `sienaDataCreate()`
   accepts both dependent variables and returns a populated effect set for the
-  behaviour. Unlike the K_CA case below, this is a real EFFECT capability and
-  not merely a statistic: the behaviour enters the simulated evaluation function
+  behavior. Unlike the K_CA case below, this is a real EFFECT capability and
+  not merely a statistic: the behavior enters the simulated evaluation function
   and moves.
 
 * **The one-mode influence effects `avAlt`, `totAlt`, `avSim` and `totSim` are
-  NOT available for a behaviour attached to a bipartite network, and no amount
+  NOT available for a behavior attached to a bipartite network, and no amount
   of R-level work can add them.** In a bipartite network ego's direct alters are
-  *components*, and components have no behaviour to average. This is a property
+  *components*, and components have no behavior to average. This is a property
   of the model, not a gap in RSiena or in searchnet.
 
   RSiena's substitutes are the distance-2 family, where two actors are
@@ -630,7 +695,7 @@ reconstruct.
   `totInAltDist2`, `avTInAltDist2`, `totAInAltDist2`, `avInSimDist2`,
   `totInSimDist2`. **`avInSimDist2` is the bipartite counterpart of `avSim`**,
   and is what a caller reaching for "imitation" or "social influence" wants.
-  Also available on the behaviour DV: `linear`, `quad`, `constant`,
+  Also available on the behavior DV: `linear`, `quad`, `constant`,
   `threshold1-4`, `simAllNear`, `simAllFar`, `avGroup`, `outdeg`, `outIsolate`,
   `popAlt`, `effFrom`, `avXAlt`, `totXAlt`, and the covariate distance-2 family
   (`avXInAltDist2`, `totXInAltDist2`, `avTXInAltDist2`, `totAXInAltDist2`).
@@ -645,7 +710,7 @@ reconstruct.
   presence of the distance-2 effects and the ABSENCE of `avSim`/`avAlt`. If a
   future RSiena release changes either, those tests will say so.
 
-* **A behaviour DV changes RSiena's estimation mode, and therefore what a row of
+* **A behavior DV changes RSiena's estimation mode, and therefore what a row of
   the theta matrix means.** RSiena estimates *conditionally* with one dependent
   variable and *unconditionally* with two or more. Under conditional estimation
   the conditioning variable's basic rate is deleted from the parameter vector,
@@ -658,9 +723,9 @@ reconstruct.
   The consequence for callers: with one DV each theta row corresponds to exactly
   one ministep. With two DVs the number of ministeps per row is drawn from the
   rate parameters, so **the chain is longer than the theta matrix has rows** and
-  a "run" is no longer a ministep. `saomnk_get_behavior()` reports behaviour once
-  per run; per-ministep behaviour changes are in `env$chain_stats`, in the
-  `beh_difference` column of rows whose `dv_varname` is the behaviour DV.
+  a "run" is no longer a ministep. `saomnk_get_behavior()` reports behavior once
+  per run; per-ministep behavior changes are in `env$chain_stats`, in the
+  `beh_difference` column of rows whose `dv_varname` is the behavior DV.
 
 * **An undeclared basic rate defaults to 1.0, with a message.** RSiena's `parm`
   column defaults to 0 for basic rates, and searchnet reads `parm` as theta. A
@@ -670,19 +735,19 @@ reconstruct.
 
 * **The utility and K-4 decompositions cover the bipartite evaluation function
   only.** `linear`, `quad`, `avInSimDist2` and the rest are statistics of the
-  behaviour, not of the bipartite matrix, and have no per-actor decomposition on
+  behavior, not of the bipartite matrix, and have no per-actor decomposition on
   that path. They are excluded from `actor_stats_df` rather than fabricated.
-  Extending the decomposition to the behaviour evaluation function is a separate
+  Extending the decomposition to the behavior evaluation function is a separate
   piece of work.
 
 ## Bug fixes / hardening
 
 * `search_rsiena_process_ministep_chain()` and `get_chain_stats_list()` now skip
-  behaviour ministeps when reconstructing the bipartite state trajectory. A
-  behaviour ministep's `id_to` column carries a behaviour value, not a component
+  behavior ministeps when reconstructing the bipartite state trajectory. A
+  behavior ministep's `id_to` column carries a behavior value, not a component
   id, so toggling on it would have silently corrupted every downstream network
   statistic. There is a test asserting the bipartite matrix never changes on a
-  behaviour ministep.
+  behavior ministep.
 
 * The generic effect-inclusion fallback in
   `include_rsiena_effect_from_eff_list()` now passes `interaction2` through to
@@ -781,7 +846,7 @@ reconstruct.
 
 * A file that fails to source no longer aborts the load silently: failures are
   collected in `.saomnk_failed` and surfaced as warnings.
-  `options(saomnk.loader.strict = TRUE)` restores fail-fast behaviour;
+  `options(saomnk.loader.strict = TRUE)` restores fail-fast behavior;
   `options(saomnk.loader.quiet = TRUE)` suppresses the summary line.
 
 ## Notes
@@ -824,7 +889,7 @@ reconstruct.
   = TRUE)` filtered out every effect whose `shortName` matched `/rate/i`. RSiena excludes
   only the *basic* rate parameter from `thetaValues`, so any additional rate effect
   under-counted the columns and RSiena rejected the matrix ("should have N columns"). The
-  filter now removes only the basic `Rate` parameter. This is behaviour-preserving for any
+  filter now removes only the basic `Rate` parameter. This is behavior-preserving for any
   model whose sole rate effect is the basic rate.
 
 ## New features
@@ -845,7 +910,7 @@ reconstruct.
   This separates the *frequency* with which an actor may change (the rate function) from
   *which* change it prefers (the evaluation function) — the two are separately
   parameterised and separately estimable. Verified: with `RateX = 2` on a binary covariate,
-  the two actor groups differ by a factor of ~12.6 in realised tie changes, against ~1.5 at
+  the two actor groups differ by a factor of ~12.6 in realized tie changes, against ~1.5 at
   `RateX = 0`.
 
 ## Testing

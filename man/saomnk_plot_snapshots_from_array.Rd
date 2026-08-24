@@ -30,7 +30,7 @@ alphabetical order the API version silently won: calling
 \code{saomnk_plot_snapshots(env, snapshot_ids = ...)} failed with an unused-argument
 error even though this definition existed. No caller in the package, its
 vignettes, its papers or the dependent projects used \code{snapshot_ids}, so
-renaming is behaviour-preserving.
+renaming is behavior-preserving.
 }
 \examples{
 \donttest{

@@ -1,16 +1,16 @@
 ###############################################################################
 ## searchnet-behavior.R
 ##
-## Network--behaviour coevolution for the bipartite searchnet engine.
+## Network--behavior coevolution for the bipartite searchnet engine.
 ##
 ## WHAT RSIENA ACTUALLY SUPPORTS (verified, not recalled)
 ## ------------------------------------------------------
-## RSiena 1.5.0 DOES support a behaviour dependent variable coevolving with a
+## RSiena 1.5.0 DOES support a behavior dependent variable coevolving with a
 ## bipartite network dependent variable. `sienaDataCreate()` accepts both, and
-## `getEffects()` returns a populated effect set for the behaviour DV.
+## `getEffects()` returns a populated effect set for the behavior DV.
 ##
-## The behaviour DV must live on the ACTORS node set (the ROW mode of the
-## bipartite network). A behaviour on the COMPONENTS node set is also
+## The behavior DV must live on the ACTORS node set (the ROW mode of the
+## bipartite network). A behavior on the COMPONENTS node set is also
 ## constructible, but the influence effects below are then defined over
 ## component-to-component distance-2 neighbourhoods, which is a different
 ## substantive claim; `saomnk_behavior()` therefore defaults to ACTORS and
@@ -18,46 +18,46 @@
 ##
 ## The crucial limitation, which is NOT a bug and cannot be worked around at
 ## the R level: the classic one-mode influence effects `avAlt`, `totAlt`,
-## `avSim` and `totSim` DO NOT EXIST for a behaviour attached to a bipartite
+## `avSim` and `totSim` DO NOT EXIST for a behavior attached to a bipartite
 ## network. They cannot be included, because in a bipartite network an actor's
-## direct alters are COMPONENTS, and components have no behaviour to average.
+## direct alters are COMPONENTS, and components have no behavior to average.
 ##
 ## RSiena's substitutes are the distance-2 effects: two actors are
 ## distance-2 neighbours when they hold a component in common. These ARE the
 ## bipartite influence effects, and they are genuinely available:
 ##
-##   avInAltDist2   average behaviour of distance-2 (co-holding) alters
-##   totInAltDist2  total   behaviour of distance-2 alters
+##   avInAltDist2   average behavior of distance-2 (co-holding) alters
+##   totInAltDist2  total   behavior of distance-2 alters
 ##   avTInAltDist2  average of the total over distance-2 alters
 ##   totAInAltDist2 total of the average over distance-2 alters
-##   avInSimDist2   average behaviour SIMILARITY to distance-2 alters
-##   totInSimDist2  total   behaviour similarity to distance-2 alters
+##   avInSimDist2   average behavior SIMILARITY to distance-2 alters
+##   totInSimDist2  total   behavior similarity to distance-2 alters
 ##
 ## `avInSimDist2` is the bipartite analogue of `avSim`, and is the effect a
 ## caller reaching for "imitation" or "social influence" almost always wants.
 ##
-## Also available on the behaviour DV:
+## Also available on the behavior DV:
 ##   linear, quad             shape (baseline tendency, self-reinforcement)
 ##   constant                 constant term
 ##   threshold, threshold2-4  threshold shapes
 ##   simAllNear, simAllFar    similarity to the whole population
 ##   avGroup                  average of the group
-##   outdeg                   own outdegree in the bipartite net -> behaviour
-##   outIsolate               being an isolate -> behaviour
-##   popAlt                   popularity of the components held -> behaviour
-##   effFrom                  effect of an actor covariate on behaviour
+##   outdeg                   own outdegree in the bipartite net -> behavior
+##   outIsolate               being an isolate -> behavior
+##   popAlt                   popularity of the components held -> behavior
+##   effFrom                  effect of an actor covariate on behavior
 ##   avXAlt, totXAlt          average/total of a COMPONENT covariate over the
 ##                            components held (needs interaction2 = the net)
 ##   avXInAltDist2, totXInAltDist2, avTXInAltDist2, totAXInAltDist2
 ##                            actor-covariate versions of the dist-2 effects
 ##
-## And in the other direction -- selection ON behaviour, i.e. behaviour
+## And in the other direction -- selection ON behavior, i.e. behavior
 ## entering the NETWORK evaluation function -- RSiena offers, among others:
 ##   egoX, egoSqX, altInDist2, totInDist2, simEgoInDist2, sameEgoInDist2,
 ##   inPopX, sameXInPop, diffXInPop, sameXCycle4, avGroupEgoX,
 ##   degAbsDiffX, degPosDiffX, degNegDiffX, sameWXClosure
 ## These are reached through the ordinary `dv_bipartite$coCovars`-style route,
-## with interaction1 set to the behaviour DV name.
+## with interaction1 set to the behavior DV name.
 ##
 ## `saomnk_behavior_effects()` regenerates this list from a live
 ## `getEffects()` call rather than trusting the comment above, and the test
@@ -65,7 +65,7 @@
 ###############################################################################
 
 
-## Name under which the behaviour DV is registered with sienaDataCreate().
+## Name under which the behavior DV is registered with sienaDataCreate().
 ## sienaDataCreate() takes the DV name from the NAME OF THE `...` ARGUMENT, and
 ## every downstream includeEffects()/setEffect() call addresses it by that
 ## string, exactly as `self$bipartite_rsienaDV` does for the network.
@@ -76,25 +76,25 @@
 #  saomnk_behavior
 # --------------------------------------------------------------------------- #
 
-#' Declare a Coevolving Behaviour Dependent Variable
+#' Declare a Coevolving Behavior Dependent Variable
 #'
 #' Builds a \code{dv_behavior} block for a searchnet structure model. Adding it
-#' to a structure model makes an actor-level behaviour (performance,
+#' to a structure model makes an actor-level behavior (performance,
 #' aspiration, capability, absorptive capacity -- whatever the attribute is
-#' theorised to be) a second dependent variable that evolves jointly with the
+#' theorized to be) a second dependent variable that evolves jointly with the
 #' bipartite actor-component network, rather than being a fixed covariate.
 #'
 #' Coevolution means both directions are live at once. The network shapes the
-#' behaviour through the distance-2 influence effects (an actor is pulled
-#' towards the behaviour of the actors it shares components with), and the
-#' behaviour shapes the network through selection effects declared on
+#' behavior through the distance-2 influence effects (an actor is pulled
+#' towards the behavior of the actors it shares components with), and the
+#' behavior shapes the network through selection effects declared on
 #' \code{dv_bipartite} with \code{interaction1} set to this DV's name.
 #'
 #' @section Which effects are available:
-#' For a behaviour attached to a BIPARTITE network, RSiena does \strong{not}
+#' For a behavior attached to a BIPARTITE network, RSiena does \strong{not}
 #' provide the one-mode influence effects \code{avAlt}, \code{totAlt},
 #' \code{avSim} or \code{totSim}. In a bipartite network an actor's direct
-#' alters are components, which have no behaviour to average. The available
+#' alters are components, which have no behavior to average. The available
 #' influence effects are the distance-2 family --- \code{avInAltDist2},
 #' \code{totInAltDist2}, \code{avTInAltDist2}, \code{totAInAltDist2},
 #' \code{avInSimDist2}, \code{totInSimDist2} --- where two actors are
@@ -104,20 +104,20 @@
 #' your own model, rather than relying on this paragraph.
 #'
 #' @param values Numeric. Either a length-\code{M} vector (replicated across
-#'   waves) or an \code{M x waves} matrix of behaviour values. RSiena requires
-#'   behaviour to be integer-valued with a modest number of categories; values
+#'   waves) or an \code{M x waves} matrix of behavior values. RSiena requires
+#'   behavior to be integer-valued with a modest number of categories; values
 #'   are rounded and shifted to start at 1, and the mapping is reported when
 #'   \code{verbose = TRUE}.
-#' @param effects A list of effect specifications for the behaviour evaluation
+#' @param effects A list of effect specifications for the behavior evaluation
 #'   function. Each is a list with \code{effect} (RSiena shortName),
 #'   \code{parameter}, and optionally \code{interaction1} / \code{interaction2}.
 #'   For network-dependent effects set
 #'   \code{interaction1 = "self$bipartite_rsienaDV"}. Defaults to a
 #'   \code{linear} + \code{quad} shape, which is the minimum RSiena needs to
-#'   identify a behaviour process.
+#'   identify a behavior process.
 #' @param rates A list of rate-effect specifications. Defaults to a single basic
 #'   \code{Rate} effect, which sets how often actors get the opportunity to
-#'   change their behaviour relative to their network ties.
+#'   change their behavior relative to their network ties.
 #' @param name Character. DV name. Leave at the default unless you know why you
 #'   are changing it --- the engine addresses this DV by name throughout.
 #' @param waves Integer. Number of observation waves (default \code{2}, matching
@@ -167,7 +167,7 @@ saomnk_behavior <- function(values,
   if (!is.numeric(values) || !length(values))
     stop("`values` must be a non-empty numeric vector or matrix.")
 
-  ## Normalise to an M x waves matrix.
+  ## Normalize to an M x waves matrix.
   if (is.matrix(values)) {
     if (ncol(values) == 1L) {
       values <- matrix(rep(values[, 1L], waves), ncol = waves)
@@ -179,7 +179,7 @@ saomnk_behavior <- function(values,
     values <- matrix(rep(values, waves), ncol = waves)
   }
 
-  ## RSiena behaviour must be integer-valued and, in practice, low-cardinality.
+  ## RSiena behavior must be integer-valued and, in practice, low-cardinality.
   ## Round, then shift so the minimum is 1. Report the shift: silently moving a
   ## caller's performance scale would make every reported coefficient refer to
   ## units the caller did not choose.
@@ -190,11 +190,11 @@ saomnk_behavior <- function(values,
 
   n_cat <- length(unique(as.vector(vals_int[!is.na(vals_int)])))
   if (n_cat < 2L)
-    stop("`values` is constant. A behaviour dependent variable needs at least ",
+    stop("`values` is constant. A behavior dependent variable needs at least ",
          "two distinct values, or there is no change process to model.")
   if (n_cat > 20L)
     warning(sprintf(
-      "Behaviour has %d distinct integer values. RSiena treats behaviour as an ordinal scale with a small number of categories; consider binning.",
+      "Behavior has %d distinct integer values. RSiena treats behavior as an ordinal scale with a small number of categories; consider binning.",
       n_cat))
 
   if (verbose && shift != 0L)
@@ -218,7 +218,7 @@ saomnk_behavior <- function(values,
     lapply(seq_along(lst), function(i) {
       e <- lst[[i]]
       if (!is.list(e) || is.null(e$effect))
-        stop(sprintf("Behaviour effect spec %d must be a list with an `effect` field.", i))
+        stop(sprintf("Behavior effect spec %d must be a list with an `effect` field.", i))
       if (is.null(e$parameter))    e$parameter    <- 0
       if (is.null(e$dv_name))      e$dv_name      <- name
       if (is.null(e$fix))          e$fix          <- TRUE
@@ -246,25 +246,25 @@ saomnk_behavior <- function(values,
 #  saomnk_behavior_effects
 # --------------------------------------------------------------------------- #
 
-#' Report the Behaviour Effects RSiena Offers for a Bipartite Network
+#' Report the Behavior Effects RSiena Offers for a Bipartite Network
 #'
-#' Constructs a minimal bipartite-plus-behaviour \code{sienaData} object of the
-#' requested size and returns the effect table RSiena reports for the behaviour
+#' Constructs a minimal bipartite-plus-behavior \code{sienaData} object of the
+#' requested size and returns the effect table RSiena reports for the behavior
 #' dependent variable. Use this instead of trusting documentation --- including
 #' searchnet's own --- about which influence effects exist.
 #'
 #' The distinction that matters most: the one-mode influence effects
 #' \code{avAlt}, \code{totAlt}, \code{avSim} and \code{totSim} are absent for a
 #' bipartite network, because direct alters are components and components have
-#' no behaviour. Their bipartite counterparts are the distance-2 effects
+#' no behavior. Their bipartite counterparts are the distance-2 effects
 #' (\code{avInAltDist2}, \code{avInSimDist2}, ...), where two actors are
 #' neighbours when they hold a component in common.
 #'
 #' @param M Integer. Number of actors in the probe object (default \code{10}).
 #' @param N Integer. Number of components in the probe object (default \code{6}).
-#' @param direction Character. \code{"influence"} lists effects on the BEHAVIOUR
-#'   DV (network shapes behaviour); \code{"selection"} lists effects on the
-#'   NETWORK DV that reference the behaviour (behaviour shapes network);
+#' @param direction Character. \code{"influence"} lists effects on the BEHAVIOR
+#'   DV (network shapes behavior); \code{"selection"} lists effects on the
+#'   NETWORK DV that reference the behavior (behavior shapes network);
 #'   \code{"both"} returns both, tagged.
 #' @param network_only Logical. If \code{TRUE} (default \code{FALSE}), restrict
 #'   the influence listing to effects that reference the bipartite network.
@@ -275,7 +275,7 @@ saomnk_behavior <- function(values,
 #' @export
 #' @examples
 #' \dontrun{
-#' ## Which influence effects can a bipartite network exert on behaviour?
+#' ## Which influence effects can a bipartite network exert on behavior?
 #' saomnk_behavior_effects(direction = "influence", network_only = TRUE)
 #'
 #' ## Confirm for yourself that avSim is not among them:
@@ -338,10 +338,10 @@ saomnk_behavior_effects <- function(M = 10L, N = 6L,
 #  saomnk_get_behavior
 # --------------------------------------------------------------------------- #
 
-#' Extract the Simulated Behaviour Trajectory
+#' Extract the Simulated Behavior Trajectory
 #'
-#' Recovers the coevolving behaviour dependent variable from a completed run.
-#' Without this the behaviour is write-only: it influences the simulated network
+#' Recovers the coevolving behavior dependent variable from a completed run.
+#' Without this the behavior is write-only: it influences the simulated network
 #' but its own path is buried in \code{env$rsiena_model$sims}.
 #'
 #' Two views are available. The default long data frame gives one row per
@@ -350,16 +350,16 @@ saomnk_behavior_effects <- function(M = 10L, N = 6L,
 #'
 #' Note that a "run" is one row of the theta matrix, not one ministep. Under the
 #' unconditional estimation that a two-DV model forces, each run contains
-#' several ministeps, so the behaviour is observed at the end of each run rather
-#' than after every individual change. Per-ministep behaviour changes are in
+#' several ministeps, so the behavior is observed at the end of each run rather
+#' than after every individual change. Per-ministep behavior changes are in
 #' \code{env$chain_stats}, in the \code{beh_difference} column of the rows whose
-#' \code{dv_varname} is the behaviour DV.
+#' \code{dv_varname} is the behavior DV.
 #'
 #' @param env A \code{SaomNkRSienaBiEnv} object after a run whose structure
 #'   model declared a \code{dv_behavior} block.
 #' @param wide Logical. Return a runs x actors matrix instead of a long data
 #'   frame (default \code{FALSE}).
-#' @param name Character. DV name to extract (default: the standard behaviour
+#' @param name Character. DV name to extract (default: the standard behavior
 #'   DV name).
 #'
 #' @return A \code{data.frame} with columns \code{run}, \code{actor_id},
@@ -417,7 +417,7 @@ saomnk_get_behavior <- function(env, wide = FALSE,
 
 
 ## ---------------------------------------------------------------------------
-## Internal: is there a behaviour DV in this structure model?
+## Internal: is there a behavior DV in this structure model?
 ## ---------------------------------------------------------------------------
 .searchnet_has_behavior <- function(structure_model) {
   is.list(structure_model) &&
@@ -428,10 +428,10 @@ saomnk_get_behavior <- function(env, wide = FALSE,
 
 
 ## ---------------------------------------------------------------------------
-## Internal: build the sienaDependent behaviour object for an environment
+## Internal: build the sienaDependent behavior object for an environment
 ## ---------------------------------------------------------------------------
-## Reconciles the declared behaviour values against the environment's actual M
-## (or N, for a COMPONENTS behaviour). A length mismatch is an error rather than
+## Reconciles the declared behavior values against the environment's actual M
+## (or N, for a COMPONENTS behavior). A length mismatch is an error rather than
 ## a recycle: silently recycling would attach the wrong actor's performance to
 ## the wrong actor, and nothing downstream would reveal it.
 .searchnet_build_behavior_dv <- function(env, dv_behavior) {
@@ -444,7 +444,7 @@ saomnk_get_behavior <- function(env, wide = FALSE,
 
   if (nrow(vals) != n_expected)
     stop(sprintf(
-      "dv_behavior has %d rows but node set '%s' has %d members. Behaviour values must be one per node.",
+      "dv_behavior has %d rows but node set '%s' has %d members. Behavior values must be one per node.",
       nrow(vals), node_set, n_expected))
 
   if (ncol(vals) < 2L)

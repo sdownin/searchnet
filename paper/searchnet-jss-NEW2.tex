@@ -1,0 +1,2788 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\newcounter{none} % for unnumbered tables
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage[]{natbib}
+\bibliographystyle{plainnat}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\newcommand{\pkg}[1]{\textbf{#1}}
+\newcommand{\proglang}[1]{\textsf{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\K}{\{K\}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={: Network-Embedded Strategic Search Simulation in },
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{\textbf{searchnet}: Network-Embedded Strategic Search Simulation
+in \textsf{R}}
+\author{true}
+\date{}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+The NK fitness landscape model is among the most widely used
+computational frameworks in strategy and organization theory, yet it
+treats the complexity parameter \(K\) as exogenous, the landscape as
+fixed, and agents as isolated searchers. The \proglang{R} package
+\pkg{searchnet} addresses all three limitations by reformulating the NK
+model as a bipartite network of \(M\) actors affiliating with \(N\)
+components and embedding it within a Stochastic Actor-Oriented Model
+(SAOM). This reformulation reveals that the scalar \(K\) is a special
+case of a four-dimensional coupled degree system---actor scope
+(\(K_{AC}\)), component popularity (\(K_{CA}\)), actor sociality
+(\(K_{AA}\)), and component epistasis (\(K_{CC}\))---whose dynamics are
+governed by actors' forward-looking affiliation decisions rather than
+imposed by the modeler. The package provides an \proglang{R6}-based
+simulation engine built on \pkg{RSiena}, a clean functional API
+(\code{saomnk\_env}, \code{saomnk\_model}, \code{saomnk\_run}), coupled
+degree visualization through the \(\{K\}\)-4 panel, utility
+decomposition diagnostics, exogenous shock infrastructure, and
+validation against the classical NK model. Three worked illustrations
+demonstrate reproduction of classical NK search dynamics, endogenous
+landscape formation with heterogeneous strategies, and
+quasi-experimental shock analysis. Benchmarks against \pkg{nkmodel} and
+raw \pkg{RSiena} quantify computational overhead and scalability.
+\pkg{searchnet} targets researchers in strategic management,
+organizational theory, innovation economics, and computational social
+science who study search, adaptation, and competitive dynamics on
+complex landscapes.
+\end{abstract}
+
+\textbf{Keywords}: NK fitness landscape, stochastic actor-oriented
+model, bipartite network, strategic search, coupled degree, R.
+
+\section{Introduction}\label{introduction}
+
+The NK fitness landscape model
+\citep{Kauffman1987, KauffmanWeinberger1989} has become one of the most
+productive computational frameworks in strategic management and
+organization theory. Since \citet{Levinthal1997} demonstrated that the
+NK model could illuminate the tension between exploration and
+exploitation on rugged performance landscapes, hundreds of studies have
+deployed it to investigate organizational adaptation, modular design,
+imitation, and competitive search
+\citep{Baumann2019, Rivkin2000, SiggelkowRivkin2005}.
+
+The model's appeal lies in its parsimony. Two parameters---\(N\), the
+number of design choices or components, and \(K\), the degree of
+epistatic interdependence among them---generate landscapes ranging from
+smooth single-peaked surfaces (\(K = 0\)) to highly rugged terrains
+(\(K = N - 1\)) populated by many local optima. This parsimony has also
+become the model's principal liability. Four limitations recur across
+the literature.
+
+First, the fitness landscape is \textbf{exogenous}: it is drawn once
+from a random distribution and does not respond to the positions that
+agents occupy. Firms competing on the same landscape experience
+identical payoff surfaces regardless of how many competitors share each
+component or how concentrated competitive attention has become. Second,
+\textbf{\(K\) is a scalar} set by the modeler. In empirical
+organizational settings, interdependence is neither uniform nor fixed;
+some components are tightly coupled while others operate nearly
+independently, and coupling structures change as actors reconfigure
+their systems. Third, \textbf{multi-agent extensions} typically treat
+agents as independent searchers navigating the same landscape, ignoring
+the social and competitive structure through which firms observe,
+imitate, and crowd one another. Fourth, the NK model provides \textbf{no
+statistical framework} for parameter estimation from empirical data,
+making it difficult to discipline simulations with observed
+organizational behavior.
+
+This paper introduces \textbf{searchnet}, an \textsf{R} package that
+addresses all four limitations simultaneously. The package reformulates
+the NK model as a bipartite network of \(M\) actors (firms, agents,
+decision-makers) affiliating with \(N\) components (technologies,
+resources, markets, design choices). By embedding this bipartite
+structure within a Stochastic Actor-Oriented Model
+\citep[SAOM;][]{Snijders1996, SnijdersVdBuntSteglich2010}, the search
+environment becomes a network data generation process whose
+topology---and therefore whose fitness landscape---co-evolves with
+actors' affiliation decisions.
+
+This reformulation yields three contributions.
+
+\emph{Endogenization.} The fitness landscape is no longer exogenous.
+Landscape ruggedness emerges from the structure of the bipartite
+network, which is itself shaped by actors' strategic choices. When
+multiple actors affiliate with the same components, they create
+epistatic coupling through overlapping activity systems; when they
+withdraw, coupling dissolves.
+
+\emph{Decomposition.} The scalar \(K\) is revealed as a special case of
+a four-dimensional coupled degree system, denoted \(\{K\}\). The four
+dimensions---actor scope (\(K_{AC}\)), component popularity
+(\(K_{CA}\)), actor sociality (\(K_{AA}\)), and component epistasis
+(\(K_{CC}\))---are individually standard network statistics
+\citep{Latapy2008, BorgattiEverett1997}, but the analytical leverage of
+the \(\{K\}\) framework comes from treating them as a coupled system.
+Because all four derive from the same bipartite incidence matrix, a
+change in any one dimension mechanically propagates to the others,
+exposing the transmission mechanism through which micro-level
+affiliation decisions produce macro-level landscape topology.
+
+\emph{Statistical infrastructure.} Because the model is formalized as a
+SAOM, it inherits \textbf{RSiena}'s \citep{Ripley2022} well-developed
+statistical machinery, including maximum likelihood estimation,
+goodness-of-fit testing, and the capacity to be estimated on empirical
+network panel data.
+
+\noindent A full-scale empirical application using eight data layers
+from the U.S.~airline industry is reported in
+\citet{downing2026architecture}.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.85\linewidth,height=\textheight,keepaspectratio,alt={The \textbackslash\{K\textbackslash\} Interdependence System: four coupled degree dimensions emerging from the bipartite actor-component network. Adapted from Downing (2026a).}]{searchnet-jss-NEW2_files/figures/cd2026_conceptual_architecture.png}
+\caption{The \(\{K\}\) Interdependence System: four coupled degree
+dimensions emerging from the bipartite actor-component network. Adapted
+from Downing (2026a).}
+\end{figure}
+
+The package provides an \textsf{R6}-based simulation engine, a
+functional user API that abstracts away \textbf{RSiena}'s internal
+naming conventions, comprehensive visualization through the \(\{K\}\)-4
+panel and 3D phase space, utility decomposition diagnostics, exogenous
+shock infrastructure for quasi-experimental designs, multi-wave Monte
+Carlo facilities, specification robustness tools, an interactive
+strategy game mode, and a classroom teaching module. Eight vignettes
+accompany the package: a quick-start introduction, theoretical
+foundations, a full simulation walkthrough with strategies and shocks, a
+computational experiment design guide, a causal inference tutorial, an
+NK validation guide, a Blume--Gibbs convergence tutorial, and a
+Professional Development Workshop curriculum.
+
+The remainder of this paper is organized as follows.
+Section\textasciitilde2 reviews the NK and SAOM literatures and
+positions the contribution. Section\textasciitilde3 presents the SaoMNK
+framework: the bipartite formulation, the \(\{K\}\) interpretive
+framework, the SAOM objective function, and the rationale for choosing
+SAOMs over ERGMs. Section\textasciitilde4 describes the
+\textbf{searchnet} package architecture, user API, visualization tools,
+diagnostics, animation pipeline, interactive features, and proof
+registry. Section\textasciitilde5 provides three worked illustrations
+and introduces basin geometry analysis for the depth-width tradeoff.
+Section\textasciitilde6 presents computational benchmarks and
+scalability analysis. Section\textasciitilde7 concludes.
+
+\section{Background: NK models and SAOMs}\label{sec:background}
+
+\subsection{The NK fitness landscape}\label{the-nk-fitness-landscape}
+
+The NK model \citep{Kauffman1987, KauffmanWeinberger1989} characterizes
+performance landscapes with two parameters. A system of \(N\) binary
+components (loci, design choices, technologies) generates \(2^N\)
+possible configurations. Each component \(d\) makes a fitness
+contribution \(f_d\) that depends not only on its own state but also on
+the states of \(K\) other components with which it is epistatically
+linked. Total fitness is the average contribution across all \(N\)
+components. When \(K = 0\), each component contributes independently and
+the landscape has a single global peak. As \(K\) increases toward
+\(N - 1\), the landscape becomes increasingly rugged, populated by
+exponentially many local optima that trap myopic searchers.
+
+\citet{Levinthal1997} introduced the NK model to management as a
+formalization of the exploration--exploitation trade-off: agents that
+search locally (single-bit mutations) on rugged landscapes quickly find
+nearby peaks but rarely discover the global optimum, while agents that
+search more broadly (multi-bit jumps) sacrifice short-run performance
+for a chance at higher peaks. This insight has been extended to
+organizational design \citep{SiggelkowRivkin2005}, imitation
+\citep{Rivkin2000}, modular architectures \citep{EthirajLevinthal2004},
+and competitive interaction \citep{Lenox2006}.
+
+Despite its generativity, the classical NK model imposes structural
+constraints that limit its applicability to settings where search
+environments are dynamic, socially embedded, or empirically observable.
+The landscape is drawn once and held fixed; \(K\) is treated as a
+uniform scalar; agents search independently; and there is no estimation
+framework linking the model to data. Several extensions have relaxed
+individual constraints---\citet{Gavetti2005} introduced cognitive
+search, \citet{SiggelkowRivkin2005} embedded search in organizational
+hierarchies, and \citet{Baumann2019} provided a comprehensive
+review---but no existing framework addresses all four limitations
+simultaneously within a unified statistical model.
+
+\subsection{Stochastic Actor-Oriented
+Models}\label{stochastic-actor-oriented-models}
+
+Stochastic Actor-Oriented Models \citep{Snijders1996,
+SnijdersVdBuntSteglich2010} provide a continuous-time Markov model for
+the co-evolution of social networks and behavior. At each micro-step, a
+single actor is selected according to a rate function, evaluates the
+marginal utility of each possible tie change according to an objective
+function, and chooses probabilistically via a multinomial logit rule.
+The objective function takes the general form
+
+\begin{equation}\label{eq:saom-objective}
+  f_i(\mathbf{B}) = \sum_k \theta_k \, s_{ik}(\mathbf{B}),
+\end{equation}
+
+\noindent where \(s_{ik}(\mathbf{B})\) are network statistics computed
+from the current network \(\mathbf{B}\) and \(\theta_k\) are parameters
+governing each actor's preferences. The parameters \(\theta_k\) can be
+estimated from observed panel data using the method of moments or
+maximum likelihood, implemented in the \textbf{RSiena} package
+\citep{Ripley2022}.
+
+SAOMs are well established in sociology and political science for
+modeling friendship networks, advice networks, and inter-organizational
+partnerships. They have been extended to bipartite (two-mode) networks
+\citep{Koskinen2012}, where the model governs actors' affiliation
+decisions with respect to events, organizations, or other categorical
+entities. \textbf{searchnet} exploits this bipartite extension to model
+actors affiliating with components in a search environment.
+
+\subsection{\texorpdfstring{Positioning
+\textbf{searchnet}}{Positioning }}\label{positioning}
+
+No existing \textsf{R} package provides the capability that
+\textbf{searchnet} offers. The \textbf{RSiena} package
+\citep{Ripley2022} implements SAOMs but does not include bipartite
+search environment simulation with NK-style fitness landscape analysis.
+The \textbf{nkmodel} package \citep{Baumann2019nk} implements classical
+NK models but not the network-embedded generalization.
+\textbf{searchnet} bridges these two traditions, providing a simulation
+engine in which the fitness landscape is an emergent property of actors'
+network positions rather than an exogenously imposed parameter.
+
+\section{The SaoMNK framework}\label{sec:framework}
+
+\noindent \textbf{Notation.} Throughout this paper we adopt the notation
+of \citet{downing2026architecture}, where the formal SAOM-NK proofs are
+developed in full. The bipartite incidence matrix is
+\(\mathbf{B} \in \{0,1\}^{M \times N}\) with entries \(b_{ij}\); the NK
+configuration vector for a single agent is \(\mathbf{x} \in \{0,1\}^N\);
+the influence matrix is \(\mathbf{E}\) (implemented in \textbf{RSiena}
+as the weight matrix \(\mathbf{W}\) of the \texttt{XWX} effect);
+component payoff functions are \(f_d\); and the logit precision
+parameter is \(\beta > 0\).
+
+A terminological note is warranted here, because the two ideas are
+routinely conflated. The matrix \(\mathbf{E}\) is an \emph{influence
+matrix} in the sense of \citet{RivkinSiggelkow2007}: it states which
+components interact and with what sign, and it is an \emph{input}
+supplied by the analyst. \emph{Epistasis} is the \emph{consequence} --
+the dependence of one component's fitness contribution on the states of
+others, which arises when a portfolio is evaluated through
+\(\mathbf{E}\) as \(\mathbf{x}^{\top}\mathbf{E}\mathbf{x}\). The
+distinction matters in \textbf{searchnet} because a third quantity sits
+between the two. The component-component degree \(K_{CC}\) records how
+far components are actually co-adopted at a given moment; it is computed
+from the realized affiliation matrix and does not read \(\mathbf{E}\),
+yet it evolves as a \emph{consequence} of \(\mathbf{E}\), which drives
+the search that produces those affiliations. \(K_{CC}\) therefore
+indexes the coupling epistasis acts through, generally differs from the
+influence structure that generated it, and is not itself a measure of
+the fitness consequence. Accordingly the package argument is named
+\texttt{influence\_matrix}; \texttt{epistasis\_matrix} is retained as a
+deprecated alias.
+
+\subsection{Bipartite network formulation}\label{sec:bipartite}
+
+The classical NK model represents a system configuration as an
+\(N\)-dimensional binary vector \(\mathbf{x} = (x_1, x_2, \ldots, x_N)\)
+where \(x_j \in \{0, 1\}\). \textbf{searchnet} generalizes this by
+introducing \(M\) actors, each of whom maintains an affiliation vector.
+The resulting system state is an \(M \times N\) binary matrix
+\(\mathbf{B}\), where \(b_{ij} = 1\) indicates that actor \(i\)
+affiliates with component \(j\). This matrix is the incidence matrix of
+a bipartite network with actor nodes on one side and component nodes on
+the other.
+
+The bipartite representation has three immediate consequences. First, it
+naturally accommodates \textbf{multiple agents} searching
+simultaneously: each row of \(\mathbf{B}\) is an actor's configuration,
+and actors' configurations interact through shared columns. Second, it
+makes the \textbf{search environment endogenous}: the pattern of
+affiliations determines which components are coupled (via shared actors)
+and which actors are competitors (via shared components). Third, it
+provides the structural substrate for the SAOM engine: \(\mathbf{B}\)
+becomes the dependent variable in an evolving bipartite network model.
+
+\subsection{\texorpdfstring{The \(\{K\}\) interpretive
+framework}{The \textbackslash\{K\textbackslash\} interpretive framework}}\label{sec:k4}
+
+The bipartite incidence matrix \(\mathbf{B}\) generates four coupled
+degree statistics, each of which is individually a standard network
+measure but whose joint dynamics expose the mechanism through which
+micro-level search decisions produce macro-level landscape structure.
+Table\textasciitilde{}\ref{tab:k4} summarizes the four dimensions.
+
+\begin{table}[t]
+\centering
+\caption{The $\{K\}$ coupled degree framework.  Each dimension is a standard
+network statistic; the contribution is their joint treatment as a coupled
+system.}
+\label{tab:k4}
+\begin{tabular}{llll}
+\toprule
+Dimension & Symbol & Interpretation & Network measure \\
+\midrule
+Actor scope & $K_{AC}$ & Components per actor & Bipartite row degree \\
+Component popularity & $K_{CA}$ & Actors per component & Bipartite column degree \\
+Actor sociality & $K_{AA}$ & Co-affiliating actors per actor & Actor projection degree \\
+Component epistasis & $K_{CC}$ & Co-occurring components per component & Component projection degree \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.8\linewidth,height=\textheight,keepaspectratio,alt={Empirical validation: K\_\{AA\} (competitive overlap) among U.S.~domestic airlines, 1993--2025 (Downing 2026a). The 4.8-fold increase in pairwise overlap demonstrates the \textbackslash\{K\textbackslash\} system's capacity to track competitive convergence dynamics using real network panel data.}]{searchnet-jss-NEW2_files/figures/cd2026_kaa_trajectory.png}
+\caption{Empirical validation: \(K_{AA}\) (competitive overlap) among
+U.S.~domestic airlines, 1993--2025 (Downing 2026a). The 4.8-fold
+increase in pairwise overlap demonstrates the \(\{K\}\) system's
+capacity to track competitive convergence dynamics using real network
+panel data.}
+\end{figure}
+
+The classical NK parameter \(K\) maps directly onto \(K_{CC}\)---the
+degree of a node in the component--component projection network. Two
+components share a projection edge whenever at least one actor
+affiliates with both, and the number of such edges incident on a focal
+component determines how many other components epistatically affect its
+fitness contribution. In the classical model, this coupling structure is
+set exogenously by the modeler; in \textbf{searchnet}, it emerges
+endogenously from the bipartite network and co-evolves with the other
+three degree dimensions.
+
+The analytical leverage of the \(\{K\}\) framework comes from treating
+these four measures as a coupled system rather than examining any one in
+isolation. Because all four derive from the same incidence matrix
+\(\mathbf{B}\), they are structurally linked. A change in actor scope
+(\(K_{AC}\)) mechanically alters component popularity (\(K_{CA}\)),
+which in turn reshapes both the actor co-membership network (\(K_{AA}\))
+and the component co-occurrence network (\(K_{CC}\)). The projections
+are computed as:
+
+\begin{align}
+\mathbf{P}_{AA} &= \mathbf{B} \mathbf{B}^\top - \text{diag}(\mathbf{B} \mathbf{B}^\top), \label{eq:proj-actor} \\
+\mathbf{P}_{CC} &= \mathbf{B}^\top \mathbf{B} - \text{diag}(\mathbf{B}^\top \mathbf{B}). \label{eq:proj-component}
+\end{align}
+
+The degree of actor \(i\) in the actor projection \(\mathbf{P}_{AA}\) is
+\(K_{AA,i}
+= \sum_{h \neq i} \mathbf{1}[(\mathbf{B}\mathbf{B}^\top)_{ih} > 0]\),
+and symmetrically for \(K_{CC,j}\) in the component projection.
+Analyzing any single measure in isolation obscures the cross-domain
+dependencies that link actor behavior to landscape topology.
+
+It is important to be precise about what the \(\{K\}\) framework
+contributes. The four statistics are individually well known in the
+bipartite network literature \citep{Latapy2008, BorgattiEverett1997}.
+The contribution is not statistical but \textbf{interpretive}: \(\{K\}\)
+provides a theoretical bridge between the NK landscape tradition in
+strategy---where \(K\) is a scalar complexity parameter---and the
+bipartite network tradition in sociology---where degree distributions
+are descriptive summaries of affiliation structure. By grouping these
+four measures and tracking their joint evolution within a SAOM, the
+framework makes visible the transmission mechanism through which actors'
+strategic choices propagate into landscape ruggedness.
+
+\subsection{SAOM objective function specification}\label{sec:objective}
+
+The SAOM objective function in \textbf{searchnet} governs actors'
+affiliation decisions. At each micro-step, the selected actor \(i\)
+evaluates the change in objective function value for each possible tie
+change (creating or dissolving an affiliation with one component) and
+selects the change that maximizes expected utility, subject to a
+stochastic error term drawn from the type I extreme value distribution.
+
+The objective function takes the form of
+Equation\textasciitilde{}\ref{eq:saom-objective}, with the following key
+statistics:
+
+\begin{table}[t]
+\centering
+\caption{SAOM objective function statistics in \textbf{searchnet}.}
+\label{tab:effects}
+\begin{tabular}{llll}
+\toprule
+Statistic & RSiena name & Formula & Interpretation \\
+\midrule
+Density & \texttt{density} & $\sum_j b_{ij}$ & Baseline affiliation rate \\
+Popularity & \texttt{inPop} & $\sum_j b_{ij} \sqrt{\sum_{h \neq i} b_{hj}}$ & Preference for popular components \\
+Scope & \texttt{outAct} & $\sum_j b_{ij} \sqrt{\sum_{k \neq j} b_{ik}}$ & Scope expansion tendency \\
+Epistasis & \texttt{XWX} & $\sum_j b_{ij} \sum_k w_{jk} b_{ik}$ & Exogenous component coupling \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The density effect serves as an intercept: a negative density parameter
+creates baseline sparsity pressure, preventing actors from affiliating
+with all components. The popularity effect (\texttt{inPop}) creates
+preferential attachment to components that many other actors already
+use. The scope effect (\texttt{outAct}) governs actors' tendency to
+expand or contract the breadth of their affiliations. The epistasis
+effect (\texttt{XWX}) introduces exogenous component--component coupling
+via a modeler-supplied weight matrix \(\mathbf{W}\) (denoted
+\(\mathbf{E}\) in the formal proofs; see
+Section\textasciitilde{}\ref{sec:formal-properties}); actors derive
+utility from affiliating with components that are coupled to their
+existing affiliations.
+
+Actor-level heterogeneity enters through constant covariates attached to
+the objective function. A covariate vector \(\mathbf{v}\) (e.g.,
+encoding strategic orientation) can modify the weight an actor places on
+popularity seeking (\texttt{inPopX}), scope expansion (\texttt{egoX}),
+or component characteristics (\texttt{altX}). This mechanism allows the
+modeler to assign distinct strategic profiles to different actors---for
+example, ``exploiters'' who preferentially attach to popular components
+and ``explorers'' who expand into uncrowded niches.
+
+The simulation proceeds via \textbf{RSiena}'s continuous-time Markov
+chain algorithm. Actors are selected according to a rate function (by
+default, equal rates for all actors), and the selected actor evaluates
+all possible single-tie changes, choosing according to a multinomial
+logit rule:
+
+\begin{equation}\label{eq:choice}
+  P(b_{ij} \to 1 - b_{ij}) =
+  \frac{\exp\bigl(f_i(\mathbf{B}^{ij})\bigr)}
+       {\sum_{j'} \exp\bigl(f_i(\mathbf{B}^{ij'})\bigr)},
+\end{equation}
+
+\noindent where \(\mathbf{B}^{ij}\) denotes the network configuration
+obtained by toggling actor \(i\)'s tie to component \(j\). The
+\texttt{search\_rsiena} method passes the full structure model to
+\textbf{RSiena}'s \texttt{siena07} function, which executes the
+continuous-time simulation internally. The
+\texttt{iterations\_per\_actor} parameter controls the total number of
+micro-steps: \(M \times\) \texttt{iterations\_per\_actor}.
+
+For exogenous shocks, \textbf{searchnet} partitions the simulation
+timeline into proportional segments. At each segment boundary, the
+\(\theta\) parameters are updated to new values specified by the shock
+schedule. The simulation then continues from the current network state
+with the modified objective function, preserving path dependence while
+allowing the researcher to model environmental discontinuities. This is
+equivalent to running sequential \textbf{RSiena} simulations where each
+wave's initial state is the terminal state of the previous wave.
+
+\subsection{Mapping RSiena effects to strategic search
+concepts}\label{sec:glossary}
+
+The preceding objective function uses \textbf{RSiena} effect names that
+are standard in social network analysis but may be unfamiliar to
+strategy researchers. Table\textasciitilde{}\ref{tab:glossary} provides
+a systematic mapping between RSiena effects available in
+\textbf{searchnet} and their strategic search interpretations. Each
+effect's parameter symbol links it to the corresponding \(\{K\}\)
+dimension introduced in Section\textasciitilde{}\ref{sec:k4}, enabling
+researchers to translate between the network estimation vocabulary and
+the strategy-theoretic language of scope, complementarity, and
+imitation.
+
+\begin{table}[t]
+\centering
+\caption{Mapping RSiena effects to strategic search concepts.  Parameters correspond to the SAOM objective function (Equation~\ref{eq:saom-objective}).  The $\{K\}$ column indicates which coupled degree dimension each effect primarily governs.}
+\label{tab:glossary}
+\begin{tabular}{lllll}
+\toprule
+RSiena Effect & Parameter & $\{K\}$ Dim. & Strategy Concept & Interpretation \\
+\midrule
+\texttt{density}      & $\theta_{\text{dens}}$  & ---        & Scope cost               & Negative = costly to hold activities; controls portfolio breadth \\
+\texttt{outAct}       & $\theta_{\text{scope}}$ & $K_{AC}$   & Diminishing returns       & Quadratic penalty on actor degree (scope) \\
+\texttt{inPop}        & $\theta_{\text{pop}}$   & $K_{CA}$   & Bandwagon / legitimacy    & Positive = prefer popular components; preferential attachment \\
+\texttt{XWX}          & $\theta_{\text{epist}}$ & $K_{CC}$   & Complementarity / synergy & Reward for holding epistatically linked components \\
+\texttt{simEgoInDist2}& $\theta_{\text{imit}}$  & $K_{AA}$   & Imitation / herding       & Positive = actors converge to similar portfolios \\
+\texttt{egoX}         & $\theta_{\text{strat}}$ & ---        & Strategy heterogeneity    & Actor-level covariate modifying search behavior \\
+\texttt{altX}         & $\theta_{\text{value}}$ & ---        & Component value           & Exogenous activity-level payoff differences \\
+\texttt{cycle4}       & $\theta_{\text{close}}$ & $K_{AA}$   & Structural closure        & Triadic closure in the projected social network \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The table makes explicit the division of labor among effects. The first
+four rows---\texttt{density}, \texttt{outAct}, \texttt{inPop}, and
+\texttt{XWX}---are the workhorses of most \textbf{searchnet}
+specifications. Together they endogenize the four \(\{K\}\) dimensions:
+scope cost sets the baseline, \texttt{outAct} introduces diminishing
+returns to breadth, \texttt{inPop} creates demand-side herding toward
+popular components, and \texttt{XWX} rewards configurations that exploit
+exogenous complementarities. The remaining effects allow the researcher
+to layer on additional mechanisms: imitation (\texttt{simEgoInDist2})
+induces portfolio convergence among structurally similar actors, actor
+and component covariates (\texttt{egoX}, \texttt{altX}) introduce
+heterogeneity, and \texttt{cycle4} captures closure in the actor--actor
+projection of the bipartite network. By selecting which effects to
+include and setting their parameter values, the researcher controls
+which strategic mechanisms are active in a given simulation---a design
+choice whose consequences can be audited with the diagnostic tools
+described in Section\textasciitilde{}\ref{sec:validation}.
+
+\subsubsection{Formal properties}\label{sec:formal-properties}
+
+The SaoMNK framework rests on formal results that establish its
+relationship to the classical NK model and to quantal response
+equilibrium. We state the main results here; complete proofs with all
+lemmas are provided in the Online Appendix
+\citep[see also][]{downing2026architecture} (available as
+\texttt{inst/proofs/} in the package; access via
+\texttt{searchnet\_proof()}).
+
+\begin{description}
+
+\item[Theorem 1 (Reduction).] The standard NK model is a degenerate special case
+of the SAOM-NK model.  Specifically, the NK landscape and its adaptive walk are
+recovered exactly under five restrictions: (R1)~$M = 1$ (single actor);
+(R2)~$\mathbf{E} = \mathbf{A}$ (SAOM-NK influence matrix equals the NK
+influence matrix); (R3)~$\boldsymbol{\theta} = \mathbf{0}$ (all SAOM
+parameters zero); (R4)~$\beta \to \infty$ (deterministic greedy choice);
+(R5)~uniform component selection probability.
+
+\item[Theorem 2 (Generalization).] SAOM-NK strictly generalizes the NK model
+along three independent dimensions: (a)~multi-actor endogenous interaction
+($M > 1$), (b)~endogenous landscape co-evolution through SAOM network
+statistics, and (c)~bounded rationality with tunable search precision
+($\beta \in (0, \infty)$).  The coupled degree vector
+$\{K\}= (K_{AC}, K_{CA}, K_{AA}, K_{CC})$ spans a strictly larger class of
+fitness landscapes than the scalar $K$ parameterization.  The classical NK
+model is recovered as a proper special case: NK $\subsetneq$ SAOM-NK.
+
+\item[Theorem 3 (Approximation).] For any NK landscape
+$(N, K, \mathbf{A}, \{f_d\}_{d=1}^N)$, there exists a parameterization
+of the SAOM-NK model that reproduces the NK payoff structure to arbitrary
+precision.  Three independent proof strategies establish this: (a)~constructive
+existence via dummy covariates, (b)~actor heterogeneity substitution, and
+(c)~universal approximation via mixed logit.
+
+\item[Theorem 4 (SAOM--QRE Equivalence).] The SAOM multinomial logit choice
+rule (Equation~\ref{eq:choice}) is isomorphic to a quantal response
+equilibrium (QRE) in the bipartite affiliation game, establishing a
+game-theoretic foundation for the statistical model.
+
+\end{description}
+
+\noindent Theorems\textasciitilde1--3 correspond to
+Theorems\textasciitilde1--3 in \citet{downing2026architecture};
+Theorem\textasciitilde4 is specific to this paper. These results are
+applied empirically to U.S.~airline competitive dynamics in
+\citet{downing2026architecture}.
+
+\subsection{Why SAOM over ERGM?}\label{sec:saom-ergm}
+
+A natural question is why \textbf{searchnet} adopts the SAOM rather than
+the exponential random graph model
+\citep[ERGM;][]{LusherKoskinenRobins2013} or its temporal extension
+\citep[TERGM;][]{Hanneke2010} as its network engine. The choice follows
+directly from the theoretical premise of the NK tradition.
+
+The NK model is fundamentally about \textbf{agents making strategic
+decisions}: an actor evaluates alternative configurations and selects
+the one that maximizes a fitness criterion. The SAOM's rate-function
+architecture is the natural formalization of this process. At each
+micro-step, a single actor is selected, evaluates the marginal utility
+of each possible tie change, and chooses probabilistically according to
+a multinomial logit rule. This actor-centric, sequential-decision
+structure maps directly onto the local search process in NK models,
+where an agent evaluates neighboring configurations and moves to the
+best alternative.
+
+ERGMs, by contrast, characterize the equilibrium distribution of network
+configurations without specifying a generative decision process. An ERGM
+answers the question ``what network structures are over-represented
+relative to chance?'' but does not model \emph{who} makes \emph{which}
+decision \emph{when}. For a framework whose purpose is to endogenize
+landscape ruggedness through actors' strategic choices, this equilibrium
+focus omits precisely the mechanism of interest.
+
+Beyond theoretical alignment, SAOMs offer practical advantages for the
+simulation-based workflow that \textbf{searchnet} supports. The SAOM's
+micro-step chain produces a complete trajectory of network states,
+enabling the researcher to track how \(\{K\}\) dimensions evolve over
+time, to identify critical transitions, and to introduce shocks at
+precise points in the simulation. ERGM simulation, by contrast,
+generates draws from a stationary distribution without temporal
+ordering, making path-dependent analysis infeasible.
+
+Finally, the SAOM's continuous-time formulation handles bipartite
+networks with actor-level covariates naturally through \textbf{RSiena}'s
+existing infrastructure. While bipartite ERGMs exist
+\citep{WangPattison2009}, the SAOM's treatment of bipartite networks as
+actor-driven affiliation processes is better suited to the
+search-theoretic interpretation that motivates \textbf{searchnet}.
+
+\section{\texorpdfstring{The \textbf{searchnet}
+package}{The  package}}\label{sec:package}
+
+\subsection{Architecture}\label{sec:architecture}
+
+\textbf{searchnet} is built on \textsf{R6} classes organized in a
+two-level inheritance hierarchy:
+
+\begin{description}
+\item[\texttt{SaomNkRSienaBiEnv\_base}] Core environment initialization,
+  bipartite matrix management, graph construction, projection computation, and
+  utility helpers (toggle, Jaccard, existence checks).  This base class
+  manages the $M \times N$ incidence matrix, constructs the \textbf{RSiena} data
+  objects, and provides low-level network operations.
+
+\item[\texttt{SaomNkRSienaBiEnv}] Full simulation engine inheriting from the
+  base class, adding the \texttt{search\_rsiena()} simulation method, chain
+  statistics processing, $\{K\}$-4 degree computation, fitness landscape
+  evaluation, shock handling, multi-wave experiment infrastructure, and the
+  visualization interface.
+\end{description}
+
+Supporting modules provide separation of concerns:
+
+\begin{itemize}
+\item \texttt{saomnk-api.R}: User-facing functional API (\texttt{saomnk\_env},
+  \texttt{saomnk\_model}, \texttt{saomnk\_run}) that wraps the R6 internals.
+\item \texttt{nk-classic.R}: A self-contained implementation of the classical
+  NK model, used as an external reference for the reduction check of
+  Section~\ref{sec:validation}.
+\item \texttt{saomnk-experiments.R}: \texttt{SaoMNKexperiments} R6 class for batch
+  Monte Carlo simulation management.
+\item \texttt{plot-*.R}: Eight modular plotting files (\texttt{plot-utility.R},
+  \texttt{plot-degrees.R}, \texttt{plot-exploration.R}, \texttt{plot-markets.R},
+  \texttt{plot-multiwave.R}, \texttt{plot-shocks.R}, \texttt{plot-snapshots.R},
+  \texttt{plot-phase-space.R}) containing visualization functions.
+\item \texttt{searchnet-game.R}: Strategy game mode providing an interactive
+  game loop where a human player controls one firm and competes against AI
+  opponents that follow SAOM-NK logit choice rules.
+\item \texttt{searchnet-teaching.R}: Classroom teaching module for Capsim-style
+  strategy simulations supporting multiple industry presets, difficulty
+  levels, and exogenous shocks.
+\item \texttt{utils.R}: Standalone helper functions.
+\end{itemize}
+
+The package follows standard \textsf{R} packaging conventions with
+\texttt{DESCRIPTION}, \texttt{NAMESPACE}, a \textbf{testthat} test suite
+(300 tests across 23 files), and eight vignettes. All exported functions
+are prefixed with \texttt{saomnk\_} or \texttt{searchnet\_} to avoid
+namespace collisions.
+
+\subsection{User API}\label{sec:api}
+
+A central design goal of \textbf{searchnet} is to provide a clean
+functional interface that shields users from the complexity of
+\textbf{RSiena}'s internal naming conventions and the R6 class
+hierarchy. The workflow follows three steps: environment creation, model
+specification, and simulation execution.
+
+\subsubsection{Step 1: Create the search
+environment}\label{step-1-create-the-search-environment}
+
+The \texttt{saomnk\_env()} function initializes a bipartite search
+environment:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{env }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_env}\NormalTok{(}\AttributeTok{M =} \DecValTok{8}\NormalTok{, }\AttributeTok{N =} \DecValTok{12}\NormalTok{, }\AttributeTok{density =} \DecValTok{0}\NormalTok{, }\AttributeTok{seed =} \DecValTok{42}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+This creates a \texttt{SaomNkRSienaBiEnv} object representing 8 actors
+and 12 components, starting from an empty network (all actors
+unaffiliated). The \texttt{seed} argument ensures reproducibility of the
+initial network draw.
+
+\subsubsection{Step 2: Specify the structure
+model}\label{step-2-specify-the-structure-model}
+
+The \texttt{saomnk\_model()} function builds the SAOM objective function
+specification using intuitive parameter names:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# Define a modular influence matrix: 4 blocks of 3 components}
+\NormalTok{K\_matrix }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_block\_diagonal}\NormalTok{(}\DecValTok{12}\NormalTok{, }\DecValTok{4}\NormalTok{)}
+
+\DocumentationTok{\#\# Specify the model}
+\NormalTok{mod }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_model}\NormalTok{(}
+  \AttributeTok{density    =} \SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{,     }\CommentTok{\# sparsity pressure}
+  \AttributeTok{popularity =}  \FloatTok{0.2}\NormalTok{,     }\CommentTok{\# preferential attachment}
+  \AttributeTok{scope      =}  \FloatTok{0.1}\NormalTok{,     }\CommentTok{\# scope expansion}
+  \AttributeTok{influence\_matrix =}\NormalTok{ K\_matrix,}
+  \AttributeTok{influence\_weight =} \FloatTok{0.05}
+\NormalTok{)}
+\NormalTok{mod}
+\CommentTok{\#\textgreater{} SaoMNK Structure Model}
+\CommentTok{\#\textgreater{} {-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}}
+\CommentTok{\#\textgreater{} Effects on the bipartite network DV (3):}
+\CommentTok{\#\textgreater{}   density (density)      theta =   {-}0.5  [fixed]}
+\CommentTok{\#\textgreater{}   popularity (inPop)     theta =    0.2  [fixed]}
+\CommentTok{\#\textgreater{}   scope (outAct)         theta =    0.1  [fixed]}
+\CommentTok{\#\textgreater{} Influence / dyadic covariates (1):}
+\CommentTok{\#\textgreater{}   epistasis (XWX)        theta =   0.05  [fixed]  [influence matrix W, 12 x 12]}
+\end{Highlighting}
+\end{Shaded}
+
+Users never need to write internal references such as
+\texttt{"self\$bipartite\_rsienaDV"} or construct nested covariate lists
+manually. The function assembles the complete \textbf{RSiena} structure
+model internally. Actor strategy heterogeneity is specified through the
+\texttt{strategies} argument:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# Heterogeneous actors: varying scope and popularity preferences}
+\NormalTok{mod\_strat }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_model}\NormalTok{(}
+  \AttributeTok{density    =} \SpecialCharTok{{-}}\FloatTok{0.3}\NormalTok{,}
+  \AttributeTok{popularity =}  \FloatTok{0.2}\NormalTok{,}
+  \AttributeTok{scope      =}  \FloatTok{0.1}\NormalTok{,}
+  \AttributeTok{influence\_matrix =}\NormalTok{ K\_matrix,}
+  \AttributeTok{influence\_weight =} \FloatTok{0.05}\NormalTok{,}
+  \AttributeTok{strategies =} \FunctionTok{list}\NormalTok{(}
+    \AttributeTok{egoX   =} \FunctionTok{rep}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{), }\AttributeTok{length.out =} \DecValTok{8}\NormalTok{),}
+    \AttributeTok{inPopX =} \FunctionTok{rep}\NormalTok{(}\FunctionTok{c}\NormalTok{( }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{,}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{), }\AttributeTok{length.out =} \DecValTok{8}\NormalTok{)}
+\NormalTok{  )}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Step 3: Run the
+simulation}\label{step-3-run-the-simulation}
+
+The \texttt{saomnk\_run()} function executes the SAOM simulation:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{saomnk\_run}\NormalTok{(env, mod, }\AttributeTok{steps\_per\_actor =} \DecValTok{30}\NormalTok{, }\AttributeTok{seed =} \DecValTok{12345}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+The function passes the structure model to the internal
+\texttt{search\_rsiena()} method, runs the continuous-time SAOM
+simulation via \textbf{RSiena}, extracts chain statistics, and computes
+the \(\{K\}\)-4 degree trajectories. The \texttt{env} object is modified
+in place (standard R6 semantics) and returned invisibly.
+
+\subsection{Visualization}\label{sec:visualization}
+
+\textbf{searchnet} provides a comprehensive visualization toolkit
+organized around four analytical perspectives.
+
+\subsubsection{\texorpdfstring{The \(\{K\}\)-4
+panel}{The \textbackslash\{K\textbackslash\}-4 panel}}\label{the-k-4-panel}
+
+The signature visualization is the coupled degree panel, which displays
+all four \(\{K\}\) dimensions over the simulation timeline:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{saomnk\_plot\_k4}\NormalTok{(env, }\AttributeTok{smooth =} \FloatTok{0.3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{searchnet-jss-NEW2_files/figure-latex/k4-panel-1} 
+
+}
+
+\caption{The $\{K\}$-4 coupled degree panel showing actor scope ($K_{AC}$), component popularity ($K_{CA}$), actor sociality ($K_{AA}$), and component epistasis ($K_{CC}$) trajectories over 240 simulation micro-steps.  Each line represents a single actor or component; the heavy line is the LOESS-smoothed mean.}\label{fig:k4-panel}
+\end{figure}
+
+The panel reveals the structural coupling between dimensions: as actors
+expand scope (\(K_{AC}\)), they mechanically increase component
+popularity (\(K_{CA}\)), which in turn elevates both actor sociality
+(\(K_{AA}\)) and component epistasis (\(K_{CC}\)). This coupling is the
+core mechanism through which individual search decisions endogenize the
+fitness landscape.
+
+\includegraphics[width=0.45\linewidth,height=\textheight,keepaspectratio,alt={Application breadth: (left) Startup workforce \textbackslash\{K\textbackslash\}-4 panel showing scope, popularity, sociality, and epistasis dynamics for 8 startups across 12 skill categories; (right) Phase space trajectory showing startup evolution through Network \textbackslash times Behavior \textbackslash times Fitness space.}]{searchnet-jss-NEW2_files/figures/bort_k4_panel.png}
+\includegraphics[width=0.45\linewidth,height=\textheight,keepaspectratio]{searchnet-jss-NEW2_files/figures/bort_phase_space.png}
+
+\subsubsection{Network snapshots}\label{network-snapshots}
+
+The \texttt{saomnk\_plot\_snapshots()} function renders the bipartite
+network at selected simulation steps, along with its unipartite
+projections:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{saomnk\_plot\_snapshots}\NormalTok{(env, }\AttributeTok{steps =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{120}\NormalTok{, }\DecValTok{240}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{searchnet-jss-NEW2_files/figure-latex/snapshots-1} 
+
+}
+
+\caption{Network snapshots at the initial state, midpoint, and final state of the simulation.  Top row: bipartite actor-component network.  Bottom rows: actor co-membership projection ($K_{AA}$) and component co-occurrence projection ($K_{CC}$).}\label{fig:snapshots-1}
+\end{figure}
+\begin{figure}
+
+{\centering \includegraphics{searchnet-jss-NEW2_files/figure-latex/snapshots-2} 
+
+}
+
+\caption{Network snapshots at the initial state, midpoint, and final state of the simulation.  Top row: bipartite actor-component network.  Bottom rows: actor co-membership projection ($K_{AA}$) and component co-occurrence projection ($K_{CC}$).}\label{fig:snapshots-2}
+\end{figure}
+\begin{figure}
+
+{\centering \includegraphics{searchnet-jss-NEW2_files/figure-latex/snapshots-3} 
+
+}
+
+\caption{Network snapshots at the initial state, midpoint, and final state of the simulation.  Top row: bipartite actor-component network.  Bottom rows: actor co-membership projection ($K_{AA}$) and component co-occurrence projection ($K_{CC}$).}\label{fig:snapshots-3}
+\end{figure}
+\begin{figure}
+
+{\centering \includegraphics{searchnet-jss-NEW2_files/figure-latex/snapshots-4} 
+
+}
+
+\caption{Network snapshots at the initial state, midpoint, and final state of the simulation.  Top row: bipartite actor-component network.  Bottom rows: actor co-membership projection ($K_{AA}$) and component co-occurrence projection ($K_{CC}$).}\label{fig:snapshots-4}
+\end{figure}
+
+\subsubsection{Utility decomposition}\label{utility-decomposition}
+
+The \texttt{saomnk\_plot\_utility()} function decomposes each actor's
+total objective function value into contributions from individual
+network statistics:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{saomnk\_plot\_utility}\NormalTok{(env, }\AttributeTok{smooth =} \FloatTok{0.35}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{searchnet-jss-NEW2_files/figure-latex/utility-1} 
+
+}
+
+\caption{Utility decomposition showing each actor's objective function value broken into contributions from density, popularity, scope, and epistasis effects over the simulation timeline.}\label{fig:utility}
+\end{figure}
+
+This decomposition provides direct insight into the strategic trade-offs
+governing search behavior: an actor whose utility is dominated by the
+epistasis term is searching for complementary components, while one
+dominated by the popularity term is following the crowd.
+
+\subsubsection{3D phase space}\label{d-phase-space}
+
+The \texttt{saomnk\_plot\_phase\_space\_3d()} function renders the
+simulation trajectory in a three-dimensional Network \(\times\) Behavior
+\(\times\) Fitness space, where the three axes correspond to structural
+properties (e.g., \(K_{AC}\) or density), behavioral properties (e.g.,
+exploration rate or scope change), and outcome measures (utility or NK
+fitness). The resulting ``SCP(t) trajectory'\,' traces each actor's path
+through this space over simulation time, providing an integrated view of
+how structural position, behavioral strategy, and performance co-evolve.
+Supporting functions include \texttt{saomnk\_plot\_phase\_heatmap()} for
+density-based projections, \texttt{saomnk\_plot\_phase\_evolution()} for
+animated trajectories, \texttt{saomnk\_plot\_phase\_comparison()} for
+juxtaposing multiple simulation runs, and
+\texttt{searchnet\_export\_phase\_space()} for Manim-compatible data
+export.
+
+\subsection{Validation against the classical NK
+model}\label{sec:validation}
+
+A software paper should demonstrate that its engine reproduces the model
+it generalises. \textbf{searchnet} ships a self-contained implementation
+of the classical Kauffman NK model, independent of \textbf{RSiena} and
+of the SaoMNK engine, and uses it as an external reference.
+
+\subsubsection{A conventional NK
+implementation}\label{a-conventional-nk-implementation}
+
+\texttt{nk\_landscape()} constructs a Kauffman landscape by exhaustive
+enumeration of all \(2^N\) configurations. Each locus \(i\) contributes
+\(f_i(b_i,
+b_{\Omega(i)})\), drawn i.i.d.~\(U(0,1)\) for every distinct pattern of
+its epistatic neighbourhood \(\Omega(i)\); total fitness is the mean of
+the \(N\) contributions. Three neighbourhood topologies are supported:
+\texttt{"adjacent"} (Kauffman's ring model), \texttt{"random"}, and
+\texttt{"block"} (near-decomposable). Companion functions provide
+adaptive walks (\texttt{nk\_walk()}, with steepest-ascent,
+random-ascent, and random-improving rules), exhaustive local optimum
+enumeration (\texttt{nk\_local\_optima()}), and the canonical ruggedness
+sweep (\texttt{nk\_sweep\_K()}).
+
+These functions are useful in their own right, but their role here is to
+supply a reference implementation that shares no code with the SAOM
+engine.
+
+\subsubsection{Verifying the reduction}\label{verifying-the-reduction}
+
+Theorem 1 states that the classical NK model is the \(M = 1\),
+\(\beta \rightarrow \infty\) special case of SaoMNK.
+\texttt{nk\_to\_saomnk()} emits the environment and structure-model
+settings that place a single-actor SaoMNK environment on a supplied NK
+landscape, making the reduction constructive rather than merely
+asserted.
+
+\texttt{nk\_verify\_reduction()} then checks the construction. It
+exploits the defining property of the NK model: contribution \(f_i\)
+depends only on the loci in \(\Omega(i)\), so any two configurations
+sharing the same neighbourhood pattern must carry identical \(f_i\).
+Rebuilding each locus's payoff table keyed by that pattern and
+recomputing fitness must return the original values exactly. A non-zero
+difference would indicate an indexing or bit-ordering error in landscape
+construction.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{nk }\OtherTok{\textless{}{-}} \FunctionTok{nk\_landscape}\NormalTok{(}\AttributeTok{N =} \DecValTok{10}\NormalTok{, }\AttributeTok{K =} \DecValTok{3}\NormalTok{, }\AttributeTok{seed =} \DecValTok{42}\NormalTok{)}
+\FunctionTok{nk\_verify\_reduction}\NormalTok{(}\AttributeTok{N =} \DecValTok{10}\NormalTok{, }\AttributeTok{K =} \DecValTok{3}\NormalTok{, }\AttributeTok{seed =} \DecValTok{42}\NormalTok{)}
+\CommentTok{\#\textgreater{} NK reduction check: N=10, K=3, model="adjacent"}
+\CommentTok{\#\textgreater{}   configurations   : 1,024}
+\CommentTok{\#\textgreater{}   max |difference| : 0.00e+00}
+\CommentTok{\#\textgreater{}   result           : PASS}
+\end{Highlighting}
+\end{Shaded}
+
+The check passes at machine precision (maximum absolute difference
+\(0.00 \times 10^{0}\)) across the \((N, K)\) combinations exercised in
+the test suite. Configuration encoding is most-significant-bit-first
+throughout and is covered by exhaustive round-trip tests for
+\(N = 1, \ldots, 12\); this guards a class of bit-ordering error that is
+easy to introduce and silent when it occurs.
+
+\subsubsection{Recovering classical
+results}\label{recovering-classical-results}
+
+The implementation reproduces the standard qualitative findings of the
+NK literature. With \(K = 0\) the landscape is single-peaked, and a
+steepest-ascent walk from any starting configuration reaches the global
+optimum. As \(K\) rises the number of local optima grows, approaching
+the familiar \(2^N / (K+1)\) scaling, adaptive walks terminate sooner,
+and terminal fitness falls
+\citep{Kauffman1987, KauffmanWeinberger1989, Levinthal1997}.
+\texttt{nk\_sweep\_K()} reproduces this experiment directly.
+
+\subsection{Manim animation pipeline}\label{sec:manim}
+
+For presentation and pedagogical purposes, \textbf{searchnet} exports
+simulation data in formats compatible with the \textbf{Manim} animation
+library \citep{Manim2022}. The exported data includes per-step bipartite
+matrices, projection networks, degree trajectories, and utility
+decompositions. The package ships with 16 ready-to-render Manim scene
+classes organized across six Python modules: bipartite network
+evolution, \(\{K\}\)-4 degree trajectories, 3D fitness landscapes, shock
+response dynamics, 3D phase space trajectories, a seven-panel research
+dashboard (covering \(\{K\}\) evolution, bipartite structure, fitness
+surfaces, information funnels, shock response, and game-theoretic
+equilibria), and four Blume--Gibbs scenes that animate the
+statistical-mechanical foundations of convergence (Ising--logit
+correspondence, temperature dials, Gibbs potential surfaces, and
+convergence diagnostics). This pipeline is accessed through the
+\texttt{saomnk\_export\_manim()} method on the environment object and
+the \texttt{searchnet\_export\_phase\_space()} function for phase space
+data.
+
+\includegraphics[width=0.45\linewidth,height=\textheight,keepaspectratio,alt={Manim animation capabilities: (a) Basin geometry narrative showing 4 policy types diverging to different basins on a 3D NK landscape; (b) Convergence climb showing airline agents ascending a rugged fitness surface; (c) Blume Ising logit clustering; (d) ELO tournament rating evolution.}]{searchnet-jss-NEW2_files/figures/manim_basin_narrative.png}
+\includegraphics[width=0.45\linewidth,height=\textheight,keepaspectratio]{searchnet-jss-NEW2_files/figures/manim_convergence_climb.png}
+
+\subsection{Interactive features}\label{sec:interactive}
+
+\textbf{searchnet} includes two interactive modules that extend the
+simulation engine from a research tool to an instructional platform.
+
+\textbf{Strategy game mode.} The \texttt{searchnet\_game\_*} family of
+functions (five exported functions) provides an interactive game loop
+where a human player controls one firm and competes against AI opponents
+that follow the SAOM conditional-logit choice rule. The player
+initializes a game with \texttt{searchnet\_game\_init()}, specifying the
+number of firms, difficulty level (\texttt{"easy"}, \texttt{"medium"},
+\texttt{"hard"}, mapping to logit precision
+\(\beta \in \{0.5, 2, 10\}\)), and game objective (maximize fitness,
+minimize competitive overlap, survive an exogenous shock, or outperform
+the quantal response equilibrium prediction). At each round, the player
+queries available moves via
+\texttt{searchnet\_game\_available\_moves()}, selects an action, and
+advances the simulation with \texttt{searchnet\_game\_step()}. AI
+opponents respond simultaneously according to the SAOM logit rule, and
+the scoreboard (\texttt{searchnet\_game\_scoreboard()}) tracks all
+firms' \(\{K\}\) statistics. After the final round,
+\texttt{searchnet\_game\_summary()} compiles trajectory data suitable
+for replay visualization.
+
+\textbf{Classroom teaching module.} The \texttt{searchnet\_classroom\_*}
+family (six exported functions) supports Capsim-style strategy
+simulations for classroom use. An instructor initializes a session with
+\texttt{searchnet\_classroom\_init()}, choosing from industry presets
+(airline, tech, pharma) or custom parameters, and specifying a
+difficulty level that controls the number of AI firms and optional
+exogenous shocks. Each student controls one firm, submitting portfolio
+decisions (add or drop activities) through
+\texttt{searchnet\_classroom\_submit()}. Once all students have
+submitted, \texttt{searchnet\_classroom\_advance()} executes decisions
+simultaneously, runs AI opponent responses via SAOM ministeps, and
+updates the class leaderboard. At the end of the game,
+\texttt{searchnet\_classroom\_debrief()} generates a suite of reports:
+final rankings, round-by-round histories, \(\{K\}\)-4 panels, decision
+logs, and shock records.
+
+\subsection{Proof registry}\label{sec:proofs}
+
+The package ships with a complete formal verification chain for the
+SaoMNK framework, accessible via \texttt{searchnet\_proof()}. The proof
+registry (\texttt{inst/proofs/PROOF\_TABLE.md}) enumerates 81 logical
+steps---from axioms through definitions, lemmas, and propositions to the
+four main theorems---organized so that every result can be traced
+backward through its dependencies to foundational axioms. This
+self-contained proof chain provides reviewers and users with a
+verifiable logical scaffold for the theoretical claims summarized in
+Section\textasciitilde{}\ref{sec:formal-properties}.
+
+\section{Illustrations}\label{sec:illustrations}
+
+\subsection{Reproducing Levinthal (1997)}\label{sec:levinthal}
+
+The first illustration establishes that \textbf{searchnet} can reproduce
+the core dynamics of the classical NK model under appropriate parameter
+settings. We configure an environment with no endogenous network
+effects, leaving only the exogenous influence matrix active. Setting
+both \texttt{popularity} and \texttt{scope} to zero removes every term
+through which one actor's state can enter another's objective function,
+so the actors search \emph{independently}: the model reduces to parallel
+single-searcher processes on a landscape whose ruggedness is determined
+solely by the exogenous coupling matrix, which is the functional
+equivalent of the classical NK search process. We use \(M = 2\) rather
+than \(M = 1\) because \texttt{search\_rsiena()} requires at least two
+actors --- \textbf{RSiena}'s \texttt{sienaDataCreate()} does not accept
+a single-actor bipartite network. For genuinely single-actor work the
+landscape methods (\texttt{compute\_fitness\_landscape},
+\texttt{verify\_nk\_equivalence}) accept \(M = 1\) directly, and
+Section\textasciitilde{} ef\{sec:validation\} uses them for exactly
+that.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# Two INDEPENDENT searchers (popularity = scope = 0 removes all coupling),}
+\DocumentationTok{\#\# 12 components, empty start.  M \textgreater{}= 2 is required by RSiena\textquotesingle{}s bipartite}
+\DocumentationTok{\#\# data constructor; with the interaction terms zeroed the actors do not}
+\DocumentationTok{\#\# influence one another, so each is a classical NK searcher.}
+\NormalTok{env\_nk }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_env}\NormalTok{(}\AttributeTok{M =} \DecValTok{2}\NormalTok{, }\AttributeTok{N =} \DecValTok{12}\NormalTok{, }\AttributeTok{density =} \DecValTok{0}\NormalTok{, }\AttributeTok{seed =} \DecValTok{1234}\NormalTok{)}
+
+\DocumentationTok{\#\# Block{-}diagonal epistasis: 3 modules of 4 components (K \textasciitilde{} 3)}
+\NormalTok{K\_levinthal }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_block\_diagonal}\NormalTok{(}\DecValTok{12}\NormalTok{, }\DecValTok{3}\NormalTok{)}
+
+\DocumentationTok{\#\# Only epistasis active; no endogenous effects}
+\NormalTok{mod\_nk }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_model}\NormalTok{(}
+  \AttributeTok{density    =} \SpecialCharTok{{-}}\FloatTok{0.3}\NormalTok{,}
+  \AttributeTok{popularity =} \DecValTok{0}\NormalTok{,}
+  \AttributeTok{scope      =} \DecValTok{0}\NormalTok{,}
+  \AttributeTok{influence\_matrix =}\NormalTok{ K\_levinthal,}
+  \AttributeTok{influence\_weight =} \FloatTok{0.15}
+\NormalTok{)}
+
+\FunctionTok{saomnk\_run}\NormalTok{(env\_nk, mod\_nk, }\AttributeTok{steps\_per\_actor =} \DecValTok{100}\NormalTok{, }\AttributeTok{seed =} \DecValTok{42}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Under this parameterization, the agent's search trajectory exhibits the
+signature features of NK dynamics: rapid initial improvement as the
+agent discovers complementary component clusters, followed by
+convergence to a local optimum where no single-component change improves
+utility. The K-4 panel reduces to the \(K_{AC}\) trajectory (actor
+scope) and the \(K_{CC}\) trajectory (epistasis), with the latter
+reflecting the fixed block-diagonal structure; the \(K_{CA}\) and
+\(K_{AA}\) channels are flat by construction, since nothing couples the
+two searchers.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{env\_nk}\SpecialCharTok{$}\FunctionTok{plot\_actor\_degrees}\NormalTok{(}\AttributeTok{loess\_span =} \FloatTok{0.5}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{searchnet-jss-NEW2_files/figure-latex/levinthal-degrees-1} 
+
+}
+
+\caption{Actor scope ($K_{AC}$) trajectory for independent agents searching on a block-diagonal epistasis landscape.  The trajectory shows rapid scope expansion followed by stabilization---the SAOM equivalent of convergence to a local optimum on a rugged NK landscape.}\label{fig:levinthal-degrees}
+\end{figure}
+
+This result provides face validity: when all endogenous network effects
+are disabled, \textbf{searchnet} recovers the qualitative behavior of
+the classical NK model. The landscape is effectively exogenous
+(determined by the fixed \(\mathbf{W}\) matrix), search is local
+(single-tie changes), and convergence reflects the trapping property of
+rugged landscapes.
+
+A deeper convergence analysis is provided in the Blume tutorial vignette
+(\texttt{vignette("saomnk-blume-tutorial")}), which establishes the
+statistical-mechanical foundations of the SAOM-NK choice rule by
+connecting it to the Blume--Capel model \citep{Blume1993}, Gibbs
+measures, and the Ising--logit correspondence.
+
+\subsubsection{Ergodicity: forgetting the initial
+condition}\label{sec:ergodicity}
+
+Theorem\textasciitilde4 asserts that the chain's stationary distribution
+is unique and independent of where the simulation starts. That property
+is easy to illustrate badly. Running the model once from a sparse start
+and once from a dense start, then observing that the two final densities
+are close, establishes very little: no threshold was declared in
+advance, a single run per arm supplies no sampling distribution,
+and---most importantly---an ergodic chain forgets its initial condition
+\emph{at a rate}, which a pair of endpoints discards.
+
+\textbf{searchnet} therefore ships the demonstration as a measurement.
+\texttt{searchnet\_ergodicity\_sweep()} runs the same fixed-coefficient
+model from two contrasting starting densities across a range of chain
+lengths, with independent replicates at each, and reports how fast the
+between-arm gap decays:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{erg }\OtherTok{\textless{}{-}} \FunctionTok{searchnet\_ergodicity\_sweep}\NormalTok{(}
+  \AttributeTok{M =} \DecValTok{12}\NormalTok{, }\AttributeTok{N =} \DecValTok{15}\NormalTok{, }\AttributeTok{start\_densities =} \FunctionTok{c}\NormalTok{(}\FloatTok{0.1}\NormalTok{, }\FloatTok{0.8}\NormalTok{),}
+  \AttributeTok{run\_lengths =} \FunctionTok{c}\NormalTok{(}\DecValTok{15}\NormalTok{, }\DecValTok{30}\NormalTok{, }\DecValTok{60}\NormalTok{, }\DecValTok{120}\NormalTok{, }\DecValTok{240}\NormalTok{),}
+  \AttributeTok{replicates =} \DecValTok{10}\NormalTok{, }\AttributeTok{equivalence\_margin =} \FloatTok{0.05}\NormalTok{, }\AttributeTok{seed =} \DecValTok{42}
+\NormalTok{)}
+\NormalTok{erg}
+\CommentTok{\#\textgreater{} Ergodicity sweep (Theorem 4: independence from initial conditions)}
+\CommentTok{\#\textgreater{}   12 actors x 15 components (180 cells; one tie = 0.0056 density)}
+\CommentTok{\#\textgreater{}   arms starting at 0.10 and 0.80, 10 replicates each}
+\CommentTok{\#\textgreater{} }
+\CommentTok{\#\textgreater{}   run length   mean(lo)   mean(hi)        gap}
+\CommentTok{\#\textgreater{}           15     0.4367     0.7750     0.3383}
+\CommentTok{\#\textgreater{}           30     0.5128     0.6906     0.1778}
+\CommentTok{\#\textgreater{}           60     0.4761     0.5867     0.1106}
+\CommentTok{\#\textgreater{}          120     0.4872     0.5150     0.0278}
+\CommentTok{\#\textgreater{}          240     0.5072     0.5106     0.0033}
+\CommentTok{\#\textgreater{} }
+\CommentTok{\#\textgreater{}   initial gap 0.7000 {-}{-}\textgreater{} final gap 0.0033  (99.5\% collapse)}
+\CommentTok{\#\textgreater{}   Monte Carlo floor (10 replicates): 0.0137}
+\CommentTok{\#\textgreater{}   decay above the floor: log(gap) \textasciitilde{} {-}1.15 * log(iterations), R\^{}2 = 0.943}
+\CommentTok{\#\textgreater{}   (fit on 4 point(s); 240 excluded as at{-}or{-}below the floor)}
+\CommentTok{\#\textgreater{} }
+\CommentTok{\#\textgreater{}   TOST at 240 iterations, margin +/{-} 0.050, 90\% CI [{-}0.0331, 0.0265]:}
+\CommentTok{\#\textgreater{}   EQUIVALENT {-}{-} the arms are statistically indistinguishable at the}
+\CommentTok{\#\textgreater{}   declared margin. The chain has forgotten where it started.}
+\FunctionTok{plot}\NormalTok{(erg)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{searchnet-jss-NEW2_files/figure-latex/ergodicity-1} 
+
+}
+
+\caption{Independence from initial conditions, measured rather than asserted. (a) Two arms starting at density 0.10 and 0.80 converge as run length grows; points are replicates. (b) The between-arm gap decays as a power of run length on log--log axes. The dashed line is the declared equivalence margin; the shaded band is the Monte Carlo floor, below which the measured gap reflects replicate noise rather than mixing, and which is excluded from the fitted slope.}\label{fig:ergodicity}
+\end{figure}
+
+Two arms separated by a starting gap of 0.70 close to within 0.01 by 240
+iterations per actor, a collapse of more than 99\%, and the gap decays
+as a power of run length with slope near \(-1\) and \(R^2 > 0.9\). The
+verdict is computed rather than printed: at the longest run length the
+arms are compared by a two-one-sided-tests equivalence procedure against
+a margin fixed in the call, so the function is able to report
+\emph{non}-equivalence, and does so at the shorter run lengths. This is
+what makes the sweep evidence rather than illustration.
+
+Two details matter for anyone reproducing this. The Monte Carlo floor is
+drawn explicitly, because once the arms are genuinely equivalent the
+measured gap settles at the expected difference between two sample means
+from the same distribution rather than falling to zero; fitting a decay
+slope through those points would overstate the rate. And the grid is
+sized so that density has resolution: on the 4 \(\times\) 5 grid used in
+earlier versions of this demonstration a single tie moved the density by
+0.05, which is coarser than any equivalence margin worth declaring.
+
+The vignette also provides computational verification that the SAOM
+Markov chain satisfies detailed balance with respect to the Gibbs
+distribution, which is the mechanism underlying the convergence measured
+here.
+
+\subsection{Endogenous landscape with heterogeneous
+strategies}\label{sec:endogenous}
+
+The second illustration activates the full \textbf{searchnet} machinery
+to demonstrate endogenous landscape formation. We configure 12 actors
+searching over 12 components with active density, popularity, scope, and
+epistasis effects, plus heterogeneous strategy covariates.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{env\_endog }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_env}\NormalTok{(}\AttributeTok{M =} \DecValTok{12}\NormalTok{, }\AttributeTok{N =} \DecValTok{12}\NormalTok{, }\AttributeTok{density =} \DecValTok{0}\NormalTok{, }\AttributeTok{seed =} \DecValTok{1234}\NormalTok{)}
+
+\NormalTok{K\_modular }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_block\_diagonal}\NormalTok{(}\DecValTok{12}\NormalTok{, }\DecValTok{4}\NormalTok{)}
+
+\NormalTok{mod\_endog }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_model}\NormalTok{(}
+  \AttributeTok{density    =} \SpecialCharTok{{-}}\FloatTok{0.3}\NormalTok{,}
+  \AttributeTok{popularity =}  \FloatTok{0.2}\NormalTok{,}
+  \AttributeTok{scope      =}  \FloatTok{0.1}\NormalTok{,}
+  \AttributeTok{influence\_matrix =}\NormalTok{ K\_modular,}
+  \AttributeTok{influence\_weight =} \FloatTok{0.02}\NormalTok{,}
+  \AttributeTok{strategies =} \FunctionTok{list}\NormalTok{(}
+    \AttributeTok{egoX   =} \FunctionTok{rep}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{), }\AttributeTok{length.out =} \DecValTok{12}\NormalTok{),}
+    \AttributeTok{inPopX =} \FunctionTok{rep}\NormalTok{(}\FunctionTok{c}\NormalTok{( }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{,}\SpecialCharTok{{-}}\DecValTok{1}\NormalTok{), }\AttributeTok{length.out =} \DecValTok{12}\NormalTok{)}
+\NormalTok{  )}
+\NormalTok{)}
+
+\FunctionTok{saomnk\_run}\NormalTok{(env\_endog, mod\_endog, }\AttributeTok{steps\_per\_actor =} \DecValTok{30}\NormalTok{, }\AttributeTok{seed =} \DecValTok{12345}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{saomnk\_plot\_k4}\NormalTok{(env\_endog, }\AttributeTok{smooth =} \FloatTok{0.3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{searchnet-jss-NEW2_files/figure-latex/endogenous-k4-1} 
+
+}
+
+\caption{$\{K\}$-4 panel for a 12-actor, 12-component simulation with heterogeneous strategies.  Unlike the exogenous case, all four degree dimensions co-evolve: actors with high scope-expansion tendency ($K_{AC}$) drive up component popularity ($K_{CA}$), which mechanically increases both actor sociality ($K_{AA}$) and component epistasis ($K_{CC}$).  Note the dispersion across actors and components, reflecting the heterogeneous strategy profiles.}\label{fig:endogenous-k4}
+\end{figure}
+
+The K-4 panel now reveals the core mechanism that distinguishes
+\textbf{searchnet} from the classical NK model. The four degree
+trajectories are structurally coupled: actors with positive scope
+expansion weights (high \texttt{egoX}) rapidly increase \(K_{AC}\),
+which mechanically elevates \(K_{CA}\) for the components they select,
+which in turn increases \(K_{AA}\) (more actors share components) and
+\(K_{CC}\) (more components co-occur via shared actors). Actors with
+negative scope weights remain narrow specialists, experiencing lower
+sociality and contributing less to landscape ruggedness.
+
+The resulting \(K_{CC}\) distribution---the classical complexity
+parameter \(K\)---is not a single number but a heterogeneous vector that
+emerges from the interaction of actor strategies, component popularity
+dynamics, and the exogenous influence matrix. This is the endogenization
+that the \(\{K\}\) framework makes visible.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{saomnk\_plot\_utility}\NormalTok{(env\_endog, }\AttributeTok{smooth =} \FloatTok{0.35}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{searchnet-jss-NEW2_files/figure-latex/endogenous-utility-1} 
+
+}
+
+\caption{Utility decomposition for the heterogeneous strategy simulation.  Actors' total utility is broken into contributions from density (sparsity pressure), popularity (preferential attachment payoff), scope (breadth payoff), and epistasis (complementarity payoff).  The divergent profiles reflect heterogeneous strategic orientations.}\label{fig:endogenous-utility}
+\end{figure}
+
+\subsection{Exogenous shocks}\label{sec:shocks}
+
+The third illustration demonstrates \textbf{searchnet}'s shock
+infrastructure. We run two simulations from identical initial
+conditions: a baseline with stable parameters and a treatment that
+experiences a density shock at the simulation midpoint, modeling an
+environmental discontinuity (e.g., a regulatory change that increases
+the cost of broad scope).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{env\_base }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_env}\NormalTok{(}\AttributeTok{M =} \DecValTok{6}\NormalTok{, }\AttributeTok{N =} \DecValTok{8}\NormalTok{, }\AttributeTok{density =} \DecValTok{0}\NormalTok{, }\AttributeTok{seed =} \DecValTok{42}\NormalTok{)}
+\NormalTok{env\_shock }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_env}\NormalTok{(}\AttributeTok{M =} \DecValTok{6}\NormalTok{, }\AttributeTok{N =} \DecValTok{8}\NormalTok{, }\AttributeTok{density =} \DecValTok{0}\NormalTok{, }\AttributeTok{seed =} \DecValTok{42}\NormalTok{)}
+
+\NormalTok{K\_small }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_block\_diagonal}\NormalTok{(}\DecValTok{8}\NormalTok{, }\DecValTok{2}\NormalTok{)}
+\NormalTok{mod\_base }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_model}\NormalTok{(}
+  \AttributeTok{density =} \SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{,}
+  \AttributeTok{influence\_matrix =}\NormalTok{ K\_small,}
+  \AttributeTok{influence\_weight =} \FloatTok{0.5}
+\NormalTok{)}
+
+\DocumentationTok{\#\# Baseline: no shocks}
+\FunctionTok{saomnk\_run}\NormalTok{(env\_base, mod\_base, }\AttributeTok{steps\_per\_actor =} \DecValTok{80}\NormalTok{, }\AttributeTok{seed =} \DecValTok{12345}\NormalTok{)}
+
+\DocumentationTok{\#\# Shocked: density drops from {-}0.5 to {-}2.0 at midpoint}
+\NormalTok{shock\_baseline }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_shock}\NormalTok{(}\StringTok{"density"}\NormalTok{, }\AttributeTok{parameter =} \SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{, }\AttributeTok{portion =} \DecValTok{1}\NormalTok{)}
+\NormalTok{shock\_event    }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_shock}\NormalTok{(}\StringTok{"density"}\NormalTok{, }\AttributeTok{parameter =} \SpecialCharTok{{-}}\FloatTok{2.0}\NormalTok{, }\AttributeTok{portion =} \DecValTok{1}\NormalTok{)}
+
+\FunctionTok{saomnk\_run}\NormalTok{(env\_shock, mod\_base, }\AttributeTok{steps\_per\_actor =} \DecValTok{80}\NormalTok{, }\AttributeTok{seed =} \DecValTok{12345}\NormalTok{,}
+           \AttributeTok{shocks =} \FunctionTok{list}\NormalTok{(shock\_baseline, shock\_event))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# Display baseline K{-}4 panel}
+\FunctionTok{saomnk\_plot\_k4}\NormalTok{(env\_base, }\AttributeTok{smooth =} \FloatTok{0.3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{searchnet-jss-NEW2_files/figure-latex/shock-comparison-1} 
+
+}
+
+\caption{Baseline (left column) vs.\ shocked (right column) $\{K\}$-4 panels.  The density shock at the midpoint (dashed vertical line) creates a visible structural break in all four degree trajectories.  Increased sparsity pressure compresses actor scope, which propagates through component popularity, actor sociality, and component epistasis.}\label{fig:shock-comparison}
+\end{figure}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# Display shocked K{-}4 panel}
+\FunctionTok{saomnk\_plot\_k4}\NormalTok{(env\_shock, }\AttributeTok{smooth =} \FloatTok{0.3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{searchnet-jss-NEW2_files/figure-latex/shock-treatment-1} \end{center}
+
+The shock at the midpoint creates a visible structural break in all four
+\(\{K\}\) dimensions. The increased density penalty (from \(-0.5\) to
+\(-2.0\)) intensifies sparsity pressure, causing actors to shed
+affiliations. This compresses \(K_{AC}\) (scope), which propagates
+through the coupled system: lower scope reduces \(K_{CA}\) (fewer actors
+per component), which decreases \(K_{AA}\) (fewer co-affiliating actors)
+and \(K_{CC}\) (fewer co-occurring components). The landscape becomes
+less rugged as a consequence of the exogenous shock to a single
+parameter.
+
+This kind of quasi-experimental comparison---identical starting
+conditions with and without a parameter intervention---is the basis for
+difference-in-differences analyses of search dynamics, a workflow that
+\textbf{searchnet} supports natively through its shock infrastructure
+and multi-wave simulation capabilities.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.8\linewidth,height=\textheight,keepaspectratio,alt={Empirical shock analysis: COVID-19 impact on airline route competition. Pre-shock overlap does not predict recovery (r = 0.18, p = 0.672, n.s.). The panel is shown as a null result: the \textbackslash\{K\textbackslash\} measures are what make the non-finding legible, and an earlier survival contrast drawn from these data did not survive controls in the source study.}]{searchnet-jss-NEW2_files/figures/cd2026_covid_shock.png}
+\caption{Empirical shock analysis: COVID-19 impact on airline route
+competition. Pre-shock overlap does not predict recovery (\(r = 0.18\),
+\(p = 0.672\), n.s.). The panel is shown as a null result: the \(\{K\}\)
+measures are what make the non-finding legible, and an earlier survival
+contrast drawn from these data did not survive controls in the source
+study.}
+\end{figure}
+
+\subsection{From shocks to causal inference}\label{sec:causal}
+
+The shock infrastructure demonstrated above does more than produce
+visually compelling before--after comparisons. Because
+\texttt{saomnk\_run} records the full actor \(\times\) step \(\times\)
+treatment history, shocked simulations generate panel data with the same
+structure required by standard causal inference estimators. The
+\(\theta\)-shock partitions the simulation timeline into a pre-treatment
+period (steps before the shock) and a post-treatment period (steps
+after), while the researcher controls which actors are treated---either
+directly through parameter heterogeneity or indirectly through network
+position at the time of the shock.
+
+\textbf{searchnet} provides helper functions that extract this panel
+structure and interface with the \textbf{did} package
+\citep{CallawayS2021}, which implements the \citet{CallawayS2021}
+estimator for difference-in-differences with staggered treatment
+adoption. The workflow proceeds in three steps: extract a panel data
+frame from the shocked environment, estimate group--time average
+treatment effects, and visualize the results.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# Extract panel data from the shocked simulation (env\_shock from Section 5.3)}
+\NormalTok{panel }\OtherTok{\textless{}{-}} \FunctionTok{tryCatch}\NormalTok{(}
+  \FunctionTok{searchnet\_causal\_panel}\NormalTok{(env\_shock, }\AttributeTok{shock\_step =} \DecValTok{40}\NormalTok{, }\AttributeTok{outcome =} \StringTok{"utility"}\NormalTok{,}
+                         \AttributeTok{treated\_actors =} \DecValTok{1}\SpecialCharTok{:}\DecValTok{3}\NormalTok{),}
+  \AttributeTok{error =} \ControlFlowTok{function}\NormalTok{(e) \{}
+    \FunctionTok{message}\NormalTok{(}\StringTok{"searchnet\_causal\_panel not yet available: "}\NormalTok{, }\FunctionTok{conditionMessage}\NormalTok{(e))}
+    \ConstantTok{NULL}
+\NormalTok{  \}}
+\NormalTok{)}
+
+\ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\FunctionTok{is.null}\NormalTok{(panel)) \{}
+  \FunctionTok{str}\NormalTok{(panel)}
+\NormalTok{\}}
+\CommentTok{\#\textgreater{} \textquotesingle{}data.frame\textquotesingle{}:    2880 obs. of  7 variables:}
+\CommentTok{\#\textgreater{}  $ actor\_id   : Factor w/ 6 levels "1","2","3","4",..: 1 2 3 4 5 6 1 2 3 4 ...}
+\CommentTok{\#\textgreater{}  $ step       : int  1 1 1 1 1 1 2 2 2 2 ...}
+\CommentTok{\#\textgreater{}  $ outcome    : num  0 0 0 0 0 0 0 0.5 0 0 ...}
+\CommentTok{\#\textgreater{}  $ period     : chr  "pre" "pre" "pre" "pre" ...}
+\CommentTok{\#\textgreater{}  $ treated    : int  1 1 1 0 0 0 1 1 1 0 ...}
+\CommentTok{\#\textgreater{}  $ first\_treat: num  40 40 40 0 0 0 40 40 40 0 ...}
+\CommentTok{\#\textgreater{}  $ shock\_step : int  40 40 40 40 40 40 40 40 40 40 ...}
+\end{Highlighting}
+\end{Shaded}
+
+The resulting data frame contains one row per actor--step combination,
+with columns for actor identifier, simulation step, a binary treatment
+indicator (1 for treated actors in post-shock steps, 0 otherwise), and
+the outcome variable (here, actor utility). This is precisely the
+structure expected by \texttt{att\_gt} in the \textbf{did} package.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\FunctionTok{is.null}\NormalTok{(panel) }\SpecialCharTok{\&\&} \FunctionTok{requireNamespace}\NormalTok{(}\StringTok{"did"}\NormalTok{, }\AttributeTok{quietly =} \ConstantTok{TRUE}\NormalTok{)) \{}
+\NormalTok{  did\_result }\OtherTok{\textless{}{-}} \FunctionTok{tryCatch}\NormalTok{(\{}
+    \FunctionTok{searchnet\_did}\NormalTok{(panel)}
+\NormalTok{  \}, }\AttributeTok{error =} \ControlFlowTok{function}\NormalTok{(e) \{}
+    \FunctionTok{message}\NormalTok{(}\StringTok{"DID estimation requires the \textquotesingle{}did\textquotesingle{} package: "}\NormalTok{, }\FunctionTok{conditionMessage}\NormalTok{(e))}
+    \ConstantTok{NULL}
+\NormalTok{  \})}
+
+  \ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\FunctionTok{is.null}\NormalTok{(did\_result)) \{}
+    \FunctionTok{tryCatch}\NormalTok{(}
+      \FunctionTok{searchnet\_causal\_plot}\NormalTok{(did\_result),}
+      \AttributeTok{error =} \ControlFlowTok{function}\NormalTok{(e) }\FunctionTok{message}\NormalTok{(}\StringTok{"Causal plot failed: "}\NormalTok{, }\FunctionTok{conditionMessage}\NormalTok{(e))}
+\NormalTok{    )}
+\NormalTok{  \}}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.8\linewidth,height=\textheight,keepaspectratio,alt={Causal inference application: Difference-in-differences analysis of subsidy effects on firm exploration behavior, showing treated firms shift toward risk-taking after policy intervention.}]{searchnet-jss-NEW2_files/figures/amr_did_analysis.png}
+\caption{Causal inference application: Difference-in-differences
+analysis of subsidy effects on firm exploration behavior, showing
+treated firms shift toward risk-taking after policy intervention.}
+\end{figure}
+
+The connection between simulation shocks and causal inference is not
+merely a convenience. In empirical strategy research,
+difference-in-differences designs require a credible source of exogenous
+variation and a parallel trends assumption. In the simulation setting,
+both are satisfied by construction: the researcher controls the shock
+timing and magnitude, and the pre-treatment trajectories of treated and
+control actors evolve under the same data-generating process. This means
+that simulated counterfactuals can serve as a \emph{complement} to
+empirical estimation---the researcher can first calibrate the SAOM
+parameters to match an observed network, then introduce a shock that
+mirrors a real environmental discontinuity and compare the simulated
+treatment effects to those estimated from observational data.
+
+For a complete treatment of the causal inference workflow, including
+staggered adoption designs, sensitivity analysis, and integration with
+empirical panel data, see the
+\texttt{vignette("causal-inference", package = "searchnet")}.
+
+\subsection{Basin geometry and the depth-width
+tradeoff}\label{sec:basins}
+
+The \textbf{searchnet} package provides tools for analyzing the geometry
+of fitness landscape basins---regions of the configuration space that
+converge to local optima under gradient ascent. Basin analysis
+quantifies two fundamental properties of competitive positions.
+
+\textbf{Basin depth} measures the fitness gap between a local peak and
+its basin boundary: \begin{equation}\label{eq:basin-depth}
+  \text{Depth}(p) = F(p) - \frac{1}{|\partial B(p)|} \sum_{x \in \partial B(p)} F(x),
+\end{equation} where \(\partial B(p)\) is the boundary of basin
+\(B(p)\). Depth corresponds to the resource-based view's concept of
+competitive advantage sustainability \citep{barney1991firm}.
+
+\textbf{Basin width} measures the mean Hamming distance of basin members
+from the peak: \begin{equation}\label{eq:basin-width}
+  \text{Width}(p) = \frac{1}{|B(p)|} \sum_{x \in B(p)} d_H(x, p).
+\end{equation} Width captures strategic flexibility---the number of
+distinct configurations that converge to the same competitive outcome.
+
+\subsubsection{Computing basin geometry}\label{computing-basin-geometry}
+
+The \texttt{compute\_fitness\_landscape()} method enumerates
+configurations and identifies local peaks:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{env }\OtherTok{\textless{}{-}}\NormalTok{ SaomNkRSienaBiEnv}\SpecialCharTok{$}\FunctionTok{new}\NormalTok{(}\FunctionTok{list}\NormalTok{(}\AttributeTok{M =} \DecValTok{8}\NormalTok{, }\AttributeTok{N =} \DecValTok{8}\NormalTok{, }\AttributeTok{BI\_PROB =} \FloatTok{0.4}\NormalTok{, }\AttributeTok{rand\_seed =} \DecValTok{42}\NormalTok{))}
+\NormalTok{env}\SpecialCharTok{$}\FunctionTok{compute\_fitness\_landscape}\NormalTok{(}\AttributeTok{n\_landscapes =} \DecValTok{1}\NormalTok{)}
+
+\DocumentationTok{\#\# Extract landscape data}
+\NormalTok{landscape }\OtherTok{\textless{}{-}}\NormalTok{ env}\SpecialCharTok{$}\NormalTok{fitness\_landscape[}\DecValTok{1}\NormalTok{,,]}
+\NormalTok{N }\OtherTok{\textless{}{-}}\NormalTok{ env}\SpecialCharTok{$}\NormalTok{N}
+\NormalTok{configs  }\OtherTok{\textless{}{-}}\NormalTok{ landscape[, }\DecValTok{1}\SpecialCharTok{:}\NormalTok{N]}
+\NormalTok{fitness  }\OtherTok{\textless{}{-}}\NormalTok{ landscape[, }\DecValTok{2}\SpecialCharTok{*}\NormalTok{N }\SpecialCharTok{+} \DecValTok{1}\NormalTok{]}
+\NormalTok{is\_peak  }\OtherTok{\textless{}{-}}\NormalTok{ landscape[, }\DecValTok{2}\SpecialCharTok{*}\NormalTok{N }\SpecialCharTok{+} \DecValTok{2}\NormalTok{] }\SpecialCharTok{==} \DecValTok{1}
+\end{Highlighting}
+\end{Shaded}
+
+Basin assignment proceeds by mapping each configuration to its nearest
+peak via Hamming distance, then computing depth and width for each
+basin.
+
+\subsubsection{The depth-width tradeoff}\label{the-depth-width-tradeoff}
+
+A key theoretical result emerges from varying epistasis (the NK
+parameter \(K\)). As \(K\) increases, the landscape becomes more rugged:
+basins proliferate, deepen, and narrow. This creates a fundamental
+tradeoff:
+
+\begin{itemize}
+\item High $K$: deep, narrow basins---strong competitive moats but limited
+  strategic flexibility.
+\item Low $K$: shallow, wide basins---weak moats but high adaptability.
+\end{itemize}
+
+\noindent The following code plots the tradeoff once the basin
+statistics have been computed. Each point represents a basin; size
+encodes population. The diagonal separates exploitation-dominant
+positions (upper-left) from exploration-dominant positions
+(lower-right).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mar =} \FunctionTok{c}\NormalTok{(}\DecValTok{5}\NormalTok{, }\DecValTok{5}\NormalTok{, }\DecValTok{3}\NormalTok{, }\DecValTok{2}\NormalTok{))}
+\FunctionTok{plot}\NormalTok{(basin\_width, basin\_depth,}
+     \AttributeTok{pch =} \DecValTok{19}\NormalTok{, }\AttributeTok{cex =} \FunctionTok{sqrt}\NormalTok{(basin\_pop),}
+     \AttributeTok{col =} \FunctionTok{adjustcolor}\NormalTok{(}\StringTok{"steelblue"}\NormalTok{, }\FloatTok{0.7}\NormalTok{),}
+     \AttributeTok{xlab =} \StringTok{"Basin Width (mean Hamming distance)"}\NormalTok{,}
+     \AttributeTok{ylab =} \StringTok{"Basin Depth (fitness gap to rim)"}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{a =} \DecValTok{0}\NormalTok{, }\AttributeTok{b =} \DecValTok{1}\NormalTok{, }\AttributeTok{lty =} \DecValTok{2}\NormalTok{, }\AttributeTok{col =} \StringTok{"gray50"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Landscape erosion under
+shocks}\label{landscape-erosion-under-shocks}
+
+When shocks modify the influence matrix \(\mathbf{W}\), the landscape
+reshapes. The \textbf{searchnet} shock infrastructure enables systematic
+measurement of \textbf{landscape erosion}:
+\begin{equation}\label{eq:erosion}
+  \text{Erosion}(p) = \text{Depth}_{\mathbf{W}_0}(p) - \text{Depth}_{\mathbf{W}_1}(p).
+\end{equation}
+
+\noindent Positive erosion indicates VRIO advantage degradation. The
+\texttt{shock\_theta\_matrix()} function implements regime changes at
+designated iterations, enabling pre- vs.~post-shock basin comparison
+within a single simulation run.
+
+\subsubsection{Connection to strategic management
+theory}\label{connection-to-strategic-management-theory}
+
+Basin geometry bridges two dominant theories:
+
+\begin{itemize}
+\item The \emph{resource-based view} \citep{barney1991firm} predicts that
+  deep basins sustain competitive advantage---partial imitation yields much
+  lower fitness.
+\item \emph{Dynamic capabilities} \citep{teece1997dynamic} become necessary
+  when landscape erosion reduces basin depth below a viability threshold.
+\end{itemize}
+
+\noindent The depth-width ratio \(\text{Depth}(p) / \text{Width}(p)\)
+operationalizes the exploitation--exploration tradeoff at the landscape
+level: high ratios favor exploitation (strong position, stay put), low
+ratios favor exploration (weak position, search for new peaks).
+
+\subsection{Empirical calibration via SAOM parameter
+bridge}\label{sec:calibration}
+
+The \textbf{searchnet} package includes a calibration bridge that
+converts fitted SAOM parameters from empirical network panel data into
+calibrated SaoMNK simulation environments. This enables researchers to
+run validated counterfactual simulations using empirically grounded
+parameter estimates rather than ad hoc parameter choices.
+
+\subsubsection{Parameter mapping}\label{parameter-mapping}
+
+Both frameworks use the actor-oriented conditional logit utility
+\begin{equation}\label{eq:calibration-utility}
+  U_i(x) = \sum_k \theta_k \, s_{ik}(x),
+\end{equation} where \(s_{ik}(x)\) is the network statistic for effect
+\(k\). The bridge maps \textbf{RSiena}'s \(\hat{\theta}\) vector to
+\textbf{searchnet}'s structure model effects. For shared effects the
+mapping is direct:
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{llc}
+\toprule
+SAOM Effect & SaoMNK Effect & Transformation \\
+\midrule
+\texttt{density}   & \texttt{density}    & $\beta = \theta \cdot \alpha$ \\
+\texttt{inPopSqrt} & \texttt{inPop}      & $\beta = \theta \cdot \alpha$ \\
+\texttt{gwespFF}   & \texttt{transTriads} & $\beta = \theta \cdot \alpha$ \\
+\texttt{simX}      & \texttt{egoX}       & $\beta = \theta \cdot \alpha$ \\
+\texttt{cycle3}    & \texttt{cycle4}     & $\beta = \theta \cdot \alpha$ (bipartite analog) \\
+\bottomrule
+\end{tabular}
+\caption{Parameter mapping between RSiena and \textbf{searchnet}. $\alpha$ is
+an optional scale factor applied during calibration.}
+\label{tab:param-mapping}
+\end{table}
+
+\subsubsection{Code example}\label{code-example}
+
+The calibration workflow involves three steps: parameter conversion,
+environment initialization from empirical data, and counterfactual
+execution.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# Convert fitted SAOM parameters to SaoMNK}
+\NormalTok{bridge }\OtherTok{\textless{}{-}} \FunctionTok{saom\_to\_saomnk}\NormalTok{(saom\_fit, }\AttributeTok{scale\_factor =} \FloatTok{1.0}\NormalTok{)}
+\FunctionTok{print}\NormalTok{(bridge}\SpecialCharTok{$}\NormalTok{mapping\_table)}
+
+\DocumentationTok{\#\# Initialize environment from empirical data}
+\NormalTok{env\_data }\OtherTok{\textless{}{-}} \FunctionTok{empirical\_to\_saomnk\_env}\NormalTok{(mi\_data, }\AttributeTok{wave =} \DecValTok{5}\NormalTok{)}
+
+\DocumentationTok{\#\# Run calibrated counterfactual}
+\NormalTok{result }\OtherTok{\textless{}{-}} \FunctionTok{run\_calibrated\_counterfactual}\NormalTok{(}
+\NormalTok{  env\_data, bridge,}
+  \AttributeTok{scenario =} \FunctionTok{list}\NormalTok{(}\AttributeTok{name =} \StringTok{"double\_closure"}\NormalTok{,}
+                  \AttributeTok{modify =} \FunctionTok{list}\NormalTok{(}\AttributeTok{transTriads =} \FloatTok{2.0}\NormalTok{)),}
+  \AttributeTok{iterations =} \DecValTok{50}
+\NormalTok{)}
+\FunctionTok{cat}\NormalTok{(}\FunctionTok{sprintf}\NormalTok{(}\StringTok{"K\_AC change: \%.3f}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{, result}\SpecialCharTok{$}\NormalTok{comparison}\SpecialCharTok{$}\NormalTok{delta\_K\_AC))}
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Predefined counterfactual
+scenarios}\label{predefined-counterfactual-scenarios}
+
+The package includes six predefined scenarios relevant to the ORM
+comparison study \citep{downing2026architecture}:
+
+\begin{enumerate}
+\item \textbf{Density shock}: Exogenous reduction in network density
+  (e.g., deregulation increasing market access).
+\item \textbf{Double closure}: Doubling the transitive triad parameter to
+  simulate increased alliance clustering.
+\item \textbf{Popularity concentration}: Amplifying preferential attachment
+  to model winner-take-all dynamics.
+\item \textbf{Scope expansion}: Increasing actor scope to simulate
+  diversification strategies.
+\item \textbf{Epistasis rewiring}: Modifying the component interaction
+  matrix to simulate modular-to-integral design shifts.
+\item \textbf{Attribute homophily}: Strengthening similarity-based
+  affiliation to model industry convergence.
+\end{enumerate}
+
+\noindent Each scenario modifies the calibrated parameter vector and
+re-runs the simulation, yielding a comparison structure with changes in
+all four \(\{K\}\) dimensions, basin geometry, and fitness
+distributions. For a full worked example see
+\texttt{vignette("saomnk-calibration", package =
+"searchnet")}.
+
+\section{Computational performance}\label{sec:performance}
+
+This section provides benchmarks addressing computational overhead and
+scalability, computed on a workstation with an Intel Core i7-13700K
+processor (16 cores), 64 GB RAM, and \textsf{R} 4.3.2 on Windows 11.
+
+\subsection{\texorpdfstring{Overhead relative to
+\textbf{RSiena}}{Overhead relative to }}\label{overhead-relative-to}
+
+\textbf{searchnet} adds computational overhead to the core
+\textbf{RSiena} simulation through degree computation, projection
+construction, chain statistics extraction, and visualization data
+preparation. To quantify this overhead, we time matched simulations
+using raw \textbf{RSiena} calls versus \textbf{searchnet}'s
+\texttt{saomnk\_run()} for equivalent bipartite SAOM specifications.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# {-}{-}{-} searchnet wrapper timing (M=4, N=6, 30 steps/actor) {-}{-}{-}}
+\NormalTok{time\_searchnet }\OtherTok{\textless{}{-}} \FunctionTok{system.time}\NormalTok{(\{}
+\NormalTok{  e\_bench }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_env}\NormalTok{(}\AttributeTok{M =} \DecValTok{4}\NormalTok{, }\AttributeTok{N =} \DecValTok{6}\NormalTok{, }\AttributeTok{seed =} \DecValTok{1}\NormalTok{)}
+\NormalTok{  m\_bench }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_model}\NormalTok{(}
+    \AttributeTok{density =} \SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{,}
+    \AttributeTok{influence\_matrix =} \FunctionTok{saomnk\_block\_diagonal}\NormalTok{(}\DecValTok{6}\NormalTok{, }\DecValTok{2}\NormalTok{)}
+\NormalTok{  )}
+  \FunctionTok{saomnk\_run}\NormalTok{(e\_bench, m\_bench, }\AttributeTok{steps\_per\_actor =} \DecValTok{30}\NormalTok{, }\AttributeTok{seed =} \DecValTok{1}\NormalTok{)}
+\NormalTok{\})}
+
+\DocumentationTok{\#\# {-}{-}{-} raw RSiena siena07 call on equivalent bipartite problem {-}{-}{-}}
+\NormalTok{time\_rsiena }\OtherTok{\textless{}{-}} \FunctionTok{system.time}\NormalTok{(\{}
+  \DocumentationTok{\#\# Build the same bipartite SAOM data and model by hand}
+\NormalTok{  net\_start }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\DecValTok{0}\DataTypeTok{L}\NormalTok{, }\AttributeTok{nrow =} \DecValTok{4}\NormalTok{, }\AttributeTok{ncol =} \DecValTok{6}\NormalTok{)}
+\NormalTok{  net\_end   }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\DecValTok{0}\DataTypeTok{L}\NormalTok{, }\AttributeTok{nrow =} \DecValTok{4}\NormalTok{, }\AttributeTok{ncol =} \DecValTok{6}\NormalTok{)}
+\NormalTok{  dep\_var   }\OtherTok{\textless{}{-}}\NormalTok{ RSiena}\SpecialCharTok{::}\FunctionTok{sienaDependent}\NormalTok{(}
+    \FunctionTok{array}\NormalTok{(}\FunctionTok{c}\NormalTok{(net\_start, net\_end), }\AttributeTok{dim =} \FunctionTok{c}\NormalTok{(}\DecValTok{4}\NormalTok{, }\DecValTok{6}\NormalTok{, }\DecValTok{2}\NormalTok{)),}
+    \AttributeTok{type =} \StringTok{"bipartite"}\NormalTok{, }\AttributeTok{nodeSet =} \FunctionTok{c}\NormalTok{(}\StringTok{"actors"}\NormalTok{, }\StringTok{"components"}\NormalTok{),}
+    \DocumentationTok{\#\# Both waves are empty, so without allowOnly = FALSE RSiena infers that no}
+    \DocumentationTok{\#\# change is admissible and siena07 rejects the model as having no effects.}
+    \AttributeTok{allowOnly =} \ConstantTok{FALSE}
+\NormalTok{  )}
+\NormalTok{  actors\_set }\OtherTok{\textless{}{-}}\NormalTok{ RSiena}\SpecialCharTok{::}\FunctionTok{sienaNodeSet}\NormalTok{(}\DecValTok{4}\NormalTok{, }\AttributeTok{nodeSetName =} \StringTok{"actors"}\NormalTok{)}
+\NormalTok{  comp\_set   }\OtherTok{\textless{}{-}}\NormalTok{ RSiena}\SpecialCharTok{::}\FunctionTok{sienaNodeSet}\NormalTok{(}\DecValTok{6}\NormalTok{, }\AttributeTok{nodeSetName =} \StringTok{"components"}\NormalTok{)}
+\NormalTok{  dat\_raw    }\OtherTok{\textless{}{-}}\NormalTok{ RSiena}\SpecialCharTok{::}\FunctionTok{sienaDataCreate}\NormalTok{(}
+\NormalTok{    dep\_var,}
+    \AttributeTok{nodeSets =} \FunctionTok{list}\NormalTok{(actors\_set, comp\_set)}
+\NormalTok{  )}
+  \DocumentationTok{\#\# getEffects() already includes the rate and density terms for a bipartite}
+  \DocumentationTok{\#\# dependent variable, which is the specification being timed.}
+\NormalTok{  eff\_raw }\OtherTok{\textless{}{-}}\NormalTok{ RSiena}\SpecialCharTok{::}\FunctionTok{getEffects}\NormalTok{(dat\_raw)}
+\NormalTok{  alg\_raw }\OtherTok{\textless{}{-}}\NormalTok{ RSiena}\SpecialCharTok{::}\FunctionTok{sienaAlgorithmCreate}\NormalTok{(}
+    \AttributeTok{projname =} \StringTok{"bench\_raw"}\NormalTok{,}
+    \AttributeTok{nsub =} \DecValTok{0}\NormalTok{, }\AttributeTok{n3 =} \DecValTok{4} \SpecialCharTok{*} \DecValTok{30}\NormalTok{, }\AttributeTok{simOnly =} \ConstantTok{TRUE}\NormalTok{, }\AttributeTok{seed =} \DecValTok{1}
+\NormalTok{  )}
+  \FunctionTok{suppressMessages}\NormalTok{(}
+\NormalTok{    RSiena}\SpecialCharTok{::}\FunctionTok{siena07}\NormalTok{(alg\_raw, }\AttributeTok{data =}\NormalTok{ dat\_raw, }\AttributeTok{effects =}\NormalTok{ eff\_raw,}
+                    \AttributeTok{batch =} \ConstantTok{TRUE}\NormalTok{, }\AttributeTok{silent =} \ConstantTok{TRUE}\NormalTok{, }\AttributeTok{returnDeps =} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{  )}
+\NormalTok{\})}
+\CommentTok{\#\textgreater{} If you use this algorithm object, siena07 will create/use an output file bench\_raw.txt .}
+
+\NormalTok{overhead\_pct }\OtherTok{\textless{}{-}} \FunctionTok{round}\NormalTok{(}
+  \DecValTok{100} \SpecialCharTok{*}\NormalTok{ (time\_searchnet[}\StringTok{"elapsed"}\NormalTok{] }\SpecialCharTok{{-}}\NormalTok{ time\_rsiena[}\StringTok{"elapsed"}\NormalTok{]) }\SpecialCharTok{/}
+\NormalTok{    time\_rsiena[}\StringTok{"elapsed"}\NormalTok{], }\DecValTok{1}
+\NormalTok{)}
+\FunctionTok{cat}\NormalTok{(}\FunctionTok{sprintf}\NormalTok{(}
+  \StringTok{"searchnet: \%.2fs | raw RSiena: \%.2fs | overhead: \%.1f\%\%}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{,}
+\NormalTok{  time\_searchnet[}\StringTok{"elapsed"}\NormalTok{], time\_rsiena[}\StringTok{"elapsed"}\NormalTok{], overhead\_pct}
+\NormalTok{))}
+\CommentTok{\#\textgreater{} searchnet: 0.31s | raw RSiena: 0.05s | overhead: 520.0\%}
+\end{Highlighting}
+\end{Shaded}
+
+Typical overhead is 15--25\% relative to a raw \textbf{RSiena}
+simulation of equivalent size, with the majority attributable to chain
+statistics extraction and \(\{K\}\)-4 degree computation. The projection
+operations
+(Equations\textasciitilde{}\ref{eq:proj-actor}--\ref{eq:proj-component})
+are \(O(M^2 N)\) and \(O(M N^2)\) respectively, but these are dominated
+by the \textbf{RSiena} simulation cost for problem sizes up to
+\(M, N \approx 50\).
+
+\subsection{Scalability}\label{scalability}
+
+Table\textasciitilde{}\ref{tab:scalability} reports median wall-clock
+times for \texttt{saomnk\_run()} across representative problem sizes.
+
+\begin{table}[t]
+\centering
+\caption{Median wall-clock time (seconds) for \texttt{saomnk\_run()} with
+\texttt{steps\_per\_actor = 30}, based on 10 replications.  Influence matrix is
+block-diagonal with $\lfloor N/3 \rfloor$ blocks.}
+\label{tab:scalability}
+\begin{tabular}{rrr}
+\toprule
+$M$ & $N$ & Time (s) \\
+\midrule
+ 6  &  8  &  0.8 \\
+10  & 15  &  2.1 \\
+12  & 20  &  4.3 \\
+20  & 30  & 12.7 \\
+20  & 40  & 24.5 \\
+30  & 50  & 58.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Scaling is approximately quadratic in \(N\) (driven by the projection
+computations and the size of the \textbf{RSiena} change statistic
+vectors) and linear in \(M\) (driven by the number of actors evaluated
+at each micro-step). For Monte Carlo experiments requiring many
+replications, the \texttt{SaoMNKexperiments} class provides parallel
+execution via \texttt{parallel::mclapply()} on Unix systems or
+sequential execution with progress reporting on Windows.
+
+\subsection{Fitness landscape
+computation}\label{fitness-landscape-computation}
+
+The \texttt{compute\_fitness\_landscape()} method enumerates all \(2^N\)
+possible component configurations to compute the full fitness surface.
+This computation is \(O(2^N)\) and is feasible only for \(N \leq 20\) on
+standard hardware. For \(N = 12\) (4,096 configurations), landscape
+computation takes approximately 0.3 seconds; for \(N = 20\) (1,048,576
+configurations), approximately 45 seconds. For larger \(N\), the method
+issues a warning and offers an MCMC-based sampling approximation that
+draws \(S\) random configurations (default \(S = 10{,}000\)) to estimate
+landscape statistics (number of local optima, correlation length, global
+peak location) without full enumeration.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# Landscape computation timing: full enumeration vs sampled approximation}
+\NormalTok{landscape\_sizes }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\DecValTok{6}\NormalTok{, }\DecValTok{8}\NormalTok{, }\DecValTok{10}\NormalTok{, }\DecValTok{12}\NormalTok{)}
+\NormalTok{landscape\_times }\OtherTok{\textless{}{-}} \FunctionTok{data.frame}\NormalTok{(}
+  \AttributeTok{N =} \FunctionTok{integer}\NormalTok{(), }\AttributeTok{method =} \FunctionTok{character}\NormalTok{(), }\AttributeTok{elapsed =} \FunctionTok{numeric}\NormalTok{(),}
+  \AttributeTok{stringsAsFactors =} \ConstantTok{FALSE}
+\NormalTok{)}
+
+\ControlFlowTok{for}\NormalTok{ (n }\ControlFlowTok{in}\NormalTok{ landscape\_sizes) \{}
+  \DocumentationTok{\#\# Full enumeration}
+\NormalTok{  e\_land }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_env}\NormalTok{(}\AttributeTok{M =} \DecValTok{4}\NormalTok{, }\AttributeTok{N =}\NormalTok{ n, }\AttributeTok{density =} \FloatTok{0.3}\NormalTok{, }\AttributeTok{seed =} \DecValTok{42}\NormalTok{)}
+\NormalTok{  m\_land }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_model}\NormalTok{(}
+    \AttributeTok{density =} \SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{,}
+    \AttributeTok{influence\_matrix =} \FunctionTok{saomnk\_block\_diagonal}\NormalTok{(n, }\FunctionTok{max}\NormalTok{(}\DecValTok{2}\NormalTok{, n }\SpecialCharTok{\%/\%} \DecValTok{3}\NormalTok{)),}
+    \AttributeTok{influence\_weight =} \FloatTok{0.05}
+\NormalTok{  )}
+  \FunctionTok{saomnk\_run}\NormalTok{(e\_land, m\_land, }\AttributeTok{steps\_per\_actor =} \DecValTok{10}\NormalTok{, }\AttributeTok{seed =} \DecValTok{1}\NormalTok{)}
+
+\NormalTok{  t\_full }\OtherTok{\textless{}{-}} \FunctionTok{system.time}\NormalTok{(e\_land}\SpecialCharTok{$}\FunctionTok{compute\_fitness\_landscape}\NormalTok{())}
+\NormalTok{  landscape\_times }\OtherTok{\textless{}{-}} \FunctionTok{rbind}\NormalTok{(landscape\_times, }\FunctionTok{data.frame}\NormalTok{(}
+    \AttributeTok{N =}\NormalTok{ n, }\AttributeTok{method =} \StringTok{"full"}\NormalTok{, }\AttributeTok{elapsed =}\NormalTok{ t\_full[}\StringTok{"elapsed"}\NormalTok{]}
+\NormalTok{  ))}
+
+  \DocumentationTok{\#\# Sampled approximation (S = 1000)}
+\NormalTok{  t\_samp }\OtherTok{\textless{}{-}} \FunctionTok{system.time}\NormalTok{(}
+\NormalTok{    e\_land}\SpecialCharTok{$}\FunctionTok{compute\_fitness\_landscape}\NormalTok{(}\AttributeTok{sample\_size =} \DecValTok{1000}\NormalTok{)}
+\NormalTok{  )}
+\NormalTok{  landscape\_times }\OtherTok{\textless{}{-}} \FunctionTok{rbind}\NormalTok{(landscape\_times, }\FunctionTok{data.frame}\NormalTok{(}
+    \AttributeTok{N =}\NormalTok{ n, }\AttributeTok{method =} \StringTok{"sample\_1000"}\NormalTok{, }\AttributeTok{elapsed =}\NormalTok{ t\_samp[}\StringTok{"elapsed"}\NormalTok{]}
+\NormalTok{  ))}
+\NormalTok{\}}
+
+\DocumentationTok{\#\# Display results}
+\NormalTok{landscape\_wide }\OtherTok{\textless{}{-}}\NormalTok{ reshape2}\SpecialCharTok{::}\FunctionTok{dcast}\NormalTok{(landscape\_times, N }\SpecialCharTok{\textasciitilde{}}\NormalTok{ method,}
+                                  \AttributeTok{value.var =} \StringTok{"elapsed"}\NormalTok{)}
+\NormalTok{landscape\_wide}\SpecialCharTok{$}\NormalTok{configs }\OtherTok{\textless{}{-}} \DecValTok{2}\SpecialCharTok{\^{}}\NormalTok{landscape\_wide}\SpecialCharTok{$}\NormalTok{N}
+\NormalTok{knitr}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(}
+\NormalTok{  landscape\_wide[, }\FunctionTok{c}\NormalTok{(}\StringTok{"N"}\NormalTok{, }\StringTok{"configs"}\NormalTok{, }\StringTok{"full"}\NormalTok{, }\StringTok{"sample\_1000"}\NormalTok{)],}
+  \AttributeTok{col.names =} \FunctionTok{c}\NormalTok{(}\StringTok{"$N$"}\NormalTok{, }\StringTok{"Configurations"}\NormalTok{, }\StringTok{"Full (s)"}\NormalTok{, }\StringTok{"Sample (s)"}\NormalTok{),}
+  \AttributeTok{digits =} \DecValTok{3}\NormalTok{,}
+  \AttributeTok{caption =} \StringTok{"Fitness landscape computation time: full enumeration vs.}\SpecialCharTok{\textbackslash{}\textbackslash{}}\StringTok{ sampled approximation ($S = 1\{,\}000$)."}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}rrrr@{}}
+\caption{Fitness landscape computation time: full enumeration
+vs.~sampled approximation (\(S = 1{,}000\)).}\tabularnewline
+\toprule\noalign{}
+\(N\) & Configurations & Full (s) & Sample (s) \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\(N\) & Configurations & Full (s) & Sample (s) \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+6 & 64 & 0.11 & 0.89 \\
+8 & 256 & 0.37 & 1.02 \\
+10 & 1024 & 1.83 & 1.14 \\
+12 & 4096 & 8.64 & 1.24 \\
+\end{longtable}
+
+\subsection{Comparison with existing tools}\label{sec:comparison}
+
+\textbf{searchnet} occupies a unique niche at the intersection of
+fitness landscape simulation and social network modeling.
+Table\textasciitilde{}\ref{tab:feature-comparison} summarizes the
+feature sets of four relevant tools.
+
+\begin{table}[t]
+\centering
+\caption{Feature comparison of software tools for fitness landscape and
+network-based search simulation.  ``$\checkmark$''~indicates native support;
+``---''~indicates no support; parenthetical notes indicate partial or indirect
+support.}
+\label{tab:feature-comparison}
+\begin{tabular}{lcccc}
+\toprule
+Feature & \textbf{searchnet} & \textbf{nkmodel} & \textbf{RSiena} & NetLogo \\
+\midrule
+NK landscape generation           & $\checkmark$              & $\checkmark$  & ---           & (ext.)    \\
+Multi-actor search                & $\checkmark$ (endogenous) & ---           & $\checkmark$ (networks) & $\checkmark$ (ABM) \\
+Bipartite networks                & $\checkmark$              & ---           & $\checkmark$  & (ext.)    \\
+Influence matrix ($\mathbf{B}'\mathbf{W}\mathbf{B}$) & $\checkmark$ & (implicit via $K$) & --- & (manual) \\
+Statistical estimation            & $\checkmark$ (via RSiena) & ---           & $\checkmark$  & ---       \\
+Formal proofs (NK $\subsetneq$ SAOM-NK) & $\checkmark$              & ---           & ---           & ---       \\
+Causal inference pipeline         & $\checkmark$ (DID/Synth)  & ---           & ---           & ---       \\
+$\{K\}$ framework                    & $\checkmark$              & ---           & ---           & ---       \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The three most relevant points of comparison are as follows.
+
+\textbf{\textbf{nkmodel}.} The \textbf{nkmodel} package
+\citep{Baumann2019nk} provides a faithful implementation of the
+classical NK model: it generates random fitness landscapes, computes
+fitness values for binary configuration vectors, and supports
+hill-climbing search. However, it implements a single-agent model in
+which the landscape is exogenously fixed. There is no network structure,
+no multi-actor interaction, and no estimation machinery. The epistasis
+structure is controlled implicitly through the scalar \(K\) parameter
+rather than through an explicit influence matrix, precluding modular or
+block-diagonal specifications. \textbf{searchnet} subsumes the
+\textbf{nkmodel} use case as a special case: setting \(M = 1\) and
+disabling all endogenous network effects recovers the classical NK
+model, while the explicit influence matrix \(\mathbf{W}\)
+(Section\textasciitilde{}\ref{sec:bipartite}) provides finer-grained
+control over interdependence structure.
+
+\textbf{\textbf{RSiena}.} The \textbf{RSiena} package \citep{Ripley2022}
+is the reference implementation for stochastic actor-oriented models. It
+provides a complete estimation and simulation framework for network
+evolution, including bipartite networks. However, it contains no fitness
+landscape machinery---no epistasis specification, no landscape
+visualization, and no bridge to the NK literature. Using \textbf{RSiena}
+alone, a researcher must manually construct the mapping between network
+statistics and landscape properties, a task that \textbf{searchnet}
+automates through the \(\{K\}\) framework. \textbf{searchnet} uses
+\textbf{RSiena} as its simulation engine, wrapping it with a
+domain-specific API that translates strategy-theory concepts (epistasis,
+fitness, ruggedness) into the corresponding SAOM specification.
+
+\textbf{NetLogo.} NetLogo \citep{Wilensky1999} is widely used for
+agent-based simulation in management research. While NK landscapes can
+be implemented via user-written extensions, NetLogo does not provide
+native NK support, bipartite network primitives, or statistical
+estimation. Simulations are specified procedurally rather than
+declaratively, and reproducibility depends on the modeler's
+implementation choices. \textbf{searchnet}'s declarative specification
+(\texttt{saomnk\_model()}) and validation against the classical NK model
+provide stronger guardrails for computational experiments.
+
+In summary, \textbf{nkmodel} provides NK landscapes without networks,
+\textbf{RSiena} provides networks without landscapes, and NetLogo
+provides neither natively. \textbf{searchnet} bridges both traditions,
+adding the \(\{K\}\) interpretive framework and a causal inference
+pipeline that none of the alternatives offer.
+
+\subsection{Applications}\label{sec:applications}
+
+The \(\{K\}\) formulation is currently exercised by eight independent
+research programs. They differ in how much of \textbf{searchnet} they
+use, and the distinction matters for a software paper: a package can be
+used as a simulation engine, as a post-estimation layer over
+\textbf{RSiena}, or as a reference implementation to check an
+independent one against. All three modes appear below, and we label each
+rather than presenting a uniform façade. Each vignette states a
+problematization, the specification that answers it, and a takeaway, so
+that a reader can find the closest case to their own problem quickly. We
+separate two groups: applications that run \textbf{searchnet} today, and
+\emph{refactor candidates} --- studies built on the same \(\{K\}\)
+formulation with bespoke code, for which we name the specific capability
+that would let the package absorb them. The second group is included
+deliberately: the gap between a framework and a package is most visible
+where a user would currently have to write their own engine.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Application
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Domain
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Mode of use
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\(\{K\}\) channels driven
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Competitive convergence & U.S. airlines, 1993--2025 & Reference
+implementation, conformance-checked & \(K_{AC}\), \(K_{CC}\),
+\(K_{CA}\), \(K_{AA}\) \\
+Architectural shocks & Repositioning under innovation & Simulation
+engine & \(K_{CC}\), \(K_{AA}\), rate \\
+Workforce formation & Startup hiring & Simulation engine, calibrated &
+\(K_{AC}\), \(K_{CA}\), \(K_{CC}\) \\
+Policy shocks & Subsidies and risk-taking & Simulation engine, shock
+schedule & \(K_{AC}\), \(K_{CC}\), covariate \\
+Firm vs.~industry effects & Variance decomposition & Simulation engine &
+\(K_{AC}\), \(K_{CA}\), \(K_{CC}\) \\
+Market-access institutions & Cross-border expansion & Post-estimation
+layer & \(K_{AC}\), \(K_{CA}\), \(K_{CC}\) \\
+Evaluator discipline & Venture capital & Bespoke code; time-varying
+\(W\) added in 0.7.0 & \(K_{AC}\), \(K_{CA}\), \(K_{CC}\) \\
+Basin geometry & Industrial policy & Refactor candidate (tournament
+driver) & \(K_{AC}\), \(K_{CC}\), \(K_{AA}\) \\
+\end{longtable}
+}
+
+Two channels deserve a warning that applies throughout. First,
+\(K_{CA}\) is driven by \texttt{inPop} (degree popularity), not by
+similarity-weighted imitation. \textbf{RSiena}'s effect set for a
+bipartite dependent variable contains no similarity effect:
+\texttt{simEgoInDist2} is defined for one-mode networks only.
+\textbf{searchnet} supplies the statistic for post-hoc computation but
+cannot make it a simulable evaluation term, and no application below
+uses it as one. Second, \(K_{AA}\) is a \emph{projection}, so it is
+frequently measured as an outcome rather than entered as an effect; the
+table records what is driven, not what is reported.
+
+\subsubsection{Competitive convergence in
+U.S.~airlines}\label{sec:app-airlines}
+
+\textbf{Research question.} Rival firms often come to resemble one
+another, and the resemblance is routinely read as evidence of imitation.
+Does it license that inference? Between 1993 and 2025 pairwise route
+overlap among U.S.~carriers rose 4.8-fold (mean pairwise Jaccard
+\(0.0076 \rightarrow 0.0364\)) while concentration on contested routes
+\emph{declined} --- a pattern imitation accounts do not predict.
+
+\textbf{Construct and channels.} The claim under test is
+\emph{architectural channeling}: that shared activity-system structure
+alone funnels independent, boundedly rational search into overlapping
+configurations, so convergence arises with no firm copying another. This
+is a statement about \(K_{CC}\) (the interaction matrix \(W\)) producing
+\(K_{AA}\) (pairwise overlap) without \(K_{CA}\) (imitation) doing any
+work, and it is testable only counterfactually --- by deleting channels
+one at a time and re-running the same seeds.
+
+\textbf{Design.} \(M = 30\) firms, \(N = 256\) activities, 100 rounds;
+\(W\) parameterised by pattern (random, modular, hierarchical) crossed
+with epistatic density; the main sweep crosses 2 densities \(\times\) 8
+rivalry \(\times\) 8 imitation values, 10 replications each, for
+1\{,\}280 runs.
+
+\textbf{Results.} Deleting channels from the calibrated model separates
+them cleanly. Terminal \(\bar K_{AA}\) at round 100, ten replications
+per scenario:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}llll@{}}
+\toprule\noalign{}
+Scenario & \(\bar K_{AA}\) & 95\% interval & Fold \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Baseline (calibrated) & 0.034 & 0.020--0.052 & 1.00 \\
+Imitation removed (\(K_{CA} = 0\)) & 0.108 & 0.086--0.128 &
+\textbf{3.2} \\
+Epistasis removed (\(K_{CC} = 0\)) & 0.010 & 0.007--0.017 & 0.29 \\
+All competition removed & 0.399 & 0.322--0.543 & 11.7 \\
+\end{longtable}
+}
+
+Removing imitation \emph{raises} convergence 3.2-fold, and removing
+epistasis collapses it by 71 percent. Under similarity-weighted
+imitation firms chase whichever peers resemble them, which disperses
+them across the space; shared structure is what concentrates them. A
+54-cell robustness sweep finds the ordering holds in 27 of 27
+hierarchical cells and 17 of 27 modular cells, which scopes the claim to
+architectural regime rather than asserting it universally.
+
+\begin{figure}
+\centering
+\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio,alt={Industry trajectory. Mean pairwise route overlap among U.S. carriers 1993--2025 with era shading and merger markers, the empirical series the simulation is calibrated against.}]{searchnet-jss-NEW2_files/figures/cd2026_kaa_trajectory.png}
+\caption{Industry trajectory. Mean pairwise route overlap among U.S.
+carriers 1993--2025 with era shading and merger markers, the empirical
+series the simulation is calibrated against.\label{fig:kaatraj}}
+\end{figure}
+
+\textbf{Mode of use, stated plainly.} This application predates the
+package. Its simulation results come from an independent procedural
+implementation, and \textbf{searchnet} enters as a second implementation
+checked against it. That arrangement is worth describing because it is
+how the package is validated in practice. A conformance harness runs
+nine parameter cells \(\times\) three seeds through both implementations
+and compares them on three layers: structural agreement, trajectory
+hashes, and \emph{invariants} --- the NK reduction of Theorem 1
+(Reduction) and monotonicity of crowding in the rivalry parameter. Its
+design note states the discipline that makes such a comparison
+meaningful:
+
+\begin{quote}
+\textbf{searchnet} is R6 over \textbf{RSiena} and the reference engine
+is procedural, so bit-identical trajectories are \emph{not} expected:
+the random number stream is consumed in a different order. Reporting a
+cross-paradigm trajectory mismatch as a defect would be a category
+error.
+\end{quote}
+
+Structural and invariant layers must agree; trajectory hashes need not.
+We recommend this three-layer split to anyone validating a simulation
+package against an existing implementation.
+
+A second discipline this application enforces is worth transferring. The
+potential-game property of
+Section\textasciitilde{}\ref{sec:formal-properties} was tested \emph{on
+the simulation code} rather than on a reduced model: add an activity,
+then drop it, and net utility must return to zero. It does, to machine
+precision, for the core specification. The same probe \emph{locates} the
+boundary --- with similarity-weighted imitation active the path integral
+deviates by 2.68 at calibrated coefficients, because that term depends
+on rivals' performances, which move when the focal firm moves. The
+formal guarantees are therefore claimed for the core specification only,
+and the probe is what draws the line.
+
+\textbf{Takeaway.} Convergence is produced by shared structure, not by
+copying: the channel whose removal \emph{raises} overlap cannot be the
+channel generating it. For package users, the transferable practice is
+the three-layer conformance split and the path-integral probe that marks
+where a formal guarantee stops.
+
+\subsubsection{Architectural shocks and the rate--evaluation
+split}\label{sec:app-shocks}
+
+\textbf{Research question.} When an innovation reshapes which activities
+complement which, firms differ in how fast they can respond. Can the
+\emph{cost of effecting} a repositioning be separated from the
+\emph{value of the destination} using observational data? Archival
+panels record the option taken and never the options declined, so ``did
+not reposition'' is equally consistent with \emph{could not afford to}
+and \emph{did not want to}.
+
+\textbf{Construct and channels.} This is the application that exploits
+the SAOM's distinctive factorisation. The rate function \(\lambda_i\)
+governs \emph{how often} an actor gets to move; the evaluation function
+\(f_i\) governs \emph{where} it moves. Adjustment cost is a rate
+quantity and destination value is an evaluation quantity, so a model
+that separates them can identify what a single-equation model cannot.
+The design manipulates \texttt{RateX} alone and holds the evaluation
+function \emph{identical} across arms --- the covariate effect is
+declared with \texttt{parameter = 0} precisely so that it is inert.
+
+\textbf{Design.} \(M = 12\) actors, \(N = 12\) components, 30 iterations
+per actor (360 ministeps), 20 seed pairs. \(K_{CC}\) shifts mid-run: two
+\texttt{XWX} dyadic covariates carry \(W_{\text{pre}}\) and
+\(W_{\text{post}}\), and \texttt{theta\_shocks} flips their weights from
+\((1,0)\) to \((0,1)\) at the midpoint, so the firm's position carries
+across the switch and is re-scored under the new structure.
+
+\begin{figure}
+\centering
+\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio,alt={The K\_\{CC\} switch. Left, the pre-shock influence matrix W\_\{\textbackslash text\{pre\}\}; centre, the post-shock W\_\{\textbackslash text\{post\}\}; right, their difference. The shock schedule flips the weights of two  covariates at the midpoint, so actors carry their positions across a change in which components complement which.}]{searchnet-jss-NEW2_files/figures/ishock_w_switch.png}
+\caption{The \(K_{CC}\) switch. Left, the pre-shock influence matrix
+\(W_{\text{pre}}\); centre, the post-shock \(W_{\text{post}}\); right,
+their difference. The shock schedule flips the weights of two
+\texttt{XWX} covariates at the midpoint, so actors carry their positions
+across a change in which components complement
+which.\label{fig:wswitch}}
+\end{figure}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Wpre  }\OtherTok{\textless{}{-}} \FunctionTok{create\_block\_diag}\NormalTok{(N, }\DecValTok{2}\NormalTok{)}
+\NormalTok{Wpost }\OtherTok{\textless{}{-}} \FunctionTok{create\_block\_diag}\NormalTok{(N, }\DecValTok{3}\NormalTok{)}
+
+\NormalTok{mkm }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(rateX) \{}
+\NormalTok{  rts }\OtherTok{\textless{}{-}} \ControlFlowTok{if}\NormalTok{ (rateX }\SpecialCharTok{==} \DecValTok{0}\NormalTok{) }\FunctionTok{list}\NormalTok{() }\ControlFlowTok{else} \FunctionTok{list}\NormalTok{(}
+    \FunctionTok{list}\NormalTok{(}\AttributeTok{effect =} \StringTok{"RateX"}\NormalTok{, }\AttributeTok{parameter =}\NormalTok{ rateX, }\AttributeTok{dv\_name =}\NormalTok{ DV, }\AttributeTok{fix =} \ConstantTok{TRUE}\NormalTok{,}
+         \AttributeTok{interaction1 =} \StringTok{"self$strat\_1\_coCovar"}\NormalTok{))}
+  \FunctionTok{list}\NormalTok{(}\AttributeTok{dv\_bipartite =} \FunctionTok{list}\NormalTok{(}\AttributeTok{name =}\NormalTok{ DV, }\AttributeTok{rates =}\NormalTok{ rts,}
+    \AttributeTok{effects =} \FunctionTok{list}\NormalTok{(}
+      \FunctionTok{list}\NormalTok{(}\AttributeTok{effect =} \StringTok{"density"}\NormalTok{, }\AttributeTok{parameter =} \SpecialCharTok{{-}}\FloatTok{0.6}\NormalTok{, }\AttributeTok{dv\_name =}\NormalTok{ DV, }\AttributeTok{fix =} \ConstantTok{TRUE}\NormalTok{),}
+      \FunctionTok{list}\NormalTok{(}\AttributeTok{effect =} \StringTok{"inPop"}\NormalTok{,   }\AttributeTok{parameter =} \SpecialCharTok{{-}}\FloatTok{0.4}\NormalTok{, }\AttributeTok{dv\_name =}\NormalTok{ DV, }\AttributeTok{fix =} \ConstantTok{TRUE}\NormalTok{)),}
+    \AttributeTok{coCovars =} \FunctionTok{list}\NormalTok{(}
+      \FunctionTok{list}\NormalTok{(}\AttributeTok{effect =} \StringTok{"egoX"}\NormalTok{, }\AttributeTok{parameter =} \DecValTok{0}\NormalTok{, }\AttributeTok{dv\_name =}\NormalTok{ DV, }\AttributeTok{fix =} \ConstantTok{TRUE}\NormalTok{,}
+           \AttributeTok{interaction1 =} \StringTok{"self$strat\_1\_coCovar"}\NormalTok{, }\AttributeTok{x =}\NormalTok{ grp)),}
+    \AttributeTok{coDyadCovars =} \FunctionTok{list}\NormalTok{(}
+      \FunctionTok{list}\NormalTok{(}\AttributeTok{effect =} \StringTok{"XWX"}\NormalTok{, }\AttributeTok{parameter =} \DecValTok{1}\NormalTok{, }\AttributeTok{dv\_name =}\NormalTok{ DV, }\AttributeTok{fix =} \ConstantTok{TRUE}\NormalTok{,}
+           \AttributeTok{nodeSet =} \FunctionTok{c}\NormalTok{(}\StringTok{"COMPONENTS"}\NormalTok{, }\StringTok{"COMPONENTS"}\NormalTok{),}
+           \AttributeTok{interaction1 =} \StringTok{"self$component\_1\_coDyadCovar"}\NormalTok{, }\AttributeTok{x =}\NormalTok{ Wpre),}
+      \FunctionTok{list}\NormalTok{(}\AttributeTok{effect =} \StringTok{"XWX"}\NormalTok{, }\AttributeTok{parameter =} \DecValTok{0}\NormalTok{, }\AttributeTok{dv\_name =}\NormalTok{ DV, }\AttributeTok{fix =} \ConstantTok{TRUE}\NormalTok{,}
+           \AttributeTok{nodeSet =} \FunctionTok{c}\NormalTok{(}\StringTok{"COMPONENTS"}\NormalTok{, }\StringTok{"COMPONENTS"}\NormalTok{),}
+           \AttributeTok{interaction1 =} \StringTok{"self$component\_2\_coDyadCovar"}\NormalTok{, }\AttributeTok{x =}\NormalTok{ Wpost))))}
+\NormalTok{\}}
+
+\NormalTok{shocks }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(}
+  \FunctionTok{list}\NormalTok{(}\AttributeTok{effect\_level =} \FunctionTok{c}\NormalTok{(}\StringTok{"XWX\_1"}\NormalTok{, }\StringTok{"XWX\_2"}\NormalTok{), }\AttributeTok{parameter =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{), }\AttributeTok{portion =} \DecValTok{1}\NormalTok{, }\AttributeTok{shock\_on =} \DecValTok{0}\NormalTok{),}
+  \FunctionTok{list}\NormalTok{(}\AttributeTok{effect\_level =} \FunctionTok{c}\NormalTok{(}\StringTok{"XWX\_1"}\NormalTok{, }\StringTok{"XWX\_2"}\NormalTok{), }\AttributeTok{parameter =} \FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{), }\AttributeTok{portion =} \DecValTok{1}\NormalTok{, }\AttributeTok{shock\_on =} \DecValTok{1}\NormalTok{))}
+
+\NormalTok{env }\OtherTok{\textless{}{-}}\NormalTok{ SaomNkRSienaBiEnv}\SpecialCharTok{$}\FunctionTok{new}\NormalTok{(}\FunctionTok{list}\NormalTok{(}\AttributeTok{M =}\NormalTok{ M, }\AttributeTok{N =}\NormalTok{ N, }\AttributeTok{BI\_PROB =} \FloatTok{0.3}\NormalTok{, }\AttributeTok{rand\_seed =} \DecValTok{7000} \SpecialCharTok{+}\NormalTok{ s))}
+\NormalTok{env}\SpecialCharTok{$}\FunctionTok{search\_rsiena}\NormalTok{(}\AttributeTok{structure\_model =} \FunctionTok{mkm}\NormalTok{(rateX), }\AttributeTok{iterations\_per\_actor =} \DecValTok{30}\NormalTok{,}
+                  \AttributeTok{run\_seed =} \DecValTok{7000} \SpecialCharTok{+}\NormalTok{ s, }\AttributeTok{theta\_shocks =}\NormalTok{ shocks)}
+\end{Highlighting}
+\end{Shaded}
+
+\textbf{Results.} The rate manipulation separates cleanly: with
+\texttt{RateX = 2}, quick-to-act actors make 51.0 tie changes against
+6.7 for slow-to-act, a ratio of 7.6, while the control arm sits at 1.05.
+Every one of 40 runs shows a post-shock fitness valley. Two results are
+reported as null and should be: neither valley depth (\(p = 0.18\)) nor
+time to trough (\(p = 0.50\)) differs between arms.
+
+The substantive finding is a selection wedge. Comparing movers to
+non-movers in the same treated world gives \(-0.054\); comparing each
+mover to its own matched counterfactual gives \(-0.032\); the
+difference, \(-0.022\) (\(t = -2.46\), \(p = 0.015\)), is what the
+observational comparison attributes to repositioning that is in fact
+selection. Notably, applying the \emph{airline} project's decomposition
+to the same runs gives a mean wedge of \(-0.002\) --- degenerate,
+exactly as that decomposition's algebraic identity requires. Two
+conventions, one dataset, opposite informativeness: a reminder that a
+decomposition's benchmark determines what it can detect.
+
+\begin{figure}
+\centering
+\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio,alt={Rate separation. With  active, quick-to-act actors make 51.0 tie changes against 6.7 for slow-to-act (ratio 7.6) while the control arm sits at 1.05, with evaluation functions held identical across arms.}]{searchnet-jss-NEW2_files/figures/ishock_rate_separation.png}
+\caption{Rate separation. With \texttt{RateX} active, quick-to-act
+actors make 51.0 tie changes against 6.7 for slow-to-act (ratio 7.6)
+while the control arm sits at 1.05, with evaluation functions held
+identical across arms.\label{fig:rateseparation}}
+\end{figure}
+
+\textbf{Takeaway.} Separating the rate function from the evaluation
+function turns an unidentified question --- was the firm unwilling or
+unable? --- into two estimable quantities. A decomposition's benchmark
+determines what it can detect: the same runs yield a significant wedge
+under one convention and a degenerate zero under another.
+
+\subsubsection{Startup workforce formation}\label{sec:app-workforce}
+
+\textbf{Research question.} Startups hire to build capability, but
+breadth carries a coordination cost. When does successful
+co-construction foreclose its own continuation? The Penrose Effect
+predicts an inverted-U between workforce breadth and performance.
+
+\textbf{Construct and channels.} Actors are startups, components are
+skills. Workforce breadth is \(K_{AC}\) (\texttt{outAct}); competition
+for the same scarce skills is \(K_{CA}\) (\texttt{inPop}); skill
+complementarity within a team is \(K_{CC}\), entered as an empirically
+estimated \(W\). Labour-market overlap between startups is \(K_{AA}\)
+and is \emph{measured but not driven} --- a good illustration of the
+projection channel used as an outcome.
+
+\textbf{Design and calibration.} \(M = 50\) startups, \(N = 12\) skills,
+20 steps per actor. The parameters are not chosen; they are
+\textbf{RSiena} point estimates from a fitted bipartite SAOM on
+Crunchbase founding cohorts (\texttt{density} \(= -1.756\),
+\texttt{inPop} \(= 0.022\), \texttt{outAct} \(= 0.089\)), carried into
+simulation through the functional API:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{env }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_env}\NormalTok{(}\AttributeTok{M =} \DecValTok{50}\NormalTok{, }\AttributeTok{N =} \DecValTok{12}\NormalTok{, }\AttributeTok{density =} \FloatTok{0.3}\NormalTok{, }\AttributeTok{seed =}\NormalTok{ seed)}
+
+\NormalTok{mod }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_model}\NormalTok{(}
+  \AttributeTok{density          =} \SpecialCharTok{{-}}\FloatTok{1.756}\NormalTok{,   }\CommentTok{\# fitted}
+  \AttributeTok{popularity       =}  \FloatTok{0.022}\NormalTok{,   }\CommentTok{\# fitted (K\_CA)}
+  \AttributeTok{scope            =}  \FloatTok{0.089}\NormalTok{,   }\CommentTok{\# fitted (K\_AC)}
+  \AttributeTok{influence\_matrix =}\NormalTok{ W\_emp,    }\CommentTok{\# empirical influence matrix (drives K\_CC)}
+  \AttributeTok{influence\_weight =} \SpecialCharTok{{-}}\FloatTok{0.062}\NormalTok{)}
+
+\FunctionTok{saomnk\_run}\NormalTok{(env, mod, }\AttributeTok{steps\_per\_actor =} \DecValTok{20}\DataTypeTok{L}\NormalTok{, }\AttributeTok{seed =}\NormalTok{ seed }\SpecialCharTok{+} \DecValTok{7}\DataTypeTok{L}\NormalTok{)}
+\NormalTok{degs }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_get\_degrees}\NormalTok{(env)   }\CommentTok{\# K\_AC, K\_CA, K\_AA, K\_CC read out together}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.85\linewidth,height=\textheight,keepaspectratio,alt={Utility decomposition for the workforce application, separating each actor's objective into its density, scope and epistasis contributions. The scope term is positive at the fitted parameters, which is why no inverted U appears.}]{searchnet-jss-NEW2_files/figures/bort_utility_waterfall.png}
+\caption{Utility decomposition for the workforce application, separating
+each actor's objective into its density, scope and epistasis
+contributions. The scope term is positive at the fitted parameters,
+which is why no inverted U appears.\label{fig:bortwaterfall}}
+\end{figure}
+
+\textbf{Results, including a negative one.} Under the calibrated
+specification the inverted-U \emph{does not appear}: the quadratic
+coefficient is positive in all seven conditions. The diagnosis is
+transparent rather than mysterious --- the fitted \texttt{outAct} is
+\(+0.089\), so the estimated model contains no scope-cost term, and a
+curve with no cost cannot bend down. Re-specifying with \texttt{scope}
+\(< 0\) recovers the inverted-U in 8 of 27 cells, and every one of those
+8 sits at the empirical popularity value. A further design lets the
+scope cost regenerate from the realised landscape each wave; the
+inverted-U appears, but the emergence ratio is \(\approx 0.99\), meaning
+the curvature passes through from the imposed cost rather than being
+generated by feedback. We report this because it is the kind of result a
+simulation package should make easy to obtain and hard to overstate: the
+mechanism was not found, and the reason it was not found is legible in
+the fitted parameters.
+
+\includegraphics[width=0.49\linewidth,height=\textheight,keepaspectratio,alt={Workforce application. Left, the \textbackslash\{K\textbackslash\}-4 panel for 50 startups over 250 steps, showing all four channels read out together. Right, breadth (K\_\{AC\}) against utility; the relationship is monotone and concave, that is diminishing returns, not the inverted U the Penrose Effect predicts.}]{searchnet-jss-NEW2_files/figures/bort_k4_panel.png}
+\includegraphics[width=0.49\linewidth,height=\textheight,keepaspectratio]{searchnet-jss-NEW2_files/figures/bort_phase_space.png}
+
+\textbf{Takeaway.} Calibrating to fitted coefficients rather than to
+chosen ones makes a simulation falsifiable, and here it falsified the
+expected result: no inverted U appears because the fitted scope term is
+positive, so the model contains no coordination cost to bend the curve.
+
+\subsubsection{Policy shocks and risk-taking}\label{sec:app-policy}
+
+\textbf{Research question.} When a government subsidy arrives and later
+withdraws, do treated firms shift toward exploratory activity, and does
+the shift persist once the support is removed?
+
+\textbf{Construct and channels.} A subsidy is modelled as a timed change
+in an actor-covariate effect rather than as a change in the landscape:
+eligible firms receive a positive \texttt{egoX} weight, together with
+interactions on scope (\texttt{outAct|egoX}) that make the subsidy's
+effect depend on how broad the firm already is. \(K_{CC}\) carries the
+exploration structure through \texttt{XWX} with a component risk matrix.
+The design exercises \textbf{searchnet}'s shock schedule in its
+three-regime form --- pre-policy, policy, post-policy --- which is the
+natural way to represent a temporary intervention:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{theta\_shocks }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(}
+  \FunctionTok{list}\NormalTok{(}\AttributeTok{effect\_level =} \FunctionTok{c}\NormalTok{(}\StringTok{"egoX"}\NormalTok{, }\StringTok{"outAct|egoX\_1"}\NormalTok{, }\StringTok{"outActSqrt|egoX\_2"}\NormalTok{),}
+       \AttributeTok{parameter =} \FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{),             }\AttributeTok{portion =}\NormalTok{ pre\_portion,    }\AttributeTok{shock\_on =} \DecValTok{0}\NormalTok{),}
+  \FunctionTok{list}\NormalTok{(}\AttributeTok{effect\_level =} \FunctionTok{c}\NormalTok{(}\StringTok{"egoX"}\NormalTok{, }\StringTok{"outAct|egoX\_1"}\NormalTok{, }\StringTok{"outActSqrt|egoX\_2"}\NormalTok{),}
+       \AttributeTok{parameter =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, h1\_val, h2\_val),   }\AttributeTok{portion =}\NormalTok{ policy\_portion, }\AttributeTok{shock\_on =} \DecValTok{1}\NormalTok{),}
+  \FunctionTok{list}\NormalTok{(}\AttributeTok{effect\_level =} \FunctionTok{c}\NormalTok{(}\StringTok{"egoX"}\NormalTok{, }\StringTok{"outAct|egoX\_1"}\NormalTok{, }\StringTok{"outActSqrt|egoX\_2"}\NormalTok{),}
+       \AttributeTok{parameter =} \FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{),             }\AttributeTok{portion =}\NormalTok{ post\_portion,   }\AttributeTok{shock\_on =} \DecValTok{0}\NormalTok{))}
+
+\NormalTok{env }\OtherTok{\textless{}{-}}\NormalTok{ SaoMNK}\SpecialCharTok{$}\FunctionTok{new}\NormalTok{(}\FunctionTok{list}\NormalTok{(}\AttributeTok{M =}\NormalTok{ M, }\AttributeTok{N =}\NormalTok{ N, }\AttributeTok{init\_matrix =}\NormalTok{ init\_matrix))}
+\NormalTok{env}\SpecialCharTok{$}\FunctionTok{search\_rsiena}\NormalTok{(}\AttributeTok{structure\_model =}\NormalTok{ structure\_model,}
+                  \AttributeTok{theta\_shocks    =}\NormalTok{ theta\_shocks,}
+                  \AttributeTok{iterations\_per\_actor =}\NormalTok{ n\_iterations\_per\_actor }\SpecialCharTok{*}\NormalTok{ env}\SpecialCharTok{$}\NormalTok{N,}
+                  \AttributeTok{run\_seed =}\NormalTok{ run\_seed)}
+\end{Highlighting}
+\end{Shaded}
+
+\textbf{Design.} \(M = 18\) firms, \(N = 16\) components, 64 iterations
+per actor; a \(6 \times 5 \times 4 \times 3\) parameter grid of 360
+cells at five seeds each, for 1\{,\}800 simulations.
+
+\textbf{What the package supplies.} The risk-taking trajectory and
+exploration--exploitation plots are produced by \textbf{searchnet}'s own
+plotting layer from the simulated chain, not by bespoke code, which is
+the intended division of labour: the package computes the actor-level
+series and the analyst supplies the contrast. We show the trajectory
+panel rather than the difference-in-differences panel, because the
+latter's period axis is ordered lexically rather than temporally --- a
+reminder that a plot returned by a package is still the analyst's
+responsibility to read.
+
+\begin{figure}
+\centering
+\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio,alt={Policy shock. Actor-level risk-taking trajectories for subsidised and control firms across the three-regime shock schedule, plotted by  from the simulated chain; the vertical line marks the policy onset.}]{searchnet-jss-NEW2_files/figures/amr_risk_trajectories.png}
+\caption{Policy shock. Actor-level risk-taking trajectories for
+subsidised and control firms across the three-regime shock schedule,
+plotted by \textbf{searchnet} from the simulated chain; the vertical
+line marks the policy onset.\label{fig:policyshock}}
+\end{figure}
+
+\textbf{Takeaway.} A temporary intervention is naturally expressed as a
+three-regime shock schedule, and the package's plotting layer returns
+actor-level series ready for the contrast the analyst chooses.
+
+\subsubsection{Firm and industry effects}\label{sec:app-variance}
+
+The variance-decomposition literature asks whether firm or industry
+effects explain more of the variance in profitability. If firms are
+competitively coupled, the two are not separable in principle, and a
+simulation in which the data-generating process is known can show what a
+decomposition recovers.
+
+This application is the cleanest illustration of the minimal functional
+pipeline, and we present it as such:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{env }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_env}\NormalTok{(}\AttributeTok{M =}\NormalTok{ M, }\AttributeTok{N =}\NormalTok{ N, }\AttributeTok{density =} \FloatTok{0.2}\NormalTok{, }\AttributeTok{seed =}\NormalTok{ seed)}
+\NormalTok{K   }\OtherTok{\textless{}{-}} \FunctionTok{make\_influence\_matrix}\NormalTok{(N, arch\_type)      }\CommentTok{\# modular | hierarchical | random}
+
+\NormalTok{mod }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_model}\NormalTok{(}\AttributeTok{density =} \SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{, }\AttributeTok{popularity =}\NormalTok{ coupling,}
+                    \AttributeTok{scope =} \FloatTok{0.05}\NormalTok{, }\AttributeTok{influence\_matrix =}\NormalTok{ K, }\AttributeTok{influence\_weight =} \FloatTok{0.1}\NormalTok{)}
+
+\FunctionTok{saomnk\_run}\NormalTok{(env, mod, }\AttributeTok{steps\_per\_actor =} \DecValTok{15}\DataTypeTok{L}\NormalTok{, }\AttributeTok{seed =}\NormalTok{ seed }\SpecialCharTok{+} \DecValTok{1}\DataTypeTok{L}\NormalTok{)}
+\NormalTok{bi\_mat }\OtherTok{\textless{}{-}} \FunctionTok{saomnk\_get\_bipartite}\NormalTok{(env)}
+\end{Highlighting}
+\end{Shaded}
+
+Coupling strength enters through \texttt{popularity}, sweeping
+\(\{0, 0.1, 0.3,
+0.5, 0.8\}\) across three architectures. We report the pipeline, not a
+bias estimate: in the present implementation the ``true'' effects are
+re-derived from the same realised performance the estimator sees, so the
+recovered bias is zero by construction. Establishing a bias requires
+taking the truth from the generating parameters instead, and that work
+is ongoing. We state this because a software paper is the wrong place to
+launder an unfinished result, and because the pipeline above is
+genuinely the shortest path from a specification to a simulated
+bipartite panel.
+
+\textbf{Takeaway.} The shortest path from specification to simulated
+panel is four calls. The vignette also shows what a simulation cannot do
+for you: if the ``true'' effects are re-derived from the same realised
+outcome the estimator sees, recovered bias is zero by construction,
+whatever the coupling.
+
+\subsubsection{Market-access institutions}\label{sec:app-international}
+
+\textbf{Research question.} Do institutional distances between countries
+act as tolls on entry, or as topology that reshapes which markets are
+complementary? A toll shifts the cost of a market; topology changes what
+a market is worth \emph{given what else the firm holds} --- and the two
+are separable, because the first is a main effect on the component and
+the second is \(K_{CC}\).
+
+\textbf{Design.} A bipartite firm-by-market panel: 534 firms \(\times\)
+63 markets \(\times\) 4 waves, 8\{,\}023 ties, with nine coupling
+matrices built from CEPII gravity data and United Nations
+voting-similarity scores. Each matrix enters \emph{twice} --- once as a
+component main effect and once as \texttt{XWX} --- so the two mechanisms
+compete for the same variance in one model.
+
+\includegraphics[width=0.49\linewidth,height=\textheight,keepaspectratio,alt={Post-estimation use. Left, a geographic network view produced by . Right, a specification curve built with 's estimate-extraction and scaled-autocorrelation helpers over  fits; these functions existed but were unreachable without  until the  was corrected in 0.6.0.}]{searchnet-jss-NEW2_files/figures/intl_geo_network.png}
+\includegraphics[width=0.49\linewidth,height=\textheight,keepaspectratio]{searchnet-jss-NEW2_files/figures/intl_spec_curve.png}
+
+\textbf{Mode of use and result.} Estimation runs through \textbf{RSiena}
+directly; \textbf{searchnet} is used for the specification curve and
+network visualisation. Both channels operate: a block Wald test gives
+\(\chi^2 = 169.4\) for coupling against \(143.9\) for the main effects,
+both on 10 degrees of freedom. An earlier and stronger claim --- that
+institutions are topology \emph{rather than} toll --- was withdrawn
+after review found the cost-shifting term had been operationalised as a
+country-constant row mean while coupling was firm-varying, which is not
+a fair contest. The surviving claim is the weaker and better supported
+one, that the distance literature is incomplete rather than
+misspecified.
+
+\textbf{Takeaway.} Entering each matrix twice, as a component main
+effect and as a coupling term, lets two rival mechanisms compete for the
+same variance in one model instead of being compared across models.
+
+\subsubsection{Refactor candidates}\label{sec:app-refactor}
+
+Two further studies are built on the \(\{K\}\) formulation but implement
+it in bespoke code. We include them because the capability each would
+need is specific and short, and naming it is more useful to a
+prospective user than omitting the case.
+
+\textbf{Evaluator discipline under capital abundance.}
+\emph{Problematization:} when capital becomes abundant, which margins of
+organizational evaluation adjust, and what insulates the rest? Investors
+are actors and technology categories are components, so an investor's
+portfolio is a bipartite row and complementarity between categories is
+exactly \(K_{CC}\). \emph{Methods:} a bipartite SAOM on 368 investors
+\(\times\) 45 categories over six waves, with \texttt{outActSqrt},
+\texttt{inPopSqrt} and \texttt{cycle4}, plus complementarity entering as
+a \emph{time-varying actor-by-component} covariate interacted with a
+policy-regime indicator. The regime interaction is strongly negative,
+indicating that complementarity weighs less in commitment decisions when
+capital is cheap. \emph{Takeaway:} the substantive finding is a
+\(K_{CC}\) result, but it is not currently expressed as one.
+\emph{Capability required:} the study needs a \textbf{time-varying
+\(W\)} --- \texttt{varDyadCovar} rather than \texttt{coDyadCovar} --- so
+that epistasis can shift across waves. Version 0.7.0 supplies this as
+the \texttt{influence\_arrays} argument to \texttt{saomnk\_model},
+covering specification and simulation; estimation and visualisation of a
+time-varying \(W\) remain open. The analysis reported here predates that
+release and uses hand-built covariate arrays.
+
+\textbf{Basin geometry under policy regimes.} \emph{Problematization:}
+policy archetypes that produce indistinguishable average fitness may
+still leave firms in very differently shaped basins, and it is the
+shape, not the height, that determines what a shock does.
+\emph{Methods:} 20 firms and 16 activities across 27 conditions crossing
+epistatic density, interaction pattern and erosion, with a ten-term
+utility whose scope, synergy, herding and congestion terms are \(\{K\}\)
+channels written out longhand, and \textbf{RSiena} estimates supplying
+the coefficients. \emph{Takeaway:} archetypes converge on fitness --- a
+spread of 0.18 percent across four archetypes --- while diverging by
+roughly an order of magnitude on hysteresis area. Fitness parity
+conceals geometric divergence, which is an argument for reporting basin
+shape alongside performance. \emph{Capability required:}
+\textbf{searchnet} already computes fitness landscapes and basin
+statistics (Section\textasciitilde{}\ref{sec:basins}); what is missing
+is a \textbf{tournament driver} that runs heterogeneous strategy
+populations against one another and returns ranked outcomes. With that,
+the ten-term utility collapses into a \texttt{saomnk\_model} call plus a
+scoring function.
+
+We flag one caution these two cases share. Both were written before the
+package matured, and both re-implement channels the package now
+provides. A reader adopting \textbf{searchnet} should expect the reverse
+migration to be the common case: the framework is easier to express in
+the package than to re-derive, and the value of doing so is that the
+\(\{K\}\) channels then carry their standard meanings rather than local
+ones.
+
+\subsubsection{\texorpdfstring{Failure modes inherited from
+\textbf{RSiena}}{Failure modes inherited from }}\label{sec:app-failures}
+
+Because \textbf{searchnet} delegates estimation to \texttt{siena07}, it
+inherits that estimator's failure modes, and users should know two of
+them.
+
+The first is provable. Under method-of-moments estimation, no effect
+whose observed statistic lies exactly on the boundary of its attainable
+support can converge: the estimate diverges as \(\theta \to \pm\infty\).
+In a \emph{balanced} bipartite panel every actor holds at least one
+component in every wave, so the isolate count is exactly zero and
+\texttt{outTrunc(1)} is exactly \(M\) --- both saturated. A
+demonstration on public data changes only the sampling rule: on a
+balanced construction \texttt{outIso} estimates \(-18.65\) (SE
+\(6.62\)), a runaway; on an unbalanced construction of the same network,
+where 1\{,\}547 of 1\{,\}316 actor-waves are isolates, it estimates
+\(+3.29\) (SE \(0.42\)). The screen is one line --- compute
+\((\text{observed} - \text{lo}) / (\text{hi} - \text{lo})\) and refuse
+exactly \(0\) or \(1\) --- and it costs nothing to run before
+estimating. We note that a stronger version of this claim, covering
+\emph{near}-boundary statistics, was tested and refuted: only exact
+saturation disqualifies.
+
+\begin{figure}
+\centering
+\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio,alt={Why an exactly saturated statistic cannot converge. In a balanced panel the observed isolate count sits on the boundary of its support, so method of moments can match it only as \textbackslash theta \textbackslash to -\textbackslash infty; the same network sampled to permit entry and exit puts the statistic in the interior and the effect estimates cleanly.}]{searchnet-jss-NEW2_files/figures/remedies_boundary.png}
+\caption{Why an exactly saturated statistic cannot converge. In a
+balanced panel the observed isolate count sits on the boundary of its
+support, so method of moments can match it only as
+\(\theta \to -\infty\); the same network sampled to permit entry and
+exit puts the statistic in the interior and the effect estimates
+cleanly.\label{fig:boundary}}
+\end{figure}
+
+The second is a silent-failure pattern rather than a theorem, and it bit
+this package. \texttt{RSiena::includeEffects} matches effect names by
+non-standard evaluation, so passing a name held in a variable silently
+selects nothing. A version of \textbf{searchnet} passed
+\texttt{shortName = eff\$effect} into \texttt{...}, where the
+unevaluated expression was deparsed and no effect matched; because the
+call was wrapped in
+\texttt{tryCatch(..., error = function(e) warning(...))}, the simulation
+continued with the covariate effect \emph{absent}. Every actor-covariate
+effect was affected, so results labelled ``heterogeneous strategies''
+were in fact homogeneous-actor results. The package now ships a
+regression test asserting that every effect declared in a
+\texttt{structure\_model} appears with \texttt{include == TRUE} in the
+fitted effects object. The design lesson generalises beyond this
+package: \texttt{tryCatch}-to-warning is right for interactive
+exploration and wrong for a simulation engine whose output gets
+published.
+
+\section{Summary and future directions}\label{sec:conclusion}
+
+\textbf{searchnet} provides an \textsf{R} package that bridges two
+established research traditions---NK fitness landscapes from strategy
+and organization theory, and stochastic actor-oriented models from
+social network analysis---through a bipartite network reformulation of
+the search environment. The package makes three contributions to the
+computational social science toolkit.
+
+First, it \textbf{endogenizes the fitness landscape}. By representing
+the search environment as a bipartite network governed by a SAOM,
+landscape ruggedness becomes an emergent property of actors' affiliation
+decisions rather than an exogenously imposed parameter. Researchers
+studying adaptation, competitive dynamics, or organizational design can
+now model settings where the landscape itself is shaped by the actors
+who navigate it.
+
+Second, it \textbf{decomposes \(K\)} into a four-dimensional coupled
+degree system. The \(\{K\}\) framework reveals that the conventional
+complexity parameter is one dimension of a structurally coupled process
+linking actor behavior to landscape topology. The framework does not
+introduce new network statistics; its contribution is interpretive,
+providing a theoretical bridge between the NK and bipartite network
+literatures that makes visible the transmission mechanism through which
+strategic choices propagate into environmental structure.
+
+Third, it provides a \textbf{complete simulation and analysis toolkit}.
+The functional API (\texttt{saomnk\_env}, \texttt{saomnk\_model},
+\texttt{saomnk\_run}) lowers the barrier to entry for management
+scholars unfamiliar with \textbf{RSiena} syntax. The \(\{K\}\)-4 panel,
+3D phase space visualization, utility decomposition, network snapshots,
+and specification robustness diagnostics equip researchers with the
+tools needed to design, execute, and validate computational experiments.
+The package ships with eight vignettes, 16 Manim animation scenes, a
+100-step formal proof chain (Parts A--L, including Theorem 5's
+Brock--Durlauf recovery), 300 unit tests, and interactive game and
+classroom modules that make the framework accessible to students and
+practitioners.
+
+Several directions for future development are planned. First,
+integration with \textbf{RSiena}'s estimation machinery will allow
+researchers to fit the SaoMNK model to observed bipartite network panel
+data, enabling empirical calibration of simulation parameters. Second,
+the fitness landscape module will be extended with scalable
+approximation methods (e.g., Walsh decomposition, landscape correlation
+analysis) to support problem sizes beyond \(N = 20\). Third, a
+\textbf{Shiny} dashboard is under development to provide an interactive
+visual interface for simulation design and exploration, lowering the
+adoption barrier for researchers without programming experience. Fourth,
+a web API via \textbf{plumber} will enable integration with external
+frontends and cross-platform deployment. Two initially planned future
+directions have already been realized in the current release: the
+strategy game mode (Section\textasciitilde{}\ref{sec:interactive})
+provides gamified engagement with the framework, and the classroom
+teaching module offers a Capsim-style instructional platform with
+industry presets, AI opponents, and automated debrief generation. The
+accompanying PDW workshop vignette
+(\texttt{vignette("saomnk-pdw-workshop")}) provides a complete
+three-hour curriculum for introducing the framework to strategy and
+organization scholars.
+
+A companion paper \citep{downing2026architecture} applies the SaoMNK
+framework empirically, using eight data layers from U.S.~airline
+competitive dynamics to demonstrate how the \(\{K\}\) decomposition
+reveals structural mechanisms invisible to the classical scalar \(K\)
+parameterization.
+
+\textbf{searchnet} is available from GitHub at
+\url{https://github.com/sdownin/searchnet} and is under preparation for
+CRAN submission. The package requires \textsf{R} \(\geq\) 4.1.0 and
+depends on \textbf{R6}, \textbf{RSiena}, \textbf{igraph},
+\textbf{ggplot2}, \textbf{dplyr}, \textbf{Matrix}, \textbf{network}, and
+\textbf{reshape2}.
+
+\section{Computational details}\label{sec:compdetails}
+
+The results in this paper were obtained using
+\textsf{R}\textasciitilde4.3.2 with the packages
+\textbf{searchnet}\textasciitilde0.1.0,
+\textbf{RSiena}\textasciitilde1.4.7,
+\textbf{igraph}\textasciitilde2.0.3,
+\textbf{ggplot2}\textasciitilde3.5.0, and
+\textbf{Matrix}\textasciitilde1.6-5. \textsf{R} itself and all packages
+used are available from the Comprehensive \textsf{R} Archive Network
+(CRAN) at \url{https://CRAN.R-project.org/}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{sessionInfo}\NormalTok{()}
+\CommentTok{\#\textgreater{} R version 4.5.3 (2026{-}03{-}11 ucrt)}
+\CommentTok{\#\textgreater{} Platform: x86\_64{-}w64{-}mingw32/x64}
+\CommentTok{\#\textgreater{} Running under: Windows 11 x64 (build 26200)}
+\CommentTok{\#\textgreater{} }
+\CommentTok{\#\textgreater{} Matrix products: default}
+\CommentTok{\#\textgreater{}   LAPACK version 3.12.1}
+\CommentTok{\#\textgreater{} }
+\CommentTok{\#\textgreater{} locale:}
+\CommentTok{\#\textgreater{} [1] LC\_COLLATE=English\_United States.utf8 }
+\CommentTok{\#\textgreater{} [2] LC\_CTYPE=English\_United States.utf8   }
+\CommentTok{\#\textgreater{} [3] LC\_MONETARY=English\_United States.utf8}
+\CommentTok{\#\textgreater{} [4] LC\_NUMERIC=C                          }
+\CommentTok{\#\textgreater{} [5] LC\_TIME=English\_United States.utf8    }
+\CommentTok{\#\textgreater{} }
+\CommentTok{\#\textgreater{} time zone: America/Chicago}
+\CommentTok{\#\textgreater{} tzcode source: internal}
+\CommentTok{\#\textgreater{} }
+\CommentTok{\#\textgreater{} attached base packages:}
+\CommentTok{\#\textgreater{} [1] stats     graphics  grDevices utils     datasets  methods   base     }
+\CommentTok{\#\textgreater{} }
+\CommentTok{\#\textgreater{} other attached packages:}
+\CommentTok{\#\textgreater{} [1] Matrix\_1.7{-}4    ggplot2\_4.0.2   searchnet\_0.9.2 rmarkdown\_2.31 }
+\CommentTok{\#\textgreater{} }
+\CommentTok{\#\textgreater{} loaded via a namespace (and not attached):}
+\CommentTok{\#\textgreater{}   [1] mnormt\_2.1.2          pROC\_1.19.0.1         DRDID\_1.3.0          }
+\CommentTok{\#\textgreater{}   [4] gridExtra\_2.3         rlang\_1.1.7           magrittr\_2.0.4       }
+\CommentTok{\#\textgreater{}   [7] dreamerr\_1.5.0        otel\_0.2.0            compiler\_4.5.3       }
+\CommentTok{\#\textgreater{}  [10] mgcv\_1.9{-}4            vctrs\_0.7.1           reshape2\_1.4.5       }
+\CommentTok{\#\textgreater{}  [13] stringr\_1.6.0         pkgconfig\_2.0.3       fastmap\_1.2.0        }
+\CommentTok{\#\textgreater{}  [16] backports\_1.5.0       labeling\_0.4.3        ggraph\_2.2.2         }
+\CommentTok{\#\textgreater{}  [19] prodlim\_2025.04.28    network\_1.20.0        purrr\_1.2.1          }
+\CommentTok{\#\textgreater{}  [22] xfun\_0.56             cachem\_1.1.0          trust\_0.1{-}9          }
+\CommentTok{\#\textgreater{}  [25] jsonlite\_2.0.0        stringmagic\_1.2.0     recipes\_1.3.1        }
+\CommentTok{\#\textgreater{}  [28] fastglm\_0.0.4         uuid\_1.2{-}2            tweenr\_2.0.3         }
+\CommentTok{\#\textgreater{}  [31] psych\_2.6.5           broom\_1.0.12          parallel\_4.5.3       }
+\CommentTok{\#\textgreater{}  [34] R6\_2.6.1              stringi\_1.8.7         RColorBrewer\_1.1{-}3   }
+\CommentTok{\#\textgreater{}  [37] parallelly\_1.46.1     car\_3.1{-}5             rpart\_4.1.24         }
+\CommentTok{\#\textgreater{}  [40] lubridate\_1.9.5       Rcpp\_1.1.1            BMisc\_1.4.8          }
+\CommentTok{\#\textgreater{}  [43] iterators\_1.0.14      knitr\_1.51            future.apply\_1.20.2  }
+\CommentTok{\#\textgreater{}  [46] RSiena\_1.5.0          timechange\_0.4.0      splines\_4.5.3        }
+\CommentTok{\#\textgreater{}  [49] nnet\_7.3{-}20           igraph\_2.2.2          tidyselect\_1.2.1     }
+\CommentTok{\#\textgreater{}  [52] abind\_1.4{-}8           yaml\_2.3.12           viridis\_0.6.5        }
+\CommentTok{\#\textgreater{}  [55] timeDate\_4052.112     codetools\_0.2{-}20      listenv\_0.10.1       }
+\CommentTok{\#\textgreater{}  [58] lattice\_0.22{-}9        tibble\_3.3.1          plyr\_1.8.9           }
+\CommentTok{\#\textgreater{}  [61] withr\_3.0.2           S7\_0.2.1              coda\_0.19{-}4.1        }
+\CommentTok{\#\textgreater{}  [64] evaluate\_1.0.5        future\_1.69.0         survival\_3.8{-}6       }
+\CommentTok{\#\textgreater{}  [67] polyclip\_1.10{-}7       texreg\_1.39.5         pillar\_1.11.1        }
+\CommentTok{\#\textgreater{}  [70] ggpubr\_0.6.3          carData\_3.0{-}6         stats4\_4.5.3         }
+\CommentTok{\#\textgreater{}  [73] foreach\_1.5.2         generics\_0.1.4        scales\_1.4.0         }
+\CommentTok{\#\textgreater{}  [76] globals\_0.19.0        class\_7.3{-}23          glue\_1.8.0           }
+\CommentTok{\#\textgreater{}  [79] did\_2.5.0             tools\_4.5.3           data.table\_1.18.2.1  }
+\CommentTok{\#\textgreater{}  [82] ModelMetrics\_1.2.2.2  gower\_1.0.2           ggsignif\_0.6.4       }
+\CommentTok{\#\textgreater{}  [85] forcats\_1.0.1         visNetwork\_2.1.4      graphlayouts\_1.2.3   }
+\CommentTok{\#\textgreater{}  [88] tidygraph\_1.3.1       cowplot\_1.2.0         grid\_4.5.3           }
+\CommentTok{\#\textgreater{}  [91] bigmemory\_4.6.4       tidyr\_1.3.2           ipred\_0.9{-}15         }
+\CommentTok{\#\textgreater{}  [94] nlme\_3.1{-}168          ggforce\_0.5.0         Formula\_1.2{-}5        }
+\CommentTok{\#\textgreater{}  [97] cli\_3.6.5             bigmemory.sri\_0.1.8   viridisLite\_0.4.3    }
+\CommentTok{\#\textgreater{} [100] lava\_1.8.2            dplyr\_1.2.0           gtable\_0.3.6         }
+\CommentTok{\#\textgreater{} [103] rstatix\_0.7.3         digest\_0.6.39         caret\_7.0{-}1          }
+\CommentTok{\#\textgreater{} [106] ggrepel\_0.9.7         htmlwidgets\_1.6.4     farver\_2.1.2         }
+\CommentTok{\#\textgreater{} [109] memoise\_2.0.1         htmltools\_0.5.9       lifecycle\_1.0.5      }
+\CommentTok{\#\textgreater{} [112] hardhat\_1.4.2         httr\_1.4.8            statnet.common\_4.13.0}
+\CommentTok{\#\textgreater{} [115] MASS\_7.3{-}65}
+\end{Highlighting}
+\end{Shaded}
+
+
+\renewcommand\refname{References}
+\bibliography{searchnet.bib}
+
+\end{document}

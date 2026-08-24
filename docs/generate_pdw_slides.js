@@ -1481,9 +1481,9 @@ s31.addText([
 
 addPlainEnglishBox(s31, "Covariates let you model heterogeneous strategies. Not all firms search the same way.", 0.5, 4.9, 9.0, 0.45);
 
-// --- SLIDE 32: The Epistasis Matrix ---
+// --- SLIDE 32: The Influence Matrix ---
 let s32 = pres.addSlide({ masterName: "CONTENT" });
-addContentTitle(s32, "The Epistasis Matrix");
+addContentTitle(s32, "The Influence Matrix");
 addFooter(s32, "SECTION 4: Running Simulations", 32);
 
 // Two visual cards
@@ -1528,7 +1528,7 @@ s32.addText("Everything depends on everything. Many local optima. Hard to optimi
   fontFace: FONTS.body, fontSize: 10, color: C.gray600, margin: 0,
 });
 
-addPlainEnglishBox(s32, "The epistasis matrix controls landscape ruggedness -- just like in classic NK, but here it co-evolves with the actors.", 0.5, 4.2, 9.0, 0.55);
+addPlainEnglishBox(s32, "The influence matrix W is the model input that sets landscape ruggedness -- just like classic NK. You fix W; what co-evolves with the actors is the realized coupling K_CC and the fitness it drives.", 0.5, 4.2, 9.0, 0.55);
 
 // --- SLIDE 33: Key Insight ---
 let s33 = pres.addSlide({ masterName: "DARK_FULL" });
