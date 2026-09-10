@@ -164,7 +164,7 @@ bd_self_consistency <- function(beta, J, h,
 #' coupling \eqn{J m}, while RSiena's \code{inPop} statistic uses the
 #' sqrt-transformed column-degree \eqn{\sqrt{n_j + 1}} as a variance
 #' stabiliser. The two coincide only in the local linearisation around
-#' \eqn{m = 1/2} (PROOF\_TABLE.md row L16); elsewhere the saomnk-inPop
+#' \eqn{m = 1/2} (\code{PROOF_TABLE.md} row L16); elsewhere the saomnk-inPop
 #' fixed point differs from B&D's, and this function gives the former.
 #'
 #' The fixed-point equation is:
@@ -197,12 +197,14 @@ bd_self_consistency <- function(beta, J, h,
 #'   add an \code{all_roots} argument analogous to
 #'   \code{\link{bd_self_consistency}}.
 #' @references
-#'   See PROOF\_TABLE.md row L16 for the linearisation that connects
+#'   See \code{PROOF_TABLE.md} row L16 for the linearisation that connects
 #'   this fixed-point equation to the canonical
-#'   \citep{BrockDurlauf2001} form.
+#'   Brock & Durlauf (2001) form.
 #' @seealso \code{\link{bd_self_consistency}} for the B&D linear-
 #'   coupling fixed point; \code{\link{verify_brock_durlauf_reduction}}
-#'   for the harness that uses both as comparison targets.
+#'   for the harness that uses both as comparison targets;
+#'   \code{vignette("saomnk-brock-durlauf")} for the full discussion of
+#'   the B/C tradeoff.
 #' @examples
 #' ## Sub-critical regime around m = 0.5 (Option C regime where B&D
 #' ## linearisation is locally accurate)
@@ -535,6 +537,30 @@ bd_landau_steepness <- function(beta, J, m_star, tau = 1, delta_m = 0.05) {
 #' \eqn{O(1 / \sqrt{M})} is the headline empirical signature of the
 #' mean-field reduction.
 #'
+#' The empirical end-state mean adoption is compared to \emph{two}
+#' analytical references:
+#'
+#' \enumerate{
+#'   \item \strong{Option C reference (B&D, primary):} the canonical
+#'     Brock and Durlauf (2001) fixed point
+#'     \eqn{m = \sigma(\beta(h + J m))} computed via
+#'     \code{\link{bd_self_consistency}}.  This is what Theorem 5 predicts
+#'     in the regime where the sqrt linearisation of inPop is locally
+#'     accurate (\eqn{m^* \approx 0.5}, achieved by setting
+#'     \code{h_b = -J_b / 2} with modest \code{J_b}).
+#'   \item \strong{Option B reference (saomnk-inPop, secondary):} the
+#'     actual fixed point of the live RSiena pipeline,
+#'     \eqn{m = \sigma(\beta(h + \theta\sqrt{Mm + 1}))} computed via
+#'     \code{\link{saomnk_inpop_self_consistency}}.  This is what the
+#'     simulation should match in \emph{any} regime (regardless of where
+#'     \eqn{m^*} sits), and is the correct comparison target outside the
+#'     Option C regime.
+#' }
+#'
+#' Convergence of \code{m_b_empirical} to \code{m_BD_analytical} (when
+#' \code{in_BD_regime = TRUE}) and to \code{m_saomnk_analytical} (always)
+#' is what the harness reports.
+#'
 #' The function is robust to absent or failing simulation back-ends:
 #' if \code{\link{saomnk_env}}, \code{\link{saomnk_model}}, or
 #' \code{\link{saomnk_run}} throw, the offending row's
@@ -582,7 +608,7 @@ bd_landau_steepness <- function(beta, J, m_star, tau = 1, delta_m = 0.05) {
 #' @param n_components Integer number of components \eqn{N}
 #'   (default \code{8}). Must be \eqn{\ge 4} because RSiena's bipartite
 #'   \code{sienaDependent} rejects degenerate \eqn{N \le 2} arrays.
-#'   Under restriction Rb2(b) (PROOF\_TABLE.md L4) the \eqn{N} components
+#'   Under restriction Rb2(b) (\code{PROOF_TABLE.md} L4) the \eqn{N} components
 #'   become independent B&D problems when \code{scope = 0} and
 #'   \code{influence_weight = 0}, providing \eqn{N} statistical replicates
 #'   per simulated environment for free.
@@ -602,13 +628,13 @@ bd_landau_steepness <- function(beta, J, m_star, tau = 1, delta_m = 0.05) {
 #'   the slope of \eqn{\sqrt{Mm+1}} at \eqn{m=1/2}); when \code{FALSE},
 #'   the raw \code{J_b} is used. The corrected version is locally
 #'   accurate near \eqn{m = 1/2} (Option C regime). See
-#'   PROOF\_TABLE.md row L16 for full derivation.
+#'   \code{PROOF_TABLE.md} row L16 for full derivation.
 #' @param seed Integer random seed (default \code{12345}).
 #' @return A \code{data.frame} with columns (Option B = saomnk-inPop
 #'   reference; Option C = B&D reference):
 #'   \item{M}{Actor count.}
-#'   \item{m_b_empirical}{Mean end-state adoption fraction (in [0,1])
-#'     averaged across replicates.}
+#'   \item{m_b_empirical}{Mean end-state adoption fraction (in
+#'     \eqn{[0,1]}) averaged across replicates.}
 #'   \item{m_BD_analytical}{Analytical B&D fixed-point adoption
 #'     fraction (Option C reference). Theorem 5 predicts the empirical
 #'     should match this in the Option C regime.}
@@ -629,6 +655,20 @@ bd_landau_steepness <- function(beta, J, m_star, tau = 1, delta_m = 0.05) {
 #'   \item{log_error_saomnk}{\code{log10(abs_error_saomnk)}.}
 #'   \item{qualitative_match}{Logical: empirical and B&D analytical
 #'     are on the same side of 0.5.}
+#' @references
+#'   Brock, W. A. & Durlauf, S. N. (2001). Discrete choice with social
+#'   interactions. \emph{Review of Economic Studies}, 68(2), 235--260.
+#'
+#'   Ellis, R. S. (1985). \emph{Entropy, Large Deviations, and Statistical
+#'   Mechanics}. Springer.
+#' @seealso \code{\link{bd_self_consistency}} (B&D analytical),
+#'   \code{\link{saomnk_inpop_self_consistency}} (saomnk-inPop analytical),
+#'   \code{\link{bd_equilibrium_count}},
+#'   \code{\link{saomnk_social_multiplier}},
+#'   \code{\link{bd_landau_steepness}};
+#'   \code{vignette("saomnk-brock-durlauf")} for the full Theorem 5
+#'   walkthrough including the Option B / Option C tradeoff.
+#' @keywords utilities
 #' @examples
 #' \dontrun{
 #'   ## Default (Option C regime): J_b=0.5, h_b=-0.25, m*~=0.5

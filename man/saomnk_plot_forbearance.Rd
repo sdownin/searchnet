@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot-forbearance.R
 \name{saomnk_plot_forbearance}
 \alias{saomnk_plot_forbearance}
-\title{Standalone forbearance plot functions for SaoMNK.}
+\title{Standalone forbearance plot functions for SaoMNK}
 \usage{
 saomnk_plot_forbearance(
   env = NULL,

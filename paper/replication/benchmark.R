@@ -48,7 +48,7 @@ for (r in seq_len(n_reps)) {
     e_bench <- saomnk_env(M = 4, N = 6, seed = r)
     m_bench <- saomnk_model(
       density = -0.5,
-      epistasis_matrix = saomnk_block_diagonal(6, 2)
+      influence_matrix = saomnk_block_diagonal(6, 2)
     )
     saomnk_run(e_bench, m_bench, steps_per_actor = 30, seed = r)
   })
@@ -128,7 +128,7 @@ for (i in seq_len(nrow(sizes))) {
       e_s <- saomnk_env(M = m_val, N = n_val, seed = 1000 + r)
       m_s <- saomnk_model(
         density = -0.5,
-        epistasis_matrix = saomnk_block_diagonal(n_val, n_blocks)
+        influence_matrix = saomnk_block_diagonal(n_val, n_blocks)
       )
       saomnk_run(e_s, m_s, steps_per_actor = 30, seed = 1000 + r)
     })
@@ -176,7 +176,7 @@ for (n_val in c(8, 10, 12)) {
   e_ls <- saomnk_env(M = 4, N = n_val, seed = 2000)
   m_ls <- saomnk_model(
     density = -0.5,
-    epistasis_matrix = saomnk_block_diagonal(n_val, max(floor(n_val / 3), 1))
+    influence_matrix = saomnk_block_diagonal(n_val, max(floor(n_val / 3), 1))
   )
   saomnk_run(e_ls, m_ls, steps_per_actor = 10, seed = 2000)
 
@@ -205,7 +205,7 @@ for (n_val in c(15, 20)) {
   e_ls <- saomnk_env(M = 4, N = n_val, seed = 3000)
   m_ls <- saomnk_model(
     density = -0.5,
-    epistasis_matrix = saomnk_block_diagonal(n_val, max(floor(n_val / 3), 1))
+    influence_matrix = saomnk_block_diagonal(n_val, max(floor(n_val / 3), 1))
   )
   saomnk_run(e_ls, m_ls, steps_per_actor = 10, seed = 3000)
 

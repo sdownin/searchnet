@@ -101,3 +101,4 @@
 ^_debug_install\.R$
 ^_jss_.*\.txt$
 ^\.git$
+^\.public-exclude$

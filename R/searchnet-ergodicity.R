@@ -313,6 +313,7 @@ searchnet_ergodicity_sweep <- function(M = 12L, N = 15L,
 #' @param x A \code{searchnet_ergodicity} object.
 #' @param ... Ignored.
 #' @return \code{x}, invisibly.
+#' @method print searchnet_ergodicity
 #' @export
 print.searchnet_ergodicity <- function(x, ...) {
   cfg <- x$config; v <- x$verdict
@@ -411,7 +412,7 @@ plot.searchnet_ergodicity <- function(x, ...) {
   ## Shade the Monte Carlo floor: below it the measured gap is estimator
   ## noise, so the flattening there is not the chain failing to mix.
   if (!is.null(x$decay) && is.finite(x$decay$floor)) {
-    graphics::rect(par("usr")[1], par("usr")[3], par("usr")[2],
+    graphics::rect(graphics::par("usr")[1], graphics::par("usr")[3], graphics::par("usr")[2],
                    log10(x$decay$floor),
                    col = grDevices::adjustcolor("grey60", alpha.f = 0.18),
                    border = NA)

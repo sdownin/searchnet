@@ -99,7 +99,7 @@ saomnk_depth_width_tradeoff <- function(policy_params = .policy_params) {
 
 #' Compute Cross-Partial Derivative Numerically
 #'
-#' Numerically estimates d2W/d(sigma)d(gamma) — the cross-partial
+#' Numerically estimates d2W/d(sigma)d(gamma), the cross-partial
 #' of basin width with respect to synergy and scope cost.
 #' Negative cross-partial = the complementarity trap.
 #'

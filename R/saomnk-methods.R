@@ -65,6 +65,7 @@ NULL
 #' @param x A \code{saomnk_model} object.
 #' @param ... Ignored; present for S3 consistency.
 #' @return \code{x}, invisibly.
+#' @method print saomnk_model
 #' @export
 #' @examples
 #' saomnk_model(density = -0.5, popularity = 0.2,
@@ -159,6 +160,7 @@ print.saomnk_model <- function(x, ...) {
 #' @param x A \code{saomnk_shock} object.
 #' @param ... Ignored; present for S3 consistency.
 #' @return \code{x}, invisibly.
+#' @method print saomnk_shock
 #' @export
 #' @examples
 #' saomnk_shock("density", parameter = -2.0, portion = 1)
@@ -191,6 +193,7 @@ print.saomnk_shock <- function(x, ...) {
 #' @param x A \code{saomnk_assent} object built by \code{\link{saomnk_assent}}.
 #' @param ... Ignored; present for S3 consistency.
 #' @return \code{x}, invisibly.
+#' @method print saomnk_assent
 #' @export
 #' @examples
 #' saomnk_assent(prob = 0.5)
@@ -240,6 +243,7 @@ print.saomnk_assent <- function(x, ...) {
 #' @param x A \code{saomnk_summary} object (a classed character string).
 #' @param ... Ignored; present for S3 consistency.
 #' @return \code{x}, invisibly.
+#' @method print saomnk_summary
 #' @export
 #' @examples
 #' \dontrun{

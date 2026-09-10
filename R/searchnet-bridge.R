@@ -820,7 +820,7 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
 #'     \item{\code{env}}{A \code{SaomNkRSienaBiEnv} object with the bipartite
 #'       matrix set to the empirical data.}
 #'     \item{\code{W}}{An \eqn{N \times N}{N x N} influence matrix estimated from
-#'       SIC co-occurrence in supply chains (normalized to [0,1]).}
+#'       SIC co-occurrence in supply chains (normalized to \eqn{[0,1]}).}
 #'     \item{\code{actor_attrs}}{A \code{data.frame} of actor (firm) covariates.}
 #'     \item{\code{component_attrs}}{A \code{data.frame} of component (SIC
 #'       category) attributes.}

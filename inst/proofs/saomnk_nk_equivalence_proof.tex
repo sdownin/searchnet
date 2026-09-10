@@ -1,3 +1,13 @@
+% ---------------------------------------------------------------------------
+% NUMBERING AND STATUS NOTE (2026-09-09). This file's Theorems 1-3 are Paper T's
+% Theorems 1-3 (CD2026_PaperT_v4, Management Science). Its "Proposition 1/2/3"
+% under Theorem 3 are Paper T's Theorems 3a/3b/3c. Lemma 1 (Payoff Equivalence)
+% was FALSE as written until 2026-09-09: the utility carried a factor b_{id} in
+% front of f_d that NK fitness does not have, and the proof verified the
+% identity only at x = 1. Repaired here and in Paper T (stage 127) by dropping
+% the factor; the counterexample and the repaired proof are machine-checked in
+% Lean 4 (D:\CD2026\formal\saomnk, Saomnk/Reduction.lean).
+% ---------------------------------------------------------------------------
 \documentclass[12pt]{article}
 
 % ---------- packages ----------
@@ -192,7 +202,7 @@ other actors $\bB_{-i}$ and influence matrix $\bE$, is
 \begin{equation}
 \label{eq:saomnk_utility}
   u_i(\bb_i; \bB_{-i}, \bE)
-  = \underbrace{\sum_{d=1}^{N} b_{id} \cdot
+  = \underbrace{\sum_{d=1}^{N}
     f_d\!\left(\bb_i \odot \bE_{d\cdot}\right)}_{\text{NK component}}
   + \underbrace{\sum_{k=1}^{p} \theta_k \, s_k(\bb_i, \bB)}_{\text{SAOM network statistics}},
 \end{equation}
@@ -293,58 +303,29 @@ $\bB_{-i}$---become irrelevant.
 The SaoMNK utility \eqref{eq:saomnk_utility} therefore simplifies to
 \begin{equation}
 \label{eq:reduced_utility}
-  u(\bx; \bE) = \sum_{d=1}^{N} x_d \cdot f_d\!\left(\bx \odot \bE_{d\cdot}\right).
+  u(\bx; \bE) = \sum_{d=1}^{N} f_d\!\left(\bx \odot \bE_{d\cdot}\right).
 \end{equation}
 
 Under \ref{R2}, $\bE = \bA$, so $\bE_{d\cdot} = \bA_{d\cdot}$ and the
 mask $\bx \odot \bE_{d\cdot}$ selects exactly the entries of $\bx$ in the
 epistatic neighborhood $\mathcal{N}(d) = \{j : A_{dj} = 1\}$.
 
-Now consider any configuration $\bx$ that the single actor would adopt. Since
-the actor occupies exactly the components where $x_d = 1$, and the payoff
-$f_d$ is only relevant for occupied components, we examine the index computation
-\eqref{eq:powerkey_index}:
-\begin{equation*}
-  f_d\!\left(\bx \odot \bA_{d\cdot}\right)
-  = \mathrm{NK\_land}\!\left[\sum_{j=1}^{N} x_j \, A_{dj} \, \mathrm{PK}(N)_j + 1,\; d\right].
-\end{equation*}
-
-In the standard NK model, $f_d(\bx_{\mathcal{N}(d)})$ uses the same indexing:
-the sub-vector $\bx_{\mathcal{N}(d)}$ is converted to an integer via a power key
-over the $K+1$ relevant bits. The SaoMNK formulation embeds this into the full
-$N$-bit power key by zeroing out non-epistatic components via the mask
-$A_{dj}$. Since $x_j \cdot A_{dj} = 0$ whenever $j \notin \mathcal{N}(d)$,
-only the bits in $\mathcal{N}(d)$ contribute to the index sum, yielding the
-identical table lookup.
-
-Consider the case where $\bx = \mathbf{1}$ (all components set to 1, i.e., the
-actor occupies all $N$ components). Then $x_d = 1$ for all $d$, and
-\begin{equation*}
-  u(\mathbf{1}; \bA) = \sum_{d=1}^{N} 1 \cdot f_d(\mathbf{1} \odot \bA_{d\cdot})
-  = \sum_{d=1}^{N} f_d(\bx_{\mathcal{N}(d)}) = N \cdot W(\bx).
-\end{equation*}
-
-More generally, for the standard NK model to be fully embedded, we require
-that the single actor always occupies all $N$ components (i.e.,
-$\bx = \mathbf{1}$ as a constraint on the ``occupied'' set, with the
-\emph{values} of the components---0 or 1---encoding the decision). In the NK
-model, the state $\bx \in \{0,1\}^N$ represents the \emph{value} assigned to
-each of $N$ components. In the SaoMNK bipartite representation, $b_{1d} = 1$
-means actor~1 is connected to component $d$.
-
-The equivalence is achieved by the following interpretation: each component $d$
-in the NK model corresponds to a tie $b_{1d}$ in SaoMNK. The NK state
-$x_d \in \{0,1\}$ maps directly to $b_{1d} \in \{0,1\}$. Thus, the NK
-fitness at configuration $\bx$ equals:
+Under \ref{R2}, every term of \eqref{eq:reduced_utility} is the NK component
+payoff evaluated on the same sub-vector, so
 \begin{equation}
 \label{eq:payoff_equiv}
-  W(\bx) = \frac{1}{N}\sum_{d=1}^{N} f_d(\bx_{\mathcal{N}(d)})
-  = \frac{1}{N}\, u(\bx; \bA),
+  u(\bx; \bA) = \sum_{d=1}^{N} f_d(\bx_{\mathcal{N}(d)}) = N \cdot W(\bx)
+  \quad\text{for every } \bx \in \{0,1\}^N .
 \end{equation}
-since every term in \eqref{eq:reduced_utility} contributes (with $x_d$
-serving as both the component value and the tie indicator). The factor
-$\frac{1}{N}$ is a normalization constant that does not affect ordinal rankings
-of configurations.
+Every component contributes its payoff whether $x_d = 0$ or $x_d = 1$, exactly as
+in \Cref{def:nk}; this is why the NK term of \eqref{eq:saomnk_utility} carries
+no factor $b_{id}$. (An earlier version of this proof multiplied each payoff by
+$b_{id}$ and verified the identity only at $\bx = \mathbf{1}$; with that factor
+the identity fails whenever some $x_d = 0$, and the greedy walks can move in
+opposite directions from the same state. The counterexample and the repaired
+identity are machine-checked in Lean 4; see the note at the head of this file.)
+The factor $\frac{1}{N}$ is a normalization constant that does not affect
+ordinal rankings of configurations.
 
 This completes the payoff equivalence: the SaoMNK utility under
 \ref{R1}--\ref{R3} is an affine transformation of the NK fitness function, and

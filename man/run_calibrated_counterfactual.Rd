@@ -7,10 +7,12 @@
 run_calibrated_counterfactual(
   bridge_env,
   bridge_params,
-  scenario = list(name = "double_closure", modify = list(transTriads = 2)),
+  scenario = list(name = "double_popularity", modify = list(inPop = 2)),
   iterations = 50,
   n_reps = 10,
-  seed = 42
+  seed = 42,
+  conf_level = 0.95,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -22,48 +24,106 @@ run_calibrated_counterfactual(
 \describe{
 \item{\code{name}}{Character. Scenario label for output.}
 \item{\code{modify}}{Named list of \code{effect -> multiplier}
-overrides.  For example, \code{list(transTriads = 2.0)} doubles the
-closure parameter.}
+overrides.  For example, \code{list(cycle4 = 2.0)} doubles the
+bipartite closure parameter.  The keys are SaoMNK-side effect names --
+what \code{\link{saom_to_saomnk}} produced -- and a key that matches no
+baseline effect is a hard error, not a silent no-op.}
 \item{\code{description}}{Optional character description.}
 }}
 
 \item{iterations}{Integer. Number of RSiena simulation iterations per wave
 (default \code{50}).}
 
-\item{n_reps}{Integer. Number of Monte Carlo replications for statistical
-comparison (default \code{10}).}
+\item{n_reps}{Integer. Number of Monte Carlo replications (default
+\code{10}).  Replication \code{r} uses seed \code{seed + r - 1} for BOTH
+arms, so the two arms are matched within a replication and independent
+across replications.}
 
-\item{seed}{Integer. Random seed (default \code{42}).}
+\item{seed}{Integer. Base random seed (default \code{42}).}
+
+\item{conf_level}{Numeric confidence level for the paired interval across
+replications (default \code{0.95}).}
+
+\item{verbose}{Logical. Print per-replication progress and the summary
+(default \code{TRUE}).}
 }
 \value{
 A list with components:
 \describe{
 \item{\code{scenario}}{The scenario specification.}
-\item{\code{baseline}}{List with \code{env} and \code{k4} summary.}
-\item{\code{counterfactual}}{List with \code{env} and \code{k4} summary.}
+\item{\code{baseline}}{List with \code{env} and \code{k4} summary for the
+FIRST replication, plus \code{k4_reps} (one summary per replication)
+and \code{envs}.}
+\item{\code{counterfactual}}{The same, for the counterfactual arm.}
 \item{\code{comparison}}{Named list of delta values for each K-degree
 measure (\code{delta_K_AC}, \code{delta_K_CA}, \code{delta_K_AA},
-\code{delta_K_CC}).}
+\code{delta_K_CC}).  Each is now the MEAN delta over replications; with
+\code{n_reps = 1} it is the single-run delta as before.}
+\item{\code{rep_deltas}}{Tidy \code{data.frame}, one row per replication
+x measure: \code{rep}, \code{seed}, \code{measure}, \code{baseline},
+\code{counterfactual}, \code{delta}.}
+\item{\code{summary}}{\code{data.frame}, one row per measure:
+\code{mean_delta}, \code{sd_delta}, \code{mc_se}, paired t-test
+(\code{t_stat}, \code{df}, \code{p_value}, \code{ci_lower},
+\code{ci_upper}) and the paired quantile interval (\code{q_lower},
+\code{q_upper}).}
+\item{\code{actor_deltas}}{Tidy \code{data.frame} of per-actor deltas:
+\code{rep}, \code{seed}, \code{actor}, \code{actor_id}, arm values and
+deltas for \code{K_AC} and \code{K_AA}.  Use this for actor-level
+heterogeneous effects.}
+\item{\code{component_deltas}}{The same, per component, for \code{K_CA}
+and \code{K_CC}.}
+\item{\code{seeds}}{Integer vector of the replication seeds used.}
+\item{\code{influence}}{What happened to the influence matrix W: the
+RSiena slot it was registered into, the \code{XWX} weight actually
+used, and \code{weight_source} -- \code{"fitted"} when the SAOM
+estimated an \code{XWX} term, otherwise a weight of \code{0} with the
+reason stated.  A zero weight means epistasis is switched OFF in both
+arms; no value is invented to avoid that.}
+\item{\code{caveat}}{The matched-seed caveat, for reporting.}
 }
 }
 \description{
 Takes a calibrated environment (from \code{\link{empirical_to_saomnk_env}})
-and parameter bridge (from \code{\link{saom_to_saomnk}}), runs a baseline
-simulation, then applies a counterfactual parameter modification and runs
-again.  Compares the four K-degree measures between scenarios.
+and parameter bridge (from \code{\link{saom_to_saomnk}}), and runs a matched
+pair of simulations -- baseline and counterfactual -- \code{n_reps} times.
+Within each replication BOTH arms are constructed and run at the same seed,
+so the only difference between them is the parameter modification.  The four
+K-degree measures are differenced within each replication and then averaged
+across replications with a Monte Carlo standard error, a paired t-test and a
+paired quantile interval.  Per-actor and per-component deltas are returned as
+well, so heterogeneous effects can be computed downstream.
 }
+\section{Matched seeds fix initialisation, not the path}{
+
+Within a replication both arms are constructed and run at the same seed, so
+the landscape, the W matrix, the NK noise matrix and the initial holdings are
+bit-identical across arms.  This fixes INITIALISATION only.  It does not fix
+the realized trajectory: after the first divergent ministep the two arms
+consume the RNG stream differently, so \dQuote{same actors, same landscape,
+same start} holds exactly while \dQuote{same realized path} does not.  A
+single baseline/counterfactual pair is therefore not a counterfactual; the
+delta must be reported as an average over replications with its Monte Carlo
+error.  (This mirrors the disclosure in
+\code{03_STUDY_DESIGN.md} section 6.3 for \code{run_counterfactual_pair()}.)
+}
+
 \examples{
 \dontrun{
 mi_data <- readRDS("path/to/mi_data.rds")
 bridge_env <- empirical_to_saomnk_env(mi_data, wave = 3)
 
-thetas <- c(density = -1.2, gwespFF = 0.8, inPop = 0.3)
-bridge_params <- saom_to_saomnk(thetas)
+thetas <- c(density = -1.2, cycle3 = 0.8, inPop = 0.3)
+## cycle3 -> cycle4 is an APPROXIMATE mapping, so it must be opted into
+bridge_params <- saom_to_saomnk(thetas, strict = FALSE)
 
 result <- run_calibrated_counterfactual(
   bridge_env, bridge_params,
-  scenario = get_orm_scenarios()$double_closure
+  scenario = get_orm_scenarios()$double_closure,
+  n_reps = 20
 )
-result$comparison  # delta K values
+result$comparison    # mean delta K values over replications
+result$summary       # with Monte Carlo error and paired t-tests
+result$actor_deltas  # per-actor heterogeneity
 }
 }

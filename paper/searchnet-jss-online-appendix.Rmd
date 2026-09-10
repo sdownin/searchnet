@@ -1169,7 +1169,7 @@ $m_j$, and cross-component variation (induced by heterogeneous fields $h_j$
 or by component-specific covariate shifts) supplies further moments for joint
 identification of the field/coupling pair.
 
-This is the bridge to the CD2026 airline empirics: the same $(\beta, J_b, h_b)$
+This is the bridge to structural estimation: the same $(\beta, J_b, h_b)$
 triple that governs equilibrium concentration in our SaoMNK simulations is
 *identifiable from cross-sectional and panel variation* under the standard
 B&D assumptions, opening the door to structural estimation of social

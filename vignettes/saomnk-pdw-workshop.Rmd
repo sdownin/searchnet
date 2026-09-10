@@ -464,19 +464,28 @@ starting point but *how fast*.
 extremes --- 10% and 80% of ties present --- and run at a range of chain
 lengths, several replicates each:
 
-```{r ergodicity-demo, fig.height=5, fig.width=10}
+<!-- purl=FALSE: the sweep runs in full at build time, which is where the
+     output below comes from. Excluding it from the tangled script keeps
+     `R CMD check`'s vignette-code step from running it a second time;
+     nothing later depends on `erg`. -->
+
+```{r ergodicity-demo, fig.height=5, fig.width=10, purl=FALSE}
+## An 8 x 10 grid keeps this runnable in a workshop session. A tie is worth
+## 1/80 = 0.0125 of the density here, so the 0.10 margin is eight ties --- the
+## same margin-to-resolution ratio as the 12 x 15 / 0.05 run in
+## vignette("saomnk-blume-tutorial"), which is the full-size version.
 erg <- searchnet_ergodicity_sweep(
-  M = 12, N = 15, start_densities = c(0.1, 0.8),
-  run_lengths = c(15, 30, 60, 120, 240),
-  replicates = 6, equivalence_margin = 0.05, seed = 42
+  M = 8, N = 10, start_densities = c(0.1, 0.8),
+  run_lengths = c(8, 24, 72),
+  replicates = 6, equivalence_margin = 0.10, seed = 42
 )
 
 erg
 plot(erg)
 ```
 
-A starting gap of 0.70 is erased to under 0.01, and the gap decays as a power
-of run length --- roughly halving each time the chain runs twice as long.
+A starting gap of 0.70 is erased to around 0.01, and the gap decays as a power
+of run length --- shrinking steadily as the chain runs longer.
 
 **Why this is worth showing in a methods session.** The version of this
 demonstration that circulated in earlier releases ran the model once from each
@@ -495,10 +504,10 @@ Three things make the replacement a measurement:
 | The verdict is an **equivalence test**, not a difference test | Failing to reject a difference is not evidence of sameness; TOST requires the whole interval inside the margin |
 | The **Monte Carlo floor** is drawn and excluded from the fit | Once the arms agree, the measured gap settles at replicate noise, not zero; fitting through it overstates the decay rate |
 
-> **Discussion prompt.** The sweep reports *not* equivalent at 15 and 30
-> iterations per actor. Is that a failure of the model, or a fact about the
-> model? What would you conclude if it never reached equivalence at any run
-> length you could afford?
+> **Discussion prompt.** The sweep reports *not* equivalent at the shorter run
+> lengths, and reaches equivalence only at the longest one. Is that a failure
+> of the model, or a fact about the model? What would you conclude if it never
+> reached equivalence at any run length you could afford?
 
 > **A trap worth knowing.** `search_rsiena(process_chain = FALSE)` skips
 > writing the simulated end state back to `$bipartite_matrix`. Compute a

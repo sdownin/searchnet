@@ -1,3 +1,134 @@
+# searchnet 0.10.0
+
+JSS submission preparation. Five parallel workstreams against
+`R CMD check --as-cran`, the manuscript's dependence on unpublished work, and
+the vignettes' check-time cost. Three engine defects surfaced along the way and
+are fixed here.
+
+## Engine defects
+
+* **`compute_formal_utility()$nk_fitness` returned a different configuration's
+  fitness.** `NK_land_raw` is indexed by configuration (rows) with the N
+  per-dimension contributions in its columns, but the lookup passed
+  `power_key_index()` -- a per-dimension neighborhood key -- as the ROW index,
+  then clamped the result with `min(pk_idx, nrow(NK_land_raw))`. The clamp is
+  what made this silent: an out-of-range key returned a neighboring row instead
+  of failing. For `N = 4`, `K = 1` and `b_i = (0, 1, 0, 0)` the function
+  returned **0.4879**, the value stored for the EMPTY portfolio, where the
+  landscape stores **0.2825**. The row is now computed from the configuration
+  directly (rows enumerate least-significant-bit first) for a full enumeration,
+  matched against the stored configurations for a sampled landscape, and
+  reports `NA` rather than a neighbor's value when the configuration is absent.
+
+* **Every single-actor utility call returned `NaN`.** With `M = 1` there is no
+  other actor, so `overlaps` is empty and `mean(numeric(0))` is `NaN`; because
+  `$total` adds `beta_h * herding`, the whole utility became `NaN` even at
+  `beta_h = 0`. That in turn made `compute_choice_probabilities()` return an
+  all-`NaN` `delta_u`. Herding is now 0 when there is nobody to overlap with.
+
+* **`DIR_OUTPUT` defaulted to `getwd()`**, and RSiena writes a report `.txt` per
+  run into it, so runs dropped files into whatever directory the caller happened
+  to be in. Running the vignettes left them in `vignettes/`, where `R CMD build`
+  carries them into the tarball. The default is now `tempdir()`; callers that
+  want the reports kept pass `dir_output`.
+
+## CRAN readiness
+
+* `R CMD check --as-cran` went from **2 ERRORs, 9 WARNINGs, 5 NOTEs** to a clean
+  code and documentation surface. The ERRORs were one cause: `saom_to_saomnk()`'s
+  own example passed `gwespFF`, which the function correctly refuses as a
+  bipartite non-implementation, so the example demonstrated a call that errors by
+  design -- and it halted example checking partway, hiding whatever came after.
+* Non-ASCII characters removed from R sources; `ggrepel`, `future` and
+  `future.apply` declared in Suggests; `ggExtra` and `ggridges` in Imports (they
+  were used unqualified AND undeclared, so `ggMarginal()` would fail at runtime
+  for any user without them); 27 `ggsave(file=)` partial argument matches
+  corrected; 152 non-standard-evaluation column names declared via
+  `utils::globalVariables()`; 17 missing function imports qualified at their call
+  sites.
+* `.saomnk_dir` was referenced in `searchnet_proof()`'s fallback branch and
+  defined nowhere, so that branch could only ever raise "object not found". It
+  now raises an informative error. It was deliberately NOT added to
+  `globalVariables()`, which would have silenced the only diagnostic that found
+  it.
+* `RSiena::sienaRI` was written literally. `sienaRI` is present in RSiena 1.5.0's
+  namespace but is **not exported**, so the `::` form could only fail; it is now
+  resolved at runtime behind the guard that already proves it exists.
+* `export(run_counterfactual_with_uncertainty)` added. It carried `@export`, a
+  manual page, 8 test references, and all three of its sibling bridge functions
+  are exported, but it had no NAMESPACE entry, so it was reachable only through
+  `:::`. Same class as the 17 stranded exports fixed in 0.6.0.
+  `tools/check_namespace_sync.R` had been exiting 1 because of it.
+
+## Documentation
+
+* Eight hand-maintained `man/` pages that roxygen refuses to overwrite were
+  deleted so roxygen owns the topics they were shadowing, resolving 5 duplicated
+  names and 23 duplicated aliases. Their substantive content -- references,
+  `\seealso`, the Option B / Option C enumeration -- was migrated into the
+  roxygen sources, not dropped.
+* 26 pages that had never been generated at all are now present, which cleared
+  15 "undocumented code objects" and two codoc mismatches.
+* Two hazards were latent behind that shadowing and only appeared once the pages
+  rendered: `\citep{}` is not an Rd macro, and an apostrophe inside
+  `\code{(B'B)}` opens a string the Rd parser never sees closed, aborting
+  `tools::parse_Rd()`.
+* `saomnk_model.Rd` had been documenting the pre-0.4.0 signature
+  (`epistasis_matrix`, `dyad_covariate_effect = "egoXaltX"`); it is regenerated
+  from the current one. `tools::checkRd()` is clean across all pages.
+
+## Vignettes
+
+* The check-time cost is now finite. `R CMD check` tangles and sources every
+  chunk, including `eval=FALSE` ones, so code that never ran during a build ran
+  for real during a check: `saomnk-amr-basins` was killed at a 3000-second
+  timeout. Tangled execution across all vignettes is now **367 s**; render is
+  **557 s**, from a 26.4-minute baseline that included two failures.
+* `saomnk-amr-basins`: the hang was an O(4^N) basin assignment that located each
+  Hamming-1 neighbor by scanning all 2^N rows, five times over. Configurations
+  are now indexed by bit string.
+* `saomnk-proof-registry` had been failing outright ("subscript out of bounds",
+  chunk A8) since before the 0.9.3 terminology work. `nk_fitness()` built a full
+  N-bit power key and looked it up in a `2^(K+1) x N` table -- the same defect
+  family as the engine bug above. Four further defects were masked behind it.
+* Three registry checks (I3, J2, K1) are left FAILING and named in the vignette
+  rather than tuned to pass. I3 is a systematic mismatch, not sampling noise:
+  the empirical-versus-Gibbs correlation is stable at 0.34-0.48 across 400 to
+  8000 samples and three seeds.
+
+## The JSS manuscript
+
+* The paper no longer depends on an unpublished companion manuscript. Both
+  airline figures are replaced by seeded simulations generated by a new
+  `paper/replication/make_k_system_figures.R`, captioned explicitly as simulated
+  output; every companion citation and the corresponding `.bib` entry are gone.
+  A software paper cannot carry a result its replication script cannot
+  reproduce, which is the JSS requirement the old figures failed.
+* **`paper/replication/reproduce_all.R` did not run at all as committed.** It
+  aborted at startup under `Rscript` (`sys.frame(1)$ofile` is defined only under
+  `source()`), and two of five blocks had drifted from the manuscript, using
+  `M = 1`, which the engine now rejects. It runs end to end in 45 s.
+* `paper/jss_submission/` regenerated from the swept sources; it had been
+  carrying 7 companion citations and 3 airline figure references. Nothing in the
+  repository regenerates that bundle, so it re-rots after every paper change.
+* Five figures belonging to other unpublished papers (`cd2026_*`, `me2_*`) are
+  unreferenced by the manuscript but were tracked and would have shipped in the
+  next public snapshot. They are listed in `.public-exclude`.
+* A forward outline of the sections the paper still lacks -- time-varying
+  couplings, network-behavior coevolution, two-sided ties, pre-estimation
+  diagnostics -- is in `paper/_drafts/`, in outline form rather than prose.
+
+## Known and deliberately open
+
+* `fit_rsiena_static()` passes a bare `structure_model` that is neither a formal
+  nor a field (the field is `config_structure_model`). Its only caller is
+  `fit_rsiena_shocks()`, and no test names either. Not fixed here.
+* The AMR basins vignette's four policy arms produce an identical landscape,
+  because `compute_fitness_landscape()` takes no theta: a shock moves where
+  firms sit, not the shape of the basins. The computed output now reports
+  geometry and occupancy separately; the vignette's propositions are unchanged
+  and need an author decision.
+
 # searchnet 0.9.3
 
 Documentation and terminology release. No behavioral change to the engine;

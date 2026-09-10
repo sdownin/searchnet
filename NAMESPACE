@@ -339,6 +339,7 @@ S3method(plot, saomnk_sai)
 export(saom_to_saomnk)
 export(empirical_to_saomnk_env)
 export(run_calibrated_counterfactual)
+export(run_counterfactual_with_uncertainty)
 
 # export helpers
 export(searchnet_export_all)

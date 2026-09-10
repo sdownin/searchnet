@@ -75,10 +75,10 @@ saomnk_plot_bipartite_ring_markets <- function(env,
 
     # Set threshold for meaningful interactions
     E(g)$weight[E(g)$weight < 0.3] <- 0
-    g <- delete_edges(g, which(E(g)$weight == 0))
+    g <- igraph::delete_edges(g, which(E(g)$weight == 0))
 
     # Community detection to find component groups
-    communities <- cluster_louvain(g)
+    communities <- igraph::cluster_louvain(g)
 
     # Convert membership to list format for many-to-many mapping
     component_groups <- list()
@@ -216,7 +216,7 @@ saomnk_plot_bipartite_ring_markets <- function(env,
 
     # Create a convex hull
     if (nrow(all_points) >= 3) {
-      ch <- chull(all_points$x, all_points$y)
+      ch <- grDevices::chull(all_points$x, all_points$y)
       hull <- all_points[c(ch, ch[1]), ]
 
       market_regions[[g]] <- data.frame(
@@ -559,10 +559,10 @@ saomnk_plot_bipartite_ring_markets_animation <- function(env,
 
     # Set threshold for meaningful interactions
     E(g)$weight[E(g)$weight < 0.4] <- 0
-    g <- delete_edges(g, which(E(g)$weight == 0))
+    g <- igraph::delete_edges(g, which(E(g)$weight == 0))
 
     # Community detection to find component groups
-    communities <- cluster_louvain(g)
+    communities <- igraph::cluster_louvain(g)
 
     # Convert membership to list format for many-to-many mapping
     component_groups <- list()
@@ -695,7 +695,7 @@ saomnk_plot_bipartite_ring_markets_animation <- function(env,
     all_points <- rbind(points, buffer_points)
 
     if (nrow(all_points) >= 3) {
-      ch <- chull(all_points$x, all_points$y)
+      ch <- grDevices::chull(all_points$x, all_points$y)
       hull <- all_points[c(ch, ch[1]), ]
 
       market_regions[[g]] <- data.frame(

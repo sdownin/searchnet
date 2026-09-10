@@ -150,7 +150,10 @@ Snapshots of the bipartite network (DGP) and the social and component epistasis
 projections show the evolving multidimensional coupled search environment:
 
 ```{r snapshots, fig.height=5, fig.width=11}
-snapshot_ids <- seq(1, env$M * steps_per_actor)
+## Sample the trajectory evenly rather than plotting every ministep: one
+## panel per step is both slow and unreadable at this figure size.
+snapshot_ids <- unique(round(
+  seq(1, env$M * steps_per_actor, length.out = 12)))
 env$plot_snapshots(snapshot_ids)
 ```
 

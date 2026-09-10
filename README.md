@@ -1,8 +1,8 @@
-# searchnet <img src="" align="right" height="139" />
+# searchnet
 
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![R-CMD-check](https://img.shields.io/badge/R--CMD--check-passing-brightgreen.svg)]()
+[![R-CMD-check](https://img.shields.io/badge/R--CMD--check-passing-brightgreen.svg)](https://github.com/sdownin/searchnet)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
 
@@ -15,7 +15,7 @@
 > to be expected. The companion methods paper is under review and has
 > not yet been peer-reviewed; results should be treated accordingly.
 > For reproducibility, install a pinned tag rather than the moving branch:
-> `devtools::install_github("sdownin/searchnet@v0.9.3")`.
+> `devtools::install_github("sdownin/searchnet@v0.10.0")`.
 > **v0.8.3 and earlier:** `saomnk_model()` simulations that declared
 > `influence_weight`, `cycle4`, `XWX`, `X`, `inPopX`, `outActX` or
 > `homXOutAct` did not simulate the declared coefficient (estimation via
@@ -251,7 +251,7 @@ searchnet/
 ```r
 # Run the full test suite
 testthat::test_dir("tests/testthat")
-# Expected: 619 passing, 0 failures
+# Expected: 4118 passing, 0 failures, 0 errors
 ```
 
 Tests cover initialization, simulation execution, chain statistics, K-4 degree computation (with canonical network validation), shock processing, export pipeline, formal utility decomposition, McFadden choice probabilities, NK equivalence verification (Theorem 1), DGP validation, reproducibility, and edge cases.
@@ -369,6 +369,7 @@ history jumps from v0.4.1 to v0.7.0 — NEWS.md records why.
 
 | Version | Highlights |
 |---|---|
+| **v0.10.0** | JSS submission preparation. Four engine defects fixed: `compute_formal_utility()` returned another configuration's NK fitness (a `min()` clamp masked an out-of-range lookup); every `M = 1` utility call returned `NaN`; `DIR_OUTPUT` wrote RSiena reports into the working directory; `fit_rsiena_static()` referenced an undefined `structure_model`. `R CMD check --as-cran` cleared from 2 ERRORs / 9 WARNINGs / 5 NOTEs. The JSS paper no longer depends on an unpublished companion, and `reproduce_all.R` now runs (it did not). 4118 tests passing, 0 failures, 0 errors, 2 skips. |
 | **v0.9.3** | Documentation and terminology release; no engine change. "Epistasis" names **three** things and the package now says so everywhere: `W` is the input, `K_CC` is the realized bipartite-projection degree it drives, and epistatic fitness is the `XWX` outcome. The v0.8.2 claim that `K_CC` *measures* epistasis is corrected — a degree cannot measure a fitness consequence, and until the v0.9.0 theta repair `W` could not influence `K_CC` at all. `K_CC` keeps its *Component Epistasis* label; no identifier changes. Also: `man/saomnk_model.Rd` had documented the pre-0.4.0 argument names since v0.2.0 (it is not roxygen-owned, so `roxygenise()` silently skipped it); `paper/_searchnet-jss-web.Rmd` is now tracked, having been the untracked sole source of the published Pages site; American English across ~200 sites. Suite: 46 files, 747 tests, 4108 passing, 0 failures, 2 skips. |
 | **v0.9.2** | `searchnet_ergodicity_sweep()` (with `print()`/`plot()`): the Theorem 4 independence-from-initial-conditions demonstration is now a measurement rather than an assertion. It sweeps run length, reports how fast the between-arm gap decays, and ends in a TOST equivalence verdict against a margin declared in the call — so it can, and at short run lengths does, return "not equivalent". The Monte Carlo floor is computed and excluded from the decay fit. Also: `searchnet_did()` now pre-flights `did::att_gt()`'s minimum group size instead of passing through an opaque error; `saomnk-basins` vignette repaired (it had `eval = FALSE`, so nothing in it had ever run, and its erosion demo never applied its influence matrices); JSS paper and appendix re-rendered. Version 0.9.1 was skipped — see the note at the top of NEWS.md. Suite: 46 files, 747 tests, 4108 passing, 0 failures, 2 skips. |
 | **v0.9.0** | **Theta-storage repair: coefficients were stored in RSiena's internal-parameter column, so `influence_weight` simulated at 0, `cycle4` at 1, and `inPopX`/`outActX`/`homXOutAct` computed a different statistic. Simulations from v0.8.3 and earlier that declared those must be re-run; estimation is unaffected.** Plus ministep-chain event statistics (`searchnet_chain_stats`, `_from_fit`, `_compare`, `_gap`, `_null_model`, `_calibrate`), behavioral repertoires (`searchnet_repertoire`, `_null`, `_stability`), one-mode component coevolution (`searchnet_coevolve*`), time-varying influence slots raised 4 to 20, and a corrected `scope_confound_screen()` that no longer inverts banding on a sparse directed W. Suite: 44 files, 738 tests, 4075 passing, 0 failures, 2 skips. |
@@ -385,7 +386,7 @@ Development happens on `dev`; this branch (`public-release`) carries squashed
 release snapshots. Network–behavior coevolution, two-sided tie formation
 (`saomnk_assent`/`saomnk_confirm`), and continuous parameter ramps
 (`saomnk_theta_ramp`/`saomnk_theta_drift`) shipped in the 0.5–0.6 development
-line and are exercised by the v0.9.3 test suite.
+line and are exercised by the v0.10.0 test suite.
 
 ## Citation
 
@@ -394,7 +395,7 @@ line and are exercised by the v0.9.3 test suite.
   title  = {searchnet: Network-Embedded Search Simulation Engine},
   author = {Stephen Downing},
   year   = {2026},
-  note   = {R package version 0.9.3},
+  note   = {R package version 0.10.0},
   url    = {https://github.com/sdownin/searchnet}
 }
 ```

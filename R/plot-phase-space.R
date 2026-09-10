@@ -339,6 +339,7 @@
 #'                                 y_var = "exploration_rate",
 #'                                 z_var = "utility", color_by = "time")
 #' }
+#' @family phase space functions
 #' @export
 saomnk_plot_phase_space_3d <- function(env,
                                        x_var = "K_AC",
@@ -356,7 +357,7 @@ saomnk_plot_phase_space_3d <- function(env,
   df <- .extract_phase_data(env, vars = c(x_var, y_var, z_var), thin_factor = thin_factor)
 
   # Remove incomplete cases for the three axes
-  df <- df[complete.cases(df[, c(x_var, y_var, z_var)]), ]
+  df <- df[stats::complete.cases(df[, c(x_var, y_var, z_var)]), ]
   if (nrow(df) == 0) stop("No complete observations for the requested variables.")
 
   # Color variable
@@ -490,11 +491,11 @@ saomnk_plot_phase_space_3d <- function(env,
       # Optional loess smoothing per axis
       if (smooth > 0 && nrow(adf) >= 5) {
         tryCatch({
-          x_smooth <- predict(loess(as.formula(paste(x_var, "~ chain_step_id")),
+          x_smooth <- predict(loess(stats::as.formula(paste(x_var, "~ chain_step_id")),
                                     data = adf, span = smooth))
-          y_smooth <- predict(loess(as.formula(paste(y_var, "~ chain_step_id")),
+          y_smooth <- predict(loess(stats::as.formula(paste(y_var, "~ chain_step_id")),
                                     data = adf, span = smooth))
-          z_smooth <- predict(loess(as.formula(paste(z_var, "~ chain_step_id")),
+          z_smooth <- predict(loess(stats::as.formula(paste(z_var, "~ chain_step_id")),
                                     data = adf, span = smooth))
           adf[[x_var]] <- x_smooth
           adf[[y_var]] <- y_smooth
@@ -688,6 +689,7 @@ saomnk_plot_phase_space_3d <- function(env,
 #' p <- saomnk_plot_phase_heatmap(env, x_var = "K_AC", y_var = "utility",
 #'                                bins = 10)
 #' }
+#' @family phase space functions
 #' @export
 saomnk_plot_phase_heatmap <- function(env,
                                       x_var = "K_AC",
@@ -702,7 +704,7 @@ saomnk_plot_phase_heatmap <- function(env,
   if (!is.null(facet_by) && facet_by == "phase") all_vars <- c(all_vars, "exploration_rate")
 
   df <- .extract_phase_data(env, vars = all_vars, thin_factor = thin_factor)
-  df <- df[complete.cases(df[, c(x_var, y_var)]), ]
+  df <- df[stats::complete.cases(df[, c(x_var, y_var)]), ]
   if (nrow(df) == 0) stop("No complete observations for the requested variables.")
 
   x_label <- .phase_var_label(x_var)
@@ -816,6 +818,7 @@ saomnk_plot_phase_heatmap <- function(env,
 #' anim <- saomnk_plot_phase_evolution(env, x_var = "K_AC", y_var = "utility",
 #'                                     thin_factor = 5)
 #' }
+#' @family phase space functions
 #' @export
 saomnk_plot_phase_evolution <- function(env,
                                         x_var = "K_AC",
@@ -827,7 +830,7 @@ saomnk_plot_phase_evolution <- function(env,
                                         use_3d = FALSE) {
 
   df <- .extract_phase_data(env, vars = c(x_var, y_var, z_var), thin_factor = thin_factor)
-  df <- df[complete.cases(df[, c(x_var, y_var)]), ]
+  df <- df[stats::complete.cases(df[, c(x_var, y_var)]), ]
   if (nrow(df) == 0) stop("No complete observations for the requested variables.")
 
   x_label <- .phase_var_label(x_var)
@@ -959,6 +962,7 @@ saomnk_plot_phase_evolution <- function(env,
 #' p <- saomnk_plot_phase_comparison(list(weak = env1, strong = env2),
 #'                                   x_var = "K_AC", y_var = "utility")
 #' }
+#' @family phase space functions
 #' @export
 saomnk_plot_phase_comparison <- function(envs,
                                          x_var = "K_AC",
@@ -986,7 +990,7 @@ saomnk_plot_phase_comparison <- function(envs,
   combined <- bind_rows(all_dfs)
   combined$condition <- factor(combined$condition, levels = cond_names)
 
-  combined <- combined[complete.cases(combined[, c(x_var, y_var)]), ]
+  combined <- combined[stats::complete.cases(combined[, c(x_var, y_var)]), ]
   if (nrow(combined) == 0) stop("No complete observations across conditions.")
 
   x_label <- .phase_var_label(x_var)
@@ -1033,7 +1037,7 @@ saomnk_plot_phase_comparison <- function(envs,
 
   # -- 3D overlay with plotly if requested and available --
   if (overlay && requireNamespace("plotly", quietly = TRUE)) {
-    combined_3d <- combined[complete.cases(combined[, c(x_var, y_var, z_var)]), ]
+    combined_3d <- combined[stats::complete.cases(combined[, c(x_var, y_var, z_var)]), ]
     if (nrow(combined_3d) > 0) {
       z_label <- .phase_var_label(z_var)
       fig <- plotly::plot_ly()
@@ -1103,6 +1107,7 @@ saomnk_plot_phase_comparison <- function(envs,
 #' head(read.csv(f))
 #' unlink(f)
 #' }
+#' @family phase space functions
 #' @export
 searchnet_export_phase_space <- function(env,
                                          vars = c("K_AC", "K_AA",

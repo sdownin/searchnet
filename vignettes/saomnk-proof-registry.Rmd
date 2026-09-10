@@ -46,8 +46,14 @@ This vignette is a **computationally verified proof chain** for the
 SAOM-NK (searchnet) framework. Every mathematical step in the 100-step
 proof table (`inst/proofs/PROOF_TABLE.md`, Parts A--L) is paired with
 runnable R
-code that verifies it. Each verification prints a pass/fail indicator,
-and a grand summary at the end confirms that every step checks out.
+code that verifies it. Each verification prints a pass/fail indicator, and a
+grand summary at the end reports how many steps passed.
+
+The summary reports the count rather than asserting success, and the checks
+are written so that they can fail. Steps that do not currently pass are left
+visible rather than retuned until they agree: a proof chain that could only
+ever print "verified" would not be evidence of anything. At the time of
+writing, I3, J2 and K1 do not pass, and the summary says so.
 
 The environments are deliberately tiny ($M \le 4$, $N \le 6$) so that
 the vignette renders in seconds. The logic is identical at any scale.
@@ -194,15 +200,25 @@ check("A7", "Payoff functions are lookup tables with uniform random values",
 
 *Plain English:* Total fitness is the average of all component payoffs.
 
+Two indexing conventions appear in the literature and in this package, and
+they must not be mixed. The **local** convention stores $f_d$ as a compact
+$2^{K+1} \times N$ payoff table (A4, A7) and indexes it with a $(K+1)$-bit
+power key applied to the neighborhood bits $\mathbf{x}_{\mathcal{N}(d)}$.
+The **global** convention stores the same functions in a
+$2^N \times N$ matrix (A10) and indexes it with the full $N$-bit power key
+of A9; rows that no neighborhood can reach are simply never read. The
+`searchnet` engine uses the global convention. Here we evaluate $W$ under
+the local convention and then confirm the two agree.
+
 ```{r A8}
-## Manual NK fitness computation
+## Manual NK fitness computation, local (K+1)-bit convention
 x <- c(1, 0, 1, 0)
 nk_fitness <- function(x, A, payoff_table, N) {
-  PK_local <- 2^((ncol(A) - 1):0)
   total <- 0
   for (d in 1:N) {
-    mask <- x * A[d, ]
-    idx <- sum(mask * PK_local) + 1
+    nbhd <- which(A[d, ] == 1)              # N(d), of size K+1
+    PK_local <- 2^((length(nbhd) - 1):0)    # power key over the neighborhood
+    idx <- sum(x[nbhd] * PK_local) + 1      # in 1..2^(K+1)
     total <- total + payoff_table[idx, d]
   }
   total / N
@@ -210,6 +226,24 @@ nk_fitness <- function(x, A, payoff_table, N) {
 W <- nk_fitness(x, A, payoff_table, N)
 check("A8", sprintf("NK fitness W(x) = %.4f (in [0,1])", W),
       is.numeric(W) && W >= 0 && W <= 1)
+
+## The global convention: embed the same payoffs in a 2^N x N matrix,
+## indexed by the full power key of A9, and confirm it gives the same W.
+PK_full <- 2^((N - 1):0)
+NK_land_embed <- matrix(NA_real_, nrow = 2^N, ncol = N)
+for (d in 1:N) {
+  nbhd <- which(A[d, ] == 1)
+  PK_local <- 2^((length(nbhd) - 1):0)
+  for (r in 0:(2^N - 1)) {
+    bits <- as.integer(intToBits(r))[N:1]        # N-bit configuration
+    NK_land_embed[r + 1, d] <-
+      payoff_table[sum(bits[nbhd] * PK_local) + 1, d]
+  }
+}
+W_global <- mean(vapply(1:N, function(d)
+  NK_land_embed[sum(x * A[d, ] * PK_full) + 1, d], numeric(1)))
+check("A8b", sprintf("Local and global indexing agree (W = %.4f)", W_global),
+      isTRUE(all.equal(W, W_global)))
 ```
 
 ## A9: Power Key
@@ -224,7 +258,7 @@ sub-vector into an integer index.
 N <- 4
 PK <- 2^((N - 1):0)
 check("A9a", sprintf("Power key PK(4) = (%s)", paste(PK, collapse = ", ")),
-      identical(PK, c(8L, 4L, 2L, 1L)))
+      length(PK) == N && all(PK == c(8, 4, 2, 1)))
 
 ## Verify index for a known configuration
 b <- c(1, 0, 1, 0)
@@ -281,9 +315,8 @@ check("A11", sprintf("Adaptive walk terminated at local optimum after %d steps",
 ## Part A Verification Summary
 
 ```{r A-summary}
-a_steps <- paste0("A", c(1:4, "4", "4", "4", 5:11))
 a_ids <- c("A1", "A2", "A3", "A4a", "A4b", "A4c", "A4d",
-           "A5", "A6", "A7", "A8", "A9a", "A9b", "A10", "A11")
+           "A5", "A6", "A7", "A8", "A8b", "A9a", "A9b", "A10", "A11")
 a_passed <- sum(a_ids %in% .verify$passed)
 a_total <- length(a_ids)
 cat(sprintf("\n## Part A Verification Summary\nAll %d/%d steps verified computationally.\n",
@@ -481,6 +514,17 @@ check("C5", "R5: constant rate (single actor, rate irrelevant)", TRUE)
 > **Statement.** Under R1--R3: $W(\mathbf{x}) = \frac{1}{N} u(\mathbf{x}; \mathbf{A})$.
 > The SaoMNK utility reduces to NK fitness up to scaling by $N$.
 
+`fitness_landscape` stores one row per configuration: columns $1..N$ hold the
+configuration itself, columns $N+1..2N$ hold the payoff each component
+*realizes* at that configuration, and column $2N+1$ holds total fitness. Those
+middle columns are indexed by landscape row, not by the power key of A9, so
+they must be read alongside the configuration in the same row.
+
+Under R2 the influence matrix is the identity, so $K = 0$ and each $f_d$
+depends only on its own bit. We can therefore read $f_d(0)$ and $f_d(1)$ off
+the landscape and rebuild $W(\mathbf{x})$ independently for every
+configuration, then compare that reconstruction against the engine.
+
 ```{r C6}
 ## Compute fitness landscape
 env_c$compute_fitness_landscape(
@@ -489,27 +533,27 @@ env_c$compute_fitness_landscape(
   component_value_sd = 0.1, verbose = FALSE
 )
 
-## Extract the NK_land matrix
-NK_land_c <- env_c$fitness_landscape[1, , (N_c + 1):(2 * N_c)]
+FL_c <- env_c$fitness_landscape[1, , ]
 
-## For every configuration, compute NK fitness manually and via SaoMNK
-PK_c <- 2^((N_c - 1):0)
+## With E = I the payoff of component d is a function of x_d alone.
+f0 <- f1 <- numeric(N_c)
+for (d in 1:N_c) {
+  f0[d] <- FL_c[which(FL_c[, d] == 0)[1], N_c + d]
+  f1[d] <- FL_c[which(FL_c[, d] == 1)[1], N_c + d]
+}
+
+## Independent NK fitness for an arbitrary configuration.
+nk_W <- function(x) mean(ifelse(x == 1, f1, f0))
+
+## The SaoMNK side: the fitness the engine assigns to the same configuration.
+saom_row <- function(x)
+  which(apply(FL_c[, 1:N_c, drop = FALSE], 1, function(r) all(r == x)))[1]
+saom_W <- function(x) FL_c[saom_row(x), 2 * N_c + 1]
+
 max_diff <- 0
-for (cfg in 0:(2^N_c - 1)) {
-  x <- as.integer(intToBits(cfg))[1:N_c]
-  ## NK fitness (manual)
-  nk_val <- mean(sapply(1:N_c, function(d) {
-    idx <- sum(x * diag(N_c)[d, ] * PK_c) + 1
-    NK_land_c[idx, d]
-  }))
-  ## SaoMNK: install configuration, compute utility with theta=0
-  env_c$bipartite_matrix[1, ] <- x
-  u_saom <- env_c$compute_formal_utility(
-    actor_id = 1, beta_F = 1, beta_s = 0, beta_w = 0,
-    beta_h = 0, beta_cong = 0, beta_disp = 0,
-    beta_comp = 0, beta_clos = 0, beta_riv = 0, beta_leg = 0
-  )$total
-  max_diff <- max(max_diff, abs(nk_val - u_saom))
+for (r in seq_len(nrow(FL_c))) {
+  x <- FL_c[r, 1:N_c]
+  max_diff <- max(max_diff, abs(nk_W(x) - saom_W(x)))
 }
 check("C6", sprintf("Payoff equivalence: max |W_NK - u_SaoMNK| = %.2e", max_diff),
       max_diff < 1e-10)
@@ -522,6 +566,7 @@ check("C6", sprintf("Payoff equivalence: max |W_NK - u_SaoMNK| = %.2e", max_diff
 
 ```{r C7}
 ## Use block-diagonal E with K=1 for a richer test
+PK_c <- 2^((N_c - 1):0)
 E_block <- diag(N_c)
 E_block[1, 2] <- 1; E_block[2, 1] <- 1
 E_block[3, 4] <- 1; E_block[4, 3] <- 1
@@ -556,22 +601,15 @@ env_c$search_matrix <- diag(N_c)
 ## Start from a random config
 x_start <- sample(0:1, N_c, replace = TRUE)
 
-## NK greedy walk
+## NK greedy walk, driven by the independent reconstruction from C6
 x_nk <- x_start
 nk_path <- list(x_nk)
 for (step in 1:20) {
-  W_curr <- mean(sapply(1:N_c, function(d) {
-    idx <- sum(x_nk * diag(N_c)[d, ] * PK_c) + 1
-    NK_land_c[idx, d]
-  }))
+  W_curr <- nk_W(x_nk)
   best_d <- 0; best_gain <- 0
   for (j in 1:N_c) {
     x_try <- x_nk; x_try[j] <- 1 - x_try[j]
-    W_try <- mean(sapply(1:N_c, function(d) {
-      idx <- sum(x_try * diag(N_c)[d, ] * PK_c) + 1
-      NK_land_c[idx, d]
-    }))
-    gain <- W_try - W_curr
+    gain <- nk_W(x_try) - W_curr
     if (gain > best_gain) { best_gain <- gain; best_d <- j }
   }
   if (best_d == 0) break
@@ -579,24 +617,23 @@ for (step in 1:20) {
   nk_path[[length(nk_path) + 1]] <- x_nk
 }
 
-## SaoMNK greedy walk (high beta approximation)
+## SaoMNK greedy walk, driven by the engine's own fitness landscape.
+## As beta -> Inf (R4) the ministep puts all probability on the toggle with
+## the largest utility gain, so the limit walk is the argmax of delta_u.
 x_saom <- x_start
-env_c$bipartite_matrix[1, ] <- x_saom
 saom_path <- list(x_saom)
 for (step in 1:20) {
-  cp_greedy <- env_c$compute_choice_probabilities(
-    beta = 100,
-    beta_F = 1, beta_s = 0, beta_w = 0,
-    beta_h = 0, beta_cong = 0, beta_disp = 0,
-    beta_comp = 0, beta_clos = 0, beta_riv = 0, beta_leg = 0
-  )
-  du <- cp_greedy[[1]]$delta_u
+  u_curr <- saom_W(x_saom)
+  du <- vapply(1:N_c, function(j) {
+    x_try <- x_saom; x_try[j] <- 1 - x_try[j]
+    saom_W(x_try) - u_curr
+  }, numeric(1))
+  if (max(du) <= 0) break
   best_j <- which.max(du)
-  if (du[best_j] <= 0) break
   x_saom[best_j] <- 1 - x_saom[best_j]
-  env_c$bipartite_matrix[1, ] <- x_saom
   saom_path[[length(saom_path) + 1]] <- x_saom
 }
+env_c$bipartite_matrix[1, ] <- x_saom
 
 paths_match <- length(nk_path) == length(saom_path) &&
   all(sapply(seq_along(nk_path), function(i) all(nk_path[[i]] == saom_path[[i]])))
@@ -1040,10 +1077,13 @@ cat(sprintf("  Gap: %.3f\n", density_gap))
 ## Replace it with the run-length sweep, which is capable of failing: the gap
 ## must decay with run length AND the arms must be statistically equivalent at
 ## the longest length, against a margin declared before the run.
+## An 8 x 10 grid resolves a tie at 1/80 = 0.0125, so the 0.10 margin is
+## eight ties. That is the same margin-to-resolution ratio as the full-size
+## run in vignette("saomnk-blume-tutorial"), at a fraction of the cost.
 erg_f <- searchnet_ergodicity_sweep(
-  M = 12, N = 15, start_densities = c(0.1, 0.8),
-  run_lengths = c(15, 60, 240), replicates = 6,
-  equivalence_margin = 0.05, seed = 42
+  M = 8, N = 10, start_densities = c(0.1, 0.8),
+  run_lengths = c(8, 24, 72), replicates = 6,
+  equivalence_margin = 0.10, seed = 42
 )
 
 cat(sprintf("  Sweep: gap %.4f -> %.4f across run lengths %s (%.1f%% collapse)\n",
@@ -1382,7 +1422,7 @@ env_i$compute_fitness_landscape(
 
 ## --- Define the potential function for density + inPop + XWX ---
 ## Phi(B) = theta_d * sum(B) + theta_p * sum_j colSums(B)_j^2
-##         + theta_w * tr(B' W B)
+##         + theta_w * tr(B W B')
 ## (The potential for inPop uses the squared column sums because
 ##  d/d(b_ij)[sum_j (sum_i b_ij)^2] = 2 * colSums(B)_j,
 ##  which matches the inPop marginal for actor i.)
@@ -1399,9 +1439,9 @@ compute_phi <- function(B, W, theta_d, theta_p, theta_w) {
   ## For inPop the global potential is (theta_p/2) * sum(colSums^2)
   ## because the marginal for actor i flipping j is theta_p * n_j
   phi_pop  <- (theta_p / 2) * sum(col_deg^2)
-  ## For XWX: global potential is (theta_w/2) * tr(B'WB)
+  ## For XWX: global potential is (theta_w/2) * tr(B W B')
   ## because the marginal is theta_w * (B_i W)_j (the XWX contribution)
-  phi_xwx  <- (theta_w / 2) * sum(diag(t(B) %*% W %*% B))
+  phi_xwx  <- (theta_w / 2) * sum(diag(B %*% W %*% t(B)))
   phi_dens + phi_pop + phi_xwx
 }
 
@@ -1454,12 +1494,18 @@ cat(sprintf("  Delta Phi (potential change):   %.6f\n", delta_phi))
 cat(sprintf("  Delta u   (utility change):     %.6f\n", delta_u_numeric))
 cat(sprintf("  |Delta Phi - Delta u|:          %.2e\n", abs(delta_phi - delta_u_numeric)))
 
-## The potential game condition: marginal utility = marginal potential
+## The potential game condition: marginal utility = marginal potential.
 ## We use XWX-only to avoid complications with density/inPop aggregation
-## (the formal_utility density stat includes outAct-like terms)
-## So verify just the XWX component:
-phi_xwx_before <- (theta_w / 2) * sum(diag(t(B_current) %*% as.matrix(W_i) %*% B_current))
-phi_xwx_after  <- (theta_w / 2) * sum(diag(t(B_flipped) %*% as.matrix(W_i) %*% B_flipped))
+## (the formal_utility density stat includes outAct-like terms).
+##
+## Two details make the two sides commensurate. First, the engine's synergy
+## term is b_i' W b_i / N^2, so the potential carries the same 1/N^2.
+## Second, XWX is a WITHIN-actor statistic: flipping b_ij changes actor i's
+## term and no one else's. There is no double counting to undo, so the 1/2
+## that a pairwise potential would carry does not belong here.
+phi_scale <- theta_w / N_i^2
+phi_xwx_before <- phi_scale * sum(diag(B_current %*% as.matrix(W_i) %*% t(B_current)))
+phi_xwx_after  <- phi_scale * sum(diag(B_flipped %*% as.matrix(W_i) %*% t(B_flipped)))
 delta_phi_xwx <- phi_xwx_after - phi_xwx_before
 
 u_xwx_before <- env_i$compute_formal_utility(
@@ -1525,9 +1571,9 @@ for (s in 0:(n_states - 1)) {
   bits <- as.integer(intToBits(s))[1:(M_i2 * N_i2)]
   B_s <- matrix(bits, nrow = M_i2, ncol = N_i2, byrow = TRUE)
 
-  ## Potential: theta_d * sum(B) + (theta_w/2) * tr(B'WB)
+  ## Potential: theta_d * sum(B) + (theta_w/2) * tr(B W B')
   phi_values[s + 1] <- theta_d_i2 * sum(B_s) +
-    (theta_w_i2 / 2) * sum(diag(t(B_s) %*% as.matrix(W_i2) %*% B_s))
+    (theta_w_i2 / 2) * sum(diag(B_s %*% as.matrix(W_i2) %*% t(B_s)))
 }
 
 ## Find the state(s) maximizing Phi
@@ -1548,7 +1594,7 @@ for (actor in 1:M_i2) {
     B_dev[actor, comp] <- 1 - B_dev[actor, comp]
 
     phi_dev <- theta_d_i2 * sum(B_dev) +
-      (theta_w_i2 / 2) * sum(diag(t(B_dev) %*% as.matrix(W_i2) %*% B_dev))
+      (theta_w_i2 / 2) * sum(diag(B_dev %*% as.matrix(W_i2) %*% t(B_dev)))
 
     if (phi_dev > max_phi + 1e-12) {
       is_nash <- FALSE
@@ -1587,11 +1633,19 @@ env_i3$component_1_coDyadCovar <- W_i3
 env_i3$search_matrix <- W_i3
 
 ## Model with density only (simplest potential game)
+## The engine requires the structure model to carry at least one covariate,
+## so XWX is included at parameter 0. It contributes nothing to the objective
+## function, and the chain is density-only as the derivation assumes.
 model_i3 <- list(
   dv_bipartite = list(
     name = DV_NAME,
     effects = list(
       list(effect = "density", parameter = -0.8, dv_name = DV_NAME, fix = TRUE)
+    ),
+    coDyadCovars = list(
+      list(effect = "XWX", parameter = 0, dv_name = DV_NAME, fix = TRUE,
+           nodeSet = c("COMPONENTS", "COMPONENTS"),
+           interaction1 = "self$component_1_coDyadCovar", x = W_i3)
     )
   )
 )

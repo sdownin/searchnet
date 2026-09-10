@@ -140,9 +140,17 @@ they form complementary bundles.
 env_rugged$search_rsiena_model_summary()
 ```
 
+Snapshotting every ministep would put `r 2 * steps_per_actor` panels into one
+figure, which costs a great deal of plotting time and is illegible at this
+size. We sample the trajectory evenly instead; `n_frames` is the only knob.
+
 ```{r single-rugged-snapshots, fig.height=5, fig.width=11}
-snapshot_ids <- seq(1, env_rugged$M * steps_per_actor)
-env_rugged$plot_snapshots(snapshot_ids)
+n_frames <- 12
+sample_steps <- function(env) {
+  unique(round(seq(1, env$M * steps_per_actor, length.out = n_frames)))
+}
+
+env_rugged$plot_snapshots(sample_steps(env_rugged))
 ```
 
 ```{r single-rugged-k4, fig.height=10, fig.width=10}
@@ -269,7 +277,7 @@ env_base$search_rsiena_model_summary()
 ```
 
 ```{r multi-baseline-snapshots, fig.height=5, fig.width=11}
-env_base$plot_snapshots(seq(1, env_base$M * steps_per_actor))
+env_base$plot_snapshots(sample_steps(env_base))
 ```
 
 ```{r multi-baseline-k4, fig.height=10, fig.width=10}
@@ -331,7 +339,7 @@ env_endog$search_rsiena_model_summary()
 ```
 
 ```{r multi-endog-snapshots, fig.height=5, fig.width=11}
-env_endog$plot_snapshots(seq(1, env_endog$M * steps_per_actor))
+env_endog$plot_snapshots(sample_steps(env_endog))
 ```
 
 ```{r multi-endog-k4, fig.height=10, fig.width=10}

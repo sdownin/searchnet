@@ -4,7 +4,14 @@
 \alias{saom_to_saomnk}
 \title{Convert SAOM estimated parameters to SaoMNK structure model}
 \usage{
-saom_to_saomnk(saom_result, scale_factor = 1, verbose = TRUE)
+saom_to_saomnk(
+  saom_result,
+  scale_factor = 1,
+  draw_theta = FALSE,
+  draw_seed = NULL,
+  strict = TRUE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{saom_result}{An RSiena \code{sienaFit} result object (from
@@ -12,6 +19,33 @@ saom_to_saomnk(saom_result, scale_factor = 1, verbose = TRUE)
 
 \item{scale_factor}{Numeric multiplier applied to all converted parameters
 (default \code{1.0}).  Useful for sensitivity analysis.}
+
+\item{draw_theta}{Logical. If \code{FALSE} (the default, and the historical
+behavior) the point estimates are converted, so the counterfactual carries
+no parameter uncertainty.  If \code{TRUE}, one theta vector is drawn from
+the estimated sampling distribution
+\eqn{N(\hat\theta, \Sigma_\theta)}{N(thetahat, covtheta)} using
+\code{coef(saom_result)} and \code{saom_result$covtheta}, so that repeated
+calls propagate estimation error into downstream counterfactuals.  Requires
+a \code{sienaFit} (a bare theta vector carries no covariance matrix).}
+
+\item{draw_seed}{Integer or \code{NULL} (default).  Seed used for the theta
+draw, so that a drawn parameter set is reproducible.  Ignored when
+\code{draw_theta = FALSE}.}
+
+\item{strict}{Logical, default \code{TRUE}.  Several entries in the crosswalk
+are not translations but SUBSTANTIVE RE-INTERPRETATIONS: \code{recip} is
+converted into half a \code{cycle4} parameter, \code{cycle3} into
+\code{cycle4}, \code{simX} and \code{sameX} into \code{egoX}, \code{higher}
+into \code{altX}.  A counterfactual run through any of them is calibrated to
+a DIFFERENT model from the one that was estimated.  With
+\code{strict = TRUE} such an effect is refused, with a message naming each
+one and the effect it would become.  \code{strict = FALSE} restores the
+warn-and-proceed behavior; the approximations are then listed in a
+\code{warning()} and in \code{$approximate}, and must be reported with any
+result built from them.  \code{strict} does NOT relax a non-implementation:
+an effect whose SaoMNK counterpart does not exist for a bipartite dependent
+variable (see \code{.BRIDGE_NOT_IN_BIPARTITE}) is refused either way.}
 
 \item{verbose}{Logical. If \code{TRUE}, prints the mapping table and
 diagnostics (default \code{TRUE}).}
@@ -23,10 +57,29 @@ A list with components:
 model (each element has \code{effect}, \code{parameter}, \code{fix},
 \code{dv_name}).}
 \item{\code{mapping_table}}{A \code{data.frame} documenting each
-conversion: SAOM effect name, theta, SE, SaoMNK effect, converted
-parameter, and description.}
+conversion: SAOM effect name, point estimate \code{saom_theta}, the
+value actually converted \code{saom_theta_used} (identical to
+\code{saom_theta} unless \code{draw_theta = TRUE}), SE, SaoMNK effect,
+converted parameter, \code{mapping_status} (\code{"exact"} or
+\code{"approximate"}), and description.  \code{mapping_status} is what
+makes an approximation visible in the returned object rather than only
+in the prose of \code{description}.}
+\item{\code{rate_params}}{A \code{data.frame} of extracted RSiena rate
+parameters (\code{Rate}, \code{RateX}, \code{outRate},
+\code{outRateInv}, \code{outRateLog}).  These are NOT applied to the
+simulation; see the warning raised when any are present.}
 \item{\code{unmapped}}{Character vector of SAOM effect names that
-could not be mapped.}
+could not be mapped (and were therefore dropped).}
+\item{\code{approximate}}{Character vector of SAOM effect names converted
+through an APPROXIMATE crosswalk entry.  Empty unless
+\code{strict = FALSE}, since \code{strict = TRUE} refuses them.}
+\item{\code{strict}}{The value of \code{strict} used.}
+\item{\code{theta_point}}{Named numeric vector of point estimates.}
+\item{\code{theta_used}}{Named numeric vector of the thetas actually
+converted (the drawn vector when \code{draw_theta = TRUE}).}
+\item{\code{theta_drawn}}{Logical: was theta drawn from its sampling
+distribution?}
+\item{\code{covtheta}}{The estimated covariance matrix, or \code{NULL}.}
 \item{\code{scale_factor}}{The scale factor used.}
 }
 }
@@ -36,14 +89,32 @@ Both frameworks use the same actor-oriented conditional logit utility,
 so the mapping is direct for shared effects, with sign/scale adjustments
 for framework-specific parameterizations.
 }
+\details{
+Rate parameters are extracted but not simulated: the SaoMNK structure model
+has no rate-function representation, so opportunity is governed by
+\code{iterations} rather than by an estimated rate.  Any rate effect found in
+\code{saom_result} is returned in \code{$rate_params} and announced with a
+\code{warning()} rather than dropped silently.
+}
 \examples{
 ## From a named vector of estimated thetas
-thetas <- c(density = -1.2, gwespFF = 0.8, inPop = 0.3, egoX.assets = 0.15)
+thetas <- c(density = -1.2, inPop = 0.3, outAct = -0.2)
 bridge <- saom_to_saomnk(thetas)
+
+## An approximate mapping is refused by default and named in the message
+try(saom_to_saomnk(c(density = -1.2, recip = 0.8), verbose = FALSE))
+## ... and accepted, with a warning, when the approximation is intended
+bridge_loose <- saom_to_saomnk(c(density = -1.2, recip = 0.8),
+                               strict = FALSE, verbose = FALSE)
 
 ## From a sienaFit object
 \dontrun{
 fit <- siena07(alg, data = mydata, effects = myeffects)
 bridge <- saom_to_saomnk(fit, scale_factor = 0.5)
+
+## Carry estimation uncertainty into the counterfactual: one draw per call
+draws <- lapply(1:20, function(r) saom_to_saomnk(fit, draw_theta = TRUE,
+                                                 draw_seed = 100 + r,
+                                                 verbose = FALSE))
 }
 }

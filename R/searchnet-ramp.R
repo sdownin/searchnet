@@ -170,7 +170,7 @@
 #'     \item{\code{from}}{Numeric. Parameter value at the start of the ramp.
 #'       Defaults to the model's own value for that effect if omitted.}
 #'     \item{\code{to}}{Numeric. Parameter value at the end of the ramp.}
-#'     \item{\code{start}}{Numeric in [0, 1]. Fraction of the chain at which the
+#'     \item{\code{start}}{Numeric in \eqn{[0, 1]}. Fraction of the chain at which the
 #'       ramp begins (default \code{0}).}
 #'     \item{\code{window}}{Numeric in (0, 1]. Fraction of the chain over which
 #'       the ramp completes (default \code{1 - start}).}
@@ -308,7 +308,7 @@ saomnk_theta_ramp <- function(env, structure_model, iterations, changes,
 #' supports a factorial design over direction and instability.
 #'
 #' Reproducibility: for a fixed \code{seed} the trajectory is exactly
-#' reproducible, and \code{\link{base::set.seed}} state outside the call is
+#' reproducible, and \code{\link[base]{set.seed}} state outside the call is
 #' restored on exit, so drawing a drift does not perturb any surrounding
 #' simulation stream.
 #'

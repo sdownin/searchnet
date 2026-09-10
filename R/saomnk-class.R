@@ -228,7 +228,7 @@ SaomNkRSienaBiEnv <- R6Class(
           cov_values <- if (!is.null(eff$x) && length(eff$x) > 0 && !all(is.na(eff$x))) {
             as.numeric(eff$x)
           } else {
-            warning(sprintf("Covariate '%s' has no x values — using zeros for M=%d actors", property, self$M))
+            warning(sprintf("Covariate '%s' has no x values, using zeros for M=%d actors", property, self$M))
             rep(0, self$M)
           }
           self[[property]] <- coCovar(cov_values, nodeSet = c('ACTORS'))
@@ -1428,7 +1428,7 @@ SaomNkRSienaBiEnv <- R6Class(
     add_gof_to_rsiena_shocks = function(theta_shocks=NULL) {
       if (is.null(theta_shocks))
         theta_shocks <- self$theta_shocks
-      par(mfrow=c(2,2))
+      graphics::par(mfrow=c(2,2))
       for (i in 1:length(theta_shocks)) {
         rsiena_model <- theta_shocks[[ i ]]$rsiena_model
         gof.od <- RSiena::sienaGOF(rsiena_model, OutdegreeDistribution, levls=0:(self$N-1), varName = 'bipartite_rsienaDV')
@@ -2222,7 +2222,7 @@ SaomNkRSienaBiEnv <- R6Class(
           theme_minimal()
         
         p <- p1 / p2 + 
-          plot_annotation(
+          patchwork::plot_annotation(
             title = sprintf("%s for New Components Only (C%d-C%d)", 
                             K_type, min(new_components), max(new_components)),
             theme = theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
@@ -3006,8 +3006,8 @@ SaomNkRSienaBiEnv <- R6Class(
         
         # Add common title
         combined_title_str <- "Multiperiod Diff-in-Diff Tests of Firm Scope (K_AC): Combined and Grouped by Activity (Old v. New)"
-        combined_plot <- annotate_figure(combined_plot, 
-                                         top = text_grob(combined_title_str, face = "bold", size = 14)) ##face = "bold"
+        combined_plot <- ggpubr::annotate_figure(combined_plot, 
+                                         top = ggpubr::text_grob(combined_title_str, face = "bold", size = 14)) ##face = "bold"
         
         return(list(
           plot = combined_plot,
@@ -3157,8 +3157,8 @@ SaomNkRSienaBiEnv <- R6Class(
         
         # Add common title
         combined_title_str <- "Multiperiod Diff-in-Diff Tests of Degrees (K_AC, K_AA): Combined and Grouped by Activity (Old, New)"
-        combined_plot <- annotate_figure(combined_plot, 
-                                         top = text_grob(combined_title_str, face = "bold", size = 14)) ##face = "bold"
+        combined_plot <- ggpubr::annotate_figure(combined_plot, 
+                                         top = ggpubr::text_grob(combined_title_str, face = "bold", size = 14)) ##face = "bold"
         
         return(list(
           plot = combined_plot,
@@ -3299,8 +3299,8 @@ SaomNkRSienaBiEnv <- R6Class(
         } else {
           "Multiperiod Diff-in-Diff Tests of Actor Utility and Degrees (K_AC, K_AA)"
         }
-        combined_plot <- annotate_figure(combined_plot, 
-                                         top = text_grob(combined_title_str, face = "bold", size = 14)) ##face = "bold"
+        combined_plot <- ggpubr::annotate_figure(combined_plot, 
+                                         top = ggpubr::text_grob(combined_title_str, face = "bold", size = 14)) ##face = "bold"
         
         return(list(
           plot = combined_plot,
@@ -3390,6 +3390,11 @@ SaomNkRSienaBiEnv <- R6Class(
     ###
     ###
     ###
+    ## Uses self$config_structure_model. Before 0.10.0 both call sites below
+    ## referenced a bare `structure_model` that is neither a formal of this
+    ## method nor a field, so the function could only raise "object not
+    ## found". Its sole caller, fit_rsiena_shocks(), was broken with it, and
+    ## no test names either function.
     fit_rsiena_static = function(bi_env_arr, theta_shock=NULL, 
                                   digits=3, iterations_multiplier=4, 
                                   verbose=FALSE) {
@@ -3409,11 +3414,11 @@ SaomNkRSienaBiEnv <- R6Class(
       ## input list of variable for RSiena model
       input_varlist <- list(bipartite_rsienaDV=bipartite_rsienaDV)
       ## 2. Data
-      rsiena_data <- self$get_rsiena_data_static(structure_model, input_varlist) ## does not affect self$... properties
+      rsiena_data <- self$get_rsiena_data_static(self$config_structure_model, input_varlist) ## does not affect self$... properties
       ## 3.1 Effects: init
       rsiena_effects <- RSiena::getEffects(rsiena_data)
       ## 3.1 Effects: Add from structure model
-      rsiena_effects <- self$add_rsiena_effects_static(rsiena_effects, structure_model, theta_shock)
+      rsiena_effects <- self$add_rsiena_effects_static(rsiena_effects, self$config_structure_model, theta_shock)
 
       if(verbose) {
         cat('\n\nself$rsiena_data : \n\n')
@@ -3940,13 +3945,25 @@ SaomNkRSienaBiEnv <- R6Class(
 
         # 1. NK Fitness
         nk_fit <- if (has_nk) {
-          # Look up per-dimension fitness contributions via power_key_index
-          mean(sapply(1:self$N, function(d) {
-            pk_idx <- self$power_key_index(b_i, d, W)
-            # Guard against index overflow for sampled landscapes
-            pk_idx <- min(pk_idx, nrow(NK_land_raw))
-            NK_land_raw[pk_idx, d]
-          }))
+          ## NK_land_raw is rows = configurations, cols = the N per-dimension
+          ## fitness contributions of the configuration on that row, so it is
+          ## indexed by configuration, not by a per-dimension power key. The
+          ## power_key_index() as a row index and clamped it with min(), which
+          ## silently returned another configuration's fitness rather than failing:
+          ## for N = 4, K = 1 and b_i = (0,1,0,0) it returned 0.4879, the value
+          ## stored for the EMPTY portfolio, where the landscape stores 0.2825.
+          ## Rows enumerate configurations least-significant-bit first, so the row
+          ## is computable directly for a full enumeration; a sampled landscape is
+          ## matched instead, and reports NA rather than a neighbouring row's value.
+          row_idx <- if (nrow(NK_land_raw) == 2^self$N) {
+            1L + sum(as.integer(b_i) * 2L^(seq_len(self$N) - 1L))
+          } else {
+            cfg <- self$fitness_landscape[landscape_id, , seq_len(self$N)]
+            hit <- which(apply(cfg, 1L, function(r) all(r == b_i)))
+            if (length(hit)) hit[1L] else NA_integer_
+          }
+          if (is.na(row_idx)) NA_real_
+          else mean(NK_land_raw[row_idx, ])
         } else 0
 
         # 2. Scope cost  (|B_i| / N)^2
@@ -3959,7 +3976,11 @@ SaomNkRSienaBiEnv <- R6Class(
 
         # 4. Herding  mean overlap with other actors / N
         overlaps <- apply(bi_mat[-i, , drop = FALSE], 1, function(b_j) sum(b_i & b_j))
-        herding <- mean(overlaps) / self$N
+        ## With a single actor there is nobody to overlap with, so herding is 0,
+        ## not NaN. mean(numeric(0)) is NaN, and because $total adds
+        ## beta_h * herding, one NaN made EVERY M = 1 utility call return NaN,
+        ## which in turn made compute_choice_probabilities() return all-NaN.
+        herding <- if (length(overlaps)) mean(overlaps) / self$N else 0
 
         # 5. Congestion  sum_j b_{ij} n_j / (M * N)
         congestion <- sum(b_i * n_j) / (self$M * self$N)
@@ -5586,8 +5607,8 @@ SaomNkRSienaBiEnv <- R6Class(
       #-------------------------------------------
       ## par(mfrow=) is global device state. This method set it and never
       ## restored it, so every subsequent plot in the session stayed split 1x3.
-      op <- par(mfrow = c(1,3))
-      on.exit(par(op), add = TRUE)
+      op <- graphics::par(mfrow = c(1,3))
+      on.exit(graphics::par(op), add = TRUE)
       ##------------------------------------------
       jaccard_vec <- plyr::ldply(jaccardlist)[sim_ids_plot[-1], 2] ## skip first period (no change yet)
       n_changes <- length(jaccard_vec)
@@ -5741,7 +5762,7 @@ SaomNkRSienaBiEnv <- R6Class(
         dat <- dat %>% filter(wave_id %in% wave_ids)
       dat_acp_stabil_means <- dat %>% group_by(stabilization_summary_period, strategy) %>% 
         dplyr::summarize(mean=mean(utility, na.rm=TRUE)) %>%
-        mutate(PeriodFct = fct_rev(as.factor(stabilization_summary_period)))
+        mutate(PeriodFct = forcats::fct_rev(as.factor(stabilization_summary_period)))
       ##==============================================
       strat_legend_title <- sprintf("Strategy (%s) :  ", paste(strateffs, collapse = '_'))
       strat_break <- levels(actor_strat) 
@@ -5751,21 +5772,21 @@ SaomNkRSienaBiEnv <- R6Class(
         return(a)
       }) 
       dat_dens_rigde <- dat %>%
-        mutate(PeriodFct = fct_rev(as.factor(stabilization_summary_period))) 
+        mutate(PeriodFct = forcats::fct_rev(as.factor(stabilization_summary_period))) 
       group_dens_means <- dat_dens_rigde %>% ungroup() %>% group_by(strategy) %>% 
         dplyr::summarize(n=n(),mean=mean(utility,na.rm=TRUE))
       ##---------------------
       ## Start Plot
       plt.dr <- ggplot(dat_dens_rigde, aes(y = PeriodFct, x = utility, color=strategy, fill=strategy)) +
-        stat_density_ridges(aes(point_color = strategy, point_fill = strategy, point_shape = strategy),
+        ggridges::stat_density_ridges(aes(point_color = strategy, point_fill = strategy, point_shape = strategy),
                             quantile_lines = TRUE, alpha = .3, rel_min_height = density_ridges_rel_min_height,
                             point_size=.4,
                             jittered_points = TRUE, 
-                            position = position_raincloud(adjust_vlines = FALSE, ygap = -.1, height = .15),# "raincloud",
+                            position = ggridges::position_raincloud(adjust_vlines = FALSE, ygap = -.1, height = .15),# "raincloud",
                             quantiles = c(0.5), linewidth=.75 ) +
         scale_y_discrete(expand = c(0, 0)) +
         scale_x_continuous(expand = c(0, 0)) +
-        scale_fill_cyclical(
+        ggridges::scale_fill_cyclical(
           breaks = strat_break,
           labels = strat_labs,
           values = scales::hue_pal()(length(levels(actor_strat))), # c("#ff0000", "#0000ff", "#ff8080", "#8080ff"),
@@ -5784,7 +5805,7 @@ SaomNkRSienaBiEnv <- R6Class(
         ) +
         geom_vline(xintercept = 0, linetype=1) +
         coord_cartesian(clip = "off") +
-        theme_ridges(grid = TRUE, center=TRUE) + 
+        ggridges::theme_ridges(grid = TRUE, center=TRUE) + 
         theme(legend.position = 'bottom')
       if(show_strategy_means) {
         plt.dr <- plt.dr +  
@@ -5839,15 +5860,15 @@ SaomNkRSienaBiEnv <- R6Class(
         legend = "bottom"#,     # Place legend at the bottom
       ) 
       
-      combined_plot <- annotate_figure(
+      combined_plot <- ggpubr::annotate_figure(
         combined_plot_notitle,
-        top = text_grob(maintitle, color = "black", size = 14) ## face = "bold", 
+        top = ggpubr::text_grob(maintitle, color = "black", size = 14) ## face = "bold", 
       )
       
       self$multiwave_plots <- list(combined_plot=combined_plot)
       
       if(!is.na(plot_file))
-        ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
+        ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
                combined_plot, 
                width = 10, height = 8, units = 'in', dpi = 600)
       
@@ -5961,7 +5982,7 @@ SaomNkRSienaBiEnv <- R6Class(
         legend = ifelse(show_legend, "bottom", "none")#,     # Place legend at the bottom
       ) 
       if(!is.na(plot_file))
-        ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
+        ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
                combined_plot, 
                width = 10, height = 8, units = 'in', dpi = 600)
       if(return_plot)
@@ -6077,7 +6098,7 @@ SaomNkRSienaBiEnv <- R6Class(
         legend = ifelse(show_legend, "bottom", "none")#,     # Place legend at the bottom
       ) 
       if(!is.na(plot_file))
-        ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
+        ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
                combined_plot, 
                width = 10, height = 8, units = 'in', dpi = 600)
       if(return_plot)
@@ -6190,7 +6211,7 @@ SaomNkRSienaBiEnv <- R6Class(
         legend = ifelse(show_legend, "bottom", "none")#,     # Place legend at the bottom
       ) 
       if(!is.na(plot_file))
-        ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
+        ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
                combined_plot, 
                width = 10, height = 8, units = 'in', dpi = 600)
       if(return_plot)
@@ -6303,7 +6324,7 @@ SaomNkRSienaBiEnv <- R6Class(
         legend = ifelse(show_legend, "bottom", "none")#,     # Place legend at the bottom
       ) 
       if(!is.na(plot_file))
-        ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
+        ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
                combined_plot, 
                width = 10, height = 8, units = 'in', dpi = 600)
       if(return_plot)
@@ -6482,7 +6503,7 @@ SaomNkRSienaBiEnv <- R6Class(
         legend = "bottom"#,     # Place legend at the bottom
       ) 
       if(!is.na(plot_file))
-        ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
+        ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
                combined_plot, 
                width = 10, height = 8, units = 'in', dpi = 600)
         
@@ -6518,10 +6539,10 @@ SaomNkRSienaBiEnv <- R6Class(
         plt <- plt + geom_smooth(aes(linetype=actor_id, color=strategy), method = smooth_method, linewidth=1, alpha=.15)
       plt <- plt + theme_bw()
       # Add marginal density plots
-      plt <- ggMarginal(plt, type = "density", margins = "y")
+      plt <- ggExtra::ggMarginal(plt, type = "density", margins = "y")
       
       if(!is.na(plot_file))
-        ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
+        ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
                plt, 
                width = 10, height = 8, units = 'in', dpi = 600)
       if(return_plot)
@@ -6566,7 +6587,7 @@ SaomNkRSienaBiEnv <- R6Class(
                         ))
       
       if(!is.na(plot_file))
-        ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
+        ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", self$config_environ_params$name, plot_file)), 
                plt, 
                width = 10, height = 8, units = 'in', dpi = 600)
       
@@ -7569,7 +7590,7 @@ SaomNkRSienaBiEnv <- R6Class(
     if(plot_save) {
       nfacets <- length(efflvls)
       plot_file <- paste0('util_contribs_',plot_file, round(as.numeric(Sys.time())*10))
-      ggsave(file = file.path(ifelse(is.na(plot_dir)||plot_dir=='',getwd(),plot_dir), 
+      ggsave(filename = file.path(ifelse(is.na(plot_dir)||plot_dir=='',getwd(),plot_dir), 
                               sprintf("%s_%s.jpeg", self$config_environ_params$name, plot_file)),
              plt2,
              width = 8, height = 2 + 1.2*nfacets, units = 'in', dpi = 400)
@@ -7685,7 +7706,7 @@ SaomNkRSienaBiEnv <- R6Class(
     
     if(plot_save) {
       plot_file <- paste0('K4panel_',plot_file, round(as.numeric(Sys.time())*10))
-      ggsave(file = file.path(ifelse(is.na(plot_dir)||plot_dir=='',getwd(),plot_dir), 
+      ggsave(filename = file.path(ifelse(is.na(plot_dir)||plot_dir=='',getwd(),plot_dir), 
                               sprintf("%s_%s.jpeg", self$config_environ_params$name, plot_file)),
              plt,
              width = 8, height = 8, units = 'in', dpi = 400)
@@ -7981,7 +8002,7 @@ SaomNkRSienaBiEnv <- R6Class(
     
     if(plot_save) {
       plot_file <- paste0('actr_utl_strt_smry_',plot_file, round(as.numeric(Sys.time())*10))
-      ggsave(file = file.path(ifelse(is.na(plot_dir)||plot_dir=='',getwd(),plot_dir), 
+      ggsave(filename = file.path(ifelse(is.na(plot_dir)||plot_dir=='',getwd(),plot_dir), 
                               sprintf("%s_%s.jpeg", self$config_environ_params$name, plot_file)),
              combined_plot,
              width = 8, height = 7, units = 'in', dpi = 400)
@@ -8059,10 +8080,10 @@ SaomNkRSienaBiEnv <- R6Class(
 
       # Set threshold for meaningful interactions
       E(g)$weight[E(g)$weight < 0.3] <- 0
-      g <- delete_edges(g, which(E(g)$weight == 0))
+      g <- igraph::delete_edges(g, which(E(g)$weight == 0))
 
       # Community detection to find component groups
-      communities <- cluster_louvain(g)
+      communities <- igraph::cluster_louvain(g)
 
       # Convert membership to list format for many-to-many mapping
       component_groups <- list()
@@ -8200,7 +8221,7 @@ SaomNkRSienaBiEnv <- R6Class(
 
       # Create a convex hull
       if (nrow(all_points) >= 3) {
-        ch <- chull(all_points$x, all_points$y)
+        ch <- grDevices::chull(all_points$x, all_points$y)
         hull <- all_points[c(ch, ch[1]), ]
 
         market_regions[[g]] <- data.frame(
@@ -8540,10 +8561,10 @@ SaomNkRSienaBiEnv <- R6Class(
       
       # Set threshold for meaningful interactions
       E(g)$weight[E(g)$weight < 0.4] <- 0
-      g <- delete_edges(g, which(E(g)$weight == 0))
+      g <- igraph::delete_edges(g, which(E(g)$weight == 0))
       
       # Community detection to find component groups
-      communities <- cluster_louvain(g)
+      communities <- igraph::cluster_louvain(g)
       
       # Convert membership to list format for many-to-many mapping
       component_groups <- list()
@@ -8681,7 +8702,7 @@ SaomNkRSienaBiEnv <- R6Class(
       
       # Create a convex hull
       if (nrow(all_points) >= 3) {
-        ch <- chull(all_points$x, all_points$y)
+        ch <- grDevices::chull(all_points$x, all_points$y)
         hull <- all_points[c(ch, ch[1]), ]
         
         market_regions[[g]] <- data.frame(
@@ -9029,10 +9050,10 @@ SaomNkRSienaBiEnv <- R6Class(
       
       # Set threshold for meaningful interactions
       E(g)$weight[E(g)$weight < 0.4] <- 0
-      g <- delete_edges(g, which(E(g)$weight == 0))
+      g <- igraph::delete_edges(g, which(E(g)$weight == 0))
       
       # Community detection to find component groups
-      communities <- cluster_louvain(g)
+      communities <- igraph::cluster_louvain(g)
       
       # Convert membership to list format for many-to-many mapping
       component_groups <- list()
@@ -10308,8 +10329,8 @@ SaomNkRSienaBiEnv <- R6Class(
                                                  plt_diff_fma_B), nrow=2, ncol=2)
     # Add common title
     combined_title_str <- "Deviation of First Mover Advantage from First Mover Benefit"
-    plt_diff_combined <- annotate_figure(plt_diff_combined, 
-                                     top = text_grob(combined_title_str, face = "bold", size = 14)) ##face = "bold"
+    plt_diff_combined <- ggpubr::annotate_figure(plt_diff_combined, 
+                                     top = ggpubr::text_grob(combined_title_str, face = "bold", size = 14)) ##face = "bold"
     
     
     ####
@@ -10317,8 +10338,8 @@ SaomNkRSienaBiEnv <- R6Class(
                                                     plt_fma), nrow=2, ncol=1)
     # Add common title
     combined_title_str2 <- "First Mover Benefit vs. First Mover Advantage"
-    plt_fma_fmb_combined <- annotate_figure(plt_fma_fmb_combined, 
-                                         top = text_grob(combined_title_str2, face = "bold", size = 14)) ##face = "bold"
+    plt_fma_fmb_combined <- ggpubr::annotate_figure(plt_fma_fmb_combined, 
+                                         top = ggpubr::text_grob(combined_title_str2, face = "bold", size = 14)) ##face = "bold"
     
     
     ##=====================
@@ -10695,7 +10716,7 @@ SaomNkRSienaBiEnv <- R6Class(
       if (plot_save) {
         plot_file <- paste0('explore_exploit_consistent_', plot_file, round(as.numeric(Sys.time()) * 10))
         ggsave(
-          file = file.path(
+          filename = file.path(
             ifelse(is.na(plot_dir) || plot_dir == '', getwd(), plot_dir),
             sprintf("%s_%s.jpeg", self$config_environ_params$name, plot_file)
           ),
@@ -10964,7 +10985,7 @@ SaomNkRSienaBiEnv <- R6Class(
     if (plot_save) {
       plot_file <- paste0('explore_exploit_', plot_file, round(as.numeric(Sys.time()) * 10))
       ggsave(
-        file = file.path(
+        filename = file.path(
           ifelse(is.na(plot_dir) || plot_dir == '', getwd(), plot_dir),
           sprintf("%s_%s.jpeg", self$config_environ_params$name, plot_file)
         ),
@@ -11380,7 +11401,7 @@ SaomNkRSienaBiEnv <- R6Class(
       
       # Combine plots
       combined_plot <- p_main / p_diff + 
-        plot_layout(heights = c(3, 1))
+        patchwork::plot_layout(heights = c(3, 1))
       
       return(combined_plot)
     }
@@ -11712,7 +11733,7 @@ SaomNkRSienaBiEnv <- R6Class(
     if (plot_save) {
       plot_file <- paste0('strategy_explore_exploit_', plot_file, round(as.numeric(Sys.time()) * 10))
       ggsave(
-        file = file.path(
+        filename = file.path(
           ifelse(is.na(plot_dir) || plot_dir == '', getwd(), plot_dir),
           sprintf("%s_%s.jpeg", self$config_environ_params$name, plot_file)
         ),
@@ -11747,7 +11768,7 @@ SaomNkRSienaBiEnv <- R6Class(
         values_to = "proportion"
       ) %>%
       mutate(
-        activity_type = str_to_title(activity_type),
+        activity_type = stringr::str_to_title(activity_type),
         strategy_label = paste("Strategy", strategy)
       )
     
@@ -12788,9 +12809,9 @@ SaomNkRSienaBiEnv <- R6Class(
       title_str <- paste0(title_str, "\nEffects: ", paste(effects[1:min(3, length(effects))], collapse = ", "))
     }
     
-    combined_plot <- annotate_figure(
+    combined_plot <- ggpubr::annotate_figure(
       combined_plot,
-      top = text_grob(title_str, face = "bold", size = 14)
+      top = ggpubr::text_grob(title_str, face = "bold", size = 14)
     )
     
     if (verbose) {
@@ -14041,11 +14062,11 @@ SaomNkRSienaBiEnv <- R6Class(
                                common.legend = FALSE)
     
     # Add common title and x-label
-    combined_plot <- annotate_figure(
+    combined_plot <- ggpubr::annotate_figure(
       combined_plot,
-      top = text_grob(paste("Multiperiod Diff-in-Diff Tests of Exploration Metrics\n", sim_title_str), 
+      top = ggpubr::text_grob(paste("Multiperiod Diff-in-Diff Tests of Exploration Metrics\n", sim_title_str), 
                       face = "bold", size = 14),
-      bottom = text_grob(sprintf("Event Time\n(Shock Starts at Simulated Decision Chain Step %d)", shock_start))
+      bottom = ggpubr::text_grob(sprintf("Event Time\n(Shock Starts at Simulated Decision Chain Step %d)", shock_start))
     )
     
     # Save if requested
@@ -14972,7 +14993,7 @@ SaomNkRSienaBiEnv <- R6Class(
       cov_str <- paste(covariates, collapse = ' + ')
       formula_str <- paste(formula_str, '+', cov_str)
     }
-    did_model <- lm(as.formula(formula_str), data = panel)
+    did_model <- lm(stats::as.formula(formula_str), data = panel)
     did_summary <- summary(did_model)
 
     # Extract DID estimate

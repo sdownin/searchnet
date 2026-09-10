@@ -124,7 +124,7 @@ saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy <- functio
     dat <- dat %>% filter(wave_id %in% wave_ids)
   dat_acp_stabil_means <- dat %>% group_by(stabilization_summary_period, strategy) %>%
     dplyr::summarize(mean=mean(utility, na.rm=TRUE)) %>%
-    mutate(PeriodFct = fct_rev(as.factor(stabilization_summary_period)))
+    mutate(PeriodFct = forcats::fct_rev(as.factor(stabilization_summary_period)))
   ##==============================================
   strat_legend_title <- sprintf("Strategy (%s) :  ", paste(strateffs, collapse = '_'))
   strat_break <- levels(actor_strat)
@@ -134,21 +134,21 @@ saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy <- functio
     return(a)
   })
   dat_dens_rigde <- dat %>%
-    mutate(PeriodFct = fct_rev(as.factor(stabilization_summary_period)))
+    mutate(PeriodFct = forcats::fct_rev(as.factor(stabilization_summary_period)))
   group_dens_means <- dat_dens_rigde %>% ungroup() %>% group_by(strategy) %>%
     dplyr::summarize(n=n(),mean=mean(utility,na.rm=TRUE))
   ##---------------------
   ## Start Plot
   plt.dr <- ggplot(dat_dens_rigde, aes(y = PeriodFct, x = utility, color=strategy, fill=strategy)) +
-    stat_density_ridges(aes(point_color = strategy, point_fill = strategy, point_shape = strategy),
+    ggridges::stat_density_ridges(aes(point_color = strategy, point_fill = strategy, point_shape = strategy),
                         quantile_lines = TRUE, alpha = .3, rel_min_height = density_ridges_rel_min_height,
                         point_size=.4,
                         jittered_points = TRUE,
-                        position = position_raincloud(adjust_vlines = FALSE, ygap = -.1, height = .15),
+                        position = ggridges::position_raincloud(adjust_vlines = FALSE, ygap = -.1, height = .15),
                         quantiles = c(0.5), linewidth=.75 ) +
     scale_y_discrete(expand = c(0, 0)) +
     scale_x_continuous(expand = c(0, 0)) +
-    scale_fill_cyclical(
+    ggridges::scale_fill_cyclical(
       breaks = strat_break,
       labels = strat_labs,
       values = scales::hue_pal()(length(levels(actor_strat))),
@@ -167,7 +167,7 @@ saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy <- functio
     ) +
     geom_vline(xintercept = 0, linetype=1) +
     coord_cartesian(clip = "off") +
-    theme_ridges(grid = TRUE, center=TRUE) +
+    ggridges::theme_ridges(grid = TRUE, center=TRUE) +
     theme(legend.position = 'bottom')
   if(show_strategy_means) {
     plt.dr <- plt.dr +
@@ -223,15 +223,15 @@ saomnk_search_rsiena_multiwave_plot_K_4panel <- function(env,
     legend = "bottom"
   )
 
-  combined_plot <- annotate_figure(
+  combined_plot <- ggpubr::annotate_figure(
     combined_plot_notitle,
-    top = text_grob(maintitle, color = "black", size = 14)
+    top = ggpubr::text_grob(maintitle, color = "black", size = 14)
   )
 
   env$multiwave_plots <- list(combined_plot=combined_plot)
 
   if(!is.na(plot_file))
-    ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
+    ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
            combined_plot,
            width = 10, height = 8, units = 'in', dpi = 600)
 
@@ -343,7 +343,7 @@ saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary <- function(env,
     legend = ifelse(show_legend, "bottom", "none")
   )
   if(!is.na(plot_file))
-    ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
+    ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
            combined_plot,
            width = 10, height = 8, units = 'in', dpi = 600)
   if(return_plot)
@@ -458,7 +458,7 @@ saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary <- function(env,
     legend = ifelse(show_legend, "bottom", "none")
   )
   if(!is.na(plot_file))
-    ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
+    ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
            combined_plot,
            width = 10, height = 8, units = 'in', dpi = 600)
   if(return_plot)
@@ -570,7 +570,7 @@ saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary <- function(env,
     legend = ifelse(show_legend, "bottom", "none")
   )
   if(!is.na(plot_file))
-    ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
+    ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
            combined_plot,
            width = 10, height = 8, units = 'in', dpi = 600)
   if(return_plot)
@@ -682,7 +682,7 @@ saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary <- function(env,
     legend = ifelse(show_legend, "bottom", "none")
   )
   if(!is.na(plot_file))
-    ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
+    ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
            combined_plot,
            width = 10, height = 8, units = 'in', dpi = 600)
   if(return_plot)
@@ -818,7 +818,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_strategy_summary <- function(e
     legend = "bottom"
   )
   if(!is.na(plot_file))
-    ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
+    ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
            combined_plot,
            width = 10, height = 8, units = 'in', dpi = 600)
 
@@ -856,10 +856,10 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_by_strategy <- function(env,
     plt <- plt + geom_smooth(aes(linetype=actor_id, color=strategy), method = smooth_method, linewidth=1, alpha=.15)
   plt <- plt + theme_bw()
   # Add marginal density plots
-  plt <- ggMarginal(plt, type = "density", margins = "y")
+  plt <- ggExtra::ggMarginal(plt, type = "density", margins = "y")
 
   if(!is.na(plot_file))
-    ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
+    ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
            plt,
            width = 10, height = 8, units = 'in', dpi = 600)
   if(return_plot)
@@ -905,7 +905,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_density_by_strategy <- functio
                     ))
 
   if(!is.na(plot_file))
-    ggsave(file = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
+    ggsave(filename = file.path(ifelse(is.na(plot_dir),getwd(),plot_dir), sprintf("%s_%s.png", env$config_environ_params$name, plot_file)),
            plt,
            width = 10, height = 8, units = 'in', dpi = 600)
 

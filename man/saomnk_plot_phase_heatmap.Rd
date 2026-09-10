@@ -52,3 +52,11 @@ p <- saomnk_plot_phase_heatmap(env, x_var = "K_AC", y_var = "utility",
                                bins = 10)
 }
 }
+\seealso{
+Other phase space functions: 
+\code{\link{saomnk_plot_phase_comparison}()},
+\code{\link{saomnk_plot_phase_evolution}()},
+\code{\link{saomnk_plot_phase_space_3d}()},
+\code{\link{searchnet_export_phase_space}()}
+}
+\concept{phase space functions}

@@ -33,7 +33,7 @@ the model contains several effects of the same type.}
 \item{\code{from}}{Numeric. Parameter value at the start of the ramp.
 Defaults to the model's own value for that effect if omitted.}
 \item{\code{to}}{Numeric. Parameter value at the end of the ramp.}
-\item{\code{start}}{Numeric in \link{0, 1}. Fraction of the chain at which the
+\item{\code{start}}{Numeric in \eqn{[0, 1]}. Fraction of the chain at which the
 ramp begins (default \code{0}).}
 \item{\code{window}}{Numeric in (0, 1]. Fraction of the chain over which
 the ramp completes (default \code{1 - start}).}

@@ -1,4 +1,4 @@
-#' Standalone forbearance plot functions for SaoMNK.
+#' Standalone forbearance plot functions for SaoMNK
 #'
 #' Visualizations of competitive entry/exit behavior derived from the
 #' entry tracking in \code{track-entries.R}. Each function follows the

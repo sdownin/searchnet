@@ -4,7 +4,7 @@
 \alias{print.saomnk_shock}
 \title{Print a SaoMNK Shock Specification}
 \usage{
-print.saomnk_shock(x, ...)
+\method{print}{saomnk_shock}(x, ...)
 }
 \arguments{
 \item{x}{A \code{saomnk_shock} object.}

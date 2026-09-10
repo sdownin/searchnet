@@ -12,17 +12,36 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, purl=FALSE}
+## This vignette is a design document, not a worked example: its code
+## operates on empirical panel data the package does not ship, and part of
+## the interface it sketches is not implemented yet. eval = FALSE below stops
+## the chunks running at build time; every chunk ALSO carries purl = FALSE in
+## its own header, which is what stops `R CMD check`'s vignette-code step
+## tangling and sourcing them. purl cannot be set here: in tangle mode knitr
+## never evaluates this chunk, so a global purl = FALSE is silently ignored.
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   warning = FALSE,
   message = FALSE,
   eval = FALSE,
+  purl = FALSE,
   fig.width = 7,
   fig.height = 5
 )
 ```
+
+> **How to read this vignette.** None of the code below is executed when the
+> vignette is built, and the `#>` blocks are illustrative rather than captured
+> output. Two groups of functions appear. `saom_to_saomnk()`,
+> `empirical_to_saomnk_env()` and `run_calibrated_counterfactual()` are
+> implemented and exported; see `?saom_to_saomnk` for the current signatures.
+> `saom_to_saomnk_manual()`, `run_all_counterfactuals()`,
+> `compute_empirical_k()`, `run_calibrated_waves()`,
+> `plot_trajectory_comparison()`, `validate_calibration()`,
+> `calibration_gof()` and `saomnk_app()` are **not implemented**; the sections
+> that use them describe the intended interface and will not run.
 
 # 1. Introduction
 
@@ -81,7 +100,7 @@ between the empirical sample and the simulation environment.
 
 ## 2.3 Using `saom_to_saomnk()`
 
-```{r bridge-basic}
+```{r bridge-basic, purl=FALSE}
 library(searchnet)
 
 ## Suppose saom_fit is a fitted RSiena model object
@@ -127,7 +146,7 @@ Real-world network data typically arrives as a one-mode adjacency matrix
 `empirical_to_saomnk_env()` function converts this to the bipartite
 actor-component incidence matrix required by `searchnet`.
 
-```{r env-from-data}
+```{r env-from-data, purl=FALSE}
 ## mi_data: a list with adjacency matrices and node attributes per wave
 ## (e.g., from the airline ORM study or supply chain panel data)
 env_data <- empirical_to_saomnk_env(mi_data, wave = 5)
@@ -152,7 +171,7 @@ function performs bipartite projection using a shared-partner decomposition:
 actors are the original nodes, and components are extracted as latent
 activity dimensions via spectral clustering.
 
-```{r mi-structure}
+```{r mi-structure, purl=FALSE}
 ## Example: constructing mi_data from raw alliance data
 mi_data <- list(
   networks = list(
@@ -181,7 +200,7 @@ agreements), the conversion involves:
 3. **Validation** that the reconstructed bipartite network preserves the
    degree distribution and clustering of the original one-mode projection.
 
-```{r bipartite-convert}
+```{r bipartite-convert, purl=FALSE}
 ## Convert one-mode airline alliance data to bipartite
 env_data <- empirical_to_saomnk_env(
   mi_data, wave = 5,
@@ -203,7 +222,7 @@ parameter estimates from a hypothetical airline competitive dynamics study.
 
 ## 4.1 Set up the parameter bridge
 
-```{r worked-bridge}
+```{r worked-bridge, purl=FALSE}
 ## Example: manually specify SAOM estimates
 ## (in practice these come from a fitted RSiena model)
 example_theta <- c(
@@ -221,7 +240,7 @@ print(bridge$mapping_table)
 
 ## 4.2 Create the simulation environment
 
-```{r worked-env}
+```{r worked-env, purl=FALSE}
 ## Create an environment matching the empirical network dimensions
 env <- saomnk_env(
   M = 8,                  # 8 airlines
@@ -241,7 +260,7 @@ model <- saomnk_model(
 
 ## 4.3 Run the calibrated baseline
 
-```{r worked-baseline}
+```{r worked-baseline, purl=FALSE}
 ## Run calibrated simulation
 baseline <- saomnk_run(model)
 
@@ -257,7 +276,7 @@ plot(baseline, type = "k4")
 
 ## 4.4 Compare to observed data
 
-```{r worked-validate}
+```{r worked-validate, purl=FALSE}
 ## Compare simulated degree distributions to empirical wave 5
 obs_degrees <- colSums(mi_data$networks$wave5)
 sim_degrees <- colSums(baseline$final_incidence)
@@ -292,7 +311,7 @@ substantive research question:
 
 ## 5.2 Running a counterfactual
 
-```{r counterfactual-run}
+```{r counterfactual-run, purl=FALSE}
 ## Scenario 2: Double the transitive closure parameter
 result <- run_calibrated_counterfactual(
   env_data, bridge,
@@ -328,7 +347,7 @@ closure example above:
 
 ## 5.4 Running all predefined scenarios
 
-```{r counterfactual-all}
+```{r counterfactual-all, purl=FALSE}
 ## Run all six predefined scenarios
 all_results <- run_all_counterfactuals(env_data, bridge, iterations = 50)
 
@@ -351,7 +370,7 @@ approaches.
 Compare the simulated coupled degree trajectories to observed wave-level
 statistics from the empirical panel data.
 
-```{r validation-trajectory}
+```{r validation-trajectory, purl=FALSE}
 ## Extract observed {K} statistics per wave
 obs_k <- compute_empirical_k(mi_data)
 
@@ -367,7 +386,7 @@ plot_trajectory_comparison(obs_k, sim_k)
 Compare the full distribution of actor-level outcomes (fitness, scope,
 sociality) between simulation and data.
 
-```{r validation-distribution}
+```{r validation-distribution, purl=FALSE}
 ## QQ-plot of degree distributions
 validation <- validate_calibration(baseline, mi_data, wave = 5)
 plot(validation, type = "qq")
@@ -380,7 +399,7 @@ Following RSiena's goodness-of-fit framework (Lospinoso et al., 2011),
 the package computes Mahalanobis distance between simulated and observed
 network statistics across multiple dimensions.
 
-```{r validation-gof}
+```{r validation-gof, purl=FALSE}
 ## Goodness-of-fit assessment
 gof <- calibration_gof(baseline, mi_data, wave = 5,
                        statistics = c("degree", "triad.census",
@@ -412,7 +431,7 @@ The calibration interface provides:
 
 ## 7.2 Launching the calibration page
 
-```{r gui-launch}
+```{r gui-launch, purl=FALSE}
 ## Launch the full application
 saomnk_app()
 

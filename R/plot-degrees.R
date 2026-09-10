@@ -106,7 +106,7 @@ saomnk_plot_degree_4panel <- function(env,
 
   if (plot_save) {
     plot_file <- paste0('K4panel_', plot_file, round(as.numeric(Sys.time()) * 10))
-    ggsave(file = file.path(ifelse(is.na(plot_dir) || plot_dir == '', getwd(), plot_dir),
+    ggsave(filename = file.path(ifelse(is.na(plot_dir) || plot_dir == '', getwd(), plot_dir),
                             sprintf("%s_%s.jpeg", env$config_environ_params$name, plot_file)),
            plt,
            width = 8, height = 8, units = 'in', dpi = 400)

@@ -59,3 +59,11 @@ p <- saomnk_plot_phase_comparison(list(weak = env1, strong = env2),
                                   x_var = "K_AC", y_var = "utility")
 }
 }
+\seealso{
+Other phase space functions: 
+\code{\link{saomnk_plot_phase_evolution}()},
+\code{\link{saomnk_plot_phase_heatmap}()},
+\code{\link{saomnk_plot_phase_space_3d}()},
+\code{\link{searchnet_export_phase_space}()}
+}
+\concept{phase space functions}

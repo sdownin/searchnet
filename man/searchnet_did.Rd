@@ -23,6 +23,19 @@ average treatment effects.  Requires that the panel contain both treated
 and control actors---i.e., \code{searchnet_causal_panel()} was called
 with an explicit \code{treated_actors} argument.
 }
+\details{
+\code{did::att_gt()} additionally requires at least 5 distinct units
+(more if \code{xformla} covariates are supplied) in every
+\code{first_treat} group, including the never-treated (control) group.
+\code{searchnet_did()} checks this before calling \code{did::att_gt()}
+and fails with an actionable message naming the actual requirement and
+the observed counts, rather than passing through \code{did}'s opaque
+"never-treated group is too small" error. A design with too few control
+actors is a genuine scope limit of the Callaway & Sant'Anna estimator,
+not a defect in the panel; widen the design (more actors, fewer
+\code{treated_actors}) or, for staggered treatment timing, pass
+\code{control_group = "notyettreated"}.
+}
 \examples{
 \dontrun{
 panel <- searchnet_causal_panel(env, shock_step = 60,

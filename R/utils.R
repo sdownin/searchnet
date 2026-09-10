@@ -220,7 +220,8 @@ saomnk_empirical_epistasis <- function(B, method = "jaccard", threshold = 0, dia
 searchnet_proof <- function(file = NULL) {
   proof_dir <- system.file("proofs", package = "searchnet")
   if (proof_dir == "") {
-    proof_dir <- file.path(.saomnk_dir, "..", "inst", "proofs")
+    stop("searchnet proof files are unavailable: 'inst/proofs' was not found ",
+         "in the installed package.", call. = FALSE)
   }
   if (is.null(file)) {
     return(list.files(proof_dir, full.names = TRUE))

@@ -4,7 +4,7 @@
 \alias{print.saomnk_summary}
 \title{Print a SaoMNK Model Summary Table}
 \usage{
-print.saomnk_summary(x, ...)
+\method{print}{saomnk_summary}(x, ...)
 }
 \arguments{
 \item{x}{A \code{saomnk_summary} object (a classed character string).}

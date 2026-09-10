@@ -15,6 +15,17 @@ cat("=================================================================\n\n")
 
 total_start <- proc.time()
 
+## Locate this script whether it is run with Rscript or with source().
+## (sys.frame(1)$ofile is only defined under source(); using it alone made
+## this script fail under `Rscript reproduce_all.R`.)
+.script_dir <- local({
+  a <- commandArgs(trailingOnly = FALSE)
+  f <- sub("^--file=", "", a[grepl("^--file=", a)])
+  if (length(f)) return(dirname(normalizePath(f, mustWork = FALSE)))
+  o <- tryCatch(sys.frame(1)$ofile, error = function(e) NULL)
+  if (!is.null(o)) dirname(normalizePath(o, mustWork = FALSE)) else "."
+})
+
 # ---------------------------------------------------------------------------
 # 0. Setup: install/load searchnet
 # ---------------------------------------------------------------------------
@@ -22,7 +33,7 @@ cat("--- Step 0: Loading packages ---\n")
 
 if (!requireNamespace("searchnet", quietly = TRUE)) {
   cat("searchnet not found. Attempting local install...\n")
-  pkg_dir <- normalizePath(file.path(dirname(sys.frame(1)$ofile), "..", ".."),
+  pkg_dir <- normalizePath(file.path(.script_dir, "..", ".."),
                            mustWork = FALSE)
   if (file.exists(file.path(pkg_dir, "DESCRIPTION"))) {
     install.packages(pkg_dir, repos = NULL, type = "source")
@@ -37,7 +48,7 @@ library(ggplot2)
 library(Matrix)
 
 # Create output directory
-fig_dir <- file.path(dirname(sys.frame(1)$ofile %||% "."), "figures")
+fig_dir <- file.path(.script_dir, "figures")
 if (!dir.exists(fig_dir)) dir.create(fig_dir, recursive = TRUE)
 
 cat("  searchnet version:", as.character(packageVersion("searchnet")), "\n")
@@ -47,24 +58,27 @@ options(digits = 4)
 
 # =============================================================================
 # ILLUSTRATION 1: Levinthal Replication (Section 5.1)
-# Single agent, exogenous NK landscape, M=1, N=12
+# Independent searchers on an exogenous NK landscape, M=2, N=12.
+# M >= 2 is required by RSiena's bipartite data constructor; with popularity
+# and scope zeroed the two actors do not influence one another, so each is a
+# classical NK searcher.  These are the values in the manuscript chunk.
 # =============================================================================
-cat("--- Illustration 1: Levinthal Replication (M=1, N=12) ---\n")
+cat("--- Illustration 1: Levinthal Replication (M=2, N=12) ---\n")
 t1 <- proc.time()
 
 set.seed(1234)
-env_nk <- saomnk_env(M = 1, N = 12, density = 0, seed = 1234)
+env_nk <- saomnk_env(M = 2, N = 12, density = 0, seed = 1234)
 
-# Block-diagonal epistasis: 3 modules of 4 components (K ~ 3)
+# Block-diagonal influence matrix: 3 modules of 4 components (K ~ 3)
 K_levinthal <- saomnk_block_diagonal(12, 3)
 
-# Only epistasis active; no endogenous effects
+# Only the influence term active; no endogenous effects
 mod_nk <- saomnk_model(
   density    = -0.3,
   popularity = 0,
   scope      = 0,
-  epistasis_matrix = K_levinthal,
-  epistasis_weight = 0.15
+  influence_matrix = K_levinthal,
+  influence_weight = 0.15
 )
 
 saomnk_run(env_nk, mod_nk, steps_per_actor = 100, seed = 42)
@@ -95,8 +109,8 @@ mod_endog <- saomnk_model(
   density    = -0.3,
   popularity =  0.2,
   scope      =  0.1,
-  epistasis_matrix = K_modular,
-  epistasis_weight = 0.02,
+  influence_matrix = K_modular,
+  influence_weight = 0.02,
   strategies = list(
     egoX   = rep(c(-1, 0, 1), length.out = 12),
     inPopX = rep(c( 1, 0,-1), length.out = 12)
@@ -140,8 +154,8 @@ env_shock <- saomnk_env(M = 6, N = 8, density = 0, seed = 42)
 K_small <- saomnk_block_diagonal(8, 2)
 mod_base <- saomnk_model(
   density = -0.5,
-  epistasis_matrix = K_small,
-  epistasis_weight = 0.5
+  influence_matrix = K_small,
+  influence_weight = 0.5
 )
 
 # Baseline: no shocks
@@ -185,8 +199,8 @@ mod <- saomnk_model(
   density    = -0.5,
   popularity =  0.2,
   scope      =  0.1,
-  epistasis_matrix = K_matrix,
-  epistasis_weight = 0.05
+  influence_matrix = K_matrix,
+  influence_weight = 0.05
 )
 
 saomnk_run(env, mod, steps_per_actor = 30, seed = 12345)
@@ -207,51 +221,49 @@ cat("  Saved: fig_api_k4.pdf, fig_api_utility.pdf\n\n")
 
 
 # =============================================================================
-# NK EQUIVALENCE VERIFICATION
-# Confirms that searchnet recovers classical NK dynamics when endogenous
-# effects are disabled (M=1, no popularity/scope effects)
+# NK EQUIVALENCE VERIFICATION (Section 4.6)
+# Reproduces the nk-verify chunk of the manuscript: rebuilding each locus's
+# payoff table keyed by its neighborhood pattern and recomputing fitness must
+# return the original values exactly.
 # =============================================================================
 cat("--- NK Equivalence Verification ---\n")
 t5 <- proc.time()
 
-set.seed(999)
-nk_check <- saomnk_env(M = 1, N = 8, density = 0, seed = 999)
+nk <- nk_landscape(N = 10, K = 3, seed = 42)
+nk_check <- nk_verify_reduction(N = 10, K = 3, seed = 42)
 
-K_full <- saomnk_block_diagonal(8, 2)
-
-mod_nk_only <- saomnk_model(
-  density          = -0.2,
-  popularity       = 0,
-  scope            = 0,
-  epistasis_matrix = K_full,
-  epistasis_weight = 0.2
-)
-
-saomnk_run(nk_check, mod_nk_only, steps_per_actor = 50, seed = 777)
-
-# Extract final bipartite matrix
-bip_final <- saomnk_get_bipartite(nk_check)
-cat("  Final bipartite matrix (M=1, N=8):\n")
-print(bip_final)
-
-# Extract degree data
-degrees <- saomnk_get_degrees(nk_check)
-cat("\n  Actor scope (K_AC) range:",
-    range(degrees$K_AC, na.rm = TRUE), "\n")
-cat("  Component epistasis (K_CC) range:",
-    range(degrees$K_CC, na.rm = TRUE), "\n")
-
-# Verify: with M=1 and no popularity/scope, the model should:
-# 1. Produce a single-row bipartite matrix
-# 2. Show K_CC reflecting the block-diagonal structure
-# 3. Converge to a stable configuration (local optimum)
 cat("\n  Verification checks:\n")
-cat("    [1] Single actor row:", nrow(bip_final) == 1, "\n")
-cat("    [2] Converged (stable final config):",
-    !is.null(bip_final), "\n")
+cat("    [1] Configurations enumerated:", nk_check$n_configs, "\n")
+cat("    [2] Max absolute difference:  ",
+    format(nk_check$max_difference, scientific = TRUE), "\n")
+cat("    [3] Reduction check passed:   ", nk_check$passed, "\n")
+stopifnot(nk_check$passed)
+
+# Degree extraction on a runnable environment (M >= 2), for the {K} readout
+# used throughout the manuscript.
+degrees <- saomnk_get_degrees(env)
+cat("\n  Actor scope (K_AC) range:",
+    range(degrees$K_AC$value, na.rm = TRUE), "\n")
+cat("  Component epistasis (K_CC) range:",
+    range(degrees$K_CC$value, na.rm = TRUE), "\n")
 
 t5_elapsed <- (proc.time() - t5)["elapsed"]
 cat("  Time:", round(t5_elapsed, 2), "seconds\n\n")
+
+
+# =============================================================================
+# {K}-SYSTEM DEMONSTRATION FIGURES (Sections 3.2 and 5.3)
+# Regenerates the two figures the manuscript includes as PNG files:
+#   paper/figures/fig_k_coupling_sim.png
+#   paper/figures/fig_k_shock_relocation.png
+# =============================================================================
+cat("--- {K}-system demonstration figures ---\n")
+t6 <- proc.time()
+
+source(file.path(.script_dir, "make_k_system_figures.R"))
+
+t6_elapsed <- (proc.time() - t6)["elapsed"]
+cat("  Time:", round(t6_elapsed, 2), "seconds\n\n")
 
 
 # =============================================================================
@@ -269,5 +281,6 @@ cat("  Illustration 2 (Endogenous): ", round(t2_elapsed, 1), "s\n")
 cat("  Illustration 3 (Shocks):     ", round(t3_elapsed, 1), "s\n")
 cat("  API Demo:                    ", round(t4_elapsed, 1), "s\n")
 cat("  NK Equivalence:              ", round(t5_elapsed, 1), "s\n")
+cat("  {K}-system figures:          ", round(t6_elapsed, 1), "s\n")
 cat("=================================================================\n")
 cat("\nAll figures saved to:", fig_dir, "\n")

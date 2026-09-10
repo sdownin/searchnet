@@ -82,7 +82,7 @@ volatility without moving the expected parameter, and the pair therefore
 supports a factorial design over direction and instability.
 
 Reproducibility: for a fixed \code{seed} the trajectory is exactly
-reproducible, and \code{\link{base::set.seed}} state outside the call is
+reproducible, and \code{\link[base]{set.seed}} state outside the call is
 restored on exit, so drawing a drift does not perturb any surrounding
 simulation stream.
 }

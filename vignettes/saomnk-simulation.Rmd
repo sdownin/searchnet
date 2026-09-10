@@ -139,7 +139,9 @@ env$search_rsiena(
 
 ```{r strategy-results, fig.height=5, fig.width=11}
 n_steps <- env$get_step()
-snapshot_ids <- unique(c(1, seq(10, n_steps, by = 10), n_steps))
+## Cap the panel count: every tenth step is still more frames than the figure
+## can show legibly, and each one costs plotting time.
+snapshot_ids <- unique(round(seq(1, n_steps, length.out = 12)))
 env$plot_snapshots(snapshot_ids)
 ```
 

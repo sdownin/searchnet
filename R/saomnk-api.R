@@ -205,7 +205,7 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #'   \emph{Epistasis} names three distinct things in this package, and W is
 #'   only the first.  W is the \emph{input}.  \eqn{K_{CC}} is the
 #'   \emph{realized structure}: the component-projection degree
-#'   \code{colSums((B'B) > 0)}, reported by
+#'   \code{colSums(crossprod(B) > 0)}, reported by
 #'   \code{\link{saomnk_get_degrees}}.  W does not appear in that formula, but
 #'   W drives the search that produces \eqn{B}, so \eqn{K_{CC}} evolves as a
 #'   consequence of W.  \emph{Epistatic fitness} is the \emph{outcome}: the
@@ -275,6 +275,8 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #'   and \code{parameter} (numeric) entries.
 #' @return A list with class \code{"saomnk_model"} ready to pass to
 #'   \code{\link{saomnk_run}}.
+#' @seealso \code{\link{saomnk_env}}, \code{\link{saomnk_run}},
+#'   \code{\link{saomnk_get_degrees}}
 #' @export
 #' @examples
 #' ## Minimal: density-only model

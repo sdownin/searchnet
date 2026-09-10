@@ -76,3 +76,11 @@ p <- saomnk_plot_phase_space_3d(env, x_var = "K_AC",
                                 z_var = "utility", color_by = "time")
 }
 }
+\seealso{
+Other phase space functions: 
+\code{\link{saomnk_plot_phase_comparison}()},
+\code{\link{saomnk_plot_phase_evolution}()},
+\code{\link{saomnk_plot_phase_heatmap}()},
+\code{\link{searchnet_export_phase_space}()}
+}
+\concept{phase space functions}

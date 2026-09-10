@@ -4,7 +4,7 @@
 \alias{print.saomnk_model}
 \title{Print a SaoMNK Structure Model}
 \usage{
-print.saomnk_model(x, ...)
+\method{print}{saomnk_model}(x, ...)
 }
 \arguments{
 \item{x}{A \code{saomnk_model} object.}

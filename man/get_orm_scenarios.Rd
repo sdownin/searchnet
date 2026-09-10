@@ -15,6 +15,16 @@ Returns a named list of scenario specifications suitable for use with
 \code{\link{run_calibrated_counterfactual}}.  Each scenario modifies one
 or more effect parameters via a multiplier applied to the baseline value.
 }
+\section{Keys are SaoMNK-side effect names}{
+
+Every \code{modify} key must name an effect the converted baseline model
+actually contains, because \code{\link{run_calibrated_counterfactual}} now
+refuses a key that matches nothing rather than ignoring it.  A scenario is
+therefore only usable against a bridge whose SAOM estimated the effect it
+names: \code{remove_homophily} needs an \code{egoX} in the fitted model,
+\code{epistasis_boost} needs a fitted \code{XWX} weight, and so on.
+}
+
 \examples{
 scenarios <- get_orm_scenarios()
 names(scenarios)

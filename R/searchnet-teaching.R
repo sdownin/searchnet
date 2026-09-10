@@ -47,7 +47,12 @@ NULL
 
 
 #' Null-coalescing operator (if not already defined)
+#'
+#' Internal, unexported infix operator.  No help page is generated: an Rd name
+#' may not contain the vertical bar, so the topic that roxygen produced for
+#' this operator carried an illegal name and checkRd rejected it.
 #' @keywords internal
+#' @noRd
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
 

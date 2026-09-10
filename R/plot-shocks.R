@@ -264,7 +264,7 @@ saomnk_plot_K_attribute_shocks <- function(env,
       theme_minimal()
 
     p <- p1 / p2 +
-      plot_annotation(
+      patchwork::plot_annotation(
         title = sprintf("%s for New Components Only (C%d-C%d)",
                         K_type, min(new_components), max(new_components)),
         theme = theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))

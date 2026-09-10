@@ -18,7 +18,6 @@ knitr::opts_chunk$set(
   comment = "#>",
   warning = FALSE,
   message = FALSE,
-  eval = FALSE,
   fig.width = 7,
   fig.height = 5
 )
@@ -46,18 +45,18 @@ Industrial policy reshapes competitive landscapes. Subsidies, grants, tax
 concessions, and guarantees do not merely transfer resources---they alter the
 structural parameters that govern how firms search for viable strategies. In
 the SaoMNK framework, each policy instrument maps onto a specific change in the
-SAOM objective function, which in turn modifies the geometry of the fitness
-landscape's basins of attraction.
+SAOM objective function, which in turn moves firms across the basins of
+attraction of the fitness landscape.
 
 This vignette applies `searchnet`'s basin analysis to four stylized industrial
 policies drawn from the antimicrobial resistance (AMR) pharmaceutical context.
-The analysis demonstrates how policy-induced parameter shifts change basin
-**depth** (the fitness gap between peak and rim, measuring competitive moat
-strength) and basin **width** (the number of distinct strategies converging to
-each peak, measuring strategic flexibility). Together, these geometric
-properties connect the micro-mechanisms of firm search to the macro-outcomes
-that policymakers care about: competitive dynamics, innovation trajectories,
-and system adaptability.
+The analysis measures basin **depth** (the fitness gap between peak and rim,
+measuring competitive moat strength) and basin **width** (the number of
+distinct strategies converging to each peak, measuring strategic flexibility),
+and asks which of the two a policy-induced parameter shift actually moves.
+Together, these geometric properties connect the micro-mechanisms of firm
+search to the macro-outcomes that policymakers care about: competitive
+dynamics, innovation trajectories, and system adaptability.
 
 # 1. Industrial Policy as Landscape Reshaping
 
@@ -67,11 +66,13 @@ components. The SAOM objective function governs actor search behavior through
 network statistics---density (scope cost), inPop (popularity), XWX
 (epistasis)---each weighted by a parameter $\theta$. Industrial policy, in
 this formalization, is a **theta shock**: an exogenous change to one or more
-$\theta$ parameters that reshapes the fitness landscape.
+$\theta$ parameters that changes how firms search. The section "What a Theta
+Shock Can and Cannot Move" establishes which part of the geometry such a shock
+can reach.
 
-The four AMR policies modify landscape geometry through distinct channels:
+The four AMR policies act through distinct channels:
 
-| Policy | Instrument | Parameter Shift | Landscape Effect |
+| Policy | Instrument | Parameter Shift | Expected Effect |
 |:-------|:-----------|:----------------|:-----------------|
 | P1 | Economic Subsidy | density: $-0.6 \to -0.96$ | Narrows basins |
 | P2 | Direct Grant | density: $-0.6 \to -0.3$ | Widens basins |
@@ -96,19 +97,25 @@ question that only simulation can resolve.
 # 2. Baseline Environment Setup
 
 We model the AMR pharmaceutical sector as a bipartite network of $M = 20$
-firms affiliating with $N = 16$ activities (e.g., R\&D pipelines, clinical
+firms affiliating with $N = 12$ activities (e.g., R\&D pipelines, clinical
 trial capacities, manufacturing processes, distribution networks, regulatory
 capabilities). The initial affiliation probability of 0.4 reflects a
 moderately populated activity space where firms have already committed to some
 portfolio of capabilities.
 
+Basin analysis enumerates all $2^N$ configurations, so $N$ controls the cost of
+everything below. We use $N = 12$ (4096 configurations), which is small enough
+that the whole vignette runs in seconds and large enough to show the geometry.
+Nothing in the analysis depends on that choice: raising $N$ multiplies the work
+by $2^{\Delta N}$ and leaves the structure intact.
+
 ```{r amr-environment}
 library(searchnet)
 
-## AMR environment: 20 firms, 16 activities
+## AMR environment: 20 firms, 12 activities
 env_params <- list(
   M = 20,
-  N = 16,
+  N = 12,
   BI_PROB = 0.4,
   rand_seed = 42,
   name = "amr-baseline"
@@ -116,7 +123,7 @@ env_params <- list(
 
 env <- SaomNkRSienaBiEnv$new(env_params)
 
-## Modular epistasis structure: 4 blocks of 4 components
+## Modular influence structure: 4 blocks of 3 components
 ## (e.g., R&D | Manufacturing | Regulatory | Commercial)
 component_int_mat <- create_block_diag(env_params$N, 4)
 ```
@@ -203,38 +210,56 @@ Each non-peak configuration belongs to the basin of the peak it would reach
 under greedy (steepest-ascent) local search. We compute basin membership by
 following the gradient from each configuration:
 
+The naive way to do this is to search the configuration matrix for each
+neighbor, but that scans all $2^N$ rows per lookup and makes the whole
+procedure $O(4^N)$. Instead we index the configurations once by their bit
+string, so every Hamming-1 neighbor is found by table lookup and the ascent
+itself is pure indexing.
+
 ```{r basin-assignment}
 ## Steepest-ascent basin assignment
 assign_basins <- function(configs, fitness, N) {
   n <- nrow(configs)
-  basin_id <- rep(NA, n)
+  cfg_key <- do.call(paste0, as.data.frame(configs))
 
+  ## nbr[i, j] is the row holding config i with bit j flipped.
+  nbr <- matrix(NA_integer_, nrow = n, ncol = N)
+  for (j in seq_len(N)) {
+    flipped <- configs
+    flipped[, j] <- 1 - flipped[, j]
+    nbr[, j] <- match(do.call(paste0, as.data.frame(flipped)), cfg_key)
+  }
+
+  ## From each configuration, move to the fittest strictly improving
+  ## neighbor until none improves. The endpoint is the basin's peak.
+  basin_id <- integer(n)
   for (i in seq_len(n)) {
     current <- i
     repeat {
-      ## Check all Hamming-1 neighbors
-      best_neighbor <- current
-      best_fitness  <- fitness[current]
-
-      for (j in 1:N) {
-        neighbor_config <- configs[current, ]
-        neighbor_config[j] <- 1 - neighbor_config[j]
-        ## Find this neighbor in the config matrix
-        neighbor_idx <- which(apply(configs, 1, function(x)
-          all(x == neighbor_config)))
-        if (length(neighbor_idx) == 1 &&
-            fitness[neighbor_idx] > best_fitness) {
-          best_neighbor <- neighbor_idx
-          best_fitness  <- fitness[neighbor_idx]
-        }
-      }
-
-      if (best_neighbor == current) break
-      current <- best_neighbor
+      cand <- nbr[current, ]
+      cand <- cand[!is.na(cand)]
+      best <- cand[which.max(fitness[cand])]
+      if (!length(best) || fitness[best] <= fitness[current]) break
+      current <- best
     }
     basin_id[i] <- current
   }
   basin_id
+}
+
+## Where the firms actually sit on the landscape, and the geometry each
+## firm therefore faces. This is the quantity the policy shocks move.
+occupancy <- function(bi, basins, summary_df, cfgs) {
+  rows  <- match(do.call(paste0, as.data.frame(bi)),
+                 do.call(paste0, as.data.frame(cfgs)))
+  peaks <- basins[rows]
+  g     <- summary_df[match(peaks, summary_df$peak_id), ]
+  data.frame(
+    Basins_Occupied  = length(unique(peaks[!is.na(peaks)])),
+    Depth_Faced      = mean(g$depth, na.rm = TRUE),
+    Width_Faced      = mean(g$width, na.rm = TRUE),
+    Mean_Scope       = mean(rowSums(bi))
+  )
 }
 
 basin_membership <- assign_basins(configs, fitness, N)
@@ -286,13 +311,12 @@ of the pre-intervention landscape:
 
 ```{r actor-basins}
 ## Extract current actor configurations
-bi_mat <- env$get_bipartite_matrix()
+bi_mat <- env$bipartite_matrix
 
-actor_basins <- sapply(1:env_params$M, function(a) {
-  actor_config <- bi_mat[a, ]
-  idx <- which(apply(configs, 1, function(x) all(x == actor_config)))
-  if (length(idx) == 1) basin_membership[idx] else NA
-})
+## Same bit-string index as above: match each firm's portfolio to its row.
+cfg_key    <- do.call(paste0, as.data.frame(configs))
+actor_rows <- match(do.call(paste0, as.data.frame(bi_mat)), cfg_key)
+actor_basins <- basin_membership[actor_rows]
 
 actor_df <- data.frame(
   actor = 1:env_params$M,
@@ -305,7 +329,28 @@ actor_df$group <- ifelse(actor_df$actor <= 10, "Treatment", "Control")
 
 knitr::kable(actor_df,
              caption = "Actor basin membership and attributes (baseline)")
+
+occ_base <- occupancy(bi_mat, basin_membership, basin_summary, configs)
 ```
+
+## What a Theta Shock Can and Cannot Move
+
+Before running the policies, it is worth being precise about which object each
+one touches, because the four runs below make the distinction visible.
+
+`compute_fitness_landscape()` builds the landscape from the influence matrix
+$\mathbf{W}$, the component value draws, and the seed. It does not take
+$\boldsymbol{\theta}$. So the basin geometry reported in each section
+below---the number of peaks, and the width and depth of each basin---is a
+property of the **architecture**, and it is identical across all five runs
+here because all five share one influence matrix and one seed.
+
+What $\boldsymbol{\theta}$ moves is **where the firms end up on that fixed
+landscape**. A policy that raises the scope penalty does not narrow the
+basins; it relocates firms into narrower ones. Each policy section therefore
+reports two things side by side: the geometry, which is invariant, and the
+occupancy, which is the policy effect. Reshaping the geometry itself requires
+changing $\mathbf{W}$, which is a different intervention from any of P1--P4.
 
 # 4. Policy P1: Economic Subsidy (Resource Suppressing)
 
@@ -328,7 +373,7 @@ p1_model$dv_bipartite$effects[[1]]$parameter <- -0.96
 p1_model$dv_bipartite$effects[[2]]$parameter <- 0.36
 
 env_p1 <- SaomNkRSienaBiEnv$new(list(
-  M = 20, N = 16, BI_PROB = 0.4, rand_seed = 42,
+  M = env_params$M, N = env_params$N, BI_PROB = 0.4, rand_seed = 42,
   name = "amr-p1-subsidy"
 ))
 
@@ -359,17 +404,31 @@ basin_summary_p1 <- data.frame(
   })
 )
 
-cat("P1 Subsidy: ", length(peak_ids_p1), " peaks (vs. ",
-    length(peak_ids), " baseline)\n")
-cat("Mean width: ", round(mean(basin_summary_p1$width), 1),
-    " (vs. ", round(mean(basin_summary$width), 1), " baseline)\n")
+occ_p1 <- occupancy(env_p1$bipartite_matrix, basin_p1,
+                       basin_summary_p1, FL_p1[, 1:N])
+
+cat("P1 Subsidy geometry:  ", nrow(basin_summary_p1), " peaks, mean width ",
+    round(mean(basin_summary_p1$width), 1), ", mean depth ",
+    round(mean(basin_summary_p1$depth), 3),
+    "  (baseline: ", nrow(basin_summary), " / ",
+    round(mean(basin_summary$width), 1), " / ",
+    round(mean(basin_summary$depth), 3), ")\n", sep = "")
+cat("P1 Subsidy occupancy: firms in ", occ_p1$Basins_Occupied,
+    " basins, width faced ", round(occ_p1$Width_Faced, 1),
+    ", depth faced ", round(occ_p1$Depth_Faced, 3),
+    ", mean scope ", round(occ_p1$Mean_Scope, 2),
+    "  (baseline: ", occ_base$Basins_Occupied, " / ",
+    round(occ_base$Width_Faced, 1), " / ",
+    round(occ_base$Depth_Faced, 3), " / ",
+    round(occ_base$Mean_Scope, 2), ")\n", sep = "")
 ```
 
-The subsidy creates **specialization traps**. Basin width decreases because
-the steeper scope penalty eliminates configurations where firms maintain
-diversified portfolios. More peaks emerge as previously connected regions of
-the landscape fragment into isolated basins. Firms that were exploring broad
-portfolios find themselves funneled toward narrow specializations---precisely
+The subsidy creates **specialization traps**. The steeper scope penalty does
+not eliminate configurations from the landscape; it makes the diversified ones
+unattractive to hold, so firms shed activities and settle into narrower
+basins. Read the occupancy line above rather than the geometry line: firms
+that were exploring broad portfolios find themselves funneled toward narrow
+specializations---precisely
 the rigidity that AMR policy aims to avoid when the goal is cross-therapeutic
 innovation.
 
@@ -392,7 +451,7 @@ p2_model$dv_bipartite$effects[[1]]$parameter <- -0.3
 p2_model$dv_bipartite$effects[[2]]$parameter <- 0.42
 
 env_p2 <- SaomNkRSienaBiEnv$new(list(
-  M = 20, N = 16, BI_PROB = 0.4, rand_seed = 42,
+  M = env_params$M, N = env_params$N, BI_PROB = 0.4, rand_seed = 42,
   name = "amr-p2-grant"
 ))
 
@@ -423,15 +482,29 @@ basin_summary_p2 <- data.frame(
   })
 )
 
-cat("P2 Grant: ", length(peak_ids_p2), " peaks (vs. ",
-    length(peak_ids), " baseline)\n")
-cat("Mean width: ", round(mean(basin_summary_p2$width), 1),
-    " (vs. ", round(mean(basin_summary$width), 1), " baseline)\n")
+occ_p2 <- occupancy(env_p2$bipartite_matrix, basin_p2,
+                       basin_summary_p2, FL_p2[, 1:N])
+
+cat("P2 Grant geometry:  ", nrow(basin_summary_p2), " peaks, mean width ",
+    round(mean(basin_summary_p2$width), 1), ", mean depth ",
+    round(mean(basin_summary_p2$depth), 3),
+    "  (baseline: ", nrow(basin_summary), " / ",
+    round(mean(basin_summary$width), 1), " / ",
+    round(mean(basin_summary$depth), 3), ")\n", sep = "")
+cat("P2 Grant occupancy: firms in ", occ_p2$Basins_Occupied,
+    " basins, width faced ", round(occ_p2$Width_Faced, 1),
+    ", depth faced ", round(occ_p2$Depth_Faced, 3),
+    ", mean scope ", round(occ_p2$Mean_Scope, 2),
+    "  (baseline: ", occ_base$Basins_Occupied, " / ",
+    round(occ_base$Width_Faced, 1), " / ",
+    round(occ_base$Depth_Faced, 3), " / ",
+    round(occ_base$Mean_Scope, 2), ")\n", sep = "")
 ```
 
 The grant **enables flexibility but weakens competitive moats**. With lower
-scope costs, the fitness difference between a peak configuration and nearby
-alternatives shrinks---basins become shallower. The strategic implication is
+scope costs, firms hold broader portfolios and settle into the wider, shallower
+basins of the same landscape, so the depth they face falls even though no
+basin has changed shape. The strategic implication is
 that grants are best suited for environments where adaptability matters more
 than defensibility: early-stage markets, uncertain regulatory regimes, or
 sectors where the dominant design has not yet emerged. In the AMR context,
@@ -458,7 +531,7 @@ p3_model$dv_bipartite$coDyadCovars[[1]]$parameter <- 0.96
 p3_model$dv_bipartite$effects[[2]]$parameter <- 0.21
 
 env_p3 <- SaomNkRSienaBiEnv$new(list(
-  M = 20, N = 16, BI_PROB = 0.4, rand_seed = 42,
+  M = env_params$M, N = env_params$N, BI_PROB = 0.4, rand_seed = 42,
   name = "amr-p3-tax"
 ))
 
@@ -489,15 +562,29 @@ basin_summary_p3 <- data.frame(
   })
 )
 
-cat("P3 Tax: ", length(peak_ids_p3), " peaks (vs. ",
-    length(peak_ids), " baseline)\n")
-cat("Mean depth: ", round(mean(basin_summary_p3$depth), 3),
-    " (vs. ", round(mean(basin_summary$depth), 3), " baseline)\n")
+occ_p3 <- occupancy(env_p3$bipartite_matrix, basin_p3,
+                       basin_summary_p3, FL_p3[, 1:N])
+
+cat("P3 Tax geometry:  ", nrow(basin_summary_p3), " peaks, mean width ",
+    round(mean(basin_summary_p3$width), 1), ", mean depth ",
+    round(mean(basin_summary_p3$depth), 3),
+    "  (baseline: ", nrow(basin_summary), " / ",
+    round(mean(basin_summary$width), 1), " / ",
+    round(mean(basin_summary$depth), 3), ")\n", sep = "")
+cat("P3 Tax occupancy: firms in ", occ_p3$Basins_Occupied,
+    " basins, width faced ", round(occ_p3$Width_Faced, 1),
+    ", depth faced ", round(occ_p3$Depth_Faced, 3),
+    ", mean scope ", round(occ_p3$Mean_Scope, 2),
+    "  (baseline: ", occ_base$Basins_Occupied, " / ",
+    round(occ_base$Width_Faced, 1), " / ",
+    round(occ_base$Depth_Faced, 3), " / ",
+    round(occ_base$Mean_Scope, 2), ")\n", sep = "")
 ```
 
-Tax concessions **strengthen incumbents but reduce system adaptability**. The
-deeper basins that result from amplified epistasis mean that firms sitting on
-peaks enjoy stronger VRIO-style competitive advantages: their activity
+Tax concessions **strengthen incumbents but reduce system adaptability**.
+Amplified epistasis pulls firms toward the deeper basins of the landscape, and
+firms that come to sit on those peaks enjoy stronger VRIO-style competitive
+advantages: their activity
 configurations are difficult to replicate because partial imitation destroys
 the complementarities that generate superior fitness. However, the same depth
 that protects incumbents also traps them. When the landscape shifts---due to a
@@ -523,7 +610,7 @@ p4_model$dv_bipartite$effects[[1]]$parameter <- -0.24
 p4_model$dv_bipartite$coDyadCovars[[1]]$parameter <- 0.9
 
 env_p4 <- SaomNkRSienaBiEnv$new(list(
-  M = 20, N = 16, BI_PROB = 0.4, rand_seed = 42,
+  M = env_params$M, N = env_params$N, BI_PROB = 0.4, rand_seed = 42,
   name = "amr-p4-guarantee"
 ))
 
@@ -554,50 +641,85 @@ basin_summary_p4 <- data.frame(
   })
 )
 
-cat("P4 Guarantee: ", length(peak_ids_p4), " peaks (vs. ",
-    length(peak_ids), " baseline)\n")
-cat("Mean depth: ", round(mean(basin_summary_p4$depth), 3),
-    " (vs. ", round(mean(basin_summary$depth), 3), " baseline)\n")
-cat("Mean width: ", round(mean(basin_summary_p4$width), 1),
-    " (vs. ", round(mean(basin_summary$width), 1), " baseline)\n")
+occ_p4 <- occupancy(env_p4$bipartite_matrix, basin_p4,
+                       basin_summary_p4, FL_p4[, 1:N])
+
+cat("P4 Guarantee geometry:  ", nrow(basin_summary_p4), " peaks, mean width ",
+    round(mean(basin_summary_p4$width), 1), ", mean depth ",
+    round(mean(basin_summary_p4$depth), 3),
+    "  (baseline: ", nrow(basin_summary), " / ",
+    round(mean(basin_summary$width), 1), " / ",
+    round(mean(basin_summary$depth), 3), ")\n", sep = "")
+cat("P4 Guarantee occupancy: firms in ", occ_p4$Basins_Occupied,
+    " basins, width faced ", round(occ_p4$Width_Faced, 1),
+    ", depth faced ", round(occ_p4$Depth_Faced, 3),
+    ", mean scope ", round(occ_p4$Mean_Scope, 2),
+    "  (baseline: ", occ_base$Basins_Occupied, " / ",
+    round(occ_base$Width_Faced, 1), " / ",
+    round(occ_base$Depth_Faced, 3), " / ",
+    round(occ_base$Mean_Scope, 2), ")\n", sep = "")
 ```
 
-The guarantee produces the **most diverse basin geometries** of the four
-policies. Because both scope cost and epistasis shift in the same direction
-(toward more viable configurations with stronger complementarities), the
-landscape can develop wide basins with substantial depth---a combination
-that is rare under single-parameter interventions. Whether the widening or
+The guarantee produces the **most dispersed occupancy** of the four policies.
+Because both scope cost and epistasis shift in the same direction (toward
+broader portfolios with stronger complementarities), firms spread across
+basins that are both wide and deep---a combination that single-parameter
+interventions do not reach. Whether the widening or
 deepening force dominates depends on the initial landscape topology: in
 modular environments (low cross-block epistasis), the widening effect tends
 to dominate; in tightly coupled environments, the deepening effect prevails.
 
 # 8. Comparative Analysis
 
+Every number in the table below is computed from the five simulations above,
+not asserted. **VRIO erosion** is the change in mean basin depth relative to
+baseline: positive values indicate strengthened competitive moats, negative
+values indicate weakened moats.
+
 ```{r comparison-table}
-policy_comparison <- data.frame(
-  Policy        = c("Baseline", "P1: Subsidy", "P2: Grant",
-                     "P3: Tax", "P4: Guarantee"),
-  Density       = c(-0.6, -0.96, -0.3, -0.6, -0.24),
-  XWX           = c(0.6, 0.6, 0.6, 0.96, 0.9),
-  Mean_Depth    = c(0.15, 0.18, 0.09, 0.25, 0.20),
-  Mean_Width    = c(2.1, 1.4, 3.2, 1.8, 2.5),
-  N_Peaks       = c(5, 7, 3, 8, 6),
-  VRIO_Erosion  = c(NA, 0.03, -0.06, 0.10, 0.05),
-  DC_Activation = c(NA, "15%", "5%", "25%", "10%")
+summaries <- list(
+  "Baseline"      = basin_summary,
+  "P1: Subsidy"   = basin_summary_p1,
+  "P2: Grant"     = basin_summary_p2,
+  "P3: Tax"       = basin_summary_p3,
+  "P4: Guarantee" = basin_summary_p4
 )
 
+occs <- rbind(occ_base, occ_p1, occ_p2, occ_p3, occ_p4)
+
+policy_comparison <- data.frame(
+  Policy      = names(summaries),
+  Density     = c(-0.6, -0.96, -0.3, -0.6, -0.24),
+  XWX         = c(0.6, 0.6, 0.6, 0.96, 0.9),
+  ## Geometry: a property of the influence matrix, invariant to theta.
+  N_Peaks     = sapply(summaries, nrow),
+  Mean_Depth  = sapply(summaries, function(s) mean(s$depth)),
+  Mean_Width  = sapply(summaries, function(s) mean(s$width)),
+  ## Occupancy: where the theta shock actually puts the firms.
+  Occupied    = occs$Basins_Occupied,
+  Depth_Faced = occs$Depth_Faced,
+  Width_Faced = occs$Width_Faced,
+  Scope       = occs$Mean_Scope,
+  row.names   = NULL
+)
+policy_comparison$VRIO_Erosion <-
+  policy_comparison$Depth_Faced - policy_comparison$Depth_Faced[1]
+policy_comparison$VRIO_Erosion[1] <- NA
+
 knitr::kable(policy_comparison, digits = 3,
-             caption = "Basin geometry under four industrial policies")
+             caption = paste("Basin geometry and firm occupancy under four",
+                             "industrial policies"))
 ```
 
-The comparison reveals a systematic structure. The density and XWX parameters
-operate as independent controls on basin width and depth, respectively, with
-predictable directional effects. **VRIO erosion** measures the mean change in
-basin depth relative to baseline: positive values indicate strengthened
-competitive moats (P1, P3, P4), negative values indicate weakened moats (P2).
-**DC activation** estimates the fraction of firms whose basin depth exceeds
-the threshold at which dynamic capabilities must be invoked to escape a local
-peak---i.e., where exploitation alone cannot achieve adaptation.
+The three geometry columns are identical down every row, which is the point:
+the landscape is fixed by the influence matrix. The occupancy columns are
+where the policies separate.
+
+The density and XWX parameters act on basin width and depth through separate
+channels. Read the table against the directional expectations stated for each
+policy above; where a run does not move in the expected direction, that is a
+result about this landscape rather than a defect, and the depth--width
+scatterplot below shows which of the two forces dominated.
 
 ```{r comparison-plot, fig.width=8, fig.height=5}
 library(ggplot2)
@@ -606,21 +728,21 @@ comp_plot_df <- policy_comparison[-1, ]  # exclude baseline
 comp_plot_df$Policy <- factor(comp_plot_df$Policy,
                                levels = comp_plot_df$Policy)
 
-ggplot(comp_plot_df, aes(x = Mean_Width, y = Mean_Depth)) +
-  geom_point(aes(size = N_Peaks, color = Policy), alpha = 0.8) +
-  geom_hline(yintercept = 0.15, linetype = "dashed", alpha = 0.4) +
-  geom_vline(xintercept = 2.1, linetype = "dashed", alpha = 0.4) +
-  annotate("text", x = 1.2, y = 0.26, label = "Deep & Narrow\n(P3: Tax)",
-           size = 3, alpha = 0.6) +
-  annotate("text", x = 3.4, y = 0.08, label = "Shallow & Wide\n(P2: Grant)",
-           size = 3, alpha = 0.6) +
-  scale_size_continuous(name = "Number of Peaks", range = c(3, 8)) +
+## Plot the occupancy measures. The geometry columns are constant across
+## policies, so plotting them would put every policy on one point.
+ggplot(comp_plot_df, aes(x = Width_Faced, y = Depth_Faced)) +
+  geom_point(aes(size = Occupied, color = Policy), alpha = 0.8) +
+  geom_hline(yintercept = policy_comparison$Depth_Faced[1],
+             linetype = "dashed", alpha = 0.4) +
+  geom_vline(xintercept = policy_comparison$Width_Faced[1],
+             linetype = "dashed", alpha = 0.4) +
+  scale_size_continuous(name = "Basins Occupied", range = c(3, 8)) +
   scale_color_brewer(palette = "Set1") +
   labs(
-    title = "Policy Effects on Basin Geometry",
+    title = "Policy Effects on Where Firms Sit",
     subtitle = "Dashed lines mark baseline values",
-    x = "Mean Basin Width (configurations per basin)",
-    y = "Mean Basin Depth (fitness gap: peak minus rim)"
+    x = "Mean Basin Width Faced by Firms",
+    y = "Mean Basin Depth Faced by Firms"
   ) +
   theme_minimal() +
   theme(legend.position = "right")
@@ -648,24 +770,34 @@ parameter (we use $\alpha = 0.10$ throughout).
 ```{r dc-boundary}
 alpha <- 0.10
 
-## For each policy, compute which basins exceed the DC threshold
-compute_dc_stats <- function(basin_df, label) {
-  basin_df$dc_threshold <- alpha * basin_df$peak_fitness
-  basin_df$dc_required  <- basin_df$depth > basin_df$dc_threshold
+## The threshold applies to the basins FIRMS occupy, not to every basin on
+## the landscape: a deep basin nobody sits in activates nobody's dynamic
+## capabilities. Weighting by occupancy is also what makes the measure
+## respond to the policy, since the landscape itself does not.
+compute_dc_stats <- function(bi, basins, basin_df, cfgs, label) {
+  rows  <- match(do.call(paste0, as.data.frame(bi)),
+                 do.call(paste0, as.data.frame(cfgs)))
+  faced <- basin_df[match(basins[rows], basin_df$peak_id), ]
+  faced <- faced[!is.na(faced$peak_id), ]
+  threshold <- alpha * faced$peak_fitness
   data.frame(
     Policy          = label,
-    Pct_DC_Required = round(100 * mean(basin_df$dc_required), 1),
-    Mean_Excess     = round(mean(pmax(basin_df$depth - basin_df$dc_threshold,
-                                       0)), 4)
+    Pct_DC_Required = round(100 * mean(faced$depth > threshold), 1),
+    Mean_Excess     = round(mean(pmax(faced$depth - threshold, 0)), 4)
   )
 }
 
 dc_results <- rbind(
-  compute_dc_stats(basin_summary, "Baseline"),
-  compute_dc_stats(basin_summary_p1, "P1: Subsidy"),
-  compute_dc_stats(basin_summary_p2, "P2: Grant"),
-  compute_dc_stats(basin_summary_p3, "P3: Tax"),
-  compute_dc_stats(basin_summary_p4, "P4: Guarantee")
+  compute_dc_stats(bi_mat, basin_membership, basin_summary,
+                   configs, "Baseline"),
+  compute_dc_stats(env_p1$bipartite_matrix, basin_p1, basin_summary_p1,
+                   FL_p1[, 1:N], "P1: Subsidy"),
+  compute_dc_stats(env_p2$bipartite_matrix, basin_p2, basin_summary_p2,
+                   FL_p2[, 1:N], "P2: Grant"),
+  compute_dc_stats(env_p3$bipartite_matrix, basin_p3, basin_summary_p3,
+                   FL_p3[, 1:N], "P3: Tax"),
+  compute_dc_stats(env_p4$bipartite_matrix, basin_p4, basin_summary_p4,
+                   FL_p4[, 1:N], "P4: Guarantee")
 )
 
 knitr::kable(dc_results,

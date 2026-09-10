@@ -295,7 +295,7 @@ saomnk_plot_utility_contributions <- function(env,
   if (plot_save) {
     nfacets <- length(efflvls)
     plot_file <- paste0('util_contribs_', plot_file, round(as.numeric(Sys.time()) * 10))
-    ggsave(file = file.path(ifelse(is.na(plot_dir) || plot_dir == '', getwd(), plot_dir),
+    ggsave(filename = file.path(ifelse(is.na(plot_dir) || plot_dir == '', getwd(), plot_dir),
                             sprintf("%s_%s.jpeg", env$config_environ_params$name, plot_file)),
            plt2,
            width = 8, height = 2 + 1.2 * nfacets, units = 'in', dpi = 400)

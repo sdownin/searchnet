@@ -4,7 +4,7 @@
 \alias{print.saomnk_assent}
 \title{Print a SaoMNK Assent (Confirmation) Rule}
 \usage{
-print.saomnk_assent(x, ...)
+\method{print}{saomnk_assent}(x, ...)
 }
 \arguments{
 \item{x}{A \code{saomnk_assent} object built by \code{\link{saomnk_assent}}.}

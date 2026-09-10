@@ -911,7 +911,13 @@ searchnet_repertoire_ri <- function(dat, ans, ...) {
                      nm, d[2], d[1]), call. = FALSE)
     }
   }
-  out <- try(RSiena::sienaRI(data = dat, ans = ans, ...), silent = TRUE)
+  ## Resolved at run time rather than written as RSiena::sienaRI. The symbol is
+  ## absent from some RSiena builds (1.4.6-1.5.0, and again from 1.6 under the
+  ## new name) and a literal `::` makes R CMD check report it as a missing or
+  ## unexported object on exactly those builds. The guard above has already
+  ## established that RSiena exports it before we get here.
+  .sienaRI <- get("sienaRI", envir = asNamespace("RSiena"))
+  out <- try(.sienaRI(data = dat, ans = ans, ...), silent = TRUE)
   if (inherits(out, "try-error"))
     stop("RSiena::sienaRI() failed on this fit: ",
          conditionMessage(attr(out, "condition")),

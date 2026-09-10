@@ -42,3 +42,11 @@ head(read.csv(f))
 unlink(f)
 }
 }
+\seealso{
+Other phase space functions: 
+\code{\link{saomnk_plot_phase_comparison}()},
+\code{\link{saomnk_plot_phase_evolution}()},
+\code{\link{saomnk_plot_phase_heatmap}()},
+\code{\link{saomnk_plot_phase_space_3d}()}
+}
+\concept{phase space functions}

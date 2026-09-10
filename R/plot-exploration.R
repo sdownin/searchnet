@@ -337,7 +337,7 @@ saomnk_plot_exploration_exploitation_consistent <- function(
     if (plot_save) {
       plot_file <- paste0('explore_exploit_consistent_', plot_file, round(as.numeric(Sys.time()) * 10))
       ggsave(
-        file = file.path(
+        filename = file.path(
           ifelse(is.na(plot_dir) || plot_dir == '', getwd(), plot_dir),
           sprintf("%s_%s.jpeg", env$config_environ_params$name, plot_file)
         ),
@@ -605,7 +605,7 @@ saomnk_plot_exploration_exploitation <- function(
   if (plot_save) {
     plot_file <- paste0('explore_exploit_', plot_file, round(as.numeric(Sys.time()) * 10))
     ggsave(
-      file = file.path(
+      filename = file.path(
         ifelse(is.na(plot_dir) || plot_dir == '', getwd(), plot_dir),
         sprintf("%s_%s.jpeg", env$config_environ_params$name, plot_file)
       ),
@@ -1028,7 +1028,7 @@ saomnk_plot_exploration_exploitation_improved <- function(
 
     # Combine plots
     combined_plot <- p_main / p_diff +
-      plot_layout(heights = c(3, 1))
+      patchwork::plot_layout(heights = c(3, 1))
 
     return(combined_plot)
   }
@@ -1367,7 +1367,7 @@ saomnk_plot_exploration_exploitation_by_strategy <- function(
   if (plot_save) {
     plot_file <- paste0('strategy_explore_exploit_', plot_file, round(as.numeric(Sys.time()) * 10))
     ggsave(
-      file = file.path(
+      filename = file.path(
         ifelse(is.na(plot_dir) || plot_dir == '', getwd(), plot_dir),
         sprintf("%s_%s.jpeg", env$config_environ_params$name, plot_file)
       ),
@@ -1408,7 +1408,7 @@ saomnk_plot_strategy_exploration_exploitation <- function(
       values_to = "proportion"
     ) %>%
     mutate(
-      activity_type = str_to_title(activity_type),
+      activity_type = stringr::str_to_title(activity_type),
       strategy_label = paste("Strategy", strategy)
     )
 
@@ -2132,11 +2132,11 @@ saomnk_plot_exploration_did_combined <- function(
                              common.legend = FALSE)
 
   # Add common title and x-label
-  combined_plot <- annotate_figure(
+  combined_plot <- ggpubr::annotate_figure(
     combined_plot,
-    top = text_grob(paste("Multiperiod Diff-in-Diff Tests of Exploration Metrics\n", sim_title_str),
+    top = ggpubr::text_grob(paste("Multiperiod Diff-in-Diff Tests of Exploration Metrics\n", sim_title_str),
                     face = "bold", size = 14),
-    bottom = text_grob(sprintf("Event Time\n(Shock Starts at Simulated Decision Chain Step %d)", shock_start))
+    bottom = ggpubr::text_grob(sprintf("Event Time\n(Shock Starts at Simulated Decision Chain Step %d)", shock_start))
   )
 
   # Save if requested

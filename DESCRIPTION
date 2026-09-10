@@ -1,6 +1,6 @@
 Package: searchnet
 Title: Network-Embedded Search Simulation Engine
-Version: 0.9.3
+Version: 0.10.0
 Authors@R: person("Stephen", "Downing", email = "sdowning@missouri.edu",
                   role = c("aut", "cre"))
 Description: R6-based simulation engine for strategic search and adaptation
@@ -25,6 +25,7 @@ Imports:
     stats,
     utils,
     grDevices,
+    graphics,
     RSiena (>= 1.5.0),
     igraph,
     network,
@@ -40,6 +41,8 @@ Imports:
     cowplot,
     ggraph,
     ggpubr,
+    ggridges,
+    ggExtra,
     texreg,
     uuid,
     stringr,
@@ -64,12 +67,15 @@ Suggests:
     DT,
     kableExtra,
     ggforce,
+    ggrepel,
     gganimate,
     plotly,
     gifski,
     patchwork,
     fixest,
     forcats,
-    broom
+    broom,
+    future,
+    future.apply
 VignetteBuilder: knitr
 Config/testthat/edition: 3

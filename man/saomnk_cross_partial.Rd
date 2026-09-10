@@ -28,7 +28,7 @@ List with:
 \item{mean_cross_partial}{Scalar mean cross-partial (should be < 0)}
 }
 \description{
-Numerically estimates d2W/d(sigma)d(gamma) — the cross-partial
+Numerically estimates d2W/d(sigma)d(gamma), the cross-partial
 of basin width with respect to synergy and scope cost.
 Negative cross-partial = the complementarity trap.
 }

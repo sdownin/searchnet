@@ -272,8 +272,12 @@ SaomNkRSienaBiEnv_base <- R6Class(
       self$N <- config_environ_params[['N']]
       self$BI_PROB <- config_environ_params[['BI_PROB']]
       self$UUID <- UUIDgenerate(use.time = TRUE)
+      ## Default to the session temp directory, not getwd(): RSiena writes a report
+      ## .txt per run into DIR_OUTPUT, so a getwd() default dropped them wherever
+      ## the caller happened to be. Running the vignettes left them in vignettes/,
+      ## where R CMD build carries them into the tarball.
       self$DIR_OUTPUT <- ifelse(is.null(config_environ_params[['dir_output']]),
-                                getwd(),
+                                tempdir(),
                                 config_environ_params[['dir_output']])
       # self$P_change <- config_environ_params[['P_change']]
       #
@@ -597,7 +601,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
         ## RSiena's bipartite effects table has NO 'density' shortName.
         ## (Confirmed by inspecting getEffects(<bipartite data>): only
         ## 'Rate' is auto-included; the structural baseline / intercept-like
-        ## effect for bipartite is 'outAct' — outdegree activity.)
+        ## effect for bipartite is 'outAct', outdegree activity.)
         ## For one-mode networks 'density' exists. Detect by querying the
         ## current effects table for a row matching this dv_name.
         eff_tbl <- as.data.frame(self$rsiena_effects)
@@ -605,13 +609,13 @@ SaomNkRSienaBiEnv_base <- R6Class(
           eff_tbl$name == eff$dv_name & eff_tbl$shortName == 'density'
         )
         if (has_density_row) {
-          ## one-mode case — original RSiena 'density' effect
+          ## one-mode case: original RSiena 'density' effect
           self$rsiena_effects <- includeEffects(self$rsiena_effects,  density,
                                                name = eff$dv_name,
                                                fix = fix, verbose = verbose)
           self$rsiena_effects <- .set_theta('density')
         } else {
-          ## bipartite case — substitute 'outAct' (outdegree activity), which
+          ## bipartite case: substitute 'outAct' (outdegree activity), which
           ## plays the same role as the structural intercept in bipartite SAOMs.
           if (verbose) {
             message(sprintf("[SaoMNK] DV '%s' is bipartite: routing user-friendly 'density' effect to RSiena 'outAct' (the bipartite-equivalent baseline structural effect).", eff$dv_name))

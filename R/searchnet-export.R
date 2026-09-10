@@ -712,7 +712,7 @@ searchnet_export_for_manim <- function(env,
         rivalry        = NA_real_,
         stringsAsFactors = FALSE
       )
-      util_out <- util_out[complete.cases(util_out[, c("round", "carrier")]), ]
+      util_out <- util_out[stats::complete.cases(util_out[, c("round", "carrier")]), ]
       use_actual_util <- nrow(util_out) > 0
     }
   }

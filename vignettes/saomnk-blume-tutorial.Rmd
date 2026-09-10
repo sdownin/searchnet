@@ -170,12 +170,17 @@ So instead of two runs, we sweep the run length. `searchnet_ergodicity_sweep()`
 runs both arms at several chain lengths with several replicates each, and
 measures how fast the gap between them closes:
 
-```{r novice-convergence, fig.height=5.5, fig.width=11}
+<!-- purl=FALSE: this chunk runs in full when the vignette is built, which is
+     where its output comes from. It is excluded from the tangled script so
+     that `R CMD check`'s vignette-code step does not run the sweep a second
+     time; nothing later in the vignette depends on `erg`. -->
+
+```{r novice-convergence, fig.height=5.5, fig.width=11, purl=FALSE}
 erg <- searchnet_ergodicity_sweep(
   M = 12, N = 15,                    # 180 cells, so one tie moves density by 0.006
   start_densities = c(0.1, 0.8),     # a gap of 0.70 to erase
-  run_lengths = c(15, 30, 60, 120, 240),
-  replicates = 6,
+  run_lengths = c(8, 15, 30, 60, 120),  # four doublings, to see a rate
+  replicates = 5,
   equivalence_margin = 0.05,         # we declare this BEFORE looking
   seed = 42
 )
