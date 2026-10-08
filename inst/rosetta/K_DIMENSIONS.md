@@ -2,8 +2,9 @@
 
 This file is the single statement of the four {K} dimensions and of how an
 effect relates to them, used by `searchnet_effect_dimensions()`,
-`searchnet_classify_effect()`, the class registry (`classes.yaml`: `reads`,
-`moves`), `rosetta_plot(view = ...)`, the {K}-4 plots, the README and the
+`searchnet_classify_effect()`, the class registry (`classes.yaml`: `reads`
+for the decision dimension, `moves` for the outcome dimension),
+`rosetta_plot(view = ...)`, the {K}-4 plots, the README and the
 papers. Cite it; change it here and nowhere else. Installed copy:
 `system.file("rosetta", "K_DIMENSIONS.md", package = "searchnet")`. The derived
 table is shipped beside it as `effect_dimensions.csv`.
@@ -21,10 +22,10 @@ Popularity (K_CA), a component's margin, which actors hold it and how many;
 Sociality (K_AA), the actor projection BB^T, the actors who share a component
 with an actor; and Epistasis (K_CC), the component projection B^T B, the
 components co-held with a component, with W setting the value of each
-co-holding. Each effect reads the dimension its change statistic depends on, the
+co-holding. Each effect's decision dimension is the one its change statistic depends on, the
 outermost of the actor's own portfolio (K_AC), the interaction among components
-(K_CC), other actors' holdings (K_AA) and who those actors are (K_CA); it moves
-the dimension of its target statistic, the moment estimation matches. A count of
+(K_CC), other actors' holdings (K_AA) and who those actors are (K_CA); its outcome dimension is
+that of its target statistic, the moment estimation matches. A count of
 other holders is read as the overlap a move creates (K_AA); Popularity is read
 only when a statistic distinguishes among holders.
 
@@ -87,10 +88,15 @@ So no effect moves one degree type in isolation; the identities say where a
 quadratic effect on one mode's bipartite degree lands in the other mode's
 projection.
 
-## 4. How an effect relates to the dimensions: two fields
+## 4. How an effect relates to the dimensions: decision and outcome
 
-- **reads**: the dimension its change statistic
-  `Delta s_ij = s_i(b_ij = 1) - s_i(b_ij = 0)` depends on: what the deciding
+The two fields contrast an effect's role in the objective function (the
+actor's utility change for a move) with its role in the resulting network
+structure. The field names in code are `reads` and `moves`.
+
+- **decision** (field `reads`): the dimension its change statistic
+  `Delta s_ij = s_i(b_ij = 1) - s_i(b_ij = 0)`, the actor's utility change for
+  the move, depends on: what the deciding
   actor must observe to evaluate the move. Derived in code by a walk-dependency
   test: each input of `Delta s_ij` is perturbed on random networks with the
   others held fixed, and the first input it depends on, in this order, names the
@@ -100,7 +106,8 @@ projection.
   actor's own row, its own attributes, the target component's attributes, or
   nothing at all, as for the constant change statistic of `density`) ->
   **Expansiveness**.
-- **moves**: the dimension of its target statistic `sum_i s_i(B)`, the moment
+- **outcome** (field `moves`): the network-structure dimension of its target
+  statistic `sum_i s_i(B)`, the moment
   estimation matches, written through the identities above. Derived in code as
   the exact identity with a {K} moment fitted on random networks. With no exact
   identity: a target invariant to reshuffling each actor's ties is a nonlinear
@@ -108,8 +115,8 @@ projection.
   a nonlinear moment of Popularity, and one that depends on the holders'
   attributes is similarity-weighted Sociality strength. A statistic centered on
   the mean over the decision's candidates, whose target lies in neither
-  projection, moves "none (candidate-centered)".
-- An alternative reads rule, "degree" (the degree in the change statistic, a
+  projection, has the outcome "none (candidate-centered)".
+- An alternative decision rule, "degree" (the degree in the change statistic, a
   count of other holders read as Popularity), is available as `rule = "degree"`
   for comparison; it is not the package rule.
 
@@ -118,15 +125,15 @@ holders of `j`) is at once component `j`'s degree and the overlap the new tie
 creates. It is read as Sociality, the deciding actor's view; Popularity is read
 only by statistics that distinguish among holders.
 
-**The two limits.** (1) `moves` is the moment the coefficient is identified from
+**The two limits.** (1) The outcome is the moment the coefficient is identified from
 and moves first, not its equilibrium footprint: in the coupled process every
 coefficient eventually moves all four dimensions. (2) The sign of the
 coefficient changes the reading (crowding or agglomeration for `inPop`), never
 the dimension.
 
-## 5. The package's effects (reads -> moves), as derived
+## 5. The package's effects (decision -> outcome), as derived
 
-| Effect | Reads | Moves |
+| Effect | Decision dimension | Outcome dimension (target statistic) |
 |---|---|---|
 | `density` | Expansiveness (fall-through) | total ties (I1) |
 | `outAct` | Expansiveness | Epistasis strength, unvalued (I3), plus total ties |

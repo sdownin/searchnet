@@ -2,7 +2,7 @@
 % Please edit documentation in R/k-dimensions.R
 \name{searchnet_classify_effect}
 \alias{searchnet_classify_effect}
-\title{Classify a statistic by the {K} dimensions it reads and moves}
+\title{Classify a statistic by its decision and outcome {K} dimensions}
 \usage{
 searchnet_classify_effect(
   stat = NULL,
@@ -21,19 +21,20 @@ searchnet_classify_effect(
 
 \item{target}{Optional target-statistic function \verb{function(B, cov)}.}
 
-\item{rule}{Reads rule: \code{"walk"} (default, the package rule) or
-\code{"degree"} (documented alternative), or a function mapping a named
+\item{rule}{Decision rule (field \code{reads}): \code{"walk"} (default, the
+package rule) or \code{"degree"} (documented alternative), or a function mapping a named
 logical dependency profile to a dimension symbol (\code{"K_AC"}, ...).}
 
 \item{candidate_centered}{Logical; the statistic is centered on the mean
-over the decision's candidates, so a target with no identity moves
-\code{"none (candidate-centered)"}.}
+over the decision's candidates, so a target with no identity has the
+outcome \code{"none (candidate-centered)"}.}
 
 \item{seed}{Seed for the random networks (the caller's random stream is
 restored afterwards).}
 }
 \value{
-A list: \code{reads} (dimension name), \code{moves}, \code{depends_on} (the
+A list: \code{reads} (the decision dimension, by name), \code{moves} (the
+outcome dimension), \code{depends_on} (the
 inputs the change statistic depends on), \code{identity} (the fitted target
 identity, as coefficients on named moments).
 }
@@ -41,9 +42,11 @@ identity, as coefficients on named moments).
 Derives the two fields of any actor statistic \code{s_i(B)}, so that a
 researcher's own effect classifies itself by the same rules as the
 package's (stated once in \code{inst/rosetta/K_DIMENSIONS.md}; see
-\code{\link[=searchnet_effect_dimensions]{searchnet_effect_dimensions()}}). \code{reads} is the \{K\} dimension the
-change statistic \verb{Delta s_ij = s_i(b_ij = 1) - s_i(b_ij = 0)} depends on,
-by a walk-dependency test on random networks; \code{moves} is the dimension of
+\code{\link[=searchnet_effect_dimensions]{searchnet_effect_dimensions()}}). The decision dimension (field \code{reads})
+is the \{K\} dimension the change statistic
+\verb{Delta s_ij = s_i(b_ij = 1) - s_i(b_ij = 0)}, the actor's utility change
+for a move, depends on, by a walk-dependency test on random networks; the
+outcome dimension (field \code{moves}) is the network-structure dimension of
 the target statistic \verb{sum_i s_i(B)}, by an exact identity with a \{K\}
 moment (projection moments are strengths, sums over partners of shared
 components).

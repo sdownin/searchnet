@@ -166,7 +166,7 @@ net_panel <- function(g, title, subtitle) {
           axis.ticks = element_blank(), axis.title = element_blank()) +
     ## Legend keys take the node shapes: circles for the two actor groups,
     ## squares for the three component modules (levels order of `group`).
-    guides(color = guide_legend(nrow = 2,
+    guides(color = guide_legend(nrow = 3,
                                 override.aes = list(size = 4, shape = c(16, 16, 15, 15, 15))))
 }
 p_start <- net_panel(net_graph(B0, st0), "Network at the start of the run",
@@ -186,9 +186,18 @@ p_k4 <- restyle_k4(saomnk_plot_k4(env)) +
 ## Left column: the input and the two states, top to bottom; right two
 ## columns: the {K}-4 panel at full height, so the trajectories get the
 ## vertical range. Identical node legends are collected once.
-hero <- (p_w / p_start / p_end) - p_k4 +
-  plot_layout(widths = c(1, 2), guides = "collect") &
+## free() on the {K}-4 panel stops patchwork aligning the W panel with its
+## facets across the row, so the matrix sits directly under its title; the spare height
+## goes below it, as padding between the input and the two network states,
+## which sit together.
+left_col <- (p_w + theme(plot.margin = margin(5.5, 5.5, 30, 5.5))) / p_start / p_end +
+  plot_layout(heights = c(0.85, 1, 1), guides = "collect") &
   theme(legend.position = "bottom")
+## Each column keeps its own legend (node colors under the networks, line
+## colors under the {K}-4 panel): legends cannot be collected across a free()d
+## panel without overprinting its axis.
+hero <- left_col - free(p_k4 + theme(legend.position = "bottom")) +
+  plot_layout(widths = c(1, 2))
 ## 160 dpi: the {K}-4 panel's thousands of translucent points make this the
 ## largest README file.
 save_png(hero, "readme-hero.png", width = 12, height = 11, dpi = 150)
@@ -404,8 +413,9 @@ cat("[6/6] objective by class\n")
 ## rosetta_plot() with no model and no comparison entry draws row I alone:
 ## the general objective, one colored summand per class of
 ## inst/rosetta/classes.yaml, its chip, effects and construct, and black {K}
-## badges in two rows (view = "both"): the dimension each class reads
-## above, the dimension it moves below. No simulation is run.
+## badges in two rows (view = "both"): each class's decision dimension
+## (field `reads`, utility) above, its outcome dimension (field `moves`,
+## network) below. No simulation is run.
 p_obj <- rosetta_plot(NULL, compare = NULL, glyph = FALSE, view = "both",
                       classes = c("complementarity", "scope", "crowding",
                                   "contact", "imitation", "covariate"))

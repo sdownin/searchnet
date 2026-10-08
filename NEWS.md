@@ -1,3 +1,12 @@
+# searchnet 0.12.6
+
+Released 2026-10-08. Documentation and display labels; no change to simulated results since 0.12.2. Suite: 65 files, 924 tests, 6895 expectations, 0 failures, 0 errors, 9 skips.
+
+* One construct label per effect class in the registry, used verbatim in the README equation, the JSS equation and the Rosetta figure (complementarity: Epistasis among held components; scope: breadth of holdings; crowding: crowding or agglomeration on shared components; contact: repeated overlap between pairs of actors; imitation: imitation of components held by similar actors; covariates: observed heterogeneity of actors and components). The covariates class shows its outcome as "by effect", since egoX, altX and X move different dimensions.
+* README: the hero figure keeps the influence matrix directly under its title, with the start and end networks together below it; the status warning says v0.12.x and no longer says the methods paper is under review; NK's K is stated as the degree of W.
+
+* {K} display labels: the two fields of every effect are shown as **decision** (field `reads`: the {K} dimension its change statistic, the actor's utility change for a move, depends on) and **outcome** (field `moves`: the network-structure dimension its target statistic sums), contrasting an effect's role in the objective function with its role in the resulting network. Changed in the `rosetta_plot()` row labels ("decision (utility)", "outcome (network)") and legend, the README (table headers "Decision dimension" / "Outcome dimension (target statistic)", the colored equation's badges, the objective figure), `inst/rosetta/K_DIMENSIONS.md`, the Rosetta vignette, the roxygen of `searchnet_effect_dimensions()` and `searchnet_classify_effect()`, and the JSS paper's badges and table headers. `rosetta_plot()` accepts `view = c("outcome", "decision", "both")`; `"moves"` and `"reads"` still work as aliases. Field names (`reads`, `moves`, the `k_channel` alias), function names and `inst/rosetta/effect_dimensions.csv` (including its `reading` column) are unchanged.
+
 # searchnet 0.12.5
 
 Released 2026-10-08. Documentation only; no code change since 0.12.2. README hero figure: the influence matrix and the start and end networks are stacked down the left, and the {K}-4 panel takes the right two columns at full height, so the degree trajectories have about twice the vertical range.

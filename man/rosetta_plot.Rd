@@ -16,7 +16,7 @@ rosetta_plot(
   width = 12,
   height = 10,
   dpi = 110,
-  view = c("moves", "reads", "both")
+  view = c("outcome", "decision", "both", "moves", "reads")
 )
 }
 \arguments{
@@ -47,9 +47,12 @@ if wrapping is not enough, to fit the figure width so they do not run
 into the relation label. When printing without \code{file}, pass the width of
 the device.}
 
-\item{view}{Which field the \{K\} badges show: \code{"moves"} (default; the
-dimension each class's target statistic moves, \code{k_channel}), \code{"reads"}
-(the dimension its change statistic depends on), or \code{"both"}.}
+\item{view}{Which field the \{K\} badges show: \code{"outcome"} (default; the
+outcome dimension, field \code{moves}, alias \code{k_channel}: the network
+structure the class's target statistic sums), \code{"decision"} (the decision
+dimension, field \code{reads}: the one its change statistic, the actor's
+utility change for a move, depends on), or \code{"both"}. \code{"moves"} and
+\code{"reads"} are accepted as aliases of \code{"outcome"} and \code{"decision"}.}
 }
 \value{
 A ggplot object (assembled with \pkg{cowplot}); print it, or save
@@ -70,9 +73,10 @@ dimension sit side by side (K_CC, K_AC, K_AA, K_CA, then dimensions
 opened by registered classes, then other), and each dimension gets one
 black badge naming its dimension (for example "Sociality K_AA"),
 centered under its classes on a bracket when it groups two or more.
-\code{view} chooses the field: the dimension each class moves (the
-default), the one it reads, or both, in two badge rows (reads above,
-moves below), each with its own brackets. See
+\code{view} chooses the field: the outcome dimension of each class (field
+\code{moves}; the default), its decision dimension (field \code{reads}), or both,
+in two badge rows (decision above, outcome below), each with its own
+brackets. See
 \code{\link[=searchnet_effect_dimensions]{searchnet_effect_dimensions()}} and \code{inst/rosetta/K_DIMENSIONS.md}.}
 \item{Row II}{the entry \code{compare}, in row I's columns: each class's term
 in the entry's own notation, \code{+ 0} for a class it switches off,
@@ -88,8 +92,8 @@ is blank because the engine's XWX statistic sums over \code{j != h}.}
 
 The dimension groups are attached to the result as \code{attr(, "k_groups")},
 a data.frame with one row per badge (\code{k_channel}, \code{name}, \code{xmin}, \code{xmax},
-\code{x}, \code{n}, \code{classes}), for the field drawn (moves when \code{view} is
-\code{"both"}); with \code{view = "both"} the reads row's groups are
+\code{x}, \code{n}, \code{classes}), for the field drawn (outcome when \code{view} is
+\code{"both"}); with \code{view = "both"} the decision row's groups are
 attached as \code{attr(, "k_groups_reads")}.
 }
 \examples{

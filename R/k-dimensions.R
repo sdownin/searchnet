@@ -242,14 +242,16 @@
   f()
 }
 
-#' Classify a statistic by the {K} dimensions it reads and moves
+#' Classify a statistic by its decision and outcome {K} dimensions
 #'
 #' Derives the two fields of any actor statistic `s_i(B)`, so that a
 #' researcher's own effect classifies itself by the same rules as the
 #' package's (stated once in `inst/rosetta/K_DIMENSIONS.md`; see
-#' [searchnet_effect_dimensions()]). `reads` is the \{K\} dimension the
-#' change statistic `Delta s_ij = s_i(b_ij = 1) - s_i(b_ij = 0)` depends on,
-#' by a walk-dependency test on random networks; `moves` is the dimension of
+#' [searchnet_effect_dimensions()]). The decision dimension (field `reads`)
+#' is the \{K\} dimension the change statistic
+#' `Delta s_ij = s_i(b_ij = 1) - s_i(b_ij = 0)`, the actor's utility change
+#' for a move, depends on, by a walk-dependency test on random networks; the
+#' outcome dimension (field `moves`) is the network-structure dimension of
 #' the target statistic `sum_i s_i(B)`, by an exact identity with a \{K\}
 #' moment (projection moments are strengths, sums over partners of shared
 #' components).
@@ -266,15 +268,16 @@
 #'   `NULL` when `change` and `target` are given.
 #' @param change Optional change-statistic function `function(B, i, j, cov)`.
 #' @param target Optional target-statistic function `function(B, cov)`.
-#' @param rule Reads rule: `"walk"` (default, the package rule) or
-#'   `"degree"` (documented alternative), or a function mapping a named
+#' @param rule Decision rule (field `reads`): `"walk"` (default, the
+#'   package rule) or `"degree"` (documented alternative), or a function mapping a named
 #'   logical dependency profile to a dimension symbol (`"K_AC"`, ...).
 #' @param candidate_centered Logical; the statistic is centered on the mean
-#'   over the decision's candidates, so a target with no identity moves
-#'   `"none (candidate-centered)"`.
+#'   over the decision's candidates, so a target with no identity has the
+#'   outcome `"none (candidate-centered)"`.
 #' @param seed Seed for the random networks (the caller's random stream is
 #'   restored afterwards).
-#' @return A list: `reads` (dimension name), `moves`, `depends_on` (the
+#' @return A list: `reads` (the decision dimension, by name), `moves` (the
+#'   outcome dimension), `depends_on` (the
 #'   inputs the change statistic depends on), `identity` (the fitted target
 #'   identity, as coefficients on named moments).
 #' @seealso [searchnet_effect_dimensions()]
@@ -385,7 +388,7 @@ searchnet_classify_effect <- function(stat = NULL, change = NULL, target = NULL,
                      Sociality = "other actors' holdings (the overlap a move creates)",
                      Epistasis = "components coupled through W")
 
-#' The {K} dimensions each effect reads and moves
+#' The decision and outcome {K} dimensions of each effect
 #'
 #' Classifies every effect of the package by the four \{K\} dimensions
 #' (Expansiveness K_AC, Popularity K_CA, Sociality K_AA, Epistasis K_CC),
@@ -395,12 +398,13 @@ searchnet_classify_effect <- function(stat = NULL, change = NULL, target = NULL,
 #' (`system.file("rosetta", "K_DIMENSIONS.md", package = "searchnet")`).
 #'
 #' \describe{
-#'   \item{reads}{the dimension the *change statistic* `Delta s_ij` (the
-#'     change in actor `i`'s statistic when it toggles component `j`)
-#'     depends on, by the walk-dependency rule: other actors' attributes ->
+#'   \item{decision (field `reads`)}{the dimension the *change statistic*
+#'     `Delta s_ij` (the change in actor `i`'s statistic when it toggles
+#'     component `j`, its utility change for the move) depends on, by the walk-dependency rule: other actors' attributes ->
 #'     Popularity; else other actors' holdings -> Sociality; else W ->
 #'     Epistasis; else the actor's own row or attributes -> Expansiveness.}
-#'   \item{moves}{the dimension of the *target statistic* `sum_i s_i(B)`, by
+#'   \item{outcome (field `moves`)}{the network-structure dimension of the
+#'     *target statistic* `sum_i s_i(B)`, by
 #'     an exact identity fitted on random networks: what estimation matches
 #'     and the coefficient moves first. Projection moments are strengths:
 #'     Sociality strength `sum_{h != i} (BB')_ih`, Epistasis strength
@@ -410,7 +414,7 @@ searchnet_classify_effect <- function(stat = NULL, change = NULL, target = NULL,
 #'
 #' The identities link them: `sum_j b_+j (b_+j - 1) = sum_{i != h} (BB')_ih`
 #' (total Sociality strength) and `sum_i b_i+ (b_i+ - 1) = sum_{j != l}
-#' (B'B)_jl` (total Epistasis strength). Two limits apply: `moves` is the
+#' (B'B)_jl` (total Epistasis strength). Two limits apply: the outcome is the
 #' moment moved first, not the full equilibrium response; and the sign of
 #' `theta` sets the reading (for `inPop`, `theta < 0` reads as crowding,
 #' `theta > 0` as herding), never the dimension.
@@ -424,14 +428,15 @@ searchnet_classify_effect <- function(stat = NULL, change = NULL, target = NULL,
 #'
 #' @param effects Character vector of effect names, or `NULL` (default) for
 #'   every effect. A name not in the table is returned as `"not classified"`.
-#' @param rule Reads rule: `"walk"` (default) or `"degree"` (documented
+#' @param rule Decision rule (field `reads`): `"walk"` (default) or `"degree"` (documented
 #'   alternative; see [searchnet_classify_effect()]), or a function.
 #' @param custom Optional named list of user statistics, each a statistic
 #'   function `function(B, cov)` or a list with `change` and `target`; they
 #'   are classified by [searchnet_classify_effect()] and appended.
 #' @return A data.frame with one row per effect: `effect`, `class` (the class
-#'   of `inst/rosetta/classes.yaml` that carries it, or `"other"`), `reads`,
-#'   `moves`, `change_statistic`, `target_statistic` (plain formula strings),
+#'   of `inst/rosetta/classes.yaml` that carries it, or `"other"`), `reads`
+#'   (the decision dimension), `moves` (the outcome dimension),
+#'   `change_statistic`, `target_statistic` (plain formula strings),
 #'   `reading` (one short phrase per field), `notes`, `depends_on` (the
 #'   inputs the change statistic depends on).
 #' @seealso [searchnet_classify_effect()], [rosetta_classes()]

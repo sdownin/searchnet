@@ -2,8 +2,9 @@
 ###############################################################################
 ## make_effect_dimensions_csv.R
 ##
-## Writes inst/rosetta/effect_dimensions.csv: the derived table of the {K}
-## dimensions each effect reads and moves, searchnet_effect_dimensions() (rule
+## Writes inst/rosetta/effect_dimensions.csv: the derived table of each
+## effect's decision and outcome {K} dimensions (fields `reads` and `moves`;
+## the column names stay), searchnet_effect_dimensions() (rule
 ## "walk"), so other projects can pin it. tests/testthat/test-k-dimensions.R
 ## checks that the shipped file equals a fresh derivation; rerun this script
 ## after changing an effect or the rules.

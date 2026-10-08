@@ -25,8 +25,9 @@ summand: complementarity (the fitness term under an influence matrix `W`),
 scope (actor degree), popularity / crowding (components other actors hold),
 contact (four-cycles between actor pairs), and imitation (co-holder performance
 similarity). Each class stands for a construct and has two \{K\} fields: the
-dimension its change statistic reads, and the dimension its target statistic
-moves.
+decision dimension, which its change statistic (the actor's utility change for
+a move) depends on, and the outcome dimension, the network structure its
+target statistic sums.
 
 Many foundational models of search are this objective with some classes
 switched off and some restrictions imposed. The translation registry records
@@ -45,13 +46,13 @@ rosetta_classes()[, c("id", "effects", "reads", "moves", "lean_stat")]
 The four \{K\} dimensions (Expansiveness K_AC, Popularity K_CA, Sociality
 K_AA, Epistasis K_CC) and the two fields are defined once, in
 `inst/rosetta/K_DIMENSIONS.md`
-(`system.file("rosetta", "K_DIMENSIONS.md", package = "searchnet")`). `reads`
-is derived from the change statistic, the change in actor `i`'s statistic when
+(`system.file("rosetta", "K_DIMENSIONS.md", package = "searchnet")`). The
+decision dimension (field `reads`) is derived from the change statistic, the change in actor `i`'s statistic when
 it toggles component `j`: its inputs are perturbed one at a time, and the first
 it depends on names the dimension (who the other holders are, Popularity; else
 other actors' holdings, Sociality; else W, Epistasis; else the actor's own
-portfolio or attributes, Expansiveness). `moves` is the dimension of the target
-statistic (the statistic summed over actors): what estimation matches and what
+portfolio or attributes, Expansiveness). The outcome dimension (field `moves`)
+is the dimension of the target statistic (the statistic summed over actors): what estimation matches and what
 the coefficient moves first. `k_channel` is a deprecated alias of `moves`.
 `searchnet_effect_dimensions()` gives both fields effect by effect, with the
 formulas:
@@ -65,8 +66,8 @@ searchnet_effect_dimensions(c("density", "outAct", "inPop", "XWX", "cycle4",
 The package's K_AA and K_CC degrees are distinct-partner counts; their weighted
 forms, Sociality and Epistasis strength, are what the identities speak to: the
 second moment of actor degree is the total Epistasis strength, so scope effects
-read Expansiveness and move Epistasis strength. `moves` is the moment moved
-first, not the full equilibrium response, and the sign of the coefficient
+have the decision dimension Expansiveness and the outcome Epistasis strength.
+The outcome is the moment moved first, not the full equilibrium response, and the sign of the coefficient
 changes the reading (`inPop` below zero spreads actors out, above zero herds
 them), never the dimension.
 
@@ -163,10 +164,10 @@ rosetta_compare(list("nk-adaptive-walk", "brock-durlauf-social-interactions",
 
 Row I writes the objective by class: one chip per class, the effects it
 contains, and its construct; classes on the same \{K\} dimension sit side
-by side under one black badge naming it. By default the badges show what the
-classes move (popularity / crowding, contact and imitation share
-"Sociality K_AA"); `view = "reads"` shows what each class reads, and
-`view = "both"` draws the two rows, reads above moves. Row II
+by side under one black badge naming it. By default the badges show the
+classes' outcome dimension (popularity / crowding, contact and imitation share
+"Sociality K_AA"); `view = "decision"` shows each class's decision dimension,
+and `view = "both"` draws the two rows, decision above outcome. Row II
 rewrites a foundational model term by term in the same classes, with `+ 0`
 and an outlined chip for each class it switches off. Row III shows the
 bipartite state of a short seeded run of the restriction (circles are

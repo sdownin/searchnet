@@ -339,7 +339,7 @@ Expansiveness ($K_{AC}$) & breadth of the technology portfolio & assortment brea
 Epistasis ($K_{CC}$) & value of combining complementary classes & basket value of co-carried categories & fit of modules that share interfaces \\
 Sociality ($K_{AA}$) & technological overlap with rivals & assortment overlap with competing chains & modules shared across teams \\
 Popularity ($K_{CA}$) & classes held by high-reputation firms & categories carried by certified chains & modules used by prestigious products \\
-Example effect (reads $\rightarrow$ moves) & \code{outAct}: Expansiveness $\rightarrow$ Epistasis strength & \code{inPop}: Sociality $\rightarrow$ Sociality strength & \code{XWX}: Epistasis $\rightarrow$ Epistasis strength valued by $\mathbf{W}$ \\
+Example effect (decision $\rightarrow$ outcome) & \code{outAct}: Expansiveness $\rightarrow$ Epistasis strength & \code{inPop}: Sociality $\rightarrow$ Sociality strength & \code{XWX}: Epistasis $\rightarrow$ Epistasis strength valued by $\mathbf{W}$ \\
 \bottomrule
 \end{tabular}
 \caption{The elements of SAOM-NK in three business domains. Popularity is read
@@ -399,32 +399,31 @@ f_i(\mathbf{B}) ={}&
   \underbrace{\color{clsComplementarity}\textstyle\sum_{\ell}\theta^{(\ell)}_{\text{epist}}
     \sum_{j} b_{ij} \sum_{h \neq j} b_{ih}\, w^{(\ell)}_{hj}}_{
     \substack{\text{\clschip{clsComplementarity}{complementarity}\ \kbadge{$K_{CC}$}}\\[1pt]
-              \text{\scriptsize complementarity among held components}}}
+              \text{\scriptsize Epistasis among held components}}}
   \;+\;
   \underbrace{\color{clsScope}\theta_{\text{dens}}\, b_{i+} + \theta_{\text{scope}}\, b_{i+}^{2}}_{
-    \substack{\text{\clschip{clsScope}{scope}\ \kbadge{reads $K_{AC}$ $\mid$ moves $K_{CC}$}}\\[1pt]
+    \substack{\text{\clschip{clsScope}{scope}\ \kbadge{decision $K_{AC}$ $\mid$ outcome $K_{CC}$}}\\[1pt]
               \text{\scriptsize breadth of holdings}}}
   \\[4pt]
   &+\;
   \underbrace{\color{clsCrowding}\theta_{\text{pop}} \textstyle\sum_{j} b_{ij}\, b_{+j}}_{
     \substack{\text{\clschip{clsCrowding}{crowding}\ \kbadge{$K_{AA}$}}\\[1pt]
-              \text{\scriptsize crowding on, or pull toward, shared components}}}
+              \text{\scriptsize crowding or agglomeration on shared components}}}
   \;+\;
   \underbrace{\color{clsContact}\theta_{\text{close}}\, \tfrac{1}{2}\textstyle\sum_{h \neq i} \binom{o_{ih}}{2}}_{
-    \substack{\text{\clschip{clsContact}{contact}\ \kbadge{reads $K_{AA}$ $\mid$ moves $K_{AA}$, $K_{CC}$}}\\[1pt]
-              \text{\scriptsize repeated overlap among actors}}}
+    \substack{\text{\clschip{clsContact}{contact}\ \kbadge{decision $K_{AA}$ $\mid$ outcome $K_{AA}$, $K_{CC}$}}\\[1pt]
+              \text{\scriptsize repeated overlap between pairs of actors}}}
   \\[4pt]
   &+\;
   \underbrace{\color{clsImitation}\theta_{\text{imit}} \textstyle\sum_{j} b_{ij}\,
     \bigl(\mathrm{sim}_{ij} - \overline{\mathrm{sim}}\bigr)}_{
-    \substack{\text{\clschip{clsImitation}{imitation}\ \kbadge{reads $K_{CA}$ $\mid$ moves $K_{AA}$}}\\[1pt]
-              \text{\scriptsize attraction to components held by similar actors,}\\
-              \text{\scriptsize via covariate similarity (\code{simEgoInDist2})}}}
+    \substack{\text{\clschip{clsImitation}{imitation}\ \kbadge{decision $K_{CA}$ $\mid$ outcome $K_{AA}$}}\\[1pt]
+              \text{\scriptsize imitation of components held by similar actors}}}
   \;+\;
   \underbrace{\color{clsCovariate}\theta_{\text{strat}}\, b_{i+}\tilde{v}_i
     + \theta_{\text{value}} \textstyle\sum_{j} b_{ij}\, \tilde{c}_j}_{
-    \substack{\text{\clschip{clsCovariate}{covariates}\ \kbadge{reads $K_{AC}$ $\mid$ moves $K_{AC}$, $K_{CA}$}}\\[1pt]
-              \text{\scriptsize actor and component attributes}}}
+    \substack{\text{\clschip{clsCovariate}{covariates}\ \kbadge{decision $K_{AC}$ $\mid$ outcome by effect}}\\[1pt]
+              \text{\scriptsize observed heterogeneity of actors and components}}}
 \end{aligned}
 \end{equation}
 
@@ -446,7 +445,7 @@ post hoc statistic and is not simulated.
 \centering
 \begin{tabular}{lllll}
 \toprule
-Construct & RSiena name & Statistic $s_{ik}(\mathbf{B})$ & $\K$ dimension read & Moves (target statistic) \\
+Construct & RSiena name & Statistic $s_{ik}(\mathbf{B})$ & Decision dimension & Outcome dimension (target statistic) \\
 \midrule
 Scope (cost) & \code{density} & $\sum_j b_{ij}$ & Expansiveness & total ties \\
 Crowding & \code{inPop} & $\sum_j b_{ij} \sum_{h} b_{hj}$ & Sociality & Sociality strength \\
@@ -694,7 +693,7 @@ language of scope, complementarity, and imitation.
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{ll>{\raggedright\arraybackslash}p{1.9cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{2.3cm}>{\raggedright\arraybackslash}p{3.4cm}}
 \toprule
-RSiena Effect & Parameter & $\K$ dimension read & Moves (target statistic) & Strategy Concept & Interpretation \\
+RSiena Effect & Parameter & Decision dimension & Outcome dimension (target statistic) & Strategy Concept & Interpretation \\
 \midrule
 \code{density}      & $\theta_{\text{dens}}$  & Expansiveness & total ties & Scope cost               & Negative = costly to hold activities; controls portfolio breadth \\
 \code{outAct}       & $\theta_{\text{scope}}$ & Expansiveness & Epistasis strength & Diminishing returns       & Quadratic penalty on actor degree (scope) \\
@@ -706,7 +705,7 @@ RSiena Effect & Parameter & $\K$ dimension read & Moves (target statistic) & Str
 \code{cycle4}       & $\theta_{\text{close}}$ & Sociality & Sociality and Epistasis & Contact                   & Repeated overlap between pairs of actors (four-cycles) \\
 \bottomrule
 \end{tabular}
-\caption{Mapping RSiena effects to strategic search concepts.  Parameters correspond to the SAOM objective function (Equation~\ref{eq:saom-objective}).  The two $\K$ columns give the dimension each effect's change statistic reads and the one its target statistic moves (\code{searchnet\_effect\_dimensions()}).}
+\caption{Mapping RSiena effects to strategic search concepts.  Parameters correspond to the SAOM objective function (Equation~\ref{eq:saom-objective}).  The two $\K$ columns give each effect's decision dimension (its change statistic) and outcome dimension (its target statistic) (\code{searchnet\_effect\_dimensions()}).}
 \label{tab:glossary}
 \end{table}
 

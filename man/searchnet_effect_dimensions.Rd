@@ -2,7 +2,7 @@
 % Please edit documentation in R/k-dimensions.R
 \name{searchnet_effect_dimensions}
 \alias{searchnet_effect_dimensions}
-\title{The {K} dimensions each effect reads and moves}
+\title{The decision and outcome {K} dimensions of each effect}
 \usage{
 searchnet_effect_dimensions(effects = NULL, rule = "walk", custom = NULL)
 }
@@ -10,7 +10,7 @@ searchnet_effect_dimensions(effects = NULL, rule = "walk", custom = NULL)
 \item{effects}{Character vector of effect names, or \code{NULL} (default) for
 every effect. A name not in the table is returned as \code{"not classified"}.}
 
-\item{rule}{Reads rule: \code{"walk"} (default) or \code{"degree"} (documented
+\item{rule}{Decision rule (field \code{reads}): \code{"walk"} (default) or \code{"degree"} (documented
 alternative; see \code{\link[=searchnet_classify_effect]{searchnet_classify_effect()}}), or a function.}
 
 \item{custom}{Optional named list of user statistics, each a statistic
@@ -19,8 +19,9 @@ are classified by \code{\link[=searchnet_classify_effect]{searchnet_classify_eff
 }
 \value{
 A data.frame with one row per effect: \code{effect}, \code{class} (the class
-of \code{inst/rosetta/classes.yaml} that carries it, or \code{"other"}), \code{reads},
-\code{moves}, \code{change_statistic}, \code{target_statistic} (plain formula strings),
+of \code{inst/rosetta/classes.yaml} that carries it, or \code{"other"}), \code{reads}
+(the decision dimension), \code{moves} (the outcome dimension),
+\code{change_statistic}, \code{target_statistic} (plain formula strings),
 \code{reading} (one short phrase per field), \code{notes}, \code{depends_on} (the
 inputs the change statistic depends on).
 }
@@ -34,12 +35,13 @@ two limits) are stated once, in \code{inst/rosetta/K_DIMENSIONS.md}
 }
 \details{
 \describe{
-\item{reads}{the dimension the \emph{change statistic} \verb{Delta s_ij} (the
-change in actor \code{i}'s statistic when it toggles component \code{j})
-depends on, by the walk-dependency rule: other actors' attributes ->
+\item{decision (field \code{reads})}{the dimension the \emph{change statistic}
+\verb{Delta s_ij} (the change in actor \code{i}'s statistic when it toggles
+component \code{j}, its utility change for the move) depends on, by the walk-dependency rule: other actors' attributes ->
 Popularity; else other actors' holdings -> Sociality; else W ->
 Epistasis; else the actor's own row or attributes -> Expansiveness.}
-\item{moves}{the dimension of the \emph{target statistic} \verb{sum_i s_i(B)}, by
+\item{outcome (field \code{moves})}{the network-structure dimension of the
+\emph{target statistic} \verb{sum_i s_i(B)}, by
 an exact identity fitted on random networks: what estimation matches
 and the coefficient moves first. Projection moments are strengths:
 Sociality strength \verb{sum_\{h != i\} (BB')_ih}, Epistasis strength
@@ -48,7 +50,7 @@ partner counts of the same projections.}
 }
 
 The identities link them: \verb{sum_j b_+j (b_+j - 1) = sum_\{i != h\} (BB')_ih}
-(total Sociality strength) and \verb{sum_i b_i+ (b_i+ - 1) = sum_\{j != l\} (B'B)_jl} (total Epistasis strength). Two limits apply: \code{moves} is the
+(total Sociality strength) and \verb{sum_i b_i+ (b_i+ - 1) = sum_\{j != l\} (B'B)_jl} (total Epistasis strength). Two limits apply: the outcome is the
 moment moved first, not the full equilibrium response; and the sign of
 \code{theta} sets the reading (for \code{inPop}, \code{theta < 0} reads as crowding,
 \code{theta > 0} as herding), never the dimension.

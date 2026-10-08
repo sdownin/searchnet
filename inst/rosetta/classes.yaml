@@ -51,7 +51,7 @@ classes:
     k_channel: K_CC
     color: "#3E5C76"
     lean_stat: xwx
-    construct: interdependence among components
+    construct: Epistasis among held components
     description: "Fitness under each influence matrix W: the NK term, or its quadratic form XWX in the engine."
   - id: scope
     label: scope
@@ -62,7 +62,7 @@ classes:
     k_channel: K_CC
     color: "#2A9D8F"
     lean_stat: outAct
-    construct: breadth of the actor's portfolio
+    construct: breadth of holdings
     description: "Actor degree terms: the baseline cost or value of holding components and its curvature."
   - id: crowding
     label: crowding
@@ -73,7 +73,7 @@ classes:
     k_channel: K_AA
     color: "#C8553D"
     lean_stat: inPop
-    construct: congestion on shared components
+    construct: crowding or agglomeration on shared components
     description: "Change in an actor's payoff from components other actors already hold."
   - id: contact
     label: contact
@@ -95,7 +95,7 @@ classes:
     k_channel: K_AA
     color: "#6D5BA8"
     lean_stat: null
-    construct: attraction to components held by similar performers
+    construct: imitation of components held by similar actors
     description: "Co-holder performance similarity (saomnk_coholder_similarity); a statistic, not yet simulable."
   - id: covariate
     label: covariates

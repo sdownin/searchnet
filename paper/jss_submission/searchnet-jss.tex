@@ -353,7 +353,7 @@ Expansiveness ($K_{AC}$) & breadth of the technology portfolio & assortment brea
 Epistasis ($K_{CC}$) & value of combining complementary classes & basket value of co-carried categories & fit of modules that share interfaces \\
 Sociality ($K_{AA}$) & technological overlap with rivals & assortment overlap with competing chains & modules shared across teams \\
 Popularity ($K_{CA}$) & classes held by high-reputation firms & categories carried by certified chains & modules used by prestigious products \\
-Example effect (reads $\rightarrow$ moves) & \code{outAct}: Expansiveness $\rightarrow$ Epistasis strength & \code{inPop}: Sociality $\rightarrow$ Sociality strength & \code{XWX}: Epistasis $\rightarrow$ Epistasis strength valued by $\mathbf{W}$ \\
+Example effect (decision $\rightarrow$ outcome) & \code{outAct}: Expansiveness $\rightarrow$ Epistasis strength & \code{inPop}: Sociality $\rightarrow$ Sociality strength & \code{XWX}: Epistasis $\rightarrow$ Epistasis strength valued by $\mathbf{W}$ \\
 \bottomrule
 \end{tabular}
 \caption{The elements of SAOM-NK in three business domains. Popularity is read
@@ -414,32 +414,31 @@ f_i(\mathbf{B}) ={}&
   \underbrace{\color{clsComplementarity}\textstyle\sum_{\ell}\theta^{(\ell)}_{\text{epist}}
     \sum_{j} b_{ij} \sum_{h \neq j} b_{ih}\, w^{(\ell)}_{hj}}_{
     \substack{\text{\colorbox{clsComplementarity}{\textcolor{white}{\scriptsize\bfseries complementarity}}\ \colorbox{black}{\textcolor{white}{\scriptsize\bfseries $K_{CC}$}}}\\[1pt]
-              \text{\scriptsize complementarity among held components}}}
+              \text{\scriptsize Epistasis among held components}}}
   \;+\;
   \underbrace{\color{clsScope}\theta_{\text{dens}}\, b_{i+} + \theta_{\text{scope}}\, b_{i+}^{2}}_{
-    \substack{\text{\colorbox{clsScope}{\textcolor{white}{\scriptsize\bfseries scope}}\ \colorbox{black}{\textcolor{white}{\scriptsize\bfseries reads $K_{AC}$ $\mid$ moves $K_{CC}$}}}\\[1pt]
+    \substack{\text{\colorbox{clsScope}{\textcolor{white}{\scriptsize\bfseries scope}}\ \colorbox{black}{\textcolor{white}{\scriptsize\bfseries decision $K_{AC}$ $\mid$ outcome $K_{CC}$}}}\\[1pt]
               \text{\scriptsize breadth of holdings}}}
   \\[4pt]
   &+\;
   \underbrace{\color{clsCrowding}\theta_{\text{pop}} \textstyle\sum_{j} b_{ij}\, b_{+j}}_{
     \substack{\text{\colorbox{clsCrowding}{\textcolor{white}{\scriptsize\bfseries crowding}}\ \colorbox{black}{\textcolor{white}{\scriptsize\bfseries $K_{AA}$}}}\\[1pt]
-              \text{\scriptsize crowding on, or pull toward, shared components}}}
+              \text{\scriptsize crowding or agglomeration on shared components}}}
   \;+\;
   \underbrace{\color{clsContact}\theta_{\text{close}}\, \tfrac{1}{2}\textstyle\sum_{h \neq i} \binom{o_{ih}}{2}}_{
-    \substack{\text{\colorbox{clsContact}{\textcolor{white}{\scriptsize\bfseries contact}}\ \colorbox{black}{\textcolor{white}{\scriptsize\bfseries reads $K_{AA}$ $\mid$ moves $K_{AA}$, $K_{CC}$}}}\\[1pt]
-              \text{\scriptsize repeated overlap among actors}}}
+    \substack{\text{\colorbox{clsContact}{\textcolor{white}{\scriptsize\bfseries contact}}\ \colorbox{black}{\textcolor{white}{\scriptsize\bfseries decision $K_{AA}$ $\mid$ outcome $K_{AA}$, $K_{CC}$}}}\\[1pt]
+              \text{\scriptsize repeated overlap between pairs of actors}}}
   \\[4pt]
   &+\;
   \underbrace{\color{clsImitation}\theta_{\text{imit}} \textstyle\sum_{j} b_{ij}\,
     \bigl(\mathrm{sim}_{ij} - \overline{\mathrm{sim}}\bigr)}_{
-    \substack{\text{\colorbox{clsImitation}{\textcolor{white}{\scriptsize\bfseries imitation}}\ \colorbox{black}{\textcolor{white}{\scriptsize\bfseries reads $K_{CA}$ $\mid$ moves $K_{AA}$}}}\\[1pt]
-              \text{\scriptsize attraction to components held by similar actors,}\\
-              \text{\scriptsize via covariate similarity (\code{simEgoInDist2})}}}
+    \substack{\text{\colorbox{clsImitation}{\textcolor{white}{\scriptsize\bfseries imitation}}\ \colorbox{black}{\textcolor{white}{\scriptsize\bfseries decision $K_{CA}$ $\mid$ outcome $K_{AA}$}}}\\[1pt]
+              \text{\scriptsize imitation of components held by similar actors}}}
   \;+\;
   \underbrace{\color{clsCovariate}\theta_{\text{strat}}\, b_{i+}\tilde{v}_i
     + \theta_{\text{value}} \textstyle\sum_{j} b_{ij}\, \tilde{c}_j}_{
-    \substack{\text{\colorbox{clsCovariate}{\textcolor{white}{\scriptsize\bfseries covariates}}\ \colorbox{black}{\textcolor{white}{\scriptsize\bfseries reads $K_{AC}$ $\mid$ moves $K_{AC}$, $K_{CA}$}}}\\[1pt]
-              \text{\scriptsize actor and component attributes}}}
+    \substack{\text{\colorbox{clsCovariate}{\textcolor{white}{\scriptsize\bfseries covariates}}\ \colorbox{black}{\textcolor{white}{\scriptsize\bfseries decision $K_{AC}$ $\mid$ outcome by effect}}}\\[1pt]
+              \text{\scriptsize observed heterogeneity of actors and components}}}
 \end{aligned}
 \end{equation}
 
@@ -464,7 +463,7 @@ statistic and is not simulated.
 \centering
 \begin{tabular}{lllll}
 \toprule
-Construct & RSiena name & Statistic $s_{ik}(\mathbf{B})$ & $\{K\}$ dimension read & Moves (target statistic) \\
+Construct & RSiena name & Statistic $s_{ik}(\mathbf{B})$ & Decision dimension & Outcome dimension (target statistic) \\
 \midrule
 Scope (cost) & \code{density} & $\sum_j b_{ij}$ & Expansiveness & total ties \\
 Crowding & \code{inPop} & $\sum_j b_{ij} \sum_{h} b_{hj}$ & Sociality & Sociality strength \\
@@ -742,7 +741,7 @@ complementarity, and imitation.
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{ll>{\raggedright\arraybackslash}p{1.9cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{2.3cm}>{\raggedright\arraybackslash}p{3.4cm}}
 \toprule
-RSiena Effect & Parameter & $\{K\}$ dimension read & Moves (target statistic) & Strategy Concept & Interpretation \\
+RSiena Effect & Parameter & Decision dimension & Outcome dimension (target statistic) & Strategy Concept & Interpretation \\
 \midrule
 \code{density}      & $\theta_{\text{dens}}$  & Expansiveness & total ties & Scope cost               & Negative = costly to hold activities; controls portfolio breadth \\
 \code{outAct}       & $\theta_{\text{scope}}$ & Expansiveness & Epistasis strength & Diminishing returns       & Quadratic penalty on actor degree (scope) \\
@@ -754,7 +753,7 @@ RSiena Effect & Parameter & $\{K\}$ dimension read & Moves (target statistic) & 
 \code{cycle4}       & $\theta_{\text{close}}$ & Sociality & Sociality and Epistasis & Contact                   & Repeated overlap between pairs of actors (four-cycles) \\
 \bottomrule
 \end{tabular}
-\caption{Mapping RSiena effects to strategic search concepts.  Parameters correspond to the SAOM objective function (Equation~\ref{eq:saom-objective}).  The two $\{K\}$ columns give the dimension each effect's change statistic reads and the one its target statistic moves (\code{searchnet\_effect\_dimensions()}).}
+\caption{Mapping RSiena effects to strategic search concepts.  Parameters correspond to the SAOM objective function (Equation~\ref{eq:saom-objective}).  The two $\{K\}$ columns give each effect's decision dimension (its change statistic) and outcome dimension (its target statistic) (\code{searchnet\_effect\_dimensions()}).}
 \label{tab:glossary}
 \end{table}
 
@@ -1832,7 +1831,7 @@ R> cat(sprintf(
 + ))
 \end{CodeInput}
 \begin{CodeOutput}
-searchnet: 0.11s | raw RSiena: 0.06s | overhead: 83.3%
+searchnet: 0.11s | raw RSiena: 0.04s | overhead: 175.0%
 \end{CodeOutput}
 \end{CodeChunk}
 
@@ -1937,7 +1936,7 @@ The skewness of the number of peaks per landscape is: 0.6872
 
 The kurtosis of the number of peaks per landscape is: -0.1868 
 
-Elapsed time: 0.1 sec
+Elapsed time: 0.09 sec
 
 [Sampled mode] 1,000 of 2^6 = 64 configurations sampled per landscape.
 
@@ -1949,7 +1948,7 @@ The skewness of the number of peaks per landscape is: 2.094
 
 The kurtosis of the number of peaks per landscape is: 5.358 
 
-Elapsed time: 0.88 sec
+Elapsed time: 0.87 sec
 
 The mean number of peaks per landscape is: 10.5 
 
@@ -1959,7 +1958,7 @@ The skewness of the number of peaks per landscape is: 1.546
 
 The kurtosis of the number of peaks per landscape is: 2.836 
 
-Elapsed time: 0.4 sec
+Elapsed time: 0.39 sec
 
 [Sampled mode] 1,000 of 2^8 = 256 configurations sampled per landscape.
 
@@ -1971,7 +1970,7 @@ The skewness of the number of peaks per landscape is: 1.403
 
 The kurtosis of the number of peaks per landscape is: 2.651 
 
-Elapsed time: 1.03 sec
+Elapsed time: 1.01 sec
 
 The mean number of peaks per landscape is: 11.93 
 
@@ -1981,7 +1980,7 @@ The skewness of the number of peaks per landscape is: 0.8163
 
 The kurtosis of the number of peaks per landscape is: 0.7357 
 
-Elapsed time: 2.24 sec
+Elapsed time: 1.81 sec
 
 [Sampled mode] 1,000 of 2^10 = 1,024 configurations sampled per landscape.
 
@@ -1993,7 +1992,7 @@ The skewness of the number of peaks per landscape is: 1.483
 
 The kurtosis of the number of peaks per landscape is: 2.346 
 
-Elapsed time: 1.21 sec
+Elapsed time: 1.18 sec
 
 The mean number of peaks per landscape is: 17.33 
 
@@ -2003,7 +2002,7 @@ The skewness of the number of peaks per landscape is: 1.162
 
 The kurtosis of the number of peaks per landscape is: 1.043 
 
-Elapsed time: 8.89 sec
+Elapsed time: 8.5 sec
 
 [Sampled mode] 1,000 of 2^12 = 4,096 configurations sampled per landscape.
 
@@ -2015,7 +2014,7 @@ The skewness of the number of peaks per landscape is: 1.298
 
 The kurtosis of the number of peaks per landscape is: 0.5899 
 
-Elapsed time: 1.15 sec
+Elapsed time: 1.19 sec
 \end{CodeOutput}
 \begin{CodeInput}
 R> ## Display results
@@ -2038,9 +2037,9 @@ Table: Fitness landscape computation time: full enumeration vs.\ sampled approxi
 | $N$| Configurations| Full (s)| Sample (s)|
 |---:|--------------:|--------:|----------:|
 |   6|             64|     0.11|       0.92|
-|   8|            256|     0.39|       1.03|
-|  10|           1024|     2.23|       1.20|
-|  12|           4096|     8.91|       1.16|
+|   8|            256|     0.39|       1.01|
+|  10|           1024|     1.81|       1.17|
+|  12|           4096|     8.50|       1.19|
 
 \end{CodeChunk}
 
@@ -2169,7 +2168,7 @@ depends on \pkg{R6}, \pkg{RSiena}, \pkg{igraph}, \pkg{ggplot2},
 \section{Computational details}\label{sec:compdetails}
 
 The results in this paper were obtained using \proglang{R}~4.5.3 with
-the packages \pkg{searchnet}~0.12.2 and \pkg{RSiena}~1.5.0
+the packages \pkg{searchnet}~0.12.6 and \pkg{RSiena}~1.5.0
 (\pkg{searchnet} requires \pkg{RSiena}~\(\geq\)~1.5.0). \proglang{R}
 itself and all packages used other than \pkg{searchnet} are available
 from the Comprehensive \proglang{R} Archive Network (CRAN) at

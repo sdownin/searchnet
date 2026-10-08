@@ -241,6 +241,10 @@ test_that("rosetta_plot groups classes sharing a {K} dimension under one badge",
   expect_equal(gd$classes[gd$k_channel == "K_AA"], "crowding, contact")
   expect_equal(gd$classes[gd$k_channel == "K_CA"], "imitation")
   expect_equal(gd$classes[gd$k_channel == "K_AC"], "scope")
+  ## display names: "decision" is the reads view, "outcome" the moves view
+  expect_identical(attr(rosetta_plot(full, glyph = FALSE, view = "decision"), "k_groups"), gd)
+  expect_identical(attr(rosetta_plot(full, glyph = FALSE, view = "outcome"), "k_groups"),
+                   attr(rosetta_plot(full, glyph = FALSE, view = "moves"), "k_groups"))
 
   ## both views: two badge rows, decision above outcome, each with brackets;
   ## within a moves group the classes are ordered by what they read

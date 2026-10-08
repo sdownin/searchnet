@@ -50,11 +50,12 @@
 }
 
 ## Plotmath text of a dimension badge: "Sociality K_AA" with K_AA as italic K
-## subscripted AA; "other" stays a word.
+## subscripted AA. "other" (a class whose effects move different dimensions,
+## such as the covariates) is drawn as "by effect".
 .rosetta_k_badge_text <- function(ch, labels = character(0)) {
   vapply(ch, function(k) {
     nm <- if (k %in% names(labels)) gsub("\"", "", labels[[k]]) else ""
-    if (identical(k, "other")) return(sprintf("\"%s\"", if (nzchar(nm)) nm else "other"))
+    if (identical(k, "other")) return(sprintf("\"%s\"", if (nzchar(nm)) nm else "by effect"))
     sub <- sub("^K_", "", k)
     sym <- if (grepl("^[A-Za-z][A-Za-z0-9]*$", sub)) sprintf("italic(K)[italic(%s)]", sub)
            else sprintf("italic(K)[\"%s\"]", sub)
@@ -106,7 +107,8 @@
 }
 
 ## Row I: the objective by class. With `groups_reads` (view = "both"), two
-## badge rows: what the classes read above, what they move below.
+## badge rows: the decision dimension (field `reads`) above, the outcome
+## dimension (field `moves`) below.
 .rosetta_row_objective <- function(terms, classes, title, groups = .rosetta_k_groups(terms),
                                    groups_reads = NULL) {
   n <- nrow(terms)
@@ -142,7 +144,7 @@
     (if (is.null(groups_reads)) .rosetta_k_layers(groups, y = 1.0) else
       c(.rosetta_k_layers(groups_reads, y = 1.0), .rosetta_k_layers(groups, y = 0.38),
         list(ggplot2::annotate("text", x = 0.3, y = c(1.0, 0.38),
-                               label = c("reads", "moves"),
+                               label = c("decision\n(utility)", "outcome\n(network)"),
                                size = 2.6, fontface = "italic", lineheight = 0.85,
                                colour = .rosetta_pal$muted)))) +
     ggplot2::scale_x_continuous(limits = c(-0.1, n + 0.6), expand = c(0, 0)) +
@@ -364,9 +366,10 @@
 #'     opened by registered classes, then other), and each dimension gets one
 #'     black badge naming its dimension (for example "Sociality K_AA"),
 #'     centered under its classes on a bracket when it groups two or more.
-#'     `view` chooses the field: the dimension each class moves (the
-#'     default), the one it reads, or both, in two badge rows (reads above,
-#'     moves below), each with its own brackets. See
+#'     `view` chooses the field: the outcome dimension of each class (field
+#'     `moves`; the default), its decision dimension (field `reads`), or both,
+#'     in two badge rows (decision above, outcome below), each with its own
+#'     brackets. See
 #'     [searchnet_effect_dimensions()] and `inst/rosetta/K_DIMENSIONS.md`.}
 #'   \item{Row II}{the entry `compare`, in row I's columns: each class's term
 #'     in the entry's own notation, `+ 0` for a class it switches off,
@@ -382,8 +385,8 @@
 #'
 #' The dimension groups are attached to the result as `attr(, "k_groups")`,
 #' a data.frame with one row per badge (`k_channel`, `name`, `xmin`, `xmax`,
-#' `x`, `n`, `classes`), for the field drawn (moves when `view` is
-#' `"both"`); with `view = "both"` the reads row's groups are
+#' `x`, `n`, `classes`), for the field drawn (outcome when `view` is
+#' `"both"`); with `view = "both"` the decision row's groups are
 #' attached as `attr(, "k_groups_reads")`.
 #'
 #' @param x A model (anything [rosetta_translate()] accepts), or `NULL` for
@@ -398,9 +401,12 @@
 #' @param include_private Logical; allow entries from `entries-private/`.
 #' @param classes Class ids to draw (default: every registered class that
 #'   is switched on in `x` or `compare`, plus the five shipped core classes).
-#' @param view Which field the \{K\} badges show: `"moves"` (default; the
-#'   dimension each class's target statistic moves, `k_channel`), `"reads"`
-#'   (the dimension its change statistic depends on), or `"both"`.
+#' @param view Which field the \{K\} badges show: `"outcome"` (default; the
+#'   outcome dimension, field `moves`, alias `k_channel`: the network
+#'   structure the class's target statistic sums), `"decision"` (the decision
+#'   dimension, field `reads`: the one its change statistic, the actor's
+#'   utility change for a move, depends on), or `"both"`. `"moves"` and
+#'   `"reads"` are accepted as aliases of `"outcome"` and `"decision"`.
 #' @param file Optional path of a PNG to write; the path is then returned.
 #' @param width,height,dpi Size of the PNG in inches, and its resolution. `width`
 #'   also sets the layout of row II: long expressions are wrapped, and shrunk
@@ -421,8 +427,9 @@
 rosetta_plot <- function(x = NULL, compare = NULL, glyph = TRUE, W = NULL, seed = 1L,
                          include_private = FALSE, classes = NULL, file = NULL,
                          width = 12, height = 10, dpi = 110,
-                         view = c("moves", "reads", "both")) {
+                         view = c("outcome", "decision", "both", "moves", "reads")) {
   view <- match.arg(view)
+  view <- switch(view, outcome = "moves", decision = "reads", view)
   cl <- rosetta_classes()
   if (is.null(x)) {
     s <- .rosetta_spec(M = NA, N = NA, effects = lapply(seq_len(nrow(cl)), function(i) {
@@ -488,9 +495,9 @@ rosetta_plot <- function(x = NULL, compare = NULL, glyph = TRUE, W = NULL, seed 
     heights <- c(heights, 1.15)
   }
   badge_txt <- switch(view,
-    moves = "Black badge: the {K} dimension its classes move, one per dimension; a bracket spans classes that share it.",
-    reads = "Black badge: the {K} dimension its classes read, one per dimension; a bracket spans classes that share it.",
-    both = "Black badges: upper row, the {K} dimension the classes read; lower row, the dimension they move; brackets span classes that share one.")
+    moves = "Black badge: the outcome {K} dimension of its classes (the network structure they shift), one per dimension; a bracket spans classes that share it.",
+    reads = "Black badge: the decision {K} dimension of its classes (what their utility change depends on), one per dimension; a bracket spans classes that share it.",
+    both = "Black badges: upper row, the decision {K} dimension (utility); lower row, the outcome dimension (network); brackets span classes that share one.")
   key <- paste("Filled chip: class switched on. Outlined chip: zero, absent or held fixed.",
                badge_txt, sep = "\n")
   head <- ggplot2::ggplot() + ggplot2::annotate("text", x = 0, y = 0, label = key, size = 3,
