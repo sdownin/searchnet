@@ -183,14 +183,15 @@ p_k4 <- restyle_k4(saomnk_plot_k4(env)) +
   guides(color = guide_legend(nrow = 2,
                               override.aes = list(alpha = 1, shape = NA, linewidth = 1)))
 
-## Top row: input and the two states; bottom row: how the run got from one to
-## the other. Identical node legends are collected once.
-hero <- (p_w + p_start + p_end + plot_layout(widths = c(0.85, 1, 1))) / p_k4 +
-  plot_layout(heights = c(1, 1.15), guides = "collect") &
+## Left column: the input and the two states, top to bottom; right two
+## columns: the {K}-4 panel at full height, so the trajectories get the
+## vertical range. Identical node legends are collected once.
+hero <- (p_w / p_start / p_end) - p_k4 +
+  plot_layout(widths = c(1, 2), guides = "collect") &
   theme(legend.position = "bottom")
 ## 160 dpi: the {K}-4 panel's thousands of translucent points make this the
 ## largest README file.
-save_png(hero, "readme-hero.png", width = 12, height = 9, dpi = 160)
+save_png(hero, "readme-hero.png", width = 12, height = 11, dpi = 150)
 
 
 ###############################################################################

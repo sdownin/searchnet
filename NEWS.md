@@ -1,3 +1,7 @@
+# searchnet 0.12.5
+
+Released 2026-10-08. Documentation only; no code change since 0.12.2. README hero figure: the influence matrix and the start and end networks are stacked down the left, and the {K}-4 panel takes the right two columns at full height, so the degree trajectories have about twice the vertical range.
+
 # searchnet 0.12.4
 
 Released 2026-10-08. Documentation only; no code change since 0.12.2. The README no longer quotes mean K_CC values of 13.95 / 16.40 / 20.00 under varying W (withdrawn by the 2026-10-06 audit of replayed trajectories); the architectures figure reports current values. First public release since 0.12.1, so it carries 0.12.2 and 0.12.3.
