@@ -25,6 +25,6 @@ saomnk_plot_component_degrees(
 A ggplot object (if \code{return_plot} is TRUE)
 }
 \description{
-Popularity (\eqn{K_{CA}}) above coupling (\eqn{K_{CC}}), in the style of
+Popularity (\eqn{K_{CA}}) above epistasis (\eqn{K_{CC}}), in the style of
 \code{\link{saomnk_plot_degree_4panel}}.
 }

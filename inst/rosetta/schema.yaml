@@ -47,5 +47,8 @@ status:
   absent: the class has no counterpart in the model
   linearized: the class carries the model's term after a stated approximation
 k_channel: [K_CC, K_AC, K_AA, K_CA, other]
+# Every class in classes.yaml carries both fields (rosetta_validate(), E9);
+# k_channel is a deprecated alias of moves.
+class_required: [reads, moves]
 W: [binary-k-regular, real, zero, any]
 revision_rule: [single_flip, multinomial]

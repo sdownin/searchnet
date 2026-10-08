@@ -28,7 +28,7 @@ impose), and \code{within} (entries whose restrictions the model already
 satisfies, switching on no class the entry leaves off).
 }
 \description{
-Decomposes a model class by class (status, effects, expression, K channel
+Decomposes a model class by class (status, effects, expression, K dimension
 and construct) and gives a nesting verdict against every registry entry.
 }
 \details{

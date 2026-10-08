@@ -38,7 +38,7 @@ test_that("print.saomnk_model() shows header, effects, and thetas", {
   expect_true(length(out) > 0)
   expect_true(any(grepl("SaoMNK Structure Model", out)))
   expect_true(any(grepl("density", out)))
-  expect_true(any(grepl("popularity \\(inPop\\)", out)))
+  expect_true(any(grepl("crowding \\(inPop\\)", out)))
   expect_true(any(grepl("scope \\(outAct\\)", out)))
   expect_true(any(grepl("-0\\.5", out)))
   expect_true(any(grepl("\\[fixed\\]", out)))
@@ -64,7 +64,7 @@ test_that("print.saomnk_model() reports a static influence matrix with its dimen
                       influence_matrix = saomnk_block_diagonal(6, 2),
                       influence_weight = 0.15)
   out <- capture.output(print(mod))
-  expect_true(any(grepl("epistasis \\(XWX\\)", out)))
+  expect_true(any(grepl("complementarity \\(XWX\\)", out)))
   expect_true(any(grepl("influence matrix W", out)))
   expect_true(any(grepl("6 x 6", out)))
   expect_true(any(grepl("0\\.15", out)))
@@ -122,7 +122,7 @@ test_that("print.saomnk_shock() shows effect, target value, and portion", {
 test_that("print.saomnk_shock() labels mapped shortcodes with their friendly names", {
   s <- saomnk_shock(c("popularity", "scope"), parameter = c(0.5, 0.3))
   out <- capture.output(print(s))
-  expect_true(any(grepl("popularity \\(inPop\\)", out)))
+  expect_true(any(grepl("crowding \\(inPop\\)", out)))
   expect_true(any(grepl("scope \\(outAct\\)", out)))
   expect_true(any(grepl("sets 2 parameter", out)))
 })

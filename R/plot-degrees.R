@@ -9,11 +9,14 @@
 
 #' Plot the four-panel degree grid (K_AC, K_CA, K_AA, K_CC)
 #'
-#' One panel per \eqn{\{K\}} channel, labeled with its plain name: scope
-#' (\eqn{K_{AC}}, components each actor holds), popularity (\eqn{K_{CA}},
-#' actors holding each component), sociality (\eqn{K_{AA}}, actors each actor
-#' shares a component with) and coupling (\eqn{K_{CC}}, components each
-#' component is held with). Faint points are nodes at each ministep (actors
+#' One panel per \eqn{\{K\}} dimension, labeled with its display name:
+#' expansiveness (\eqn{K_{AC}}, components each actor holds), popularity
+#' (\eqn{K_{CA}}, actors holding each component), sociality (\eqn{K_{AA}},
+#' the number of OTHER actors each actor shares at least one component with)
+#' and epistasis (\eqn{K_{CC}}, the number of OTHER components each component
+#' is co-held with). The two projection degrees are partner counts that
+#' exclude the node itself (through searchnet 0.12.1 the engine
+#' counted it, adding 1 for every non-isolated node). Faint points are nodes at each ministep (actors
 #' orange, components blue, or one color per group when there are several);
 #' the black line is the loess-smoothed mean. The title states what the run
 #' shows (computed from the smoothed means), the subtitle how to read the
@@ -60,7 +63,7 @@ saomnk_plot_degree_4panel <- function(env,
 
 #' Plot component degrees (K_CA and K_CC) over the simulation chain
 #'
-#' Popularity (\eqn{K_{CA}}) above coupling (\eqn{K_{CC}}), in the style of
+#' Popularity (\eqn{K_{CA}}) above epistasis (\eqn{K_{CC}}), in the style of
 #' \code{\link{saomnk_plot_degree_4panel}}.
 #'
 #' @param env SaomNkRSienaBiEnv object

@@ -14,6 +14,14 @@
 ## Regenerate the fixture ONLY when a change to the path's results is
 ## intended and documented:  SEARCHNET_WRITE_CHAIN_GOLDEN=true, then run this
 ## file once.
+##
+## Regenerated 2026-10-08 (branch fix/k-degree-alignment) for an intended
+## change: K_AA and K_CC exclude the node itself (every non-isolated node's
+## value drops by 1), the NEW/OLD subsets no longer swap K_CA and K_CC, and
+## K_CC_df carries its NEW/OLD strategy. Before rewriting, every object was
+## compared with the old fixture: only the K tables (and K4_df / the
+## multiwave K frames built from them) differed; the state arrays, change
+## logs, statistics and utilities were identical.
 ###############################################################################
 
 .golden_file <- function() test_path("fixtures", "chain_golden.rds")

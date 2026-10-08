@@ -152,7 +152,7 @@ saomnk_plot_utility_contributions_basic <- function(env,
 #' Plot utility contributions with strategy coloring and optional experiment data
 #'
 #' One panel per effect, labeled with a plain name (for example
-#' "popularity (inPop): ties to popular components"), plus a top panel with
+#' "crowding (inPop): ties to components others hold"), plus a top panel with
 #' total utility. With \code{use_thetas = TRUE} each panel is the effect's
 #' contribution, statistic times weight, so the panels add up to the total.
 #' Without actor strategies each effect has its own color; with strategies,

@@ -12,13 +12,19 @@ rosetta_classes(path = getOption("searchnet.rosetta_path"))
 }
 \value{
 A data.frame with columns \code{id}, \code{label}, \code{effects}, \code{simulable},
-\code{k_channel}, \code{color}, \code{lean_stat}, \code{construct}, \code{description}, \code{source}.
+\code{k_channel} (deprecated alias of \code{moves}), \code{reads}, \code{moves},
+\code{color}, \code{lean_stat}, \code{construct}, \code{description}, \code{source}.
 }
 \description{
 The class registry the translation functions use: each class groups
-searchnet effect names into one summand of the objective, names the
-\{K\} channel it moves, a color token, and the statistic of the Lean
-library that carries it. Shipped classes are read from
+searchnet effect names into one summand of the objective, names two
+\{K\} dimensions, a color token, and the statistic of the Lean library
+that carries it. The two fields are those of
+\code{\link[=searchnet_effect_dimensions]{searchnet_effect_dimensions()}}: \code{reads}, the dimension the change
+statistic depends on (what the deciding actor reads), and \code{moves}, the
+dimension of the target statistic (the moment estimation matches and the
+coefficient moves first). \code{k_channel} is a deprecated alias of \code{moves},
+kept for the v0.12.0 contract. Shipped classes are read from
 \code{inst/rosetta/classes.yaml}; classes added with
 \code{\link[=rosetta_register_class]{rosetta_register_class()}} are appended (or replace a shipped class with
 the same id) for the current session.

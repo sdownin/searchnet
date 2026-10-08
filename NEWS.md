@@ -1,3 +1,85 @@
+# searchnet 0.12.4
+
+Released 2026-10-08. Documentation only; no code change since 0.12.2. The README no longer quotes mean K_CC values of 13.95 / 16.40 / 20.00 under varying W (withdrawn by the 2026-10-06 audit of replayed trajectories); the architectures figure reports current values. First public release since 0.12.1, so it carries 0.12.2 and 0.12.3.
+
+# searchnet 0.12.3
+
+Released 2026-10-08. Documentation only; no code change since 0.12.2. README figures: the hero shows the network at the start and at the end of the run on one shared layout (ties formed, kept and dropped marked) above the {K}-4 panel; the architectures figure adds a row with signed real weights on the same four patterns, beside conventional NK's nonnegative interaction pattern, with end-of-run ties and mean K_CC for each.
+
+# searchnet 0.12.2
+
+Released 2026-10-08. The {K} dimensions each effect reads and moves (`searchnet_effect_dimensions()`, `searchnet_classify_effect()`, `inst/rosetta/K_DIMENSIONS.md`), on the shared {K} specification. Reported K_AA and K_CC are now partner counts that exclude the node (1 lower for every non-isolated node); simulated networks, statistics and utilities are unchanged. Suite: 65 files, 924 tests, 6893 expectations, 0 failures, 0 errors, 9 skips.
+
+## Paper and registry aligned with the {K} specification (2026-10-08)
+
+* JSS paper: `tab:effects` names constructs (scope, crowding, complementarity) and gives each statistic as actor i's s_ik(B) with its reads and moves; the glossary reads inPop as crowding (agglomeration when positive) and cycle4 as contact (repeated overlap); `eq:choice` includes the no-change option; the parameter-mapping table follows `.bridge_crosswalk()`; covariate centering and the imitation term are defined as in RSiena 1.5.0. Every objective term checked against the RSiena manual.
+* Rosetta: `k-scope` is titled Expansiveness; `k-sociality` reads and moves Sociality; the objective figure prints theta_k s_ik.
+
+
+## {K} degrees and statistics aligned with the {K} specification (2026-10-08)
+
+Reported K_AA and K_CC values change; simulated networks, statistics and
+utilities do not (except the post hoc `inPopX` column, below).
+
+* **K_AA and K_CC now exclude the node itself.** `saomnk_get_degrees()` (and
+  `env$K_AA_df`, `env$K_CC_df`, `get_K4_df()`, the degree plots and exports
+  built on them) counted the node in its own projection degree, so every
+  non-isolated actor's K_AA and every held component's K_CC was 1 too large.
+  They are now what the {K} specification and `inst/rosetta/K_DIMENSIONS.md`
+  define, and what `.rosetta_k_summary()` and the rest of the package already
+  computed: K_AA(i) = number of OTHER actors sharing at least one component
+  with i, K_CC(j) = number of OTHER components co-held with j. **Values from
+  earlier versions are lower by 1 for every non-isolated node** (unchanged for
+  isolates); an actor holding only components nobody else holds now reports
+  K_AA = 0, not 1. Figures and stated means of K_AA or K_CC from earlier
+  versions should be regenerated.
+* The NEW/OLD component subsets (`K_CA_NEW_df`, `K_CC_NEW_df`, `K_CA_OLD_df`,
+  `K_CC_OLD_df`, `get_K4_df(type = "new" / "old")`) had K_CA and K_CC swapped:
+  the "K_CA" frame held the component-projection degree and the "K_CC" frame
+  the column sum. Fixed (and K_CC there is exclusive, as above). `K_CC_df`
+  now carries its NEW/OLD `strategy` column; the assignment had been written
+  to `K_CA_df` instead.
+* A `density` effect on a bipartite dependent variable is RSiena's `density`
+  (it always was when the effects table had a density row, which RSiena 1.5.0
+  provides for bipartite variables). The fallback that silently substituted
+  `outAct` (a different statistic) when no density row existed is replaced by
+  an informative error.
+* `inPopX`'s post hoc statistic column (stats and utility frames) recycled the
+  N-vector of holder sums column-major (`rowSums(B * w)`), so each actor was
+  weighted by the wrong components. It is now RSiena 1.5.0's two-mode form,
+  `sum_j b_ij sum_h b_hj v~_h` (ego counted, covariate centered as declared),
+  pinned to `siena07()` targets. RSiena 1.5.0's own two-mode inPopX target is
+  not deterministic (identical calls sometimes omit the last component's term);
+  the test records both values. `searchnet_effect_dimensions()` now classifies
+  inPopX (reads Popularity; moves attribute-weighted Expansiveness and
+  Sociality strength), and `inst/rosetta/effect_dimensions.csv` is regenerated.
+* `saomnk_model()`: an `altX`, `altSqX` or `outActX` entry in `strategies`
+  (actor covariates) is now an error pointing to `component_covariates`; for a
+  bipartite dependent variable these effects need a component covariate. The
+  documentation no longer lists `altX` under `strategies`. The `popularity`
+  argument keeps its name but is documented as what `inPop` is read as:
+  crowding (negative weight) or agglomeration (positive).
+* Labels: utility panels and model printouts name `inPop` "crowding (inPop)"
+  and `XWX` "complementarity (XWX)" (constructs, per the {K} specification's
+  vocabulary), replacing "popularity (inPop)", "influence (XWX)" and
+  "epistasis (XWX)".
+* `saomnk_coholder_similarity()` documentation: it is not the CD4 engine's
+  imitation statistic. Per component it equals the engine's `simPerfCand` add
+  term only up to a per-decision constant (the centering sets differ), and its
+  change on a flip never equals that term. It reads Popularity (K_CA).
+
+## The {K} dimensions each effect reads and moves (2026-10-08)
+
+No change to simulated results.
+
+* `searchnet_effect_dimensions()` (new): every effect gets two fields. `reads` is the {K} dimension its change statistic depends on, derived by a walk-dependency test on random networks (who the other holders are -> Popularity; else other actors' holdings -> Sociality; else W -> Epistasis; else the actor's own row or attributes -> Expansiveness); `moves` is the dimension of its target statistic, by an identity fitted on random networks. Both are computed from the engine's own statistic. `rule = "degree"` gives a documented alternative reads rule.
+* `searchnet_classify_effect()` (new): classifies a user's own statistic by the same rules.
+* `inst/rosetta/K_DIMENSIONS.md` (new): the four dimensions (Expansiveness K_AC, Popularity K_CA, Sociality K_AA, Epistasis K_CC), degrees versus strengths (K_AA and K_CC are distinct-partner counts; the coupling identities hold for Sociality and Epistasis strengths), the two fields, the tie convention and the two limits, written once for the package, the README and the papers. `inst/rosetta/effect_dimensions.csv` (new, from `tools/make_effect_dimensions_csv.R`) ships the derived table.
+* Rosetta: every class in `classes.yaml` carries `reads` and `moves`; `k_channel` stays as a deprecated alias of `moves`, so scope now moves K_CC and imitation K_AA. The crowding class is labeled "crowding" (id unchanged). `rosetta_validate()` errors (E9) on a class missing either field; `rosetta_export_json()`, `rosetta_classes()`, `rosetta_register_class()` and translation terms carry both. `rosetta_plot()` gains `view = c("moves", "reads", "both")`; "both" draws two badge rows, reads above moves.
+* Plot strips use the display names and name the projection degrees as partner counts ("Sociality: number of actors sharing a component"); K_CC is "Epistasis", never "coupling" (terminology rule); the black line is labeled "mean degree". README hero, shock and objective figures and the paper's Figure 1 and {K}-system figures regenerated.
+* The engine's `inPopX` column multiplies `B` by its weight vector with column-major recycling, so it is not the statistic its comment states; it is left unclassified, and a test records the state.
+* Paper: tab:k4 uses the display names; NK's K is corrected to the W-degree (not K_CC); the glossary table has "{K} dimension read" and "Moves (target statistic)" columns; the class-colored objective shows both fields where they differ; 23 printed tildes before cross-references fixed.
+
 # searchnet 0.12.1
 
 Released 2026-10-08. Documentation only; no code change. The README hero

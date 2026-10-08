@@ -23,7 +23,7 @@ A ggplot object.
 \description{
 Visualizes the four coupled degree processes---actor scope (\eqn{K_{AC}}),
 component popularity (\eqn{K_{CA}}), actor sociality (\eqn{K_{AA}}), and
-component coupling (\eqn{K_{CC}})---over the simulated decision chain.
+component epistasis (\eqn{K_{CC}})---over the simulated decision chain.
 Each panel is labeled with its channel and plain name; the title states
 what the run shows, the subtitle how to read the figure, and the caption
 lists the model weights. See \code{\link{saomnk_plot_degree_4panel}}.

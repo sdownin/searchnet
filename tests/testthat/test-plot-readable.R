@@ -2,7 +2,7 @@
 ## test-plot-readable.R
 ## The reader-friendly defaults of the main plots (R/plot-readable.R and the
 ## functions that use it): computed takeaway titles, plain-language
-## subtitles, K-channel strip labels with plain names, the model weights in
+## subtitles, {K}-dimension strip labels with display names, the model weights in
 ## the caption, and the optional reading guides (annotate = TRUE / FALSE).
 ###############################################################################
 
@@ -32,10 +32,30 @@ readable_env <- function(shock = FALSE, strategies = FALSE, M = 4) {
   env
 }
 
-test_that("K-channel labels carry the plain names", {
+test_that("{K}-dimension labels carry the display names and partner counts", {
   lab <- searchnet:::.sn_k_label(c("K_AC", "K_CA", "K_AA", "K_CC"))
   expect_match(lab[1], "K[AC]", fixed = TRUE)
-  expect_match(lab, "scope|popularity|sociality|coupling")
+  expect_match(lab, "Expansiveness|Popularity|Sociality|Epistasis")
+  expect_match(lab[3], "Sociality: actors sharing a component", fixed = TRUE)
+  expect_match(lab[4], "Epistasis: components sharing an actor", fixed = TRUE)
+})
+
+test_that("plot labels use the dimension display names of the registry (terminology rule)", {
+  ## One set of names everywhere: Expansiveness (K_AC), Popularity (K_CA),
+  ## Sociality (K_AA), Epistasis (K_CC) -- the plot strips, the rosetta badges
+  ## (classes.yaml k_channel_label) and inst/rosetta/K_DIMENSIONS.md. K_CC is never
+  ## labeled "coupling" (author decision 2026-08-21, test-terminology.R).
+  info <- searchnet:::.sn_k_info
+  expect_identical(info$plain, c("expansiveness", "popularity", "sociality", "epistasis"))
+  lab <- searchnet:::.sn_k_label(info$channel)
+  expect_false(any(grepl("coupling", lab, ignore.case = TRUE)))
+  skip_if_not_installed("yaml")
+  reg <- searchnet:::.rosetta_k_labels()
+  expect_identical(unname(reg[info$channel]), info$name)
+  expect_identical(tolower(info$name), info$plain)
+  ch <- readLines(file.path(searchnet:::.rosetta_home(), "K_DIMENSIONS.md"))
+  for (nm in c("Expansiveness (K_AC)", "Popularity (K_CA)", "Sociality (K_AA)", "Epistasis (K_CC)"))
+    expect_true(any(grepl(nm, ch, fixed = TRUE)), info = nm)
   expect_true(all(vapply(lab, function(l) is.expression(parse(text = l)), TRUE)))
   expect_identical(searchnet:::.sn_join(c("a", "b", "c")), "a, b and c")
   expect_identical(searchnet:::.sn_join("a"), "a")
@@ -61,12 +81,12 @@ test_that("saomnk_plot_k4() returns a ggplot with readable defaults; annotate to
   expect_identical(p0$labels$title, p1$labels$title)
   expect_false(grepl("Environment:", p1$labels$title, fixed = TRUE))
   expect_match(p1$labels$caption, "^Model: ")
-  expect_match(p1$labels$subtitle, "Black line: the mean", fixed = TRUE)
+  expect_match(p1$labels$subtitle, "Black line: mean degree", fixed = TRUE)
   expect_identical(p1$labels$x, "Ministep (one decision opportunity)")
   ch <- levels(p1$data$channel)
   expect_length(ch, 4)
   expect_match(ch[1], "K[AC]", fixed = TRUE)
-  expect_match(ch[4], "coupling", fixed = TRUE)
+  expect_match(ch[4], "Epistasis", fixed = TRUE)
   ## One actor group and one component group: no legend.
   expect_true(draws_ok(p1))
   expect_true(draws_ok(p0))
@@ -99,7 +119,7 @@ test_that("strategies give a legend and per-group colors", {
   expect_true(draws_ok(p))
 })
 
-test_that("actor and component degree plots: two channels, annotate on and off", {
+test_that("actor and component degree plots: two dimensions, annotate on and off", {
   skip_if_not_installed("RSiena")
   env <- readable_env()
   pa <- suppressWarnings(saomnk_plot_actor_degrees(env))
@@ -124,7 +144,7 @@ test_that("utility decomposition: plain strip labels, computed title, annotate t
   expect_gt(n_layers(p1), n_layers(p0))
   pans <- levels(p1$data$panel)
   expect_match(pans[1], "^Total utility")
-  expect_true(any(grepl("popularity (inPop)", pans, fixed = TRUE)))
+  expect_true(any(grepl("crowding (inPop)", pans, fixed = TRUE)))
   expect_match(p1$labels$title, "largest")
   expect_match(p1$labels$caption, "^Model: ")
   pb <- suppressWarnings(saomnk_plot_utility_contributions_basic(env, annotate = FALSE))

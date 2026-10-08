@@ -32,12 +32,15 @@ test_that("a data.table field is copied, not shared, by clone(deep = TRUE)", {
 
   ## The substantive assertion: a by-reference update on the clone must not
   ## reach the original. This is the assertion that fails without deep_clone().
-  cl$actor_stats_df[, probe := 1L]
+  ## data.table::set() is the by-reference update that needs no data.table-aware
+  ## caller: `:=` errors (cedta) when the test env is the installed namespace,
+  ## which does not import data.table.
+  data.table::set(cl$actor_stats_df, j = "probe", value = 1L)
   expect_false("probe" %in% names(env$actor_stats_df))
   expect_true("probe" %in% names(cl$actor_stats_df))
 
   ## ...and symmetrically, so neither direction is privileged.
-  env$actor_stats_df[, other := 2L]
+  data.table::set(env$actor_stats_df, j = "other", value = 2L)
   expect_false("other" %in% names(cl$actor_stats_df))
 })
 

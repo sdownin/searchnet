@@ -8,7 +8,7 @@
 
 **Network-Embedded Search Simulation Engine**
 
-![One seeded run: the input influence matrix W, the actor-component network at the end of the run, and the four coupled degree series of the {K} framework](man/figures/readme-hero.png)
+![One seeded run: the input influence matrix W, the actor-component network at the start and at the end of the run (same node positions; ties formed, kept and dropped marked), and the four coupled degree series of the {K} framework that connect them](man/figures/readme-hero.png)
 
 *One seeded run with 8 actors and 12 components. Left: the influence matrix W
 supplied as input (three modules of four components) and the bipartite network
@@ -25,7 +25,7 @@ squares, colored by module). Right: the four coupled degree series
 > to be expected. The companion methods paper is under review and has
 > not yet been peer-reviewed; results should be treated accordingly.
 > For reproducibility, install a pinned tag rather than the moving branch:
-> `devtools::install_github("sdownin/searchnet@v0.12.1")`.
+> `devtools::install_github("sdownin/searchnet@v0.12.4")`.
 > **v0.8.3 and earlier:** `saomnk_model()` simulations that declared
 > `influence_weight`, `cycle4`, `XWX`, `X`, `inPopX`, `outActX` or
 > `homXOutAct` did not simulate the declared coefficient (estimation via
@@ -140,16 +140,94 @@ The scalar NK complexity parameter *K* decomposes into four coupled degree measu
 
 | Degree | Symbol | Projection | Interpretation |
 |--------|--------|------------|----------------|
-| Actor Scope | K_AC | Actor -> Component | How many components each actor uses; breadth of activity system |
-| Component Popularity | K_CA | Component -> Actor | How many actors adopt each component; competitive crowding |
-| Actor Sociality | K_AA | Actor -> Actor | Overlap in component portfolios; strategic similarity |
-| Component Epistasis | K_CC | Component -> Component | Co-adoption coupling between components; component-projection degree |
+| Expansiveness | K_AC | Actor -> Component | How many components each actor holds; breadth of activity system |
+| Popularity | K_CA | Component -> Actor | How many actors hold each component, and who they are |
+| Sociality | K_AA | Actor -> Actor | How many other actors share a component with the actor (distinct partners) |
+| Epistasis | K_CC | Component -> Component | How many other components are co-held with the component (distinct partners) |
 
 These four dimensions are structurally coupled: changes in any one propagate through the bipartite structure to the others. The {K} framework provides a lens for analyzing how search, adaptation, and rivalry co-evolve.
 
+#### What each effect reads and moves
+
+The four {K} dimensions, and how an effect relates to them, are defined once in
+[`inst/rosetta/K_DIMENSIONS.md`](inst/rosetta/K_DIMENSIONS.md). K_AA and K_CC
+are distinct-partner counts; their weighted forms, **Sociality strength**
+(components shared with other actors) and **Epistasis strength** (actors holding
+both components), are what the coupling identities speak to: the second moment
+of Popularity is total Sociality strength, and the second moment of
+Expansiveness is total Epistasis strength.
+
+Every effect has two fields. **reads** is the dimension its *change statistic*
+(the change in actor *i*'s statistic when it toggles component *j*) depends on,
+derived by a perturbation test in this order: who the other holders are
+(Popularity), else other actors' holdings (Sociality), else W (Epistasis), else
+the actor's own portfolio or attributes (Expansiveness). A count of other
+holders is read as the overlap a move creates (Sociality). **moves** is the
+dimension of its *target statistic* (summed over actors): the moment estimation
+matches and the coefficient moves first.
+
+| Effect | Reads | Moves |
+|--------|-------|-------|
+| `density` | Expansiveness | total ties |
+| `outAct` | Expansiveness | Epistasis strength |
+| `inPop` | Sociality | Sociality strength |
+| `XWX` | Epistasis | Epistasis strength valued by W |
+| `cycle4` | Sociality | Sociality and Epistasis (four-cycle count) |
+| `egoX` | Expansiveness | Expansiveness, attribute-weighted |
+| `altX` | Expansiveness | Popularity, attribute-weighted |
+| `simEgoInDist2` | Popularity | Sociality strength, similarity-weighted |
+
+`searchnet_effect_dimensions()` returns the full table with formulas (also
+shipped as `inst/rosetta/effect_dimensions.csv`), and
+`searchnet_classify_effect()` classifies your own statistic by the same rules.
+`moves` is the moment moved first, not the full equilibrium response, and the
+sign of the coefficient changes the reading (crowding or agglomeration for
+`inPop`), never the dimension.
+
+### The objective by class of effects
+
+Each actor's objective is a sum of class-grouped terms, one color per effect
+class of `inst/rosetta/classes.yaml` (colors are the registry's tokens):
+
+```math
+\begin{aligned}
+f_i(\mathbf{B}) ={}&
+\underbrace{\color{#3E5C76}{\sum_{\ell}\theta^{(\ell)}_{\text{epist}}\sum_{j} b_{ij}\sum_{h\neq j} b_{ih}\,w^{(\ell)}_{hj}}}_{\substack{\color{#3E5C76}{\textbf{complementarity}}\ (K_{CC})\\ \text{complementarity among held components}}}
+\;+\;
+\underbrace{\color{#2A9D8F}{\theta_{\text{dens}}\,b_{i+}+\theta_{\text{scope}}\,b_{i+}^{2}}}_{\substack{\color{#2A9D8F}{\textbf{scope}}\ (\text{reads}\ K_{AC}\mid\text{moves}\ K_{CC})\\ \text{breadth of holdings}}}
+\\
+&+\;
+\underbrace{\color{#C8553D}{\theta_{\text{pop}}\sum_{j} b_{ij}\,b_{+j}}}_{\substack{\color{#C8553D}{\textbf{popularity / crowding}}\ (K_{AA})\\ \text{pull toward, or crowding on, popular components}}}
+\;+\;
+\underbrace{\color{#D9A13B}{\theta_{\text{close}}\,\frac{1}{2}\sum_{h\neq i}\binom{o_{ih}}{2}}}_{\substack{\color{#D9A13B}{\textbf{contact}}\ (\text{reads}\ K_{AA}\mid\text{moves}\ K_{AA},K_{CC})\\ \text{repeated overlap among actors}}}
+\\
+&+\;
+\underbrace{\color{#6D5BA8}{\theta_{\text{imit}}\sum_{j} b_{ij}\,\left(\mathrm{sim}_{ij}-\overline{\mathrm{sim}}\right)}}_{\substack{\color{#6D5BA8}{\textbf{imitation}}\ (\text{reads}\ K_{CA}\mid\text{moves}\ K_{AA})\\ \text{attraction to components held by similar actors, via covariate similarity}}}
+\;+\;
+\underbrace{\color{#7A7A7A}{\theta_{\text{strat}}\,b_{i+}\tilde{v}_i+\theta_{\text{value}}\sum_{j} b_{ij}\,\tilde{c}_j}}_{\substack{\color{#7A7A7A}{\textbf{covariates}}\ (\text{reads}\ K_{AC}\mid\text{moves}\ K_{AC},K_{CA})\\ \text{actor and component attributes}}}
+\end{aligned}
+```
+
+Here `b_i+` is actor *i*'s degree, `b_+j` component *j*'s degree (counting *i*),
+`o_ih` the number of components actors *i* and *h* share, `W^(l)` the *l*-th
+influence matrix, and `v`, `c` actor and component covariates centered on their
+means. Each term is the RSiena 1.5.0 two-mode statistic the engine computes
+(`density`, `outAct`, `inPop`, `cycle4`, `XWX`, `egoX`, `altX`). Imitation
+enters a simulation through RSiena's covariate similarity effect
+`simEgoInDist2` with an actor covariate; the co-holder performance similarity
+of `saomnk_coholder_similarity()` is a post hoc statistic and is not simulated.
+
+![The SAOM-NK objective by class of effects: one colored summand per class, its chip, effects and construct, and black badges naming the {K} dimension each class reads and the one it moves](man/figures/readme-objective.png)
+
+*The same classes as drawn by `rosetta_plot(NULL, compare = NULL, glyph = FALSE,
+view = "both")` (row I alone), for viewers where the math above does not
+render. Its two badge rows follow `inst/rosetta/classes.yaml`: the {K}
+dimension each class reads above, the one it moves below.
+Generated by `tools/make_readme_figures.R`.*
+
 ### Terminology: W, K_CC, and epistatic fitness
 
-The inter-component channel is called **epistasis** throughout the package and
+The inter-component {K} dimension is called **epistasis** throughout the package and
 the paper. It has *three* distinct elements, and collapsing any two of them is
 a common source of confusion:
 
@@ -164,21 +242,25 @@ rather than one feeding the other: W enters the objective function directly,
 while K_CC is the structural state the same search produces. Neither is a
 measurement of the other, and neither is a measurement of W.
 
-That W really does drive K_CC is demonstrable rather than assumed. Holding
-seeds and every other parameter fixed and varying only W, mean K_CC moves from
-13.95 (no influence) to 16.40 (block-diagonal W) to 20.00 (its complement);
-and zeroing the matrix gives a run bit-identical to zeroing
-`influence_weight`, confirming the channel is the coefficient x matrix
-product. Note that in **v0.8.3 and earlier this channel was inert** -- the
+That W really does drive K_CC is demonstrable rather than assumed. The figure
+below varies only W, holding seeds and every other parameter fixed; and zeroing
+the matrix gives a run bit-identical to zeroing `influence_weight`, confirming
+the channel is the coefficient x matrix product. Note that in **v0.8.3 and earlier this channel was inert** -- the
 declared `XWX` coefficient was not simulated (fixed in v0.9.0), so W could not
 influence K_CC at all in those versions.
 
-![Four influence matrices W: modular, nested modules, local ring, and random](man/figures/readme-architectures.png)
+![Four influence-matrix patterns W (modular, nested modules, local ring, random), each shown with conventional NK's nonnegative interaction weights (top) and with signed real weights on the same pattern (bottom)](man/figures/readme-architectures.png)
 
 *Four influence-matrix architectures for 12 components, each built from package
 functions (subtitles), run under the same model and seeds (environment seed 42,
-run seed 12345; density -1.5, influence weight 0.5). Subtitles report the mean
-realized K_CC at the end of each run. Generated by
+run seed 12345; density -1.5, influence weight 0.5). Top row: the interaction
+pattern as conventional NK uses it, nonnegative weights saying which components
+interact, with payoffs drawn separately and i.i.d. Uniform(0, 1). Bottom row:
+the same pattern with signed real weights (Uniform(-1, 1); nested modules keep
+their magnitudes with random signs), which SAOM-NK takes directly: positive
+weights are complements, negative weights substitutes. Subtitles report the ties
+and mean realized K_CC at the end of each run; with substitutes offsetting
+complements, little co-holding survives the density cost. Generated by
 `tools/make_readme_figures.R`.*
 
 Before v0.4.0 the API called the input `epistasis_matrix`, which blurred W
@@ -202,8 +284,8 @@ Generated by `tools/make_readme_figures.R` (environment seed 42, run seed
 12345).*
 
 ### Structure Model Specification
-- **Structural effects**: density, popularity (`inPop`), scope (`outAct`)
-- **Actor covariates** (`coCovars`): Strategy heterogeneity via `egoX`, `inPopX`, `altX`
+- **Structural effects**: density, crowding (`inPop`; the `popularity` argument), scope (`outAct`)
+- **Actor covariates** (`coCovars`): Strategy heterogeneity via `egoX`, `inPopX`; component covariates via `altX`, `outActX`
 - **Dyadic covariates** (`coDyadCovars`): Exogenous influence matrices via `XWX`, actor-component payoffs via `X`
 - **Time-varying covariates**: Dynamic strategy programs
 - **Effect interactions**: Strategy-epistasis interaction terms
@@ -453,6 +535,9 @@ history jumps from v0.4.1 to v0.7.0 — NEWS.md records why.
 
 | Version | Highlights |
 |---|---|
+| **v0.12.4** | Documentation only: withdrawn K_CC figures removed from the README. Public release of 0.12.2 (the {K} dimensions each effect reads and moves; K_AA and K_CC exclude the node) and 0.12.3 (README figures). No code change since v0.12.2. |
+| **v0.12.3** | Documentation only: README hero shows the network at the start and end of the run; architectures figure adds signed real weights beside the conventional NK pattern. No code change since v0.12.2. |
+| **v0.12.2** | The {K} dimensions each effect reads and moves (`searchnet_effect_dimensions()`, `searchnet_classify_effect()`); K_AA and K_CC exclude the node itself (reported values 1 lower for non-isolated nodes; simulations unchanged); `inPopX` fixed and pinned; crowding and complementarity labels. Suite: 65 files, 924 tests, 6893 expectations, 0 failures, 0 errors, 9 skips. |
 | **v0.12.1** | Documentation only: README figure legend uses the node shapes (actors circles, components squares). No code change since v0.12.0. |
 | **v0.12.0** | Translation registry (Rosetta) published: published NK-family models and theory constructs in SAOM-NK terms (`rosetta_*()`). Formal results relabeled Properties 1-7. One ggplot2 theme and palette across all plots (`theme_searchnet()`), reader-friendly titles, optional `annotate`. No change to simulated results. Suite: 64 files, 902 tests, 5482 expectations, 0 failures, 0 errors, 5 skips. |
 | **v0.11.2** | Colorblind-safe default palette for `saomnk_plot_snapshots()` (legacy colors on request), restylable panels returned, actors colored by their own strategy; README figures generated by the package. No change to simulated results. Suite: 62 files, 881 tests, 5291 expectations, 0 failures, 0 errors, 4 skips. |
@@ -475,7 +560,7 @@ Development happens on `dev`; this branch (`public-release`) carries squashed
 release snapshots. Network–behavior coevolution, two-sided tie formation
 (`saomnk_assent`/`saomnk_confirm`), and continuous parameter ramps
 (`saomnk_theta_ramp`/`saomnk_theta_drift`) shipped in the 0.5–0.6 development
-line and are exercised by the v0.12.0 test suite.
+line and are exercised by the v0.12.2 test suite.
 
 ## Citation
 
@@ -484,7 +569,7 @@ line and are exercised by the v0.12.0 test suite.
   title  = {searchnet: Network-Embedded Search Simulation Engine},
   author = {Stephen Downing},
   year   = {2026},
-  note   = {R package version 0.12.1},
+  note   = {R package version 0.12.4},
   url    = {https://github.com/sdownin/searchnet}
 }
 ```

@@ -26,14 +26,17 @@ that a check measuring someone's work reports and never demands:
 \details{
 \describe{
 \item{errors}{a violation with a determinate fix. E1 the entry fails the
-schema (required fields, types, the relation, status and K-channel
+schema (required fields, types, the relation, status and K-dimension
 vocabularies); E2 the id differs from its file name or repeats; E3 a
 Lean declaration named in \code{lean} is not in the package's Lean library;
 E4 a term names a class that is not registered; E5 an em-dash or a
 section symbol; E6 British spelling; E7 a check names an R function
 that does not exist or a test file that is missing; E8 a mapping key
 that a YAML 1.1 reader coerces to a boolean (an unquoted \code{N}, \code{Y},
-\code{yes}, \code{no}, \code{on} or \code{off}).}
+\code{yes}, \code{no}, \code{on} or \code{off}); E9 a class in \code{classes.yaml} (or a
+registered class) lacks \code{reads} or \code{moves}, names a dimension outside
+the vocabulary, or carries a \code{k_channel} (deprecated alias) that
+differs from its \code{moves}. E9 rows carry the id \verb{class:<id>}.}
 \item{advisory}{measurements, reported only. A1 AI-drafted and not yet
 reviewed; A2 a citation without a DOI; A3 a special case with an empty
 \code{does_not_cover}; A4 a registered class the entry does not mention;

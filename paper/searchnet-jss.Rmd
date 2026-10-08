@@ -21,9 +21,9 @@ abstract: >
   limitations by reformulating the NK model as a bipartite network of $M$
   actors affiliating with $N$ components and embedding it within a Stochastic
   Actor-Oriented Model (SAOM).  This reformulation reveals that the scalar
-  $K$ is a special case of a four-dimensional coupled degree system---actor
-  scope ($K_{AC}$), component popularity ($K_{CA}$), actor sociality
-  ($K_{AA}$), and component epistasis ($K_{CC}$)---whose dynamics are
+  $K$ is a special case of a four-dimensional coupled degree system---Expansiveness
+  ($K_{AC}$), Popularity ($K_{CA}$), Sociality ($K_{AA}$), and Epistasis
+  ($K_{CC}$)---whose dynamics are
   governed by actors' forward-looking affiliation decisions rather than
   imposed by the modeler.  The package provides an \pkg{R6}-based
   simulation engine built on \pkg{RSiena}, a clean functional API
@@ -44,7 +44,17 @@ preamble: >
   \usepackage{amsmath}
   \usepackage{amssymb}
   \usepackage{booktabs}
+  \usepackage{array}
   \usepackage{etoolbox}
+  \usepackage{xcolor}
+  \definecolor{clsComplementarity}{HTML}{2C4154}
+  \definecolor{clsScope}{HTML}{258B7F}
+  \definecolor{clsCrowding}{HTML}{9D4330}
+  \definecolor{clsContact}{HTML}{B48531}
+  \definecolor{clsImitation}{HTML}{4F427A}
+  \definecolor{clsCovariate}{HTML}{7A7A7A}
+  \newcommand{\clschip}[2]{\colorbox{#1}{\textcolor{white}{\scriptsize\bfseries #2}}}
+  \newcommand{\kbadge}[1]{\colorbox{black}{\textcolor{white}{\scriptsize\bfseries #1}}}
   \robustify{\pkg}
   \robustify{\proglang}
   \robustify{\code}
@@ -160,7 +170,7 @@ embedding this bipartite structure within a Stochastic Actor-Oriented Model
 \citep[SAOM;][]{Snijders1996, SnijdersVdBuntSteglich2010}, the search
 environment becomes a network data generation process whose topology---and
 therefore whose fitness landscape---co-evolves with actors' affiliation
-decisions (Figure~ef{fig:mentalmodel}).
+decisions (Figure\ \ref{fig:mentalmodel}).
 
 <!-- RECAST: author to write the contribution paragraph(s) recast as software (design, correctness checks, reproducible workflows), replacing the deleted three-contributions block (Endogenization, Decomposition, Statistical infrastructure); drafts in paper/_drafts/2026-10-07_recast_introduction.md -->
 
@@ -262,7 +272,7 @@ influence matrix is $\mathbf{E}$ (implemented in \pkg{RSiena} as the weight
 matrix $\mathbf{W}$ of the \code{XWX} effect); component payoff functions are
 $f_d$; and the logit precision parameter is $\beta > 0$.
 
-A terminological note is warranted here, because the two ideas are routinely conflated.  The matrix $\mathbf{E}$ is an *influence matrix* in the sense of \citet{RivkinSiggelkow2007}: it states which components interact and with what sign, and it is an *input* supplied by the analyst.  *Epistasis* is the *consequence* -- the dependence of one component's fitness contribution on the states of others, which arises when a portfolio is evaluated through $\mathbf{E}$ as $\mathbf{x}^{\top}\mathbf{E}\mathbf{x}$.  The distinction matters in \pkg{searchnet} because a third quantity sits between the two.  The component-component degree $K_{CC}$ records how far components are actually co-adopted at a given moment; it is computed from the realized affiliation matrix and does not read $\mathbf{E}$, yet it evolves as a *consequence* of $\mathbf{E}$, which drives the search that produces those affiliations.  $K_{CC}$ therefore indexes the coupling epistasis acts through, generally differs from the influence structure that generated it, and is not itself a measure of the fitness consequence.  Accordingly the package argument is named \code{influence\_matrix}; \code{epistasis\_matrix} is retained as a deprecated alias.
+A terminological note is warranted here, because the two ideas are routinely conflated.  The matrix $\mathbf{E}$ is an *influence matrix* in the sense of \citet{RivkinSiggelkow2007}: it states which components interact and with what sign, and it is an *input* supplied by the analyst.  *Epistasis* is the *consequence* -- the dependence of one component's fitness contribution on the states of others, which arises when a portfolio is evaluated through $\mathbf{E}$ as $\sum_{j \neq h} x_j x_h e_{hj}$ (the \code{XWX} statistic).  The distinction matters in \pkg{searchnet} because a third quantity sits between the two.  The component-component degree $K_{CC}$ records how far components are actually co-adopted at a given moment; it is computed from the realized affiliation matrix and does not read $\mathbf{E}$, yet it evolves as a *consequence* of $\mathbf{E}$, which drives the search that produces those affiliations.  $K_{CC}$ therefore indexes the coupling epistasis acts through, generally differs from the influence structure that generated it, and is not itself a measure of the fitness consequence.  Accordingly the package argument is named \code{influence\_matrix}; \code{epistasis\_matrix} is retained as a deprecated alias.
 
 ### Bipartite network formulation {#sec:bipartite}
 
@@ -290,7 +300,7 @@ model.
 The bipartite incidence matrix $\mathbf{B}$ generates four coupled degree
 statistics, each of which is individually a standard network measure but whose
 joint dynamics expose the mechanism through which micro-level search decisions
-produce macro-level landscape structure.  Table~\ref{tab:k4} summarizes the
+produce macro-level landscape structure.  Table\ \ref{tab:k4} summarizes the
 four dimensions.
 
 \begin{table}[t]
@@ -300,10 +310,10 @@ four dimensions.
 \toprule
 Dimension & Symbol & Interpretation & Network measure \\
 \midrule
-Actor scope & $K_{AC}$ & Components per actor & Bipartite row degree \\
-Component popularity & $K_{CA}$ & Actors per component & Bipartite column degree \\
-Actor sociality & $K_{AA}$ & Co-affiliating actors per actor & Actor projection degree \\
-Component epistasis & $K_{CC}$ & Co-occurring components per component & Component projection degree \\
+Expansiveness & $K_{AC}$ & Components per actor & Bipartite row degree \\
+Popularity & $K_{CA}$ & Actors per component & Bipartite column degree \\
+Sociality & $K_{AA}$ & Co-affiliating actors per actor & Actor projection degree (distinct partners) \\
+Epistasis & $K_{CC}$ & Co-occurring components per component & Component projection degree (distinct partners) \\
 \bottomrule
 \end{tabular}
 \caption{The $\K$ coupled degree framework.  Each dimension is a standard
@@ -311,20 +321,48 @@ network statistic.}
 \label{tab:k4}
 \end{table}
 
-The classical NK parameter $K$ maps directly onto $K_{CC}$---the degree of a
-node in the component--component projection network.  Two components share a
-projection edge whenever at least one actor affiliates with both, and the
-number of such edges incident on a focal component determines how many other
-components epistatically affect its fitness contribution.  In the classical
-model, this coupling structure is set exogenously by the modeler; in
-\pkg{searchnet}, it emerges endogenously from the bipartite network and
-co-evolves with the other three degree dimensions.
+<!-- AI-DRAFTED (2026-10-08, Framing A from paper/_drafts/2026-10-08_domain_translation_table.md), inserted at the author's request for review in context; table cells and the lead-in sentence are for the author to re-voice. -->
+Table\ \ref{tab:domains} translates the elements of the model into three business domains.
+
+\begin{table}[t]
+\centering
+\scriptsize
+\begin{tabular}{p{2.9cm}p{3.6cm}p{3.6cm}p{3.6cm}}
+\toprule
+Model element & Technology portfolios & Retail assortments & Product design \\
+\midrule
+Actor (row of $\mathbf{B}$) & firm & retail chain & design team \\
+Component (column of $\mathbf{B}$) & technology class & product category & product module \\
+Tie $b_{ij} = 1$ & firm patents in the class & chain carries the category & product includes the module \\
+Influence matrix $\mathbf{W}$ & complementarity between classes & cross-selling between categories & interfaces between modules \\
+Expansiveness ($K_{AC}$) & breadth of the technology portfolio & assortment breadth & modules per product \\
+Epistasis ($K_{CC}$) & value of combining complementary classes & basket value of co-carried categories & fit of modules that share interfaces \\
+Sociality ($K_{AA}$) & technological overlap with rivals & assortment overlap with competing chains & modules shared across teams \\
+Popularity ($K_{CA}$) & classes held by high-reputation firms & categories carried by certified chains & modules used by prestigious products \\
+Example effect (reads $\rightarrow$ moves) & \code{outAct}: Expansiveness $\rightarrow$ Epistasis strength & \code{inPop}: Sociality $\rightarrow$ Sociality strength & \code{XWX}: Epistasis $\rightarrow$ Epistasis strength valued by $\mathbf{W}$ \\
+\bottomrule
+\end{tabular}
+\caption{The elements of SAOM-NK in three business domains. Popularity is read
+only when a statistic distinguishes among holders, here by an actor attribute
+(reputation, certification, prestige).}
+\label{tab:domains}
+\end{table}
+
+<!-- AI-DRAFTED factual correction (2026-10-08): NK's K is the W-degree, not K_CC. The former paragraph and its explanation are in paper/_drafts/2026-10-08_nk_K_correction.md; author to re-voice. -->
+The classical NK parameter $K$ is the W-degree: the number of other components
+with a nonzero entry in a component's row of the influence matrix
+$\mathbf{W}$.  $K_{CC}$, the degree in the component projection, counts the
+components co-held with it by at least one actor; the two coincide only when a
+component's co-held partners are exactly its partners in $\mathbf{W}$.  In
+\pkg{searchnet}, $\mathbf{W}$ is set by the modeler, while $K_{CC}$ emerges
+from the bipartite network and co-evolves with the other three degree
+dimensions.
 
 The analytical leverage of the $\K$ framework comes from treating these four
 measures as a coupled system rather than examining any one in isolation.
 Because all four derive from the same incidence matrix $\mathbf{B}$, they are
-structurally linked.  A change in actor scope ($K_{AC}$) mechanically alters
-component popularity ($K_{CA}$), which in turn reshapes both the actor
+structurally linked.  A change in Expansiveness ($K_{AC}$) mechanically alters
+Popularity ($K_{CA}$), which in turn reshapes both the actor
 co-membership network ($K_{AA}$) and the component co-occurrence network
 ($K_{CC}$).  The projections are computed as:
 
@@ -352,22 +390,71 @@ affiliation with one component) and selects the change that maximizes expected
 utility, subject to a stochastic error term drawn from the type I extreme value
 distribution.
 
-The objective function takes the form of Equation~\ref{eq:saom-objective}, with
+The objective function takes the form of Equation\ \ref{eq:saom-objective}, with
 the following key statistics:
+
+\begin{equation}\label{eq:objective-classes}
+\begin{aligned}
+f_i(\mathbf{B}) ={}&
+  \underbrace{\color{clsComplementarity}\textstyle\sum_{\ell}\theta^{(\ell)}_{\text{epist}}
+    \sum_{j} b_{ij} \sum_{h \neq j} b_{ih}\, w^{(\ell)}_{hj}}_{
+    \substack{\text{\clschip{clsComplementarity}{complementarity}\ \kbadge{$K_{CC}$}}\\[1pt]
+              \text{\scriptsize complementarity among held components}}}
+  \;+\;
+  \underbrace{\color{clsScope}\theta_{\text{dens}}\, b_{i+} + \theta_{\text{scope}}\, b_{i+}^{2}}_{
+    \substack{\text{\clschip{clsScope}{scope}\ \kbadge{reads $K_{AC}$ $\mid$ moves $K_{CC}$}}\\[1pt]
+              \text{\scriptsize breadth of holdings}}}
+  \\[4pt]
+  &+\;
+  \underbrace{\color{clsCrowding}\theta_{\text{pop}} \textstyle\sum_{j} b_{ij}\, b_{+j}}_{
+    \substack{\text{\clschip{clsCrowding}{crowding}\ \kbadge{$K_{AA}$}}\\[1pt]
+              \text{\scriptsize crowding on, or pull toward, shared components}}}
+  \;+\;
+  \underbrace{\color{clsContact}\theta_{\text{close}}\, \tfrac{1}{2}\textstyle\sum_{h \neq i} \binom{o_{ih}}{2}}_{
+    \substack{\text{\clschip{clsContact}{contact}\ \kbadge{reads $K_{AA}$ $\mid$ moves $K_{AA}$, $K_{CC}$}}\\[1pt]
+              \text{\scriptsize repeated overlap among actors}}}
+  \\[4pt]
+  &+\;
+  \underbrace{\color{clsImitation}\theta_{\text{imit}} \textstyle\sum_{j} b_{ij}\,
+    \bigl(\mathrm{sim}_{ij} - \overline{\mathrm{sim}}\bigr)}_{
+    \substack{\text{\clschip{clsImitation}{imitation}\ \kbadge{reads $K_{CA}$ $\mid$ moves $K_{AA}$}}\\[1pt]
+              \text{\scriptsize attraction to components held by similar actors,}\\
+              \text{\scriptsize via covariate similarity (\code{simEgoInDist2})}}}
+  \;+\;
+  \underbrace{\color{clsCovariate}\theta_{\text{strat}}\, b_{i+}\tilde{v}_i
+    + \theta_{\text{value}} \textstyle\sum_{j} b_{ij}\, \tilde{c}_j}_{
+    \substack{\text{\clschip{clsCovariate}{covariates}\ \kbadge{reads $K_{AC}$ $\mid$ moves $K_{AC}$, $K_{CA}$}}\\[1pt]
+              \text{\scriptsize actor and component attributes}}}
+\end{aligned}
+\end{equation}
+
+\noindent where $b_{i+} = \sum_j b_{ij}$ is actor $i$'s degree, $b_{+j} = \sum_h b_{hj}$
+is component $j$'s degree (counting $i$), $o_{ih} = \sum_j b_{ij} b_{hj}$ is the
+overlap of actors $i$ and $h$, $\mathbf{W}^{(\ell)}$ is the $\ell$th influence
+matrix, $\tilde{v}$ and $\tilde{c}$ are actor and component covariates centered on
+their means (with \code{centered = TRUE}; the default, uncentered, statistic
+equals the centered one plus $\bar{v}\, b_{i+}$ or $\bar{c}\, b_{i+}$), and
+$\mathrm{sim}_{ij} = 1 - |v_i - \bar{v}_{-i,j}|/R_v$ compares
+$v_i$ with the mean $v$ of $j$'s other holders ($R_v$ the range of $v$;
+$\bar{v}_{-i,j}$ is the mean of $v$ when no other actor holds $j$;
+$\overline{\mathrm{sim}}$ the mean similarity over ordered pairs of distinct actors).  Each term is the
+\pkg{RSiena} 1.5.0 two-mode statistic that \pkg{searchnet} computes; the
+co-holder performance similarity of \code{saomnk\_coholder\_similarity()} is a
+post hoc statistic and is not simulated.
 
 \begin{table}[t]
 \centering
-\begin{tabular}{llll}
+\begin{tabular}{lllll}
 \toprule
-Statistic & RSiena name & Formula & Interpretation \\
+Construct & RSiena name & Statistic $s_{ik}(\mathbf{B})$ & $\K$ dimension read & Moves (target statistic) \\
 \midrule
-Density & \code{density} & $\sum_j b_{ij}$ & Baseline affiliation rate \\
-Popularity & \code{inPop} & $\sum_j b_{ij} \sqrt{\sum_{h \neq i} b_{hj}}$ & Preference for popular components \\
-Scope & \code{outAct} & $\sum_j b_{ij} \sqrt{\sum_{k \neq j} b_{ik}}$ & Scope expansion tendency \\
-Epistasis & \code{XWX} & $\sum_j b_{ij} \sum_k w_{jk} b_{ik}$ & Exogenous component coupling \\
+Scope (cost) & \code{density} & $\sum_j b_{ij}$ & Expansiveness & total ties \\
+Crowding & \code{inPop} & $\sum_j b_{ij} \sum_{h} b_{hj}$ & Sociality & Sociality strength \\
+Scope (breadth) & \code{outAct} & $\bigl(\sum_j b_{ij}\bigr)^{2}$ & Expansiveness & Epistasis strength \\
+Complementarity & \code{XWX} & $\sum_j b_{ij} \sum_{h \neq j} b_{ih} w_{hj}$ & Epistasis & Epistasis strength valued by $\mathbf{W}$ \\
 \bottomrule
 \end{tabular}
-\caption{SAOM objective function statistics in \pkg{searchnet}.}
+\caption{SAOM objective function statistics in \pkg{searchnet}.  Crowding reads as agglomeration when its coefficient is positive; the sign changes the reading, not the dimension.  The two $\K$ columns are those of \code{searchnet\_effect\_dimensions()}.}
 \label{tab:effects}
 \end{table}
 
@@ -378,7 +465,7 @@ attachment to components that many other actors already use.  The scope effect
 (\code{outAct}) governs actors' tendency to expand or contract the breadth of
 their affiliations.  The epistasis effect (\code{XWX}) introduces exogenous
 component--component coupling via a modeler-supplied weight matrix $\mathbf{W}$
-(denoted $\mathbf{E}$ in the formal proofs; see Section~\ref{sec:formal-properties});
+(denoted $\mathbf{E}$ in the formal proofs; see Section\ \ref{sec:formal-properties});
 actors derive utility from affiliating with components that are coupled to their
 existing affiliations.
 
@@ -398,11 +485,12 @@ single-tie changes, choosing according to a multinomial logit rule:
 \begin{equation}\label{eq:choice}
   P(b_{ij} \to 1 - b_{ij}) =
   \frac{\exp\bigl(f_i(\mathbf{B}^{ij})\bigr)}
-       {\sum_{j'} \exp\bigl(f_i(\mathbf{B}^{ij'})\bigr)},
+       {\sum_{j'=0}^{N} \exp\bigl(f_i(\mathbf{B}^{ij'})\bigr)},
 \end{equation}
 
 \noindent where $\mathbf{B}^{ij}$ denotes the network configuration obtained
-by toggling actor $i$'s tie to component $j$.  The \code{search\_rsiena}
+by toggling actor $i$'s tie to component $j$, and $\mathbf{B}^{i0} = \mathbf{B}$
+is the option to make no change.  The \code{search\_rsiena}
 method passes the full structure model to \pkg{RSiena}'s
 \code{siena07} function, which executes the continuous-time simulation
 internally.
@@ -593,50 +681,52 @@ semantics) and returned invisibly.
 
 The preceding objective function uses \pkg{RSiena} effect names that are
 standard in social network analysis but may be unfamiliar to strategy
-researchers.  Table~\ref{tab:glossary} provides a systematic mapping between
+researchers.  Table\ \ref{tab:glossary} provides a systematic mapping between
 RSiena effects available in \pkg{searchnet} and their strategic search
 interpretations.  Each effect's parameter symbol links it to the corresponding
-$\K$ dimension introduced in Section~\ref{sec:k4}, enabling researchers to
+$\K$ dimension introduced in Section\ \ref{sec:k4}, enabling researchers to
 translate between the network estimation vocabulary and the strategy-theoretic
 language of scope, complementarity, and imitation.
 
 \begin{table}[t]
 \centering
-\small
-\begin{tabular}{llllp{3.6cm}}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{ll>{\raggedright\arraybackslash}p{1.9cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{2.3cm}>{\raggedright\arraybackslash}p{3.4cm}}
 \toprule
-RSiena Effect & Parameter & $\K$ Dim. & Strategy Concept & Interpretation \\
+RSiena Effect & Parameter & $\K$ dimension read & Moves (target statistic) & Strategy Concept & Interpretation \\
 \midrule
-\code{density}      & $\theta_{\text{dens}}$  & $K_{AC}$        & Scope cost               & Negative = costly to hold activities; controls portfolio breadth \\
-\code{outAct}       & $\theta_{\text{scope}}$ & $K_{AC}$   & Diminishing returns       & Quadratic penalty on actor degree (scope) \\
-\code{inPop}        & $\theta_{\text{pop}}$   & $K_{CA}$   & Bandwagon / legitimacy    & Positive = prefer popular components; preferential attachment \\
-\code{XWX}          & $\theta_{\text{epist}}$ & $K_{CC}$   & Complementarity / synergy & Reward for holding epistatically linked components \\
-\code{simEgoInDist2}& $\theta_{\text{imit}}$  & $K_{CA}$   & Imitation / herding       & Positive = prefer components held by covariate-similar actors (needs an actor covariate) \\
-\code{egoX}         & $\theta_{\text{strat}}$ & $K_{AC}$        & Strategy heterogeneity    & Actor-level covariate modifying search behavior \\
-\code{altX}         & $\theta_{\text{value}}$ & $K_{CA}$        & Component value           & Exogenous activity-level payoff differences \\
-\code{cycle4}       & $\theta_{\text{close}}$ & $K_{AA}$   & Structural closure        & Triadic closure in the projected social network \\
+\code{density}      & $\theta_{\text{dens}}$  & Expansiveness & total ties & Scope cost               & Negative = costly to hold activities; controls portfolio breadth \\
+\code{outAct}       & $\theta_{\text{scope}}$ & Expansiveness & Epistasis strength & Diminishing returns       & Quadratic penalty on actor degree (scope) \\
+\code{inPop}        & $\theta_{\text{pop}}$   & Sociality & Sociality strength & Crowding / agglomeration  & Negative = avoid components other actors hold (crowding); positive = agglomeration \\
+\code{XWX}          & $\theta_{\text{epist}}$ & Epistasis & Epistasis strength valued by $\mathbf{W}$ & Complementarity / synergy & Reward for holding epistatically linked components \\
+\code{simEgoInDist2}& $\theta_{\text{imit}}$  & Popularity & Sociality strength, similarity-weighted & Imitation / herding       & Positive = prefer components held by covariate-similar actors (needs an actor covariate) \\
+\code{egoX}         & $\theta_{\text{strat}}$ & Expansiveness & Expansiveness, attribute-weighted & Strategy heterogeneity    & Actor-level covariate modifying search behavior \\
+\code{altX}         & $\theta_{\text{value}}$ & Expansiveness & Popularity, attribute-weighted & Component value           & Exogenous activity-level payoff differences \\
+\code{cycle4}       & $\theta_{\text{close}}$ & Sociality & Sociality and Epistasis & Contact                   & Repeated overlap between pairs of actors (four-cycles) \\
 \bottomrule
 \end{tabular}
-\caption{Mapping RSiena effects to strategic search concepts.  Parameters correspond to the SAOM objective function (Equation~\ref{eq:saom-objective}).  The $\K$ column indicates which coupled degree dimension each effect primarily governs.}
+\caption{Mapping RSiena effects to strategic search concepts.  Parameters correspond to the SAOM objective function (Equation~\ref{eq:saom-objective}).  The two $\K$ columns give the dimension each effect's change statistic reads and the one its target statistic moves (\code{searchnet\_effect\_dimensions()}).}
 \label{tab:glossary}
 \end{table}
+
+<!-- RECAST: author to add one sentence pointing to searchnet_effect_dimensions() and inst/rosetta/K_DIMENSIONS.md (the shared definitions); framings in paper/_drafts/2026-10-08_k_dimensions_paragraph.md -->
 
 The table makes explicit the division of labor among effects.  The first four
 rows---\code{density}, \code{outAct}, \code{inPop}, and \code{XWX}---are the
 workhorses of most \pkg{searchnet} specifications.  Together they endogenize the
 four $\K$ dimensions: scope cost sets the baseline, \code{outAct} introduces
-diminishing returns to breadth, \code{inPop} creates demand-side herding toward
-popular components, and \code{XWX} rewards configurations that exploit
+diminishing returns to breadth, \code{inPop} sets crowding on shared components
+(agglomeration when positive), and \code{XWX} rewards configurations that exploit
 exogenous complementarities.  The remaining effects allow the researcher to
 layer on additional mechanisms: imitation (\code{simEgoInDist2}, which requires
 an actor covariate) draws actors toward components held by actors similar on
 that covariate, actor and component
 covariates (\code{egoX}, \code{altX}) introduce heterogeneity, and
-\code{cycle4} captures closure in the actor--actor projection of the bipartite
-network.  By selecting which effects to include and setting their parameter
+\code{cycle4} captures repeated overlap between pairs of actors (contact).  By selecting which effects to include and setting their parameter
 values, the researcher controls which strategic mechanisms are active in a given
 simulation---a design choice whose consequences can be audited with the
-diagnostic tools described in Section~\ref{sec:validation}.
+diagnostic tools described in Section\ \ref{sec:validation}.
 
 
 ## Visualization {#sec:visualization}
@@ -649,7 +739,7 @@ around four analytical perspectives.
 The signature visualization is the coupled degree panel, which displays
 all four $\K$ dimensions over the simulation timeline:
 
-```{r k4-panel, fig.height=8, fig.width=8, fig.cap=paste0("The $\\{K\\}$-4 coupled degree panel showing actor scope ($K_{AC}$), component popularity ($K_{CA}$), actor sociality ($K_{AA}$), and component coupling ($K_{CC}$) trajectories over ", if (exists("env")) env$get_step() else "the realized number of", " simulation micro-steps.  Each point is a single actor or component at one ministep; the heavy line is the LOESS-smoothed mean.")}
+```{r k4-panel, fig.height=8, fig.width=8, fig.cap=paste0("The $\\{K\\}$-4 coupled degree panel showing the degrees of Expansiveness ($K_{AC}$), Popularity ($K_{CA}$), Sociality ($K_{AA}$), and Epistasis ($K_{CC}$) over ", if (exists("env")) env$get_step() else "the realized number of", " simulation micro-steps.  Each point is a single actor or component at one ministep; the heavy line is the LOESS-smoothed mean degree.")}
 saomnk_plot_k4(env, smooth = 0.3)
 ```
 
@@ -711,23 +801,27 @@ Both frameworks use the actor-oriented conditional logit utility
 \end{equation}
 where $s_{ik}(x)$ is the network statistic for effect $k$.  The bridge
 maps \pkg{RSiena}'s $\hat{\theta}$ vector to \pkg{searchnet}'s structure
-model effects.  For shared effects the mapping is direct:
+model effects.  \code{.bridge\_crosswalk()} records each mapping as exact,
+approximate (refused when \code{strict = TRUE}) or unavailable:
 
 \begin{table}[ht]
 \centering
-\begin{tabular}{llc}
+\begin{tabular}{lll}
 \toprule
-SAOM Effect & SaoMNK Effect & Transformation \\
+\pkg{RSiena} effect & \pkg{searchnet} effect & Status \\
 \midrule
-\code{density}   & \code{density}    & $\beta = \theta \cdot \alpha$ \\
-\code{inPopSqrt} & \code{inPop}      & $\beta = \theta \cdot \alpha$ \\
-\code{gwespFF}   & \code{transTriads} & $\beta = \theta \cdot \alpha$ \\
-\code{simX}      & \code{egoX}       & $\beta = \theta \cdot \alpha$ \\
-\code{cycle3}    & \code{cycle4}     & $\beta = \theta \cdot \alpha$ (bipartite analog) \\
+\code{density}, \code{inPop}, \code{inPopSqrt}, \code{outAct}, \code{outActSqrt} & same name & exact \\
+\code{XWX}, \code{egoX}, \code{altX}, \code{X}, \code{totInDist2}, \code{simEgoInDist2} & same name & exact \\
+\code{cycle3}, \code{recip} & \code{cycle4} & approximate (a different statistic) \\
+\code{simX}, \code{sameX} & \code{egoX} & approximate (similarity read as a main effect) \\
+\code{higher} & \code{altX} & approximate \\
+\code{gwespFF}, \code{transTrip} & none & unavailable (one-mode only) \\
 \bottomrule
 \end{tabular}
-\caption{Parameter mapping between RSiena and \pkg{searchnet}. $\alpha$ is
-an optional scale factor applied during calibration.}
+\caption{Parameter mapping between RSiena and \pkg{searchnet}, from
+\code{.bridge\_crosswalk()}.  Every mapped effect transforms as
+$\beta = \theta \cdot \alpha$, with $\alpha$ an optional scale factor applied
+during calibration.}
 \label{tab:param-mapping}
 \end{table}
 
@@ -807,7 +901,7 @@ supply a reference implementation that shares no code with the SAOM engine.
 
 ### Verifying the reduction
 
-Property 1 (Section~\ref{sec:formal-properties}) states that the classical NK model is the $M = 1$,
+Property 1 (Section\ \ref{sec:formal-properties}) states that the classical NK model is the $M = 1$,
 $\beta \rightarrow \infty$ special case of SaoMNK.  \code{nk\_to\_saomnk()} emits the
 environment and structure-model settings that place a single-actor SaoMNK
 environment on a supplied NK landscape, making the reduction constructive
@@ -858,7 +952,7 @@ than $M = 1$ because \code{search\_rsiena()} requires at least two actors ---
 \pkg{RSiena}'s \code{sienaDataCreate()} does not accept a single-actor
 bipartite network.  For genuinely single-actor work the landscape methods
 (\code{compute\_fitness\_landscape}, \code{verify\_nk\_equivalence}) accept
-$M = 1$ directly, and Section~\ref{sec:validation} uses them for exactly that.
+$M = 1$ directly, and Section\ \ref{sec:validation} uses them for exactly that.
 
 ```{r levinthal-setup, cache=TRUE}
 ## Two INDEPENDENT searchers (popularity = scope = 0 removes all
@@ -887,12 +981,12 @@ Under this parameterization, the agent's search trajectory exhibits the
 signature features of NK dynamics: rapid initial improvement as the agent
 discovers complementary component clusters, followed by convergence to a
 local optimum where no single-component change improves utility.  The K-4
-panel reduces to the $K_{AC}$ trajectory (actor scope) and the $K_{CC}$
-trajectory (epistasis), with the latter reflecting the fixed block-diagonal
-structure; the $K_{CA}$ and $K_{AA}$ channels are flat by construction, since
+panel reduces to the $K_{AC}$ trajectory (Expansiveness) and the $K_{CC}$
+trajectory (Epistasis), with the latter reflecting the fixed block-diagonal
+structure; the $K_{CA}$ and $K_{AA}$ dimensions are flat by construction, since
 nothing couples the two searchers.
 
-```{r levinthal-degrees, fig.height=3.5, fig.width=6, fig.cap="Actor scope ($K_{AC}$) trajectory for independent agents searching on a block-diagonal epistasis landscape.  The trajectory shows rapid scope expansion followed by stabilization---the SAOM equivalent of convergence to a local optimum on a rugged NK landscape."}
+```{r levinthal-degrees, fig.height=3.5, fig.width=6, fig.cap="Expansiveness ($K_{AC}$) trajectory for independent agents searching on a block-diagonal epistasis landscape.  The trajectory shows rapid scope expansion followed by stabilization---the SAOM equivalent of convergence to a local optimum on a rugged NK landscape."}
 env_nk$plot_actor_degrees(loess_span = 0.5)
 ```
 
@@ -916,7 +1010,7 @@ Ising--logit correspondence.
 
 ## Ergodicity: forgetting the initial condition {#sec:ergodicity}
 
-Property~4 (Section~\ref{sec:formal-properties}) asserts that the chain's stationary distribution is unique and
+Property\ 4 (Section\ \ref{sec:formal-properties}) asserts that the chain's stationary distribution is unique and
 independent of where the simulation starts.  That property is easy to
 illustrate badly.  Running the model once from a sparse start and once from a
 dense start, then observing that the two final densities are close, establishes
@@ -992,7 +1086,7 @@ saomnk_run(env_shock, mod_base, steps_per_actor = 80, seed = 12345,
            shocks = list(shock_baseline, shock_event))
 ```
 
-```{r shock-comparison, fig.height=8, fig.width=8, fig.cap="Baseline $\\{K\\}$-4 panel (this figure) and the shocked run (next figure).  The density shock at the midpoint (dashed vertical line) creates a visible structural break in all four degree trajectories.  Increased sparsity pressure compresses actor scope, which propagates through component popularity, actor sociality, and component coupling."}
+```{r shock-comparison, fig.height=8, fig.width=8, fig.cap="Baseline $\\{K\\}$-4 panel (this figure) and the shocked run (next figure).  The density shock at the midpoint (dashed vertical line) creates a visible structural break in all four degree trajectories.  Increased sparsity pressure compresses actor scope, which propagates through component popularity, actor sociality, and component epistasis."}
 ## Display baseline K-4 panel
 saomnk_plot_k4(env_base, smooth = 0.3)
 ```
@@ -1016,7 +1110,7 @@ with and without a parameter intervention---is the basis for difference-in-diffe
 \pkg{searchnet} supports natively through its shock infrastructure and
 multi-wave simulation capabilities.
 
-![Simulated demonstration that a shock relocates the coupled system.  Three seeded arms share starting conditions and the random seed, so their trajectories coincide exactly until the intervention at the dotted line.  A sparsity shock (density $-5.0 \rightarrow -6.5$) leaves every dimension near zero, as in the control; a popularity shock ($0.15 \rightarrow 1.20$) moves every dimension up.  Terminal mean $K_{CC}$ is $0.0$, $0.1$ and $14.6$ in the sparsity, control and popularity arms.  This panel is simulated output, not empirical data.  Generated by \code{paper/replication/make\_k\_system\_figures.R}.](figures/fig_k_shock_relocation.png){width=80%}
+![Simulated demonstration that a shock relocates the coupled system.  Three seeded arms share starting conditions and the random seed, so their trajectories coincide exactly until the intervention at the dotted line.  A sparsity shock (density $-5.0 \rightarrow -6.5$) leaves every dimension near zero, as in the control; an \code{inPop} shock ($0.15 \rightarrow 1.20$) moves every dimension up.  Terminal mean $K_{CC}$ is $0.0$, $0.0$ and $13.8$ in the sparsity, control and \code{inPop} arms.  This panel is simulated output, not empirical data.  Generated by \code{paper/replication/make\_k\_system\_figures.R}.](figures/fig_k_shock_relocation.png){width=80%}
 
 
 ## From shocks to causal inference {#sec:causal}
@@ -1149,18 +1243,18 @@ We illustrate the package with a worked application built on simulated data.
 It states a problematization, the specification that answers it, and a
 takeaway, so that a reader can find the closest case to their own problem.
 
-| Application | Domain | Mode of use | $\K$ channels driven |
+| Application | Domain | Mode of use | $\K$ dimensions driven |
 |---|---|---|---|
 | Firm vs.\ industry effects | Variance decomposition | Simulation engine | $K_{AC}$, $K_{CA}$, $K_{CC}$ |
 
-Two channels deserve a warning that applies throughout.  First, $K_{CA}$ is
-driven by \code{inPop} (degree popularity), not by similarity-weighted
-imitation.  With an actor covariate, \pkg{RSiena}~1.5.0 does define
+Two dimensions deserve a warning that applies throughout.  First, $K_{CA}$ moves through
+\code{inPop}, whose target statistic is Sociality strength, the second moment
+of $K_{CA}$, not through similarity-weighted imitation.  With an actor covariate, \pkg{RSiena}\ 1.5.0 does define
 \code{simEgoInDist2} for a bipartite dependent variable, but \pkg{searchnet}'s
 co-holder statistic, \code{saomnk\_coholder\_similarity()}, is a different
 quantity.  \pkg{searchnet} supplies it for post-hoc computation
 but cannot make it a simulable evaluation term, and the application below does
-not use it as one.  Second, $K_{AA}$ is a *projection*, so it is frequently measured as an
+not use it as one.  Second, $K_{AA}$ is a degree in the actor *projection*, so it is frequently measured as an
 outcome rather than entered as an effect; the table records what is driven, not
 what is reported.
 
@@ -1304,7 +1398,7 @@ framework, accessible via \code{searchnet\_proof()}.  The proof registry
 through definitions, lemmas, and propositions to the main properties---organized so that every result can be traced backward through its
 dependencies to foundational axioms.  This self-contained proof chain
 provides reviewers and users with a verifiable logical scaffold for the
-theoretical claims summarized in Section~\ref{sec:formal-properties}.
+theoretical claims summarized in Section\ \ref{sec:formal-properties}.
 
 ## Brock--Durlauf harness (Options B and C) {#sec:bd-harness}
 
@@ -1440,13 +1534,13 @@ cat(sprintf(
 Typical overhead is 15--25\% relative to a raw \pkg{RSiena} simulation of
 equivalent size, with the majority attributable to chain statistics extraction
 and $\K$-4 degree computation.  The projection operations
-(Equations~\ref{eq:proj-actor}--\ref{eq:proj-component}) are $O(M^2 N)$ and
+(Equations\ \ref{eq:proj-actor}--\ref{eq:proj-component}) are $O(M^2 N)$ and
 $O(M N^2)$ respectively, but these are dominated by the \pkg{RSiena} simulation
 cost for problem sizes up to $M, N \approx 50$.
 
 ## Scalability
 
-Table~\ref{tab:scalability} reports median wall-clock times for
+Table\ \ref{tab:scalability} reports median wall-clock times for
 \code{saomnk\_run()} across representative problem sizes.
 
 \begin{table}[t]
@@ -1541,7 +1635,7 @@ knitr::kable(
 # Comparison with existing tools {#sec:comparison}
 
 \pkg{searchnet} occupies a unique niche at the intersection of fitness landscape
-simulation and social network modeling.  Table~\ref{tab:feature-comparison}
+simulation and social network modeling.  Table\ \ref{tab:feature-comparison}
 summarizes the feature sets of four relevant tools.
 
 \begin{table}[t]
@@ -1579,7 +1673,7 @@ an explicit influence matrix, precluding modular or block-diagonal
 specifications.  \pkg{searchnet} subsumes the \pkg{nkmodel} use case as a
 special case: setting $M = 1$ and disabling all endogenous network effects
 recovers the classical NK model, while the explicit influence matrix
-$\mathbf{W}$ (Section~\ref{sec:bipartite}) provides finer-grained control over
+$\mathbf{W}$ (Section\ \ref{sec:bipartite}) provides finer-grained control over
 interdependence structure.
 
 **\pkg{RSiena}.** The \pkg{RSiena} package \citep{RSiena} is the reference
@@ -1642,7 +1736,7 @@ barrier for researchers without programming experience.  Fourth, a web API via
 \pkg{plumber} will enable integration with external frontends and
 cross-platform deployment.  Two initially planned future directions have
 already been realized in the current release: the strategy game mode
-(Section~\ref{sec:interactive}) provides gamified engagement with the
+(Section\ \ref{sec:interactive}) provides gamified engagement with the
 framework, and the classroom teaching module offers a Capsim-style
 instructional platform with industry presets, AI opponents, and automated
 debrief generation.  The accompanying PDW workshop vignette
@@ -1659,9 +1753,9 @@ submission.  The package requires \proglang{R} $\geq$ 4.1.0 and depends on
 
 # Computational details {#sec:compdetails}
 
-The results in this paper were obtained using \proglang{R}~`r r_version` with the
-packages \pkg{searchnet}~`r sn_version` and \pkg{RSiena}~`r rsiena_version`
-(\pkg{searchnet} requires \pkg{RSiena}~$\geq$~1.5.0).  \proglang{R} itself and
+The results in this paper were obtained using \proglang{R}\ `r r_version` with the
+packages \pkg{searchnet}\ `r sn_version` and \pkg{RSiena}\ `r rsiena_version`
+(\pkg{searchnet} requires \pkg{RSiena}\ $\geq$\ 1.5.0).  \proglang{R} itself and
 all packages used other than \pkg{searchnet} are available from the
 Comprehensive \proglang{R} Archive Network (CRAN) at
 \url{https://CRAN.R-project.org/}.  \pkg{searchnet} is not on CRAN; it is

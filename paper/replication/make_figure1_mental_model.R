@@ -85,10 +85,10 @@ oi <- c(orange = "#E69F00", sky = "#56B4E9", green = "#009E73",
         purple = "#CC79A7", black = "#000000")
 eff_cols <- c(density = "grey55", inPop = oi[["purple"]],
               outAct = oi[["sky"]], XWX = oi[["green"]])
-eff_names <- c(density = "density", inPop = "popularity",
-               outAct = "scope", XWX = "influence")
+eff_names <- c(density = "density", inPop = "agglomeration",
+               outAct = "scope", XWX = "complementarity")
 eff_plain <- c(density = "cost of each holding",
-               inPop   = "pull to popular components",
+               inPop   = "pull to shared components",
                outAct  = "cost of a wide portfolio",
                XWX     = "payoff from linked pairs")
 note_col <- "grey20"
@@ -241,7 +241,7 @@ p_wt <- ggplot(wt_df, aes(y = y)) +
   scale_color_manual(values = eff_cols, guide = "none") +
   scale_y_continuous(breaks = wt_df$y, labels = wt_df$name,
                      limits = c(0.6, length(theta) + 0.6)) +
-  scale_x_continuous(limits = c(-1.75, 1.35), breaks = c(-1, 0, 1)) +
+  scale_x_continuous(limits = c(-1.75, 1.6), breaks = c(-1, 0, 1)) +
   labs(title = "Effect weights", x = "weight", y = NULL) +
   theme_fig1 +
   theme(axis.text.y = element_text(size = BASE - 1, hjust = 1),
@@ -415,7 +415,7 @@ K_get <- function(k, id, t) {
 }
 kdf <- data.frame(
   k     = c("K_AC", "K_CA", "K_AA", "K_CC"),
-  plain = c("scope", "popularity", "sociality", "coupling"),
+  plain = c("Expansiveness", "Popularity", "Sociality", "Epistasis"),
   id    = c(foc_i, foc_j, foc_i, foc_j))
 kdf$who <- ifelse(kdf$k %in% c("K_AC", "K_AA"), as.character(foc_i), comp_lab[foc_j])
 kdf$before <- mapply(K_get, kdf$k, kdf$id, focal_t - 1)

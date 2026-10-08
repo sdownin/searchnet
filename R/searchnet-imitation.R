@@ -1,7 +1,8 @@
 #' @title Similarity-Weighted Imitation on Bipartite Networks (K_CA)
 #' @description
-#' The K_CA channel of the \{K\} interdependence system: the pull an actor feels
-#' toward components already held by performance-similar peers.
+#' An imitation statistic that reads the Popularity dimension (\eqn{K_{CA}})
+#' of the \{K\} system: the pull an actor feels toward components already held
+#' by performance-similar peers.
 #'
 #' @section Not RSiena's simEgoInDist2:
 #' The statistic here was exported as \code{saomnk_sim_ego_indist2()} until
@@ -28,11 +29,19 @@
 #' the evaluation function through it.
 #'
 #' What is provided here is therefore the STATISTIC, computed natively on any
-#' bipartite state. It was written to match the imitation block of the CD4
-#' procedural engines as transcribed on 2026-08-06 into
-#' \code{tests/testthat/test-imitation.R}; whether those engines still compute
-#' it is not checked here. It makes the K_CA channel measurable in
-#' searchnet, where it was previously absent entirely. It does NOT make K_CA
+#' bipartite state. It is NOT the CD4 engine's imitation statistic
+#' (\code{simPerfCand} in \code{CD4_engine.R}), although it was first written
+#' from that engine's imitation block as transcribed on 2026-08-06 into
+#' \code{tests/testthat/test-imitation.R}. The two center on different sets:
+#' this statistic subtracts the mean similarity over ALL of the actor's
+#' components that have co-holders, while the engine subtracts the mean over
+#' the decision's own candidate components. Per component, its values equal the
+#' engine's \code{simPerfCand} add terms only up to a constant per decision; in
+#' the 2026-10-08 formula-alignment audit that constant was nonzero in 187 of
+#' 197 decisions (median 0.032, maximum 0.279). Its change on a single tie flip
+#' never equals the engine term (largest gap 0.28 over 200 decisions). It makes
+#' imitation, which reads Popularity (\eqn{K_{CA}}), measurable in searchnet,
+#' where it was previously absent entirely. It does NOT make imitation
 #' simulable through `saomnk_run()`, and callers must not assume it does.
 #' Closing that gap needs either a C-level RSiena effect or a searchnet-native
 #' simulation loop, and both are larger than this.
@@ -79,7 +88,7 @@ NULL
 #' \code{NaN}. When every actor has identical performance the range is zero and
 #' every similarity is defined to be 1, since all actors are maximally similar;
 #' the centering then makes the statistic zero, which is correct because no
-#' component is more attractive than another on this channel. When a component
+#' component is more attractive than another through imitation. When a component
 #' has no co-holders its similarity is not zero but absent, and it is excluded
 #' from the mean used for centering; treating it as a zero would drag the
 #' center down and make held-but-unpopular components look repellent.

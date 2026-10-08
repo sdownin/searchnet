@@ -625,33 +625,31 @@ SaomNkRSienaBiEnv_base <- R6Class(
       }
       else if (eff$effect == 'density')
       {
-        ## RSiena's bipartite effects table has NO 'density' shortName.
-        ## (Confirmed by inspecting getEffects(<bipartite data>): only
-        ## 'Rate' is auto-included; the structural baseline / intercept-like
-        ## effect for bipartite is 'outAct', outdegree activity.)
-        ## For one-mode networks 'density' exists. Detect by querying the
-        ## current effects table for a row matching this dv_name.
+        ## RSiena's effects table carries a 'density' (outdegree) row for
+        ## one-mode AND bipartite dependent variables: in RSiena 1.5.0,
+        ## getEffects() on bipartite data lists density eval/endow/creation,
+        ## with eval included by default. An earlier version of this branch
+        ## claimed bipartite had no density and silently substituted 'outAct'
+        ## (the sum of squared outdegrees, a different statistic). That
+        ## substitution is removed: without a density row, stop rather than
+        ## include an effect the user did not ask for.
         eff_tbl <- as.data.frame(self$rsiena_effects)
         has_density_row <- any(
           eff_tbl$name == eff$dv_name & eff_tbl$shortName == 'density'
         )
-        if (has_density_row) {
-          ## one-mode case: original RSiena 'density' effect
-          self$rsiena_effects <- includeEffects(self$rsiena_effects,  density,
-                                               name = eff$dv_name,
-                                               fix = fix, verbose = verbose)
-          self$rsiena_effects <- .set_theta('density')
-        } else {
-          ## bipartite case: substitute 'outAct' (outdegree activity), which
-          ## plays the same role as the structural intercept in bipartite SAOMs.
-          if (verbose) {
-            message(sprintf("[SaoMNK] DV '%s' is bipartite: routing user-friendly 'density' effect to RSiena 'outAct' (the bipartite-equivalent baseline structural effect).", eff$dv_name))
-          }
-          self$rsiena_effects <- includeEffects(self$rsiena_effects,  outAct,
-                                               name = eff$dv_name,
-                                               fix = fix, verbose = verbose)
-          self$rsiena_effects <- .set_theta('outAct')
+        if (!has_density_row) {
+          stop(sprintf(paste0(
+            "The effects table has no 'density' row for dependent variable '%s', ",
+            "so the requested 'density' effect cannot be included. RSiena 1.5.0 ",
+            "provides 'density' for one-mode and bipartite networks alike; check ",
+            "the dependent variable name and the RSiena version (found %s). ",
+            "searchnet no longer substitutes 'outAct', which is a different statistic."),
+            eff$dv_name, as.character(utils::packageVersion("RSiena"))), call. = FALSE)
         }
+        self$rsiena_effects <- includeEffects(self$rsiena_effects,  density,
+                                             name = eff$dv_name,
+                                             fix = fix, verbose = verbose)
+        self$rsiena_effects <- .set_theta('density')
       }
       else if (eff$effect == 'inPop')
       {
@@ -1637,19 +1635,21 @@ SaomNkRSienaBiEnv_base <- R6Class(
         
         } else if (item$effect == 'inPopX') { #M-vector of actor strategy covars
 
-          ## NOT RSiena's inPopX. RSiena 1.5.0 offers bipartite inPopX with an
-          ## actor covariate ("ind. pop.^(1/#) weighted v"); on 2026-10-04 its
-          ## siena07 target matched neither this statistic nor its centered or
-          ## ego-excluded variants in every state. Unpinned: do not read this
-          ## column as RSiena's effect.
-          # covar <- item$x
+          ## RSiena 1.5.0's two-mode inPopX with an actor covariate v at
+          ## internal parameter 1 ("ind. pop.^(1/#) weighted v"):
+          ##   s_i = sum_j x_ij w_j,  w_j = sum_h x_hj v~_h  (ego counted),
+          ## v~ centered as RSiena centers it (unless declared uncentered).
+          ## Until 2026-10-08 this column computed rowSums(B * w), which
+          ## recycles the N-vector w down B's columns (column-major), so actor
+          ## i's row was weighted by the wrong components' w. RSiena 1.5.0's
+          ## own siena07 target for this effect is not deterministic: on
+          ## repeated identical calls it returns either the sum above or the
+          ## sum with the LAST component's term omitted
+          ## (tests/testthat/test-structural-stats-vs-rsiena.R records this).
+          ## Only the internal parameter 1 (no root) is implemented here.
           covar <- self$get_cov_data(item)
-          ## MxN matrix holding actor strategy covariate as columns stacked for each component
-          covarActorMat <- matrix(rep(covar, self$N), nrow=self$M, ncol=self$N,  byrow = FALSE)
-          ## N-vector of square roots of component weights (sum of actor covariate for the component's connected actors)
-          component_weights_from_actor_stats <-  colSums(covarActorMat * bi_env_mat, na.rm=TRUE)
-          ## M-vector of actor sum of it's connected component weights (which are computed as the sum of the connected actor covariates)
-          mat[ , i] <- rowSums( bi_env_mat * component_weights_from_actor_stats, na.rm=TRUE ) ##**vector element-wise multiplication by rows of covar matrix, or elements of covar array
+          w_j <- colSums(bi_env_mat * .rsiena_centered(covar), na.rm = TRUE)
+          mat[ , i] <- as.numeric(bi_env_mat %*% w_j)
         
         } else if (item$effect == 'XWX') { ## NxN
           

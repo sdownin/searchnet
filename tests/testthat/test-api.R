@@ -401,3 +401,43 @@ test_that("new argument takes precedence when both are supplied", {
   only_new <- saomnk_model(density = -0.5, influence_matrix = W2)
   expect_identical(both, only_new)
 })
+
+## ---- density is density on a bipartite DV; no silent outAct (2026-10-08) ----
+
+test_that("a bipartite model's density is RSiena's density, not outAct", {
+  skip_if_not_installed("RSiena")
+  env <- saomnk_env(M = 5, N = 7, density = 0.3, seed = 2)
+  invisible(utils::capture.output(
+    saomnk_run(env, saomnk_model(density = -0.7), steps_per_actor = 2, seed = 2)))
+  eff <- as.data.frame(env$rsiena_effects)
+  inc <- eff[eff$include & eff$type == "eval", ]
+  expect_true("density" %in% inc$shortName)
+  expect_false("outAct" %in% inc$shortName)
+  expect_equal(inc$initialValue[inc$shortName == "density"], -0.7)
+})
+
+test_that("a 'density' request with no density row stops instead of routing to outAct", {
+  skip_if_not_installed("RSiena")
+  env <- saomnk_env(M = 5, N = 7, density = 0.3, seed = 2)
+  invisible(utils::capture.output(
+    saomnk_run(env, saomnk_model(density = -0.7), steps_per_actor = 2, seed = 2)))
+  eff <- env$rsiena_effects
+  env$rsiena_effects <- eff[eff$shortName != "density", ]
+  expect_error(
+    env$include_rsiena_effect_from_eff_list(
+      list(effect = "density", parameter = -1, dv_name = "self$bipartite_rsienaDV",
+           fix = TRUE)),
+    "no 'density' row")
+  ## nothing was substituted
+  expect_false(any(env$rsiena_effects$shortName == "outAct" & env$rsiena_effects$include))
+})
+
+test_that("altX among actor `strategies` is an error pointing to component_covariates", {
+  expect_error(saomnk_model(strategies = list(altX = c(1, 0, -1))),
+               "component_covariates")
+  expect_error(saomnk_model(strategies = list(egoX = c(1, 0), outActX = c(1, 2))),
+               "'outActX'")
+  ## the component route is accepted
+  expect_s3_class(saomnk_model(component_covariates = list(altX = c(1, 0, -1))),
+                  "saomnk_model")
+})

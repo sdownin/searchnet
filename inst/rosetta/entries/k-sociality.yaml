@@ -12,10 +12,11 @@ citations:
     doi: "10.1002/(SICI)1097-0266(199903)20:3<251::AID-SMJ23>3.0.CO;2-H"
 relation: translation
 statement: >-
-  Actor-actor overlap maps to indegree popularity (inPop): the change statistic of
+  Actor-actor overlap maps to inPop (RSiena's in-degree popularity effect, which
+  here reads and moves Sociality, not Popularity): the change statistic of
   adding an activity held by n rivals equals the marginal increase in pairwise
   overlap with them, up to a density shift. A negative coefficient reads as
-  crowding, a positive one as popularity or agglomeration; four-cycles (cycle4)
+  crowding, a positive one as agglomeration; four-cycles (cycle4)
   carry repeated contact between pairs of actors.
 restrictions:
   W: any
@@ -33,7 +34,7 @@ terms:
     status: active
     effect: inPop
     expression: inPop
-    construct: crowding (negative) or popularity (positive)
+    construct: crowding (negative) or agglomeration (positive)
   - class: contact
     status: active
     effect: cycle4
@@ -44,7 +45,7 @@ terms:
     expression: "+0"
     construct: none
 constructs:
-  crowding (negative) or popularity (positive): [crowding]
+  crowding (negative) or agglomeration (positive): [crowding]
   multimarket contact: [contact]
 lean: []
 checks: []

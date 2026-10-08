@@ -24,24 +24,32 @@
 .rosetta_wrap <- function(x, width) vapply(x, function(s)
   paste(strwrap(s, width), collapse = "\n"), "", USE.NAMES = FALSE)
 
-## The {K} channels in drawing order: the four shipped channels, then channels
+## The {K} dimensions in drawing order: the four shipped dimensions, then dimensions
 ## opened by registered classes (in order of first appearance), then "other".
 .ROSETTA_K_ORDER <- c("K_CC", "K_AC", "K_AA", "K_CA")
 
-## Reorder class rows so classes sharing a channel are adjacent; stable within
-## a channel.
-.rosetta_order_by_k <- function(terms) {
+## Dimension levels in drawing order for the dimensions present in `ch`.
+.rosetta_k_levels <- function(ch) {
+  c(intersect(.ROSETTA_K_ORDER, ch),
+    setdiff(unique(ch), c(.ROSETTA_K_ORDER, "other")),
+    intersect("other", ch))
+}
+
+## Reorder class rows so classes sharing a dimension are adjacent; stable
+## within a dimension. `by` names the dimension column (k_channel, the alias
+## of moves, by default); `then`, when given, orders the classes within a
+## dimension by a second column, so that the second view's badges also group.
+.rosetta_order_by_k <- function(terms, by = "k_channel", then = NULL) {
   if (!nrow(terms)) return(terms)
-  ch <- terms$k_channel
-  lev <- c(intersect(.ROSETTA_K_ORDER, ch),
-           setdiff(unique(ch), c(.ROSETTA_K_ORDER, "other")),
-           intersect("other", ch))
-  out <- terms[order(match(ch, lev), seq_along(ch)), , drop = FALSE]
+  ch <- terms[[by]]
+  key2 <- if (!is.null(then) && !is.null(terms[[then]]))
+    match(terms[[then]], .rosetta_k_levels(terms[[then]])) else rep(0L, length(ch))
+  out <- terms[order(match(ch, .rosetta_k_levels(ch)), key2, seq_along(ch)), , drop = FALSE]
   rownames(out) <- NULL
   out
 }
 
-## Plotmath text of a channel badge: "Sociality K_AA" with K_AA as italic K
+## Plotmath text of a dimension badge: "Sociality K_AA" with K_AA as italic K
 ## subscripted AA; "other" stays a word.
 .rosetta_k_badge_text <- function(ch, labels = character(0)) {
   vapply(ch, function(k) {
@@ -54,14 +62,16 @@
   }, "", USE.NAMES = FALSE)
 }
 
-## One row per {K} channel among the drawn classes: its columns (terms must
+## One row per {K} dimension among the drawn classes: its columns (terms must
 ## already be ordered by .rosetta_order_by_k()), the badge's center, and the
 ## classes it groups. Exposed on the figure as attr(, "k_groups").
-.rosetta_k_groups <- function(terms, labels = .rosetta_k_labels()) {
+## `by` names the dimension column the badges follow; the result's column is
+## called k_channel whichever view it shows.
+.rosetta_k_groups <- function(terms, labels = .rosetta_k_labels(), by = "k_channel") {
   if (!nrow(terms)) return(data.frame(k_channel = character(0), name = character(0),
                                       badge = character(0), xmin = numeric(0), xmax = numeric(0),
                                       x = numeric(0), n = integer(0), classes = character(0)))
-  r <- rle(terms$k_channel)
+  r <- rle(terms[[by]])
   xmax <- cumsum(r$lengths); xmin <- xmax - r$lengths + 1L
   data.frame(k_channel = r$values,
              name = vapply(r$values, function(k) if (k %in% names(labels)) labels[[k]] else "", "",
@@ -73,7 +83,7 @@
              stringsAsFactors = FALSE)
 }
 
-## Layers drawing one black badge per channel at height y, centered on its
+## Layers drawing one black badge per dimension at height y, centered on its
 ## group, on a bracket (a line with end ticks) when the group spans >= 2 columns.
 .rosetta_k_layers <- function(groups, y, half = 0.36, tick = 0.22) {
   if (!nrow(groups)) return(list())
@@ -95,14 +105,16 @@
                                   size = 3.4, border = 0, label.r = grid::unit(0.18, "lines"))))
 }
 
-## Row I: the objective by class.
-.rosetta_row_objective <- function(terms, classes, title, groups = .rosetta_k_groups(terms)) {
+## Row I: the objective by class. With `groups_reads` (view = "both"), two
+## badge rows: what the classes read above, what they move below.
+.rosetta_row_objective <- function(terms, classes, title, groups = .rosetta_k_groups(terms),
+                                   groups_reads = NULL) {
   n <- nrow(terms)
   col <- classes$color[match(terms$class, classes$id)]
   on <- terms$status %in% .ROSETTA_ON
   eq <- ifelse(terms$class == "complementarity",
                "sum(F(bold(b)[i]*';'~W^(k)), k %in% c)",
-               "'+'~sum(theta[k]*s[k], k %in% c)")
+               "'+'~sum(theta[k]*s[ik], k %in% c)")
   eq[!on] <- "'+'~0"
   eq[1] <- sub("^'\\+'~", "", eq[1])
   x <- seq_len(n)
@@ -127,9 +139,15 @@
     .rosetta_geom_label(ggplot2::aes(x = x, y = 1.85, label = cons), fill = "white",
                         colour = .rosetta_pal$ink, size = 2.7, border = 0.35,
                         lineheight = 0.9, label.r = grid::unit(0.1, "lines")) +
-    .rosetta_k_layers(groups, y = 1.0) +
+    (if (is.null(groups_reads)) .rosetta_k_layers(groups, y = 1.0) else
+      c(.rosetta_k_layers(groups_reads, y = 1.0), .rosetta_k_layers(groups, y = 0.38),
+        list(ggplot2::annotate("text", x = 0.3, y = c(1.0, 0.38),
+                               label = c("reads", "moves"),
+                               size = 2.6, fontface = "italic", lineheight = 0.85,
+                               colour = .rosetta_pal$muted)))) +
     ggplot2::scale_x_continuous(limits = c(-0.1, n + 0.6), expand = c(0, 0)) +
-    ggplot2::scale_y_continuous(limits = c(0.6, 4.5), expand = c(0, 0)) +
+    ggplot2::scale_y_continuous(limits = c(if (is.null(groups_reads)) 0.6 else 0.02, 4.5),
+                                expand = c(0, 0)) +
     ggplot2::labs(title = title) + .rosetta_theme()
   p
 }
@@ -341,11 +359,15 @@
 #'   \item{Row I}{the objective of `x` (or the general objective, every class
 #'     switched on, when `x` is `NULL`): one summand per class, a chip per
 #'     class (filled when switched on, outlined when zero or absent), the
-#'     effects it contains, and its construct. Classes that move the same
-#'     \{K\} channel sit side by side (K_CC, K_AC, K_AA, K_CA, then channels
-#'     opened by registered classes, then other), and each channel gets one
+#'     effects it contains, and its construct. Classes on the same \{K\}
+#'     dimension sit side by side (K_CC, K_AC, K_AA, K_CA, then dimensions
+#'     opened by registered classes, then other), and each dimension gets one
 #'     black badge naming its dimension (for example "Sociality K_AA"),
-#'     centered under its classes on a bracket when it groups two or more.}
+#'     centered under its classes on a bracket when it groups two or more.
+#'     `view` chooses the field: the dimension each class moves (the
+#'     default), the one it reads, or both, in two badge rows (reads above,
+#'     moves below), each with its own brackets. See
+#'     [searchnet_effect_dimensions()] and `inst/rosetta/K_DIMENSIONS.md`.}
 #'   \item{Row II}{the entry `compare`, in row I's columns: each class's term
 #'     in the entry's own notation, `+ 0` for a class it switches off,
 #'     outlined chips for classes set to zero, absent or held fixed, and the
@@ -358,9 +380,11 @@
 #'     is blank because the engine's XWX statistic sums over `j != h`.}
 #' }
 #'
-#' The channel groups are attached to the result as `attr(, "k_groups")`, a
-#' data.frame with one row per badge (`k_channel`, `name`, `xmin`, `xmax`,
-#' `x`, `n`, `classes`).
+#' The dimension groups are attached to the result as `attr(, "k_groups")`,
+#' a data.frame with one row per badge (`k_channel`, `name`, `xmin`, `xmax`,
+#' `x`, `n`, `classes`), for the field drawn (moves when `view` is
+#' `"both"`); with `view = "both"` the reads row's groups are
+#' attached as `attr(, "k_groups_reads")`.
 #'
 #' @param x A model (anything [rosetta_translate()] accepts), or `NULL` for
 #'   the general objective.
@@ -374,6 +398,9 @@
 #' @param include_private Logical; allow entries from `entries-private/`.
 #' @param classes Class ids to draw (default: every registered class that
 #'   is switched on in `x` or `compare`, plus the five shipped core classes).
+#' @param view Which field the \{K\} badges show: `"moves"` (default; the
+#'   dimension each class's target statistic moves, `k_channel`), `"reads"`
+#'   (the dimension its change statistic depends on), or `"both"`.
 #' @param file Optional path of a PNG to write; the path is then returned.
 #' @param width,height,dpi Size of the PNG in inches, and its resolution. `width`
 #'   also sets the layout of row II: long expressions are wrapped, and shrunk
@@ -393,7 +420,9 @@
 #' }
 rosetta_plot <- function(x = NULL, compare = NULL, glyph = TRUE, W = NULL, seed = 1L,
                          include_private = FALSE, classes = NULL, file = NULL,
-                         width = 12, height = 10, dpi = 110) {
+                         width = 12, height = 10, dpi = 110,
+                         view = c("moves", "reads", "both")) {
+  view <- match.arg(view)
   cl <- rosetta_classes()
   if (is.null(x)) {
     s <- .rosetta_spec(M = NA, N = NA, effects = lapply(seq_len(nrow(cl)), function(i) {
@@ -416,9 +445,19 @@ rosetta_plot <- function(x = NULL, compare = NULL, glyph = TRUE, W = NULL, seed 
                              if (!is.null(t2)) t2$class[t2$status %in% .ROSETTA_ON]))
   }
   t1 <- t1[match(intersect(classes, t1$class), t1$class), , drop = FALSE]
-  t1 <- .rosetta_order_by_k(t1)
-  kg <- .rosetta_k_groups(t1)
-  rows <- list(.rosetta_row_objective(t1, cl, title, kg))
+  kgd <- NULL
+  if (view == "moves") {
+    t1 <- .rosetta_order_by_k(t1)
+    kg <- .rosetta_k_groups(t1)
+  } else if (view == "reads") {
+    t1 <- .rosetta_order_by_k(t1, by = "reads")
+    kg <- .rosetta_k_groups(t1, by = "reads")
+  } else {
+    t1 <- .rosetta_order_by_k(t1, by = "moves", then = "reads")
+    kg <- .rosetta_k_groups(t1, by = "moves")
+    kgd <- .rosetta_k_groups(t1, by = "reads")
+  }
+  rows <- list(.rosetta_row_objective(t1, cl, title, kg, kgd))
   heights <- c(1)
   es <- NULL
   if (!is.null(e)) {
@@ -448,14 +487,18 @@ rosetta_plot <- function(x = NULL, compare = NULL, glyph = TRUE, W = NULL, seed 
                                                     rel_widths = c(rep(1, length(bottom))))
     heights <- c(heights, 1.15)
   }
+  badge_txt <- switch(view,
+    moves = "Black badge: the {K} dimension its classes move, one per dimension; a bracket spans classes that share it.",
+    reads = "Black badge: the {K} dimension its classes read, one per dimension; a bracket spans classes that share it.",
+    both = "Black badges: upper row, the {K} dimension the classes read; lower row, the dimension they move; brackets span classes that share one.")
   key <- paste("Filled chip: class switched on. Outlined chip: zero, absent or held fixed.",
-               "Black badge: the {K} channel its classes move, one per channel; a bracket spans classes that share it.",
-               sep = "\n")
+               badge_txt, sep = "\n")
   head <- ggplot2::ggplot() + ggplot2::annotate("text", x = 0, y = 0, label = key, size = 3,
                                                 colour = .rosetta_pal$muted, hjust = 0) +
     ggplot2::scale_x_continuous(limits = c(0, 1)) + ggplot2::theme_void()
   p <- cowplot::plot_grid(plotlist = c(list(head), rows), ncol = 1, rel_heights = c(0.12, heights))
   attr(p, "k_groups") <- kg
+  if (!is.null(kgd)) attr(p, "k_groups_reads") <- kgd
   if (is.null(file)) return(p)
   ggplot2::ggsave(file, p, width = width, height = height, dpi = dpi, bg = "white")
   invisible(normalizePath(file, winslash = "/"))

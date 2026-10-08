@@ -15,7 +15,9 @@ rosetta_register_class(
   construct = "",
   description = "",
   simulable = character(0),
-  k_label = NULL
+  k_label = NULL,
+  reads = NULL,
+  moves = NULL
 )
 
 rosetta_reset_classes()
@@ -27,9 +29,10 @@ rosetta_reset_classes()
 
 \item{effects}{Character vector of searchnet effect names in the class.}
 
-\item{k_channel}{One of \code{"K_CC"}, \code{"K_AC"}, \code{"K_AA"}, \code{"K_CA"}, \code{"other"},
-or a new channel named \code{"K_"} followed by letters or digits (for example
-\code{"K_AL"}). Classes that share a channel are grouped under one badge by
+\item{k_channel}{Deprecated alias of \code{moves} (the v0.12.0 argument): one
+of \code{"K_CC"}, \code{"K_AC"}, \code{"K_AA"}, \code{"K_CA"}, \code{"other"}, or a new dimension
+named \code{"K_"} followed by letters or digits (for example \code{"K_AL"}).
+Classes that share a dimension are grouped under one badge by
 \code{\link[=rosetta_plot]{rosetta_plot()}}.}
 
 \item{color}{Hex color token.}
@@ -42,8 +45,14 @@ or a new channel named \code{"K_"} followed by letters or digits (for example
 
 \item{simulable}{Effects \code{\link[=saomnk_run]{saomnk_run()}} can simulate (default: none).}
 
-\item{k_label}{Dimension name of the channel shown on its badge (for
+\item{k_label}{Display name of the dimension shown on its badge (for
 example \code{"Legitimacy"}), or \code{NULL} to keep the shipped name, if any.}
+
+\item{reads}{The dimension the class's change statistic reads (same
+vocabulary as \code{k_channel}); default: \code{moves}.}
+
+\item{moves}{The dimension its target statistic moves; default
+\code{k_channel}. When given, \code{k_channel} is set to it.}
 }
 \value{
 Invisibly, the registered class as a list.

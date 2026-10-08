@@ -53,7 +53,7 @@ experimental conditions.
 A typical `searchnet` experiment varies one or more parameters systematically:
 
 - **Environment size**: $M$ (actors), $N$ (components)
-- **Structural effects**: density, popularity (inPop), scope (outAct)
+- **Structural effects**: density, crowding (inPop), scope (outAct)
 - **Strategy heterogeneity**: actor covariate weights
 - **Epistasis structure**: block-diagonal, random, or empirical
 - **Shock timing and magnitude**: when and how parameters change

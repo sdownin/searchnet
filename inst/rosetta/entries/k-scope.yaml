@@ -1,7 +1,7 @@
 # Registry entry. Validate with searchnet::rosetta_validate().
 schema_version: "1"
 id: k-scope
-title: "{K} Scope (actor to component): breadth of the activity portfolio"
+title: "{K} Expansiveness (actor to component): breadth of the activity portfolio"
 model: Scope of the firm and economies of scope
 citations:
   - key: coase_1937

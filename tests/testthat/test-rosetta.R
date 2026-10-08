@@ -200,53 +200,91 @@ test_that("rosetta_plot builds a figure", {
   expect_true(file.exists(f))
 })
 
-test_that("rosetta_plot groups classes sharing a {K} channel under one badge", {
+test_that("rosetta_plot groups classes sharing a {K} dimension under one badge", {
   full <- saomnk_model(density = -1, popularity = -0.2,
                        influence_matrix = saomnk_block_diagonal(6, 2),
                        c4 = list(effect = "cycle4", parameter = 0.1))
   p <- rosetta_plot(full, compare = "brock-durlauf-social-interactions", glyph = FALSE)
   g <- attr(p, "k_groups")
-  expect_equal(g$k_channel, c("K_CC", "K_AC", "K_AA", "K_CA"))
+  ## default view: moves (k_channel, its alias). Scope moves K_CC; the
+  ## crowding, contact and imitation classes all move K_AA.
+  expect_equal(g$k_channel, c("K_CC", "K_AA"))
+  expect_null(attr(p, "k_groups_reads"))
   expect_equal(sum(g$k_channel == "K_AA"), 1L)
   aa <- g[g$k_channel == "K_AA", ]
-  expect_equal(aa$n, 2L)
-  expect_equal(aa$xmax - aa$xmin, 1L)
+  expect_equal(aa$n, 3L)
+  expect_equal(aa$xmax - aa$xmin, 2L)
   expect_equal(aa$x, (aa$xmin + aa$xmax) / 2)
-  expect_equal(aa$classes, "crowding, contact")
+  expect_equal(aa$classes, "crowding, contact, imitation")
   expect_equal(aa$name, "Sociality")
+  expect_equal(g$classes[g$k_channel == "K_CC"], "complementarity, scope")
   expect_equal(g$name[g$k_channel == "K_CC"], "Epistasis")
-  ## the row I panel draws one badge per channel and one bracket (3 segments)
+  ## the row I panel draws one badge per dimension and one bracket (3 segment
+  ## layers, one row per group of two or more classes)
   cl <- rosetta_classes()
   t1 <- .rosetta_terms_of_spec(.rosetta_as_spec(full, FALSE), cl)
   t1 <- .rosetta_order_by_k(t1[t1$class %in% c("complementarity", "scope", "crowding",
                                                "contact", "imitation"), , drop = FALSE])
   row1 <- .rosetta_row_objective(t1, cl, "I", g)
-  labs <- Filter(function(l) inherits(l$geom, "GeomLabel") && isTRUE(l$geom_params$parse) &&
-                   any(grepl("italic(K)", l$data$badge, fixed = TRUE)), row1$layers)
+  is_badge <- function(l) inherits(l$geom, "GeomLabel") && isTRUE(l$geom_params$parse) &&
+    any(grepl("italic(K)", l$data$badge, fixed = TRUE))
+  labs <- Filter(is_badge, row1$layers)
   expect_length(labs, 1L)
-  expect_equal(nrow(labs[[1]]$data), 4L)
+  expect_equal(nrow(labs[[1]]$data), 2L)
   segs <- Filter(function(l) inherits(l$geom, "GeomSegment"), row1$layers)
   expect_length(segs, 3L)
-  expect_equal(nrow(segs[[1]]$data), 1L)
+  expect_equal(nrow(segs[[1]]$data), 2L)
 
-  ## an out-of-order class list is regrouped, stably within a channel
+  ## reads view: the dimension each class reads
+  gd <- attr(rosetta_plot(full, glyph = FALSE, view = "reads"), "k_groups")
+  expect_equal(gd$k_channel, c("K_CC", "K_AC", "K_AA", "K_CA"))
+  expect_equal(gd$classes[gd$k_channel == "K_AA"], "crowding, contact")
+  expect_equal(gd$classes[gd$k_channel == "K_CA"], "imitation")
+  expect_equal(gd$classes[gd$k_channel == "K_AC"], "scope")
+
+  ## both views: two badge rows, decision above outcome, each with brackets;
+  ## within a moves group the classes are ordered by what they read
+  pb <- rosetta_plot(full, glyph = FALSE, view = "both")
+  go <- attr(pb, "k_groups"); gb <- attr(pb, "k_groups_reads")
+  expect_equal(go$k_channel, c("K_CC", "K_AA"))
+  expect_equal(go$classes, c("complementarity, scope", "crowding, contact, imitation"))
+  expect_equal(gb$k_channel, c("K_CC", "K_AC", "K_AA", "K_CA"))
+  expect_equal(gb$classes[gb$k_channel == "K_CA"], "imitation")
+  tb <- .rosetta_order_by_k(t1, by = "moves", then = "reads")
+  rowb <- .rosetta_row_objective(tb, cl, "I", .rosetta_k_groups(tb, by = "moves"),
+                                 .rosetta_k_groups(tb, by = "reads"))
+  lb <- Filter(is_badge, rowb$layers)
+  expect_length(lb, 2L)
+  expect_equal(unname(vapply(lb, function(l) nrow(l$data), 1L)), c(4L, 2L))
+  expect_no_error(print(pb))
+  expect_error(rosetta_plot(full, glyph = FALSE, view = "sideways"))
+
+  ## an out-of-order class list is regrouped, stably within a dimension
   tt <- data.frame(class = c("crowding", "scope", "contact", "complementarity"),
                    k_channel = c("K_AA", "K_AC", "K_AA", "K_CC"), stringsAsFactors = FALSE)
   expect_equal(.rosetta_order_by_k(tt)$class, c("complementarity", "scope", "crowding", "contact"))
 
-  ## registered classes on a new channel group the same way, after the shipped ones
+  ## registered classes on a new dimension group the same way, after the shipped ones
   on.exit(rosetta_reset_classes(), add = TRUE)
   expect_error(rosetta_register_class("bad", effects = "x", k_channel = "AL"))
   rosetta_register_class("legitimacy", effects = "legitStat", k_channel = "K_AL",
                          k_label = "Legitimacy")
   rosetta_register_class("endorsement", effects = "endorseStat", k_channel = "K_AL")
-  rosetta_register_class("rivalry", effects = "rivalStat", k_channel = "K_AA")
+  rosetta_register_class("rivalry", effects = "rivalStat", moves = "K_AA",
+                         reads = "K_CA")
+  expect_error(rosetta_register_class("clash", effects = "x", k_channel = "K_AA",
+                                      moves = "K_CC"))
+  rc <- rosetta_classes()
+  expect_equal(rc$k_channel[rc$id == "rivalry"], "K_AA")
+  expect_equal(rc$reads[rc$id == "rivalry"], "K_CA")
+  expect_equal(rc$reads[rc$id == "legitimacy"], "K_AL")
+  expect_true(attr(rosetta_validate(), "ok"))
   s <- rosetta_model_from_json(list(M = 3, N = 4, effects = list(
     list(effect = "legitStat", parameter = 0.3), list(effect = "inPop", parameter = -0.1),
     list(effect = "endorseStat", parameter = 0.2), list(effect = "rivalStat", parameter = 0.1))))
   g2 <- attr(rosetta_plot(s, glyph = FALSE), "k_groups")
-  expect_equal(g2$k_channel, c("K_CC", "K_AC", "K_AA", "K_CA", "K_AL"))
-  expect_equal(g2$classes[g2$k_channel == "K_AA"], "crowding, contact, rivalry")
+  expect_equal(g2$k_channel, c("K_CC", "K_AA", "K_AL"))
+  expect_equal(g2$classes[g2$k_channel == "K_AA"], "crowding, contact, imitation, rivalry")
   expect_equal(g2$classes[g2$k_channel == "K_AL"], "legitimacy, endorsement")
   expect_equal(g2$name[g2$k_channel == "K_AL"], "Legitimacy")
   expect_no_error(parse(text = g2$badge))
@@ -379,8 +417,9 @@ test_that("the export follows the JSON contract", {
   rosetta_export_json(f)
   js <- jsonlite::fromJSON(f, simplifyVector = FALSE)
   expect_equal(js$schema_version, "1")
-  expect_true(all(c("id", "label", "effects", "k_channel", "color", "lean_stat", "description") %in%
-                    names(js$classes[[1]])))
+  expect_true(all(c("id", "label", "effects", "k_channel", "reads", "moves",
+                    "color", "lean_stat", "description") %in% names(js$classes[[1]])))
+  for (c0 in js$classes) expect_identical(c0$k_channel, c0$moves)
   e <- js$entries[[1]]
   expect_true(all(c("id", "title", "model", "citations", "relation", "restrictions", "terms",
                     "constructs", "lean", "does_not_cover") %in% names(e)))

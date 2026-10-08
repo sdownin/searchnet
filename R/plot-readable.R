@@ -11,8 +11,10 @@
 #     (annotate = TRUE), for example the shock or the level a series settles at;
 #   * one visual grammar: actors orange, components blue, the event (a shock)
 #     vermillion, the influence matrix W green, context grey; the four
-#     {K} channels labeled K_AC, K_CA, K_AA, K_CC with their plain names
-#     (scope, popularity, sociality, coupling);
+#     {K} dimensions labeled K_AC, K_CA, K_AA, K_CC with their display names
+#     (expansiveness, popularity, sociality, epistasis; the display names of
+#     inst/rosetta/K_DIMENSIONS.md and classes.yaml), and the projection
+#     degrees named as partner counts; the black line is the mean degree;
 #   * the model parameters in a one-line caption rather than the title;
 #   * no legend when it would carry a single entry.
 # Everything drawn is computed from the environment passed in.
@@ -27,26 +29,30 @@
 ## black. Vermillion is kept for events.
 .sn_actor_pool <- c("#E69F00", "#56B4E9", "#F0E442", "#CC79A7", "#000000")
 
-## The four {K} channels: plain name and what the degree counts.
+## The four {K} dimensions (inst/rosetta/K_DIMENSIONS.md): display name, its
+## lowercase form for prose, and what the degree counts. The projection
+## degrees are distinct-partner counts.
 .sn_k_info <- data.frame(
   channel = c("K_AC", "K_CA", "K_AA", "K_CC"),
-  plain   = c("scope", "popularity", "sociality", "coupling"),
-  counts  = c("components each actor holds",
-              "actors holding each component",
+  name    = c("Expansiveness", "Popularity", "Sociality", "Epistasis"),
+  plain   = c("expansiveness", "popularity", "sociality", "epistasis"),
+  counts  = c("components held",
+              "actors holding it",
               "actors sharing a component",
               "components sharing an actor"),
   node    = c("Actor", "Component", "Actor", "Component"),
   stringsAsFactors = FALSE)
 
-## Plotmath strip label for a channel, e.g. K[AC]*"  scope: components ...".
+## Plotmath strip label for a dimension, e.g.
+## K[AA]*"  Sociality: actors sharing a component" (the degree counts them).
 .sn_k_label <- function(channel) {
   i <- match(channel, .sn_k_info$channel)
-  sprintf('K[%s]*"  %s: %s"', sub("^K_", "", channel), .sn_k_info$plain[i],
+  sprintf('K[%s]*"  %s: %s"', sub("^K_", "", channel), .sn_k_info$name[i],
           .sn_k_info$counts[i])
 }
 
-## Join plain names in prose: "scope", "scope and sociality",
-## "scope, popularity and coupling".
+## Join plain names in prose: "expansiveness", "expansiveness and sociality",
+## "expansiveness, popularity and epistasis".
 .sn_join <- function(x) {
   if (length(x) <= 1) return(paste(x, collapse = ""))
   paste(paste(x[-length(x)], collapse = ", "), "and", x[length(x)])
@@ -275,8 +281,8 @@
   node_txt <- if (length(unique(.sn_k_info$node[match(channels, .sn_k_info$channel)])) == 2)
     (if (multi) "one actor or component" else "one actor (orange) or component (blue)") else
     if (all(channels %in% c("K_AC", "K_AA"))) "one actor" else "one component"
-  sub <- sprintf("Faint points: %s at each ministep%s. Black line: the mean.%s", node_txt,
-                 if (multi) ", colored by group" else "",
+  sub <- sprintf("Faint points: %s at each ministep%s.%sBlack line: mean degree.%s", node_txt,
+                 if (multi) ", colored by group" else "", if (multi) "\n" else " ",
                  if (length(channels) == 4)
                    "\nTop row: direct ties. Bottom row: links through a shared partner." else "")
 
@@ -312,8 +318,8 @@
                  ys = if (up) yt - 0.17 * diff(y_rng) else yt + 0.17 * diff(y_rng))
       notes <- data.frame(
         channel = factor(first, levels = lvl), x = tx, y = ty,
-        label = sprintf("shock: %s\nmean %s %s from %.1f to %.1f",
-                        shocks$label[1], .sn_k_info$plain[match(channels[1], .sn_k_info$channel)],
+        label = sprintf("shock: %s\nmean degree %s from %.1f to %.1f",
+                        shocks$label[1],
                         if (post_v < pre_v) "falls" else "rises", pre_v, post_v),
         pl, stringsAsFactors = FALSE)
     } else {
@@ -343,11 +349,11 @@
 ## Plain names for the effects a utility panel can show.
 .sn_effect_plain <- c(
   density = "density: each tie held",
-  inPop   = "popularity (inPop): ties to popular components",
+  inPop   = "crowding (inPop): ties to components others hold",
   outAct  = "scope (outAct): breadth of the portfolio",
-  XWX     = "influence (XWX): pairs linked in W held together")
-.sn_effect_short <- c(density = "density", inPop = "popularity (inPop)",
-                      outAct = "scope (outAct)", XWX = "influence (XWX)")
+  XWX     = "complementarity (XWX): pairs linked in W held together")
+.sn_effect_short <- c(density = "density", inPop = "crowding (inPop)",
+                      outAct = "scope (outAct)", XWX = "complementarity (XWX)")
 .sn_effect_cols <- c(UTILITY = "black", density = "grey45", inPop = "#CC79A7",
                      outAct = "#56B4E9", XWX = "#009E73")
 

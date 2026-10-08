@@ -185,9 +185,15 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #'
 #' @param density Numeric. Weight on the density (intercept) effect.
 #'   Negative values produce sparse networks (default \code{-0.5}).
-#' @param popularity Numeric. Weight on the in-degree popularity effect
-#'   (\code{inPop} in RSiena). Controls preferential attachment to
-#'   high-popularity components (default \code{0}).
+#' @param popularity Numeric. Weight on RSiena's \code{inPop} effect (default
+#'   \code{0}). The argument keeps its historical name for API stability, but
+#'   its construct is \emph{crowding}: \code{inPop}'s statistic
+#'   \eqn{\sum_j b_{ij} b_{+j}} (\eqn{b_{+j}} counting ego) reads Popularity
+#'   (\eqn{K_{CA}}), the number of actors holding a component, and a tie
+#'   to a component others hold raises the actor's overlap with them. A
+#'   negative weight is crowding (avoiding components others hold); a positive
+#'   weight is agglomeration (seeking them). See
+#'   \code{\link{searchnet_effect_dimensions}}.
 #' @param scope Numeric. Weight on the out-degree activity effect
 #'   (\code{outAct} in RSiena). Controls actors' tendency to expand scope
 #'   (default \code{0}).
@@ -204,8 +210,9 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #'
 #'   \emph{Epistasis} names three distinct things in this package, and W is
 #'   only the first.  W is the \emph{input}.  \eqn{K_{CC}} is the
-#'   \emph{realized structure}: the component-projection degree
-#'   \code{colSums(crossprod(B) > 0)}, reported by
+#'   \emph{realized structure}: the component-projection degree, the
+#'   number of OTHER components co-held with each component
+#'   (\code{P <- crossprod(B); diag(P) <- 0; colSums(P > 0)}), reported by
 #'   \code{\link{saomnk_get_degrees}}.  W does not appear in that formula, but
 #'   W drives the search that produces \eqn{B}, so \eqn{K_{CC}} evolves as a
 #'   consequence of W.  \emph{Epistatic fitness} is the \emph{outcome}: the
@@ -253,15 +260,22 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #'   Each element is an M-length vector of actor attributes; the list name
 #'   determines the RSiena covariate effect:
 #'   \describe{
-#'     \item{\code{"egoX"}}{Ego (actor scope) covariate}
-#'     \item{\code{"inPopX"}}{Popularity-seeking covariate}
-#'     \item{\code{"altX"}}{Alter (component) covariate}
+#'     \item{\code{"egoX"}}{Ego covariate: \eqn{\sum_j b_{ij} v_i}, the
+#'       actor's attribute times its number of components.}
+#'     \item{\code{"inPopX"}}{Covariate-weighted popularity:
+#'       \eqn{\sum_j b_{ij} \sum_h b_{hj} v_h}, the attribute sum of each held
+#'       component's holders (ego counted).}
 #'   }
+#'   For a bipartite dependent variable \code{altX} needs a
+#'   \emph{component} covariate, so it is not accepted here: pass it in
+#'   \code{component_covariates} (an \code{altX}, \code{altSqX} or
+#'   \code{outActX} entry in \code{strategies} is an error).
 #'   Each entry may optionally carry a \code{"weight"} attribute (numeric);
 #'   if absent the default weight is \code{0.2}.
 #' @param component_covariates Named list of N-length numeric vectors for
 #'   constant component covariates (e.g., component quality scores).
-#'   Names become the RSiena effect type (e.g., \code{"altX"}).
+#'   Names become the RSiena effect type: \code{"altX"}
+#'   (\eqn{\sum_j b_{ij} c_j}, the alter covariate) or \code{"outActX"}.
 #'   Each entry may carry a \code{"weight"} attribute; default is \code{0.2}.
 #' @param dyad_covariate An \eqn{M \times N}{M x N} actor-by-component
 #'   covariate matrix, or \code{NULL} (default).
@@ -405,6 +419,16 @@ saomnk_model <- function(density            = -0.5,
 
   if (!is.null(strategies)) {
     stopifnot(is.list(strategies))
+    ## These effects take a COMPONENT covariate for a bipartite dependent
+    ## variable (RSiena 1.5.0 getEffects()); `strategies` registers actor
+    ## covariates, so RSiena would find no such effect for them.
+    .comp_only <- intersect(names(strategies), c("altX", "altSqX", "outActX"))
+    if (length(.comp_only))
+      stop(sprintf(paste0("`strategies` holds actor covariates, but %s needs a ",
+                          "component covariate (an N-vector) for a bipartite ",
+                          "dependent variable. Pass it in `component_covariates` instead."),
+                   paste(sprintf("'%s'", .comp_only), collapse = ", ")),
+           call. = FALSE)
     strat_counter <- 0L
     for (nm in names(strategies)) {
       strat_counter <- strat_counter + 1L
@@ -896,7 +920,7 @@ saomnk_monte_carlo <- function(env, model, replications = 10, waves = 2,
 #'
 #' Visualizes the four coupled degree processes---actor scope (\eqn{K_{AC}}),
 #' component popularity (\eqn{K_{CA}}), actor sociality (\eqn{K_{AA}}), and
-#' component coupling (\eqn{K_{CC}})---over the simulated decision chain.
+#' component epistasis (\eqn{K_{CC}})---over the simulated decision chain.
 #' Each panel is labeled with its channel and plain name; the title states
 #' what the run shows, the subtitle how to read the figure, and the caption
 #' lists the model weights. See \code{\link{saomnk_plot_degree_4panel}}.

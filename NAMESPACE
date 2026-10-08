@@ -453,3 +453,7 @@ S3method(print, rosetta_validation)
 S3method(print, rosetta_spec)
 S3method(print, rosetta_translation)
 S3method(print, rosetta_lean)
+
+# The {K} dimensions each effect reads and moves -- k-dimensions.R
+export(searchnet_effect_dimensions)
+export(searchnet_classify_effect)

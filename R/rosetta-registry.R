@@ -100,7 +100,7 @@
 }
 
 .ROSETTA_K <- c("K_CC", "K_AC", "K_AA", "K_CA", "other")
-## A registered class may open a channel of its own, named K_<letters/digits>.
+## A registered class may open a dimension of its own, named K_<letters/digits>.
 .ROSETTA_K_PATTERN <- "^(K_[A-Za-z0-9]+|other)$"
 .ROSETTA_STATUS <- c("active", "fixed", "zero", "absent", "linearized")
 .ROSETTA_RELATION <- c("special-case", "special-case-linearized",
@@ -109,6 +109,11 @@
 .ROSETTA_ON <- c("active", "fixed", "linearized")
 .ROSETTA_NESTING <- c("special-case", "special-case-linearized", "equilibrium-characterization")
 
+.rosetta_moves_of <- function(c) {
+  v <- .rs_or(c$moves, .rs_or(c$k_channel, "other"))
+  as.character(v)[1]
+}
+
 .rosetta_class_df <- function(cls) {
   col <- function(x, f = "") if (is.null(x) || !length(x)) f else x
   data.frame(
@@ -116,7 +121,12 @@
     label = vapply(cls, function(c) col(c$label, c$id), ""),
     effects = vapply(cls, function(c) paste(unlist(c$effects), collapse = ", "), ""),
     simulable = vapply(cls, function(c) paste(unlist(c$simulable), collapse = ", "), ""),
-    k_channel = vapply(cls, function(c) col(c$k_channel, "other"), ""),
+    ## k_channel is a deprecated alias of moves (the v0.12.0 field). A class
+    ## read without the two fields falls back on it here so that the figures
+    ## still draw; rosetta_validate() reports the omission (E9).
+    k_channel = vapply(cls, .rosetta_moves_of, ""),
+    reads = vapply(cls, function(c) col(c$reads, .rosetta_moves_of(c)), ""),
+    moves = vapply(cls, .rosetta_moves_of, ""),
     color = vapply(cls, function(c) col(c$color, "#7A7A7A"), ""),
     lean_stat = vapply(cls, function(c) if (is.null(c$lean_stat)) NA_character_
                        else as.character(c$lean_stat), ""),
@@ -141,9 +151,14 @@
 #' Effect classes of the SAOM-NK objective
 #'
 #' The class registry the translation functions use: each class groups
-#' searchnet effect names into one summand of the objective, names the
-#' \{K\} channel it moves, a color token, and the statistic of the Lean
-#' library that carries it. Shipped classes are read from
+#' searchnet effect names into one summand of the objective, names two
+#' \{K\} dimensions, a color token, and the statistic of the Lean library
+#' that carries it. The two fields are those of
+#' [searchnet_effect_dimensions()]: `reads`, the dimension the change
+#' statistic depends on (what the deciding actor reads), and `moves`, the
+#' dimension of the target statistic (the moment estimation matches and the
+#' coefficient moves first). `k_channel` is a deprecated alias of `moves`,
+#' kept for the v0.12.0 contract. Shipped classes are read from
 #' `inst/rosetta/classes.yaml`; classes added with
 #' [rosetta_register_class()] are appended (or replace a shipped class with
 #' the same id) for the current session.
@@ -151,7 +166,8 @@
 #' @param path Directory holding `classes.yaml` (default: the option
 #'   `searchnet.rosetta_path`, else the installed package).
 #' @return A data.frame with columns `id`, `label`, `effects`, `simulable`,
-#'   `k_channel`, `color`, `lean_stat`, `construct`, `description`, `source`.
+#'   `k_channel` (deprecated alias of `moves`), `reads`, `moves`,
+#'   `color`, `lean_stat`, `construct`, `description`, `source`.
 #' @seealso [rosetta_register_class()], [rosetta_translate()]
 #' @export
 #' @examples
@@ -160,10 +176,10 @@ rosetta_classes <- function(path = getOption("searchnet.rosetta_path")) {
   .rosetta_class_df(.rosetta_class_list(path))
 }
 
-## Dimension names of the {K} channels (K_CC = "Epistasis", ...): the
+## Display names of the {K} dimensions (K_CC = "Epistasis", ...): the
 ## `k_channel_label` map of classes.yaml, then labels given at registration.
 .rosetta_k_labels <- function(path = getOption("searchnet.rosetta_path")) {
-  .rosetta_need_yaml("the {K} channel labels")
+  .rosetta_need_yaml("the {K} dimension labels")
   y <- .rosetta_read_yaml(file.path(.rosetta_home(path), "classes.yaml"))
   lab <- unlist(.rs_or(y$k_channel_label, list()))
   if (is.null(lab)) lab <- character(0)
@@ -182,17 +198,22 @@ rosetta_classes <- function(path = getOption("searchnet.rosetta_path")) {
 #' @param id Stable key (lowercase letters, digits, underscores).
 #' @param label Chip text (default `id`).
 #' @param effects Character vector of searchnet effect names in the class.
-#' @param k_channel One of `"K_CC"`, `"K_AC"`, `"K_AA"`, `"K_CA"`, `"other"`,
-#'   or a new channel named `"K_"` followed by letters or digits (for example
-#'   `"K_AL"`). Classes that share a channel are grouped under one badge by
+#' @param k_channel Deprecated alias of `moves` (the v0.12.0 argument): one
+#'   of `"K_CC"`, `"K_AC"`, `"K_AA"`, `"K_CA"`, `"other"`, or a new dimension
+#'   named `"K_"` followed by letters or digits (for example `"K_AL"`).
+#'   Classes that share a dimension are grouped under one badge by
 #'   [rosetta_plot()].
 #' @param color Hex color token.
 #' @param lean_stat Lean statistic carrying the class, or `NULL`.
 #' @param construct Default construct label.
 #' @param description One line.
 #' @param simulable Effects [saomnk_run()] can simulate (default: none).
-#' @param k_label Dimension name of the channel shown on its badge (for
+#' @param k_label Display name of the dimension shown on its badge (for
 #'   example `"Legitimacy"`), or `NULL` to keep the shipped name, if any.
+#' @param reads The dimension the class's change statistic reads (same
+#'   vocabulary as `k_channel`); default: `moves`.
+#' @param moves The dimension its target statistic moves; default
+#'   `k_channel`. When given, `k_channel` is set to it.
 #' @return Invisibly, the registered class as a list.
 #' @seealso [rosetta_classes()], [rosetta_reset_classes()]
 #' @export
@@ -206,12 +227,22 @@ rosetta_classes <- function(path = getOption("searchnet.rosetta_path")) {
 rosetta_register_class <- function(id, label = id, effects, k_channel = "other",
                                    color = "#7A7A7A", lean_stat = NULL,
                                    construct = "", description = "",
-                                   simulable = character(0), k_label = NULL) {
+                                   simulable = character(0), k_label = NULL,
+                                   reads = NULL, moves = NULL) {
   stopifnot(is.character(id), length(id) == 1L, grepl("^[a-z][a-z0-9_]*$", id))
   stopifnot(is.character(effects), length(effects) >= 1L)
-  if (!is.character(k_channel) || length(k_channel) != 1L || !grepl(.ROSETTA_K_PATTERN, k_channel))
+  ok_k <- function(v) is.character(v) && length(v) == 1L && grepl(.ROSETTA_K_PATTERN, v)
+  if (!ok_k(k_channel))
     stop("k_channel must be one of ", paste(.ROSETTA_K, collapse = ", "),
-         ", or a new channel named K_ followed by letters or digits", call. = FALSE)
+         ", or a new dimension named K_ followed by letters or digits", call. = FALSE)
+  if (!is.null(moves)) {
+    if (!ok_k(moves)) stop("moves: same vocabulary as k_channel", call. = FALSE)
+    if (!missing(k_channel) && !identical(k_channel, moves))
+      stop("k_channel is a deprecated alias of moves; give one value or two equal ones", call. = FALSE)
+    k_channel <- moves
+  }
+  if (is.null(reads)) reads <- k_channel
+  if (!ok_k(reads)) stop("reads: same vocabulary as k_channel", call. = FALSE)
   if (!is.null(k_label)) {
     stopifnot(is.character(k_label), length(k_label) == 1L)
     .rosetta_state$k_labels[[k_channel]] <- k_label
@@ -219,7 +250,8 @@ rosetta_register_class <- function(id, label = id, effects, k_channel = "other",
   if (!grepl("^#[0-9A-Fa-f]{6}$", color)) stop("color must be a hex code like #4B4FA6", call. = FALSE)
   cl <- list(id = id, label = label, effects = as.list(effects),
              simulable = as.list(intersect(simulable, effects)),
-             k_channel = k_channel, color = color, lean_stat = lean_stat,
+             k_channel = k_channel, reads = reads,
+             moves = k_channel, color = color, lean_stat = lean_stat,
              construct = construct, description = description, source = "registered")
   .rosetta_state$user_classes[[id]] <- cl
   invisible(cl)
@@ -386,14 +418,17 @@ print.rosetta_entry <- function(x, ...) {
 #'
 #' \describe{
 #'   \item{errors}{a violation with a determinate fix. E1 the entry fails the
-#'     schema (required fields, types, the relation, status and K-channel
+#'     schema (required fields, types, the relation, status and K-dimension
 #'     vocabularies); E2 the id differs from its file name or repeats; E3 a
 #'     Lean declaration named in `lean` is not in the package's Lean library;
 #'     E4 a term names a class that is not registered; E5 an em-dash or a
 #'     section symbol; E6 British spelling; E7 a check names an R function
 #'     that does not exist or a test file that is missing; E8 a mapping key
 #'     that a YAML 1.1 reader coerces to a boolean (an unquoted `N`, `Y`,
-#'     `yes`, `no`, `on` or `off`).}
+#'     `yes`, `no`, `on` or `off`); E9 a class in `classes.yaml` (or a
+#'     registered class) lacks `reads` or `moves`, names a dimension outside
+#'     the vocabulary, or carries a `k_channel` (deprecated alias) that
+#'     differs from its `moves`. E9 rows carry the id `class:<id>`.}
 #'   \item{advisory}{measurements, reported only. A1 AI-drafted and not yet
 #'     reviewed; A2 a citation without a DOI; A3 a special case with an empty
 #'     `does_not_cover`; A4 a registered class the entry does not mention;
@@ -432,6 +467,20 @@ rosetta_validate <- function(path = getOption("searchnet.rosetta_path"),
                                              message = msg, stringsAsFactors = FALSE)
   if (is.null(lean_known))
     add("(registry)", "advisory", "A5", "Lean library not found; Lean names were not checked")
+  ## E9: every class carries both {K} fields, reads and moves.
+  for (cl in .rosetta_class_list(path)) {
+    cid <- paste0("class:", .rs_or(cl$id, "?"))
+    for (fld in c("reads", "moves")) {
+      v <- cl[[fld]]
+      if (is.null(v) || !length(v) || !nzchar(as.character(v)[1]))
+        add(cid, "error", "E9", paste("missing field", fld))
+      else if (!grepl(.ROSETTA_K_PATTERN, as.character(v)[1]))
+        add(cid, "error", "E9", paste0(fld, " outside the vocabulary: ", v))
+    }
+    if (!is.null(cl$k_channel) && !is.null(cl$moves) &&
+        !identical(as.character(cl$k_channel), as.character(cl$moves)))
+      add(cid, "error", "E9", "k_channel differs from moves (k_channel is a deprecated alias of moves)")
+  }
   seen <- character(0)
   ## Test files named in `checks` resolve against the source tree holding this
   ## registry, or the package's own source tree when the registry is a copy.

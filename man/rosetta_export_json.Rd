@@ -19,7 +19,8 @@ The JSON string, invisibly when \code{path} is given.
 }
 \description{
 Writes the class registry and the entries in the JSON contract front ends
-read: \verb{\{"schema_version": "1", "searchnet_version", "classes": [\{"id", "label", "effects", "k_channel", "color", "lean_stat", "description"\}], "entries": [\{"id", "title", "model", "citations": [\{"key", "text", "doi"\}], "relation", "statement", "restrictions", "terms": [\{"class", "status", "expression", "construct"\}], "constructs", "lean", "does_not_cover", "provenance"\}]\}}.
+read: \verb{\{"schema_version": "1", "searchnet_version", "classes": [\{"id", "label", "effects", "k_channel", "reads", "moves", "color", "lean_stat", "description"\}], "entries": [\{"id", "title", "model", "citations": [\{"key", "text", "doi"\}], "relation", "statement", "restrictions", "terms": [\{"class", "status", "expression", "construct"\}], "constructs", "lean", "does_not_cover", "provenance"\}]\}}. A class's \code{k_channel} is a deprecated
+alias of its \code{moves}.
 }
 \examples{
 if (requireNamespace("yaml", quietly = TRUE)) {

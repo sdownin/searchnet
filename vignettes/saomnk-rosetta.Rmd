@@ -22,10 +22,11 @@ knitr::opts_chunk$set(eval = have_yaml)
 
 The SAOM-NK objective is a sum over classes of effects. Each class is one
 summand: complementarity (the fitness term under an influence matrix `W`),
-scope (actor degree), crowding (components other actors hold), contact
-(four-cycles between actor pairs), and imitation (co-holder performance
-similarity). Each class moves one channel of the \{K\} system and stands for a
-construct.
+scope (actor degree), popularity / crowding (components other actors hold),
+contact (four-cycles between actor pairs), and imitation (co-holder performance
+similarity). Each class stands for a construct and has two \{K\} fields: the
+dimension its change statistic reads, and the dimension its target statistic
+moves.
 
 Many foundational models of search are this objective with some classes
 switched off and some restrictions imposed. The translation registry records
@@ -38,7 +39,43 @@ draw the translation, add an entry, and reach the Lean proofs.
 ## The classes
 
 ```{r classes}
-rosetta_classes()[, c("id", "effects", "k_channel", "lean_stat")]
+rosetta_classes()[, c("id", "effects", "reads", "moves", "lean_stat")]
+```
+
+The four \{K\} dimensions (Expansiveness K_AC, Popularity K_CA, Sociality
+K_AA, Epistasis K_CC) and the two fields are defined once, in
+`inst/rosetta/K_DIMENSIONS.md`
+(`system.file("rosetta", "K_DIMENSIONS.md", package = "searchnet")`). `reads`
+is derived from the change statistic, the change in actor `i`'s statistic when
+it toggles component `j`: its inputs are perturbed one at a time, and the first
+it depends on names the dimension (who the other holders are, Popularity; else
+other actors' holdings, Sociality; else W, Epistasis; else the actor's own
+portfolio or attributes, Expansiveness). `moves` is the dimension of the target
+statistic (the statistic summed over actors): what estimation matches and what
+the coefficient moves first. `k_channel` is a deprecated alias of `moves`.
+`searchnet_effect_dimensions()` gives both fields effect by effect, with the
+formulas:
+
+```{r dimensions}
+searchnet_effect_dimensions(c("density", "outAct", "inPop", "XWX", "cycle4",
+                              "egoX", "altX", "simEgoInDist2"))[,
+  c("effect", "reads", "moves", "change_statistic")]
+```
+
+The package's K_AA and K_CC degrees are distinct-partner counts; their weighted
+forms, Sociality and Epistasis strength, are what the identities speak to: the
+second moment of actor degree is the total Epistasis strength, so scope effects
+read Expansiveness and move Epistasis strength. `moves` is the moment moved
+first, not the full equilibrium response, and the sign of the coefficient
+changes the reading (`inPop` below zero spreads actors out, above zero herds
+them), never the dimension.
+
+A statistic of your own classifies itself by the same rules. A toy example,
+ties weighted by the number of other holders of each component:
+
+```{r classify}
+toy <- function(B, cov) c(B %*% (colSums(B) - 1))
+searchnet_classify_effect(toy)[c("reads", "moves")]
 ```
 
 ## Browse the foundational models
@@ -125,9 +162,11 @@ rosetta_compare(list("nk-adaptive-walk", "brock-durlauf-social-interactions",
 ## Draw the translation
 
 Row I writes the objective by class: one chip per class, the effects it
-contains, and its construct; classes that move the same \{K\} channel sit
-side by side under one black badge naming the channel (crowding and contact
-share "Sociality K_AA"). Row II
+contains, and its construct; classes on the same \{K\} dimension sit side
+by side under one black badge naming it. By default the badges show what the
+classes move (popularity / crowding, contact and imitation share
+"Sociality K_AA"); `view = "reads"` shows what each class reads, and
+`view = "both"` draws the two rows, reads above moves. Row II
 rewrites a foundational model term by term in the same classes, with `+ 0`
 and an outlined chip for each class it switches off. Row III shows the
 bipartite state of a short seeded run of the restriction (circles are
@@ -138,6 +177,10 @@ pattern records.
 
 ```{r plot-nk}
 rosetta_plot(NULL, compare = "nk-adaptive-walk")
+```
+
+```{r plot-both, fig.height = 3.6}
+rosetta_plot(NULL, glyph = FALSE, view = "both")
 ```
 
 ```{r plot-mine}

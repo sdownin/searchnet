@@ -17,11 +17,20 @@ mock_method <- function(obj, name, fun) {
 ## Temporarily bind `name` in `env`, restoring (or removing) it on exit.
 ## testthat::local_mocked_bindings() only reaches pkgload-loaded packages;
 ## this harness sources R/ into the global environment instead.
+## Under test_dir(load_package = "installed") `env` can be the installed
+## package's namespace, whose bindings are locked: unlock for the assignment
+## and relock afterwards, both when overriding and when restoring.
 local_override <- function(name, value, env = globalenv(), frame = parent.frame()) {
   had <- exists(name, envir = env, inherits = FALSE)
   old <- if (had) get(name, envir = env, inherits = FALSE)
-  assign(name, value, envir = env)
-  withr::defer(if (had) assign(name, old, envir = env) else rm(list = name, envir = env),
+  set_binding <- function(v) {
+    locked <- had && bindingIsLocked(name, env)
+    if (locked) unlockBinding(name, env)
+    assign(name, v, envir = env)
+    if (locked) lockBinding(name, env)
+  }
+  set_binding(value)
+  withr::defer(if (had) set_binding(old) else rm(list = name, envir = env),
                envir = frame)
 }
 

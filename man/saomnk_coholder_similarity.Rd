@@ -49,7 +49,7 @@ Degenerate cases are handled explicitly rather than by falling through to
 \code{NaN}. When every actor has identical performance the range is zero and
 every similarity is defined to be 1, since all actors are maximally similar;
 the centering then makes the statistic zero, which is correct because no
-component is more attractive than another on this channel. When a component
+component is more attractive than another through imitation. When a component
 has no co-holders its similarity is not zero but absent, and it is excluded
 from the mean used for centering; treating it as a zero would drag the
 center down and make held-but-unpopular components look repellent.

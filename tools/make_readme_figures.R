@@ -19,11 +19,12 @@
 ## (200 dpi) so they stay sharp on high-density displays.
 ##
 ## Figures written:
-##   readme-hero.png           W heatmap, end-of-run bipartite network, {K}-4 panel
-##   readme-architectures.png  four influence-matrix architectures, same model
+##   readme-hero.png           W heatmap, start and end networks, {K}-4 panel
+##   readme-architectures.png  four influence-matrix architectures, 0/1 and signed weights
 ##   readme-nk-validation.png  classical NK: adaptive walks and peak counts
 ##   readme-shock.png          {K}-4 panel with a two-segment density shock
 ##   readme-did.png            DID event-time plot recovering a planted shock
+##   readme-objective.png      the objective by class of effects (rosetta_plot row I)
 ###############################################################################
 
 t_start <- Sys.time()
@@ -66,7 +67,7 @@ save_png <- function(plot, file, width, height, dpi = 200) {
 quiet <- function(expr) invisible(capture.output(suppressMessages(expr)))
 
 ## A {K}-4 panel from saomnk_plot_k4(). Since searchnet 0.11.2.9000 the
-## function draws the package grammar itself (channel strips with plain
+## function draws the package grammar itself ({K}-dimension strips with display
 ## names, actors orange, components blue, computed title, reading guides);
 ## the README keeps its computed title and only sets a subtitle where the
 ## figure needs one.
@@ -102,9 +103,10 @@ w_heatmap <- function(W, title, subtitle = NULL, labels = seq_len(nrow(W))) {
 
 
 ###############################################################################
-## 1. Hero: input W, end-of-run bipartite network, {K}-4 coupled degrees
+## 1. Hero: input W, the network at the start and at the end of the run, and
+##    the {K}-4 coupled degrees that connect them
 ###############################################################################
-cat("[1/5] hero\n")
+cat("[1/6] hero\n")
 M <- 8; N <- 12
 W_hero  <- saomnk_block_diagonal(N, 3)          # three modules of four
 module  <- rep(1:3, each = 4)
@@ -114,60 +116,87 @@ env <- saomnk_env(M = M, N = N, density = 0.15, seed = 42)
 mod <- saomnk_model(density = -1.5, popularity = 0,
                     influence_matrix = W_hero, influence_weight = 0.5,
                     strategies = list(egoX = strat))
+B0 <- saomnk_get_bipartite(env)                 # the state before the run
 quiet(saomnk_run(env, mod, steps_per_actor = 30, seed = 12345))
+B  <- saomnk_get_bipartite(env)                 # the state after it
+n_steps <- dim(env$bi_env_arr)[3] - 1L
 
-## Bipartite network at the end of the run (saomnk_get_bipartite()), drawn
-## with the same grammar as saomnk_plot_snapshots(): actors as circles,
-## components as squares, Fruchterman-Reingold layout. Kept custom rather
-## than taken from saomnk_plot_snapshots(): that function colors components
-## by initially used / unused, and this panel colors them by W module.
-B  <- saomnk_get_bipartite(env)
-g  <- igraph::graph_from_biadjacency_matrix(B, directed = FALSE)
-igraph::V(g)$kind  <- ifelse(igraph::V(g)$type, "component", "actor")
-igraph::V(g)$group <- factor(
+## Both network panels are drawn with the same grammar as
+## saomnk_plot_snapshots() (actors circles, components squares) and share ONE
+## Fruchterman-Reingold layout, computed on the union of the start and end
+## ties, so only the ties differ between the panels. Kept custom rather than
+## taken from saomnk_plot_snapshots(): that function colors components by
+## initially used / unused, and these panels color them by W module.
+node_group <- factor(
   c(ifelse(strat < 0, "Actors: strategy -1", "Actors: strategy 1"), paste("Components: module", module)),
   levels = c("Actors: strategy -1", "Actors: strategy 1", paste("Components: module", 1:3)))
-igraph::V(g)$lab   <- c(as.character(seq_len(M)), LETTERS[seq_len(N)])
+net_graph <- function(Bm, status) {
+  g <- igraph::graph_from_biadjacency_matrix(Bm, directed = FALSE)
+  igraph::V(g)$kind  <- ifelse(igraph::V(g)$type, "component", "actor")
+  igraph::V(g)$group <- node_group
+  igraph::V(g)$lab   <- c(as.character(seq_len(M)), LETTERS[seq_len(N)])
+  el <- igraph::as_edgelist(g, names = FALSE)   # actor index, M + component index
+  igraph::E(g)$status <- status[cbind(el[, 1], el[, 2] - M)]
+  g
+}
 set.seed(7)
+xy <- igraph::layout_with_fr(igraph::graph_from_biadjacency_matrix((B0 + B) > 0, directed = FALSE))
+
+kept <- B0 == 1 & B == 1
+st0  <- ifelse(kept, "kept", "dropped")          # start panel: ties later dropped
+st1  <- ifelse(kept, "kept", "formed")           # end panel: ties formed in the run
 net_cols <- c("Actors: strategy -1" = oi[["orange"]], "Actors: strategy 1" = oi[["sky"]],
               "Components: module 1" = oi[["green"]], "Components: module 2" = oi[["blue"]],
               "Components: module 3" = oi[["purple"]])
-p_net <- ggraph(g, layout = "fr") +
-  geom_edge_link(color = "grey60", edge_width = 0.5) +
-  geom_node_point(aes(shape = kind, color = group), size = 7) +
-  geom_node_text(aes(label = lab), color = "white", size = 3, fontface = "bold") +
-  scale_shape_manual(values = c(actor = 16, component = 15), guide = "none") +
-  scale_color_manual(values = net_cols, name = NULL) +
-  labs(title = "Network at the end of the run",
-       subtitle = sprintf("%d actors (circles), %d components (squares), %d ties",
-                          M, N, sum(B))) +
-  theme_readme +
-  theme(panel.grid = element_blank(), axis.text = element_blank(),
-        axis.ticks = element_blank(), axis.title = element_blank()) +
-  ## Legend keys take the node shapes: circles for the two actor groups,
-  ## squares for the three component modules (levels order of `group`).
-  guides(color = guide_legend(nrow = 2,
-                              override.aes = list(size = 4, shape = c(16, 16, 15, 15, 15))))
+net_panel <- function(g, title, subtitle) {
+  ggraph(g, layout = "manual", x = xy[, 1], y = xy[, 2]) +
+    geom_edge_link(aes(edge_colour = status, edge_linetype = status), edge_width = 0.6) +
+    scale_edge_colour_manual(values = c(kept = "grey72", formed = "grey25", dropped = "grey45"),
+                             guide = "none") +
+    scale_edge_linetype_manual(values = c(kept = "solid", formed = "solid", dropped = "22"),
+                               guide = "none") +
+    geom_node_point(aes(shape = kind, color = group), size = 6.5) +
+    geom_node_text(aes(label = lab), color = "white", size = 2.9, fontface = "bold") +
+    scale_shape_manual(values = c(actor = 16, component = 15), guide = "none") +
+    scale_color_manual(values = net_cols, name = NULL, drop = FALSE) +
+    coord_cartesian(clip = "off") +
+    labs(title = title, subtitle = subtitle) +
+    theme_readme +
+    theme(panel.grid = element_blank(), axis.text = element_blank(),
+          axis.ticks = element_blank(), axis.title = element_blank()) +
+    ## Legend keys take the node shapes: circles for the two actor groups,
+    ## squares for the three component modules (levels order of `group`).
+    guides(color = guide_legend(nrow = 2,
+                                override.aes = list(size = 4, shape = c(16, 16, 15, 15, 15))))
+}
+p_start <- net_panel(net_graph(B0, st0), "Network at the start of the run",
+                     sprintf("ministep 0: %d ties; dashed: dropped later", sum(B0)))
+p_end   <- net_panel(net_graph(B, st1), "Network at the end of the run",
+                     sprintf("ministep %d: %d ties (%d formed, dark; %d dropped)",
+                             n_steps, sum(B), sum(B == 1 & B0 == 0), sum(B0 == 1 & B == 0)))
 
 p_w <- w_heatmap(W_hero, "Influence matrix W (input)",
-                 paste0("saomnk_block_diagonal(12, 3); components A-L\n", diag_note),
+                 "saomnk_block_diagonal(12, 3)\ndiagonal unused (XWX: j != h)",
                  labels = LETTERS[seq_len(N)])
 
 p_k4 <- restyle_k4(saomnk_plot_k4(env)) +
   guides(color = guide_legend(nrow = 2,
                               override.aes = list(alpha = 1, shape = NA, linewidth = 1)))
 
-hero <- (p_w / p_net + plot_layout(heights = c(1, 1.25))) | p_k4
-hero <- hero + plot_layout(widths = c(1, 1.45))
-## 170 dpi (1785 px wide, still about 2x the README column): the {K}-4
-## panel's thousands of translucent points make this the largest file.
-save_png(hero, "readme-hero.png", width = 10.5, height = 6.9, dpi = 170)
+## Top row: input and the two states; bottom row: how the run got from one to
+## the other. Identical node legends are collected once.
+hero <- (p_w + p_start + p_end + plot_layout(widths = c(0.85, 1, 1))) / p_k4 +
+  plot_layout(heights = c(1, 1.15), guides = "collect") &
+  theme(legend.position = "bottom")
+## 160 dpi: the {K}-4 panel's thousands of translucent points make this the
+## largest README file.
+save_png(hero, "readme-hero.png", width = 12, height = 9, dpi = 160)
 
 
 ###############################################################################
 ## 2. Influence-matrix architectures under one model
 ###############################################################################
-cat("[2/5] architectures\n")
+cat("[2/6] architectures\n")
 N2 <- 12
 W_arch <- list(
   "Modular"      = saomnk_block_diagonal(N2, 3),
@@ -180,26 +209,94 @@ W_code <- c("Modular"        = "saomnk_block_diagonal(12, 3)",
             "Nested modules" = "mean of block_diagonal at 2, 4, 12 blocks",
             "Local (ring)"   = "nk_to_saomnk(nk_landscape(12, 2, \"adjacent\"))",
             "Random"         = "nk_to_saomnk(nk_landscape(12, 2, \"random\"))")
-arch_plots <- lapply(names(W_arch), function(nm) {
-  W <- unname(as.matrix(W_arch[[nm]]))
+## Ties and mean K_CC (components co-held with each component, excluding
+## itself) at the end of one run of the same model on W.
+end_kcc <- function(W) {
   e <- saomnk_env(M = 8, N = N2, density = 0.15, seed = 42)
   m <- saomnk_model(density = -1.5, influence_matrix = W, influence_weight = 0.5)
   quiet(saomnk_run(e, m, steps_per_actor = 30, seed = 12345))
-  Bf  <- saomnk_get_bipartite(e)
-  kcc <- mean(colSums((crossprod(Bf)) > 0) - (colSums(Bf) > 0))
-  w_heatmap(W, nm, sprintf("%s\nmean K_CC at end of run: %.1f\n%s",
-                           W_code[[nm]], kcc, diag_note)) +
+  Bf <- saomnk_get_bipartite(e)
+  sprintf("end of run: %d ties, mean K_CC %.1f", sum(Bf),
+          mean(colSums((crossprod(Bf)) > 0) - (colSums(Bf) > 0)))
+}
+
+## Row 2: the same support as row 1, with signed real weights. Off-diagonal
+## nonzero entries get a symmetric draw from Uniform(-1, 1); nested modules
+## keep their magnitudes (module depth) and get a random sign. Positive =
+## complements (holding both pays), negative = substitutes (holding both
+## costs). Conventional NK cannot express the negative case: its matrix only
+## says WHO interacts, and the payoffs are drawn separately, i.i.d. U(0, 1).
+signed_version <- function(W, nm, seed = 2026) {
+  W <- unname(as.matrix(W)); n <- nrow(W)
+  set.seed(seed)
+  S <- matrix(0, n, n)
+  up <- which(upper.tri(W) & W != 0)
+  S[up] <- if (nm == "Nested modules") W[up] * sample(c(-1, 1), length(up), replace = TRUE)
+           else stats::runif(length(up), -1, 1)
+  S <- S + t(S)
+  diag(S) <- diag(W)
+  S
+}
+w_heatmap_signed <- function(W, title, subtitle, legend = FALSE) {
+  N  <- nrow(W)
+  diag(W) <- NA
+  df <- data.frame(row = rep(seq_len(N), times = N), col = rep(seq_len(N), each = N),
+                   w = as.vector(W))
+  ggplot(df, aes(col, row, fill = w)) +
+    geom_tile(color = "grey85", linewidth = 0.3) +
+    scale_y_reverse(breaks = seq_len(N), expand = c(0, 0)) +
+    scale_x_continuous(breaks = seq_len(N), position = "top", expand = c(0, 0)) +
+    scale_fill_gradient2(low = "#018571", mid = "white", high = "#A6611A", midpoint = 0,
+                         limits = c(-1, 1), na.value = "grey90",
+                         name = "weight w_hj\n(+ complements,\n- substitutes)",
+                         guide = if (legend) "colourbar" else "none") +
+    coord_equal() +
+    labs(title = title, subtitle = subtitle, x = NULL, y = NULL) +
+    theme_readme +
+    theme(panel.grid = element_blank(), axis.ticks = element_blank(),
+          axis.text = element_text(size = 7), plot.subtitle = element_text(size = 8),
+          legend.position = "right", legend.title = element_text(size = 8),
+          legend.text = element_text(size = 7), legend.key.height = grid::unit(0.5, "cm"))
+}
+
+row_label <- function(head, body) {
+  ggplot() +
+    annotate("text", x = 0, y = 1, label = head, hjust = 0, vjust = 1, fontface = "bold", size = 3.6) +
+    annotate("text", x = 0, y = 0.80, label = body, hjust = 0, vjust = 1, size = 2.9,
+             color = "grey30", lineheight = 1) +
+    coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), clip = "off") +
+    theme_void()
+}
+
+arch_plots <- lapply(names(W_arch), function(nm) {
+  W <- unname(as.matrix(W_arch[[nm]]))
+  w_heatmap(W, nm, sprintf("%s\n%s\n%s",
+                           W_code[[nm]], end_kcc(W), diag_note)) +
     labs(x = NULL, y = NULL) +
     theme(plot.subtitle = element_text(size = 8))
 })
-arch <- wrap_plots(arch_plots, nrow = 1)
-save_png(arch, "readme-architectures.png", width = 12, height = 3.9)
+signed_plots <- lapply(seq_along(W_arch), function(k) {
+  nm <- names(W_arch)[k]
+  S  <- signed_version(W_arch[[nm]], nm)
+  w_heatmap_signed(S, paste(nm, "(signed)"),
+                   sprintf("%s\n%s",
+                           if (nm == "Nested modules") "same magnitudes, random signs"
+                           else "same pattern, weights U(-1, 1)", end_kcc(S)),
+                   legend = k == length(W_arch))
+})
+lab1 <- row_label("Conventional NK",
+                  "binary pattern: who\ninteracts (nested:\nmodule depth)\n\npayoffs drawn apart,\ni.i.d. Uniform(0, 1)")
+lab2 <- row_label("SAOM-NK",
+                  "signed real weights\non the same pattern\n\nbrown: complements\nteal: substitutes")
+arch <- wrap_plots(c(list(lab1), arch_plots, list(lab2), signed_plots), nrow = 2,
+                   widths = c(0.55, 1, 1, 1, 1))
+save_png(arch, "readme-architectures.png", width = 13, height = 7.6, dpi = 170)
 
 
 ###############################################################################
 ## 3. Classical NK reproduction (validation)
 ###############################################################################
-cat("[3/5] NK validation\n")
+cat("[3/6] NK validation\n")
 N3 <- 12
 walk_df <- do.call(rbind, lapply(c(0, 3, 8), function(k) {
   nk <- nk_landscape(N3, k, model = "random", seed = 2026 + k)
@@ -250,7 +347,7 @@ save_png(nkfig, "readme-nk-validation.png", width = 12, height = 4.2)
 ###############################################################################
 ## 4. Shock response: two-segment density schedule
 ###############################################################################
-cat("[4/5] shock\n")
+cat("[4/6] shock\n")
 ## Same design as vignettes/saomnk-simulation.Rmd, section 3.2: density -0.5
 ## in the first half of model time, -2.0 in the second.
 env_s <- saomnk_env(M = 6, N = 8, density = 0, seed = 42)
@@ -267,7 +364,7 @@ save_png(p_shock, "readme-shock.png", width = 8.5, height = 6)
 ###############################################################################
 ## 5. Causal pipeline: DID event-time estimates of the planted shock
 ###############################################################################
-cat("[5/5] DID\n")
+cat("[5/6] DID\n")
 ## Same design as vignettes/saomnk-causal-inference.Rmd: a shocked arm and an
 ## unshocked comparison arm, six actors each, identical seeds.
 mod_c <- saomnk_model(density = -0.5, popularity = 0.15,
@@ -297,5 +394,20 @@ p_did <- p_did +
   labs(caption = "Outcome: actor utility. Shocked arm vs. unshocked arm, 6 actors each, same start and seed.") +
   theme(plot.background = element_rect(fill = "white", color = NA))
 save_png(p_did, "readme-did.png", width = 9, height = 4.8)
+
+
+###############################################################################
+## 6. The objective by class of effects (image fallback for the README math)
+###############################################################################
+cat("[6/6] objective by class\n")
+## rosetta_plot() with no model and no comparison entry draws row I alone:
+## the general objective, one colored summand per class of
+## inst/rosetta/classes.yaml, its chip, effects and construct, and black {K}
+## badges in two rows (view = "both"): the dimension each class reads
+## above, the dimension it moves below. No simulation is run.
+p_obj <- rosetta_plot(NULL, compare = NULL, glyph = FALSE, view = "both",
+                      classes = c("complementarity", "scope", "crowding",
+                                  "contact", "imitation", "covariate"))
+save_png(p_obj, "readme-objective.png", width = 12, height = 4.2)
 
 cat(sprintf("done in %.1f s\n", as.numeric(difftime(Sys.time(), t_start, units = "secs"))))

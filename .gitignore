@@ -77,6 +77,8 @@ _test_txt/
 
 # Ignore large data files
 *.csv
+## The derived {K}-dimension table ships with the package (tools/make_effect_dimensions_csv.R).
+!inst/rosetta/effect_dimensions.csv
 *.tsv
 *.json
 *.parquet

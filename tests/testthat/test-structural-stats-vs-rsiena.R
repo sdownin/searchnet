@@ -306,6 +306,89 @@ test_that("saomnk_coholder_similarity() is not RSiena's simEgoInDist2", {
   expect_true(all(gaps > 1e-6), info = paste(signif(gaps, 3), collapse = ", "))
 })
 
+## ---- inPopX (2026-10-08) --------------------------------------------------
+##
+##   inPopX  sum_i sum_j x_ij w_j,  w_j = sum_h x_hj v_h (ego counted),
+##           v an actor covariate centered as RSiena centers it, internal
+##           parameter 1 ("ind. pop.^(1/#) weighted v")
+##
+## RSiena 1.5.0's two-mode siena07 target for inPopX is NOT deterministic:
+## identical calls (same data, same seed) return either the sum above or the
+## same sum with the LAST component's term, x_+N w_N, omitted. Found
+## 2026-10-08 by probing with unit covariates: the gap is exactly the last
+## column's term in every state tried. So the pin below is two-sided: every
+## target RSiena returns is one of those two values, the full form occurs, and
+## searchnet's column sums to the full form.
+
+.rsiena_target_inpopx <- function(B, VA) {
+  n1 <- nrow(B); n2 <- ncol(B)
+  actors <- RSiena::sienaNodeSet(n1, nodeSetName = "actors")
+  comps  <- RSiena::sienaNodeSet(n2, nodeSetName = "comps")
+  Xdep <- RSiena::sienaDependent(array(c(B, B), dim = c(n1, n2, 2)),
+                                 type = "bipartite", nodeSet = c("actors", "comps"),
+                                 allowOnly = FALSE)
+  va <- RSiena::coCovar(VA, nodeSet = "actors")
+  dat <- RSiena::sienaDataCreate(Xdep, va, nodeSets = list(actors, comps))
+  eff <- RSiena::includeEffects(RSiena::getEffects(dat), inPopX,
+                                interaction1 = "va", verbose = FALSE)
+  alg <- RSiena::sienaAlgorithmCreate(projname = NULL, seed = 1, n3 = 5, nsub = 0,
+                                      simOnly = TRUE, silent = TRUE)
+  ans <- suppressWarnings(
+    RSiena::siena07(alg, data = dat, effects = eff, batch = TRUE,
+                    verbose = FALSE, silent = TRUE))
+  e <- eff[eff$include & eff$type == "eval", ]
+  stats::setNames(as.numeric(ans$targets), e$shortName)[["inPopX"]]
+}
+
+test_that("inPopX sums to RSiena's two-mode inPopX target (full form)", {
+  skip_on_cran()
+  skip_if_not_installed("RSiena")
+
+  set.seed(20261008)
+  M <- 6; N <- 7
+  VA <- round(stats::rnorm(M, 3, 2), 2)       ## nonzero mean: centering matters
+  dvn <- "self$bipartite_rsienaDV"
+  env <- SaomNkRSienaBiEnv$new(list(M = M, N = N, BI_PROB = 0.3, rand_seed = 1,
+                                    name = "_inpopx_vs_rsiena_", dir_output = tempdir()))
+  sm <- list(dv_bipartite = list(
+    name = dvn, rates = list(),
+    effects = list(list(effect = "density", parameter = -0.5, dv_name = dvn, fix = TRUE)),
+    coCovars = list(list(effect = "inPopX", parameter = 0.1, dv_name = dvn, fix = TRUE,
+                         interaction1 = "self$strat_1_coCovar", x = VA, centered = TRUE))
+  ))
+  suppressWarnings(env$search_rsiena(structure_model = sm, iterations_per_actor = 2,
+                                     run_seed = 5, verbose = FALSE))
+  expect_equal(as.numeric(env$strat_1_coCovar), VA)
+
+  states <- lapply(1:8, function(k)
+    matrix(stats::rbinom(M * N, 1, stats::runif(1, 0.3, 0.7)), M, N))
+  vt <- VA - mean(VA)
+  n_full <- 0L
+  for (k in seq_along(states)) {
+    B <- states[[k]]
+    w <- colSums(B * vt)
+    full <- sum(colSums(B) * w)
+    no_last <- full - sum(B[, N]) * w[N]
+    utils::capture.output(st <- env$get_struct_mod_stats_mat_from_bi_mat(B))
+    expect_equal(sum(st[, "inPopX"]), full, tolerance = 1e-8, info = sprintf("state %d", k))
+    tg <- replicate(5, .rsiena_target_inpopx(B, VA))
+    ok <- abs(tg - full) < 1e-8 | abs(tg - no_last) < 1e-8
+    expect_true(all(ok), info = sprintf("state %d: targets %s; full %.6f, no last %.6f",
+                                        k, paste(signif(tg, 8), collapse = ", "), full, no_last))
+    n_full <- n_full + sum(abs(tg - full) < 1e-8)
+  }
+  expect_gt(n_full, 0L)
+})
+
+test_that("negative control: the pre-2026-10-08 inPopX column does NOT match", {
+  set.seed(9)
+  M <- 6; N <- 7
+  VA <- round(stats::rnorm(M, 3, 2), 2); vt <- VA - mean(VA)
+  B <- matrix(stats::rbinom(M * N, 1, 0.5), M, N)
+  w <- colSums(B * vt)
+  expect_gt(abs(sum(rowSums(B * w)) - sum(colSums(B) * w)), 1e-6)
+})
+
 test_that("every crosswalk entry marked exact maps onto a statistic pinned here", {
   ## saom_to_saomnk()'s "exact" status says the SaoMNK effect IS the estimated
   ## RSiena effect. That is a claim about searchnet's statistic, so it needs a

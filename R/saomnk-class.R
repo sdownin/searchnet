@@ -5307,38 +5307,35 @@ SaomNkRSienaBiEnv <- R6Class(
         util_vals[[i]] <- c( statmat %*% theta_mat[i, ] )
 
         ## --- K-stats from incrementally maintained projection matrices ---
-        ## NOTE: The original code counts ALL positive entries per row/col of the
-        ## projection including the diagonal. The diagonal of B%*%t(B) at [i,i] is
-        ## row_sums[i], and of t(B)%*%B at [j,j] is col_sums[j]. Our projection
-        ## matrices have zeroed diagonals for clean rank-1 updates, so we add the
-        ## diagonal contribution back: +1 if the sum is positive.
-        ##
-        ## K_AA: actor-actor degree from social projection (already maintained)
-        K_AA_vals[[i]] <- K_AA_vec + as.integer(row_sums > 0)
+        ## {K} definitions (inst/rosetta/K_DIMENSIONS.md): K_AA(i) counts the
+        ## OTHER actors sharing at least one component with i, and K_CC(j) the
+        ## OTHER components co-held with j. The projections are kept with zero
+        ## diagonals, so the maintained degree vectors are already exclusive of
+        ## the node itself. (Through searchnet 0.12.1 the diagonal was added
+        ## back, overstating both degrees by 1 for every non-isolated node.)
+        K_AA_vals[[i]] <- as.integer(K_AA_vec)
         ## K_AC: actor-component degree = row_sums (# components per actor)
         K_AC_vals[[i]] <- as.integer(row_sums)
         ## K_CA: component-actor degree = col_sums (# actors per component)
         K_CA_vals[[i]] <- as.integer(col_sums)
-        ## K_CC: component-component degree from the bipartite projection
-        K_CC_vals[[i]] <- K_CC_vec + as.integer(col_sums > 0)
+        ## K_CC: component-component degree in the component projection
+        K_CC_vals[[i]] <- as.integer(K_CC_vec)
 
         ## --- NEW component K stats (guard against empty new_components) ---
+        ## Same definitions restricted to the NEW (resp. OLD) columns of B:
+        ## K_CA is the column sum, K_CC the projection degree.
         if (has_new) {
-          K_AA_NEW_vals[[i]] <- K_AA_NEW_vec + as.integer(row_sums_new > 0)
+          K_AA_NEW_vals[[i]] <- as.integer(K_AA_NEW_vec)
           K_AC_NEW_vals[[i]] <- as.integer(row_sums_new)
-          ## Original: apply(t(B_new)%*%B_new, 1, sum(x>0)) = search_new positive per row (incl diag)
-          K_CA_NEW_vals[[i]] <- K_CC_NEW_vec + as.integer(col_sums_new > 0)
-          ## Original: apply(B_new, 2, sum(x>0)) = col_sums_new
-          K_CC_NEW_vals[[i]] <- as.integer(col_sums_new)
+          K_CA_NEW_vals[[i]] <- as.integer(col_sums_new)
+          K_CC_NEW_vals[[i]] <- as.integer(K_CC_NEW_vec)
         }
         ## --- OLD component K stats (guard against empty old_components) ---
         if (has_old) {
-          K_AA_OLD_vals[[i]] <- K_AA_OLD_vec + as.integer(row_sums_old > 0)
+          K_AA_OLD_vals[[i]] <- as.integer(K_AA_OLD_vec)
           K_AC_OLD_vals[[i]] <- as.integer(row_sums_old)
-          ## Original: apply(t(B_old)%*%B_old, 1, sum(x>0)) = search_old positive per row (incl diag)
-          K_CA_OLD_vals[[i]] <- K_CC_OLD_vec + as.integer(col_sums_old > 0)
-          ## Original: apply(B_old, 2, sum(x>0)) = col_sums_old
-          K_CC_OLD_vals[[i]] <- as.integer(col_sums_old)
+          K_CA_OLD_vals[[i]] <- as.integer(col_sums_old)
+          K_CC_OLD_vals[[i]] <- as.integer(K_CC_OLD_vec)
         }
 
       }
@@ -5420,7 +5417,7 @@ SaomNkRSienaBiEnv <- R6Class(
       K_CA_df$component_id <- as.factor(K_CA_df$component_id)
       K_CA_df$actor_id <- as.factor( NA )
       K_CC_df <- .long(K_CC_vals, 1:N, 'component_id')
-      K_CA_df$strategy <- as.factor(ifelse( K_CC_df$component_id %in% new_components, "NEW", "OLD"))
+      K_CC_df$strategy <- as.factor(ifelse( K_CC_df$component_id %in% new_components, "NEW", "OLD"))
       K_CC_df$component_id <- as.factor(K_CC_df$component_id)
       K_CC_df$actor_id <- as.factor( NA )
       K_CA_NEW_df <- if (has_new) .long(K_CA_NEW_vals, 1:n_new, 'component_id') else data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))

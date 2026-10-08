@@ -15,7 +15,8 @@ rosetta_plot(
   file = NULL,
   width = 12,
   height = 10,
-  dpi = 110
+  dpi = 110,
+  view = c("moves", "reads", "both")
 )
 }
 \arguments{
@@ -45,6 +46,10 @@ also sets the layout of row II: long expressions are wrapped, and shrunk
 if wrapping is not enough, to fit the figure width so they do not run
 into the relation label. When printing without \code{file}, pass the width of
 the device.}
+
+\item{view}{Which field the \{K\} badges show: \code{"moves"} (default; the
+dimension each class's target statistic moves, \code{k_channel}), \code{"reads"}
+(the dimension its change statistic depends on), or \code{"both"}.}
 }
 \value{
 A ggplot object (assembled with \pkg{cowplot}); print it, or save
@@ -60,11 +65,15 @@ model term by term in the same classes:
 \item{Row I}{the objective of \code{x} (or the general objective, every class
 switched on, when \code{x} is \code{NULL}): one summand per class, a chip per
 class (filled when switched on, outlined when zero or absent), the
-effects it contains, and its construct. Classes that move the same
-\{K\} channel sit side by side (K_CC, K_AC, K_AA, K_CA, then channels
-opened by registered classes, then other), and each channel gets one
+effects it contains, and its construct. Classes on the same \{K\}
+dimension sit side by side (K_CC, K_AC, K_AA, K_CA, then dimensions
+opened by registered classes, then other), and each dimension gets one
 black badge naming its dimension (for example "Sociality K_AA"),
-centered under its classes on a bracket when it groups two or more.}
+centered under its classes on a bracket when it groups two or more.
+\code{view} chooses the field: the dimension each class moves (the
+default), the one it reads, or both, in two badge rows (reads above,
+moves below), each with its own brackets. See
+\code{\link[=searchnet_effect_dimensions]{searchnet_effect_dimensions()}} and \code{inst/rosetta/K_DIMENSIONS.md}.}
 \item{Row II}{the entry \code{compare}, in row I's columns: each class's term
 in the entry's own notation, \code{+ 0} for a class it switches off,
 outlined chips for classes set to zero, absent or held fixed, and the
@@ -77,9 +86,11 @@ count, the K that a binary NK influence pattern records. The diagonal
 is blank because the engine's XWX statistic sums over \code{j != h}.}
 }
 
-The channel groups are attached to the result as \code{attr(, "k_groups")}, a
-data.frame with one row per badge (\code{k_channel}, \code{name}, \code{xmin}, \code{xmax},
-\code{x}, \code{n}, \code{classes}).
+The dimension groups are attached to the result as \code{attr(, "k_groups")},
+a data.frame with one row per badge (\code{k_channel}, \code{name}, \code{xmin}, \code{xmax},
+\code{x}, \code{n}, \code{classes}), for the field drawn (moves when \code{view} is
+\code{"both"}); with \code{view = "both"} the reads row's groups are
+attached as \code{attr(, "k_groups_reads")}.
 }
 \examples{
 \donttest{

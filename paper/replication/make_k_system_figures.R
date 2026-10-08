@@ -52,14 +52,15 @@ fig_out <- if (!is.na(.this_file)) {
 if (!dir.exists(fig_out)) dir.create(fig_out, recursive = TRUE)
 
 K_DIMS   <- c("K_AC", "K_CA", "K_AA", "K_CC")
-## Channel labels as the package draws them: symbol and plain name.
-K_LABELS <- c(K_AC = 'K[AC]*"  scope"',
-              K_CA = 'K[CA]*"  popularity"',
-              K_AA = 'K[AA]*"  sociality"',
-              K_CC = 'K[CC]*"  coupling"')
+## {K} dimension labels as the package draws them: symbol and display name
+## (inst/rosetta/K_DIMENSIONS.md); the series are mean degrees.
+K_LABELS <- c(K_AC = 'K[AC]*"  Expansiveness"',
+              K_CA = 'K[CA]*"  Popularity"',
+              K_AA = 'K[AA]*"  Sociality"',
+              K_CC = 'K[CC]*"  Epistasis"')
 
-## Visual grammar of the package plots (R/plot-readable.R): actor channels
-## orange, component channels blue; direct ties solid, links through a shared
+## Visual grammar of the package plots (R/plot-readable.R): actor dimensions
+## orange, component dimensions blue; direct ties solid, links through a shared
 ## partner dashed; the event vermillion; context grey.
 OI <- c(orange = "#E69F00", blue = "#0072B2", vermillion = "#D55E00",
         grey = "grey45", ink = "grey20")
@@ -117,7 +118,7 @@ COUPLING_POPULARITY <- 0.15
 SHOCK_DENSITY       <- -5.0
 SHOCK_POPULARITY    <- 0.15
 SPARSITY_TO         <- -6.5    # density after the sparsity shock
-POPULARITY_TO       <- 1.20    # popularity after the popularity shock
+POPULARITY_TO       <- 1.20    # inPop parameter after the inPop shock
 
 make_model <- function(density = SHOCK_DENSITY, popularity = SHOCK_POPULARITY) {
   saomnk_model(density          = density,
@@ -169,15 +170,16 @@ p_cpl <- ggplot(km, aes(x = step, y = value, group = k)) +
             parse = TRUE, hjust = 0, size = 3.1) +
   scale_color_manual(values = K_COLS, guide = "none") +
   scale_linetype_manual(values = K_LTY, guide = "none") +
-  scale_x_continuous(expand = expansion(mult = c(0.02, 0.2))) +
+  scale_x_continuous(expand = expansion(mult = c(0.02, 0.24))) +
   coord_cartesian(clip = "off") +
   labs(title = title_A,
        subtitle = paste0("Mean degree at each ministep of one seeded run (", SIM_M,
                          " actors, ", SIM_N, " components).\n",
-                         "Orange: actor channels; blue: component channels. ",
+                         "Orange: actor dimensions; blue: component dimensions. ",
                          "Solid: direct ties; dashed: links through a shared partner."),
        x = "Ministep (one decision opportunity)", y = "Mean degree") +
-  theme_jss()
+  theme_jss() +
+  theme(plot.margin = margin(5.5, 14, 5.5, 5.5))
 if (proj_high) {
   ## Arrow to the dashed K_AA line two thirds of the way along.
   xa <- round(0.62 * x_max)
@@ -227,7 +229,7 @@ arms <- list(
   "Control (no shock)" = run_arm(NULL),
   "Sparsity shock" = run_arm(list(saomnk_shock("density", SHOCK_DENSITY, 1),
                                   saomnk_shock("density", SPARSITY_TO, 1))),
-  "Popularity shock" = run_arm(list(saomnk_shock("popularity", SHOCK_POPULARITY, 1),
+  "inPop shock" = run_arm(list(saomnk_shock("popularity", SHOCK_POPULARITY, 1),
                                     saomnk_shock("popularity", POPULARITY_TO, 1)))
 )
 
@@ -251,25 +253,26 @@ cat(sprintf("  shock after ministep %d; arms identical before it: %s
               isTRUE(all.equal(pre_w[[3]], pre_w[[5]]))))
 
 ## Direction of each treated arm against the control at the end of the run,
-## per channel, for the title.
+## per dimension, for the title.
 end_by <- function(arm, k) {
   s <- km2[km2$arm == arm & km2$k == k, ]
   s$value[s$step == max(s$step)]
 }
 dir_of <- function(arm) sign(vapply(K_DIMS, function(k)
   end_by(arm, k) - end_by("Control (no shock)", k), numeric(1)))
-d_pop <- dir_of("Popularity shock"); d_spa <- dir_of("Sparsity shock")
+d_pop <- dir_of("inPop shock"); d_spa <- dir_of("Sparsity shock")
 title_B <- if (all(d_pop > 0) && all(d_spa < 0)) {
-  "A popularity shock raises all four {K} degrees; the sparsity arm stays near zero, like the control"
+  "An inPop shock raises all four {K} degrees;
+a sparsity shock leaves them near zero, like the control"
 } else if (all(d_pop > 0)) {
-  "A popularity shock raises all four {K} degrees"
+  "An inPop shock raises all four {K} degrees"
 } else {
   "Three runs share a start and a seed until the shock"
 }
 ARM_COLS <- c("Control (no shock)" = OI[["grey"]], "Sparsity shock" = OI[["blue"]],
-              "Popularity shock" = OI[["vermillion"]])
+              "inPop shock" = OI[["vermillion"]])
 ARM_LTY  <- c("Control (no shock)" = "solid", "Sparsity shock" = "42",
-              "Popularity shock" = "solid")
+              "inPop shock" = "solid")
 first_dim <- levels(km2$dimension)[1]
 ## Arm key written in the empty upper-left of the first panel, each name in
 ## its line's color, in place of a legend.
@@ -277,7 +280,7 @@ y_top <- max(km2$value[km2$dimension == first_dim])
 endB <- data.frame(arm = factor(names(ARM_COLS), levels = names(ARM_COLS)),
                    y_lab = y_top * c(0.80, 0.70, 0.90),
                    lab = c("control (no shock)", "sparsity shock (dashed)",
-                           "popularity shock"))
+                           "inPop shock"))
 endB$dimension <- factor(first_dim, levels = levels(km2$dimension))
 note_B <- data.frame(dimension = factor(first_dim, levels = levels(km2$dimension)),
                      x = shock_step, label = " shock")
@@ -306,7 +309,7 @@ p_shk <- ggplot(km2, aes(x = step, y = value, color = arm, linetype = arm)) +
   labs(title = title_B,
        subtitle = sprintf(paste0("Mean degree at each ministep. Three runs with the same start ",
                                  "and seed; two get a parameter\nshock at the dotted line ",
-                                 "(sparsity: density %.1f to %.1f; popularity: %.2f to %.2f)."),
+                                 "(sparsity: density %.1f to %.1f; inPop: %.2f to %.2f)."),
                           SHOCK_DENSITY, SPARSITY_TO, SHOCK_POPULARITY, POPULARITY_TO),
        x = "Ministep (one decision opportunity)", y = "Mean degree") +
   theme_jss()
@@ -322,7 +325,7 @@ term <- do.call(rbind, lapply(K_DIMS, function(k) {
   data.frame(dimension = k,
              control    = s$value[s$arm == "Control (no shock)"],
              sparsity   = s$value[s$arm == "Sparsity shock"],
-             popularity = s$value[s$arm == "Popularity shock"])
+             popularity = s$value[s$arm == "inPop shock"])
 }))
 cat("  Terminal means by arm:\n")
 print(term, row.names = FALSE, digits = 3)

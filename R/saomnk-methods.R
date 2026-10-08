@@ -21,15 +21,22 @@ NULL
 
 #' Friendly label for an RSiena shortcode
 #'
-#' Reverses \code{.EFFECT_MAP} (saomnk-api.R): "inPop" prints as
-#' "popularity (inPop)" so the console shows both the user-facing vocabulary
-#' and the RSiena name the engine actually registers.
+#' Prints the construct each effect is read as, then the RSiena name the
+#' engine registers: "inPop" prints as "crowding (inPop)" and "XWX" as
+#' "complementarity (XWX)" (inst/rosetta/K_DIMENSIONS.md: constructs are
+#' readings of effects, never {K} dimensions, and "popularity" is never a
+#' construct name for inPop). Other shortcodes reverse \code{.EFFECT_MAP}
+#' (saomnk-api.R), whose argument-style keys (\code{popularity},
+#' \code{epistasis}) stay accepted as input names.
 #'
 #' @param shortcode Character scalar, an RSiena effect shortName.
 #' @return Character scalar label.
 #' @keywords internal
 #' @noRd
 .saomnk_effect_label <- function(shortcode) {
+  construct <- c(inPop = "crowding", XWX = "complementarity")
+  if (length(shortcode) == 1 && shortcode %in% names(construct))
+    return(sprintf("%s (%s)", construct[[shortcode]], shortcode))
   friendly <- names(.EFFECT_MAP)[match(shortcode, .EFFECT_MAP)]
   if (length(friendly) == 1 && !is.na(friendly)) {
     sprintf("%s (%s)", friendly, shortcode)

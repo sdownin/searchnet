@@ -31,9 +31,15 @@ saomnk_model(
 \item{density}{Numeric. Weight on the density (intercept) effect.
 Negative values produce sparse networks (default \code{-0.5}).}
 
-\item{popularity}{Numeric. Weight on the in-degree popularity effect
-(\code{inPop} in RSiena). Controls preferential attachment to
-high-popularity components (default \code{0}).}
+\item{popularity}{Numeric. Weight on RSiena's \code{inPop} effect (default
+\code{0}). The argument keeps its historical name for API stability, but
+its construct is \emph{crowding}: \code{inPop}'s statistic
+\eqn{\sum_j b_{ij} b_{+j}} (\eqn{b_{+j}} counting ego) reads Popularity
+(\eqn{K_{CA}}), the number of actors holding a component, and a tie
+to a component others hold raises the actor's overlap with them. A
+negative weight is crowding (avoiding components others hold); a positive
+weight is agglomeration (seeking them). See
+\code{\link{searchnet_effect_dimensions}}.}
 
 \item{scope}{Numeric. Weight on the out-degree activity effect
 (\code{outAct} in RSiena). Controls actors' tendency to expand scope
@@ -52,8 +58,9 @@ influence on another's fitness contribution.
 
 \emph{Epistasis} names three distinct things in this package, and W is
 only the first.  W is the \emph{input}.  \eqn{K_{CC}} is the
-\emph{realized structure}: the component-projection degree
-\code{colSums(crossprod(B) > 0)}, reported by
+\emph{realized structure}: the component-projection degree, the
+number of OTHER components co-held with each component
+(\code{P <- crossprod(B); diag(P) <- 0; colSums(P > 0)}), reported by
 \code{\link{saomnk_get_degrees}}.  W does not appear in that formula, but
 W drives the search that produces \eqn{B}, so \eqn{K_{CC}} evolves as a
 consequence of W.  \emph{Epistatic fitness} is the \emph{outcome}: the
@@ -108,16 +115,23 @@ covariates.
 Each element is an M-length vector of actor attributes; the list name
 determines the RSiena covariate effect:
 \describe{
-\item{\code{"egoX"}}{Ego (actor scope) covariate}
-\item{\code{"inPopX"}}{Popularity-seeking covariate}
-\item{\code{"altX"}}{Alter (component) covariate}
+\item{\code{"egoX"}}{Ego covariate: \eqn{\sum_j b_{ij} v_i}, the
+actor's attribute times its number of components.}
+\item{\code{"inPopX"}}{Covariate-weighted popularity:
+\eqn{\sum_j b_{ij} \sum_h b_{hj} v_h}, the attribute sum of each held
+component's holders (ego counted).}
 }
+For a bipartite dependent variable \code{altX} needs a
+\emph{component} covariate, so it is not accepted here: pass it in
+\code{component_covariates} (an \code{altX}, \code{altSqX} or
+\code{outActX} entry in \code{strategies} is an error).
 Each entry may optionally carry a \code{"weight"} attribute (numeric);
 if absent the default weight is \code{0.2}.}
 
 \item{component_covariates}{Named list of N-length numeric vectors for
 constant component covariates (e.g., component quality scores).
-Names become the RSiena effect type (e.g., \code{"altX"}).
+Names become the RSiena effect type: \code{"altX"}
+(\eqn{\sum_j b_{ij} c_j}, the alter covariate) or \code{"outActX"}.
 Each entry may carry a \code{"weight"} attribute; default is \code{0.2}.}
 
 \item{dyad_covariate}{An \eqn{M \times N}{M x N} actor-by-component

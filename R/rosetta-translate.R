@@ -22,6 +22,8 @@
     if (cid == "complementarity" && length(on) && !is.null(s$influence_matrix))
       expr <- paste0(expr, sprintf(" (W: %d x %d)", nrow(s$influence_matrix), ncol(s$influence_matrix)))
     data.frame(class = cid, label = classes$label[i], k_channel = classes$k_channel[i],
+               reads = classes$reads[i],
+               moves = classes$moves[i],
                status = status,
                effects = paste(vapply(effs, function(e) e$effect, ""), collapse = ", "),
                expression = expr, construct = classes$construct[i], stringsAsFactors = FALSE)
@@ -30,6 +32,7 @@
   other <- Filter(function(e) !e$class %in% classes$id, s$effects)
   if (length(other))
     out <- rbind(out, data.frame(class = "other", label = "other", k_channel = "other",
+                                 reads = "other", moves = "other",
                                  status = if (any(vapply(other, .rosetta_effect_on, TRUE))) "active" else "zero",
                                  effects = paste(vapply(other, function(e) e$effect, ""), collapse = ", "),
                                  expression = paste(vapply(other, function(e) sprintf("theta_%s = %s", e$effect,
@@ -46,6 +49,8 @@
     t <- Filter(function(x) identical(x$class, cid), tl)
     t <- if (length(t)) t[[1]] else list(status = "absent", expression = "0")
     data.frame(class = cid, label = classes$label[i], k_channel = classes$k_channel[i],
+               reads = classes$reads[i],
+               moves = classes$moves[i],
                status = t$status, effects = .rs_or(t$effect, ""),
                expression = .rs_or(t$expression, if (t$status %in% .ROSETTA_ON) "" else "0"),
                construct = .rs_or(t$construct, classes$construct[i]),
@@ -126,7 +131,7 @@
 
 #' Translate a model into the classes of the SAOM-NK objective
 #'
-#' Decomposes a model class by class (status, effects, expression, K channel
+#' Decomposes a model class by class (status, effects, expression, K dimension
 #' and construct) and gives a nesting verdict against every registry entry.
 #'
 #' A class is \emph{included} in the model when the model has an effect of
@@ -446,11 +451,13 @@ print.rosetta_lean <- function(x, ...) {
 #'
 #' Writes the class registry and the entries in the JSON contract front ends
 #' read: `{"schema_version": "1", "searchnet_version", "classes": [{"id",
-#' "label", "effects", "k_channel", "color", "lean_stat", "description"}],
+#' "label", "effects", "k_channel", "reads", "moves",
+#' "color", "lean_stat", "description"}],
 #' "entries": [{"id", "title", "model", "citations": [{"key", "text",
 #' "doi"}], "relation", "statement", "restrictions", "terms": [{"class",
 #' "status", "expression", "construct"}], "constructs", "lean",
-#' "does_not_cover", "provenance"}]}`.
+#' "does_not_cover", "provenance"}]}`. A class's `k_channel` is a deprecated
+#' alias of its `moves`.
 #'
 #' @param path Output file (`NULL` returns the string only).
 #' @param include_private Logical; include `entries-private/` (default
@@ -468,7 +475,8 @@ rosetta_export_json <- function(path = NULL, include_private = FALSE, pretty = T
   classes <- lapply(seq_len(nrow(cl)), function(i) list(
     id = cl$id[i], label = cl$label[i],
     effects = I(trimws(strsplit(cl$effects[i], ",")[[1]])),
-    k_channel = cl$k_channel[i], color = cl$color[i],
+    k_channel = cl$k_channel[i], reads = cl$reads[i],
+    moves = cl$moves[i], color = cl$color[i],
     lean_stat = if (is.na(cl$lean_stat[i])) NULL else cl$lean_stat[i],
     description = cl$description[i]))
   es <- .rosetta_load(include_private)

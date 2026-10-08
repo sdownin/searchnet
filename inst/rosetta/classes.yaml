@@ -3,9 +3,12 @@
 # Each class groups searchnet effect names into one summand of the objective
 #   u_i = sum over classes c of sum over effects k in c of theta_k s_k(B),
 # where the complementarity class carries the fitness term under each influence
-# matrix W. A class names the {K} channel it moves (K_CC, K_AC, K_AA, K_CA, or
-# other), a color token used by the figures, and the statistic of the Lean
-# library that carries it (null when the library has none).
+# matrix W. A class names two {K} dimensions (K_CC, K_AC, K_AA, K_CA, or other):
+# the one its change statistic reads and the one its target statistic moves
+# (searchnet_effect_dimensions() gives both per effect; K_DIMENSIONS.md in this
+# directory states the rules).
+# It also names a color token used by the figures, and the statistic of the
+# Lean library that carries it (null when the library has none).
 #
 # The classes are extensible: add one here, or at run time with
 # rosetta_register_class(). Effects listed under no class are reported as
@@ -16,14 +19,23 @@
 #   effects       searchnet effect names that belong to the class; the first
 #                 simulable one is the default effect when a class is switched on
 #   simulable     effects saomnk_run() can simulate (a subset of effects)
-#   k_channel     K_CC | K_AC | K_AA | K_CA | other
+#   reads         the {K} dimension the class's change statistic Delta s_ij
+#                 depends on, by the walk-dependency rule of K_DIMENSIONS.md:
+#                 K_CC | K_AC | K_AA | K_CA | other. tests/testthat/test-k-dimensions.R
+#                 checks it against the dimension derived for the class's effects.
+#   moves         the {K} dimension of the target statistic sum_i s_i(B), which
+#                 theta moves first: K_CC | K_AC | K_AA | K_CA | other (other:
+#                 the class's effects move different dimensions, as the
+#                 covariates do; per effect, see effect_dimensions.csv)
+#   k_channel     DEPRECATED alias of moves, kept for the v0.12.0 contract
+#                 (must equal moves)
 #   color         hex color token
 #   lean_stat     statistic of the SaomNK Lean library, or null
 #   construct     default construct label, used when an entry names none
 #   description   one line
 schema_version: "1"
-# Dimension name of each {K} channel, shown on the channel's badge in the
-# figures. A class registered on a new channel may name it (k_label).
+# Display name of each {K} dimension, shown on its badge in the figures. A
+# class registered on a new dimension may name it (k_label).
 k_channel_label:
   K_CC: Epistasis
   K_AC: Expansiveness
@@ -34,6 +46,8 @@ classes:
     label: complementarity
     effects: [XWX, nk]
     simulable: [XWX]
+    reads: K_CC
+    moves: K_CC
     k_channel: K_CC
     color: "#3E5C76"
     lean_stat: xwx
@@ -43,7 +57,9 @@ classes:
     label: scope
     effects: [density, outAct, outActSqrt]
     simulable: [density, outAct, outActSqrt]
-    k_channel: K_AC
+    reads: K_AC
+    moves: K_CC
+    k_channel: K_CC
     color: "#2A9D8F"
     lean_stat: outAct
     construct: breadth of the actor's portfolio
@@ -52,6 +68,8 @@ classes:
     label: crowding
     effects: [inPop, inPopSqrt]
     simulable: [inPop, inPopSqrt]
+    reads: K_AA
+    moves: K_AA
     k_channel: K_AA
     color: "#C8553D"
     lean_stat: inPop
@@ -61,6 +79,8 @@ classes:
     label: contact
     effects: [cycle4]
     simulable: [cycle4]
+    reads: K_AA
+    moves: K_AA
     k_channel: K_AA
     color: "#D9A13B"
     lean_stat: cycle4
@@ -70,7 +90,9 @@ classes:
     label: imitation
     effects: [coholder_similarity]
     simulable: []
-    k_channel: K_CA
+    reads: K_CA
+    moves: K_AA
+    k_channel: K_AA
     color: "#6D5BA8"
     lean_stat: null
     construct: attraction to components held by similar performers
@@ -79,6 +101,8 @@ classes:
     label: covariates
     effects: [egoX, altX, X]
     simulable: []
+    reads: K_AC
+    moves: other
     k_channel: other
     color: "#7A7A7A"
     lean_stat: egoStat
