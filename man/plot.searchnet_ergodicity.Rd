@@ -4,18 +4,32 @@
 \alias{plot.searchnet_ergodicity}
 \title{Plot an Ergodicity Sweep}
 \usage{
-\method{plot}{searchnet_ergodicity}(x, ...)
+\method{plot}{searchnet_ergodicity}(x, ..., draw = TRUE, annotate = TRUE)
 }
 \arguments{
 \item{x}{A \code{searchnet_ergodicity} object.}
 
-\item{...}{Passed to \code{plot}.}
+\item{...}{Ignored. Kept for compatibility with the \code{plot} generic;
+base-graphics arguments no longer apply.}
+
+\item{draw}{Logical. Print the figure. Default \code{TRUE}.}
+
+\item{annotate}{Logical. If \code{TRUE} (default), mark the first run
+length at which the between-arm gap falls inside the equivalence margin.}
 }
 \value{
-\code{x}, invisibly.
+\code{x}, invisibly, as before. The figure itself, a two-panel
+ggplot built with \code{cowplot::plot_grid()}, is attached as
+\code{attr(x, "plot")}; restyle or save it from there.
 }
 \description{
 Two panels: the arms' final densities converging as run length grows, and
 the between-arm gap decaying on log-log axes (where geometric decay is a
-straight line).
+straight line). Drawn with ggplot2 in the package style
+(\code{\link{theme_searchnet}}): the low-start arm in Okabe-Ito blue, the
+high-start arm in vermillion, each labeled on its dotted starting density
+rather than in a legend; the Monte Carlo floor shaded grey; the declared
+equivalence margin dashed. Panel titles state the computed result: whether
+the arms are equivalent at the longest run (the TOST verdict) and whether
+the gap shrinks.
 }

@@ -224,3 +224,51 @@ test_that("compute_utility_shocks runs without error when shocks are set", {
   ## The key assertion is that it ran without error
   expect_true(TRUE)
 })
+
+
+## Regression (2026-10-07): the simulation vignette passed
+##   list(effect_level = "density_dv_bipartite", new_parameter = -2, portion = 1)
+## and the engine ran it as an unshocked model: the effect_level matched no
+## theta column and `new_parameter` is not a field the engine reads, and
+## shock_theta_matrix() skipped both without a word.
+test_that("a malformed theta_shocks spec errors instead of being ignored", {
+  skip_if_not_installed("RSiena")
+  env <- SaomNkRSienaBiEnv$new(make_small_environ_params(M = 4, N = 8, rand_seed = 210))
+  struct <- make_strategy_structure_model(4)
+
+  bad_level <- list(list(effect_level = "density_dv_bipartite", parameter = -2, portion = 1),
+                    list(effect_level = "density_dv_bipartite", parameter = -2, portion = 1))
+  expect_error(
+    env$search_rsiena(struct, iterations_per_actor = 4, run_seed = 1,
+                      theta_shocks = bad_level),
+    "matches no theta column")
+
+  bad_field <- list(list(effect_level = "density", parameter = -1, portion = 1),
+                    list(effect_level = "density", new_parameter = -2, portion = 1))
+  expect_error(
+    env$search_rsiena(struct, iterations_per_actor = 4, run_seed = 1,
+                      theta_shocks = bad_field),
+    "new_parameter")
+
+  one_seg <- list(list(effect_level = "density", parameter = -2, portion = 1))
+  expect_warning(
+    env$search_rsiena(struct, iterations_per_actor = 4, run_seed = 1,
+                      theta_shocks = one_seg),
+    "one entry")
+})
+
+test_that("a well-formed two-segment shock reaches the theta grid and the path", {
+  skip_if_not_installed("RSiena")
+  env <- SaomNkRSienaBiEnv$new(make_small_environ_params(M = 4, N = 8, rand_seed = 211))
+  struct <- make_strategy_structure_model(4)
+  shocks <- list(list(effect_level = "density", parameter = -1, portion = 1),
+                 list(effect_level = "density", parameter = -2, portion = 1))
+  env$search_rsiena(struct, iterations_per_actor = 6, run_seed = 1,
+                    theta_shocks = shocks)
+  dens <- env$theta_matrix[, "density"]
+  n <- length(dens)
+  expect_true(all(dens[seq_len(n / 2)] == -1))
+  expect_true(all(dens[(n / 2 + 1):n] == -2))
+  ## The break is a segment boundary of the genuine path.
+  expect_gte(nrow(env$path_segments), 2L)
+})

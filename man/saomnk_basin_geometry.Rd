@@ -32,7 +32,7 @@ Named list with width, depth, steepness, escape_difficulty
 \description{
 Derives basin width, depth, and steepness from the three search
 parameters (scope cost, synergy, herding) using the analytical
-mapping from the AMR manuscript.
+mapping in the package's basin-geometry derivation.
 }
 \examples{
 ## Resource-suppressing policy: narrow, shallow, steep-walled basin

@@ -111,11 +111,19 @@ test_that("heterogeneous rate effects (RateX) register with their covariate", {
 test_that("degree-dependent rate effects (outRate) register", {
   rates <- list(list(effect = "outRate", parameter = 0.3, dv_name = DV_NAME, fix = TRUE))
   env <- .mk_env()
-  expect_no_error(
-    suppressWarnings(env$search_rsiena(structure_model = .mk_model(rates = rates),
-                                       iterations_per_actor = 5, run_seed = 999))
-  )
+  ## Registration is checked without simulating. Since 0.11.0 search_rsiena()
+  ## simulates unconditional periods, and RSiena 1.5.0 corrupts the heap when
+  ## it simulates outRate unconditionally with inPop or XWX (R crashes at the
+  ## next garbage collection; reproduced in plain RSiena). search_rsiena()
+  ## therefore refuses the effect with a classed error rather than crashing.
+  ## Before 0.11.0 this test ran the simulation, which then consisted of
+  ## one-ministep draws under a fixed budget where no rate effect could act.
+  suppressMessages(env$prepare_theta_scaffold(.mk_model(rates = rates), iterations = 30))
   expect_true("outRate" %in% .included(env)$shortName)
+  expect_error(
+    suppressMessages(env$search_rsiena(structure_model = .mk_model(rates = rates),
+                                       iterations_per_actor = 5, run_seed = 999)),
+    class = "searchnet_unsupported_effect")
 })
 
 

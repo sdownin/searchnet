@@ -214,64 +214,56 @@ env_shocked <- SaomNkRSienaBiEnv$new(list(
   M = 6, N = 8, BI_PROB = 0, rand_seed = 42, name = "_shocked_"
 ))
 
-## Define a shock schedule using the effect_level format:
-## At the midpoint (portion 1), shift density from -0.5 to -2.0
+## A shock schedule is a list of consecutive segments, each with its own
+## parameter values; `portion` sets each segment's relative length and
+## `effect_level` names a column of the theta grid (here "density").
+## First half: density -0.5 (baseline). Second half: density -2.0.
 theta_shocks <- list(
-  list(
-    effect_level = c("density_dv_bipartite"),
-    new_parameter = c(-2.0),
-    portion = 1
-  )
+  list(effect_level = "density", parameter = -0.5, portion = 1),
+  list(effect_level = "density", parameter = -2.0, portion = 1)
 )
 
-shock_ok <- tryCatch({
-  env_shocked$search_rsiena(
-    sm_baseline,
-    iterations_per_actor = 100,
-    run_seed = 12345,
-    theta_shocks = theta_shocks
-  )
-  TRUE
-}, error = function(e) {
-  cat("Shock simulation note:", e$message, "\n")
-  FALSE
-})
+env_shocked$search_rsiena(
+  sm_baseline,
+  iterations_per_actor = 100,
+  run_seed = 12345,
+  theta_shocks = theta_shocks
+)
+table(env_shocked$theta_matrix[, "density"])
 ```
 
 ```{r shock-plots, fig.height=10, fig.width=10}
-if (exists("shock_ok") && shock_ok) {
-  env_shocked$plot_degree_4panel(loess_span = 0.3)
-} else {
-  cat("Shock simulation did not complete; see note above.\n")
-  cat("The baseline K-4 panel (Section 3.1) demonstrates the core visualization.\n")
-}
+env_shocked$plot_degree_4panel(loess_span = 0.3)
 ```
 
 The shock at step 300 creates a visible structural break in the K-4 degree
 trajectories, demonstrating how exogenous parameter changes propagate through
 the coupled search system.
 
+> **Rerun 2026-10-07:** K_AC wandering 2.4 to 4.9, no shock applied -> K_AC flat near 7.6 after step 100, no shock applied (density -0.5 on all 600 theta rows in both runs); claim no longer supported as stated.
+
+> **Rerun 2026-10-07 (shock fix):** no shock applied (the schedule's `effect_level` and `new_parameter` matched nothing the engine reads, and a single entry would have covered the whole run) -> two-segment schedule, density -0.5 on theta rows 1-300 and -2.0 on rows 301-600; the break falls at ministep 331 of 629, not step 300. Mean K_AC 7.75 over the 50 ministeps before it, 5.77 over the 50 after, 1.76 over the last 50 (unshocked baseline 7.69); final ties 11 vs 45. The break is visible; "step 300" holds on the theta grid, not on the ministep axis.
+
 # 4. Multi-Wave Simulations
 
-For Monte Carlo analysis, use `search_rsiena_multiwave_run` to execute
-multiple independent simulation waves:
+Use `search_rsiena_multiwave_run` to execute a sequence of waves, each
+started from the state the previous wave ended in (for independent
+replications, see `saomnk_monte_carlo()`):
 
 ```{r multiwave}
 env_multi <- SaomNkRSienaBiEnv$new(list(
   M = 6, N = 8, BI_PROB = 0, rand_seed = 42, name = "_multiwave_"
 ))
 
-tryCatch({
-  env_multi$search_rsiena_multiwave_run(
-    structure_model = sm_baseline,
-    n_waves = 2,              # small for vignette speed
-    iterations_per_actor = 20,
-    run_seed = 12345
-  )
-  cat("Multi-wave simulation complete:", env_multi$get_step(), "total steps\n")
-}, error = function(e) {
-  cat("Multi-wave note:", e$message, "\n")
-})
+env_multi$search_rsiena_multiwave_run(
+  structure_model = sm_baseline,
+  waves = 2,                # small for vignette speed
+  iterations_per_actor = 20,
+  run_seed = 12345
+)
+cat("Multi-wave simulation complete:", length(env_multi$rsiena_model_waves),
+    "waves; ties at the end of each wave:",
+    vapply(env_multi$bipartite_matrix_waves, sum, numeric(1)), "\n")
 ```
 
 # References

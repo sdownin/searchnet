@@ -23,6 +23,10 @@
 args    <- commandArgs(trailingOnly = TRUE)
 wt      <- if (length(args) >= 1) args[[1]] else "."
 exclude <- if (length(args) >= 2) args[[2]] else file.path(wt, ".public-exclude")
+## .public-exclude lists itself (it names what it withholds), so a snapshot
+## worktree may not carry it. Fall back to the dev checkout running the gate.
+if (!file.exists(exclude) && length(args) < 2 && file.exists(".public-exclude"))
+  exclude <- normalizePath(".public-exclude")
 
 ## ---------------------------------------------------------------------------
 ## Patterns for content that must never ship, independent of the list file.
@@ -73,7 +77,10 @@ if (file.exists(exclude)) {
   lines <- readLines(exclude, warn = FALSE)
   lines <- trimws(lines)
   listed <- lines[nzchar(lines) & !startsWith(lines, "#")]
-  hit <- intersect(listed, tracked)
+  ## An entry ending in "/" withholds everything under that directory.
+  dirs <- listed[endsWith(listed, "/")]
+  hit <- union(intersect(listed, tracked),
+               tracked[vapply(tracked, function(t) any(startsWith(t, dirs)), logical(1))])
   if (length(hit))
     problems[["listed in .public-exclude"]] <- hit
 } else {
@@ -86,6 +93,127 @@ for (p in ARTIFACT_PATTERNS) {
   hit <- grep(p, tracked, value = TRUE)
   if (length(hit))
     problems[[paste0("matches internal pattern ", p)]] <- hit
+}
+
+## -- 3. embargoed CONTENT ----------------------------------------------------- #
+## Sections 1-2 judge paths. They cannot see a file that is meant to be public
+## but carries text that must not be: that is how unpublished results reached
+## every public tag from v0.2.0 to v0.10.0. This section reads
+## the files. The pattern list is private (it names what it guards), so it is
+## looked up next to this script, i.e. in the dev checkout running the gate,
+## and the gate refuses to certify anything when it cannot find it.
+EMBARGO_FILE <- NULL
+for (cand in c(if (!is.na(.self_dir)) file.path(.self_dir, "embargo-content-patterns.txt"),
+               "tools/embargo-content-patterns.txt")) {
+  if (!is.null(cand) && file.exists(cand)) { EMBARGO_FILE <- cand; break }
+}
+EMBARGO <- .read_patterns(EMBARGO_FILE)
+if (is.null(EMBARGO) || !length(EMBARGO))
+  fail("cannot read embargo-content-patterns.txt; refusing to certify a ",
+       "snapshot without the content scan. Run this script from the dev ",
+       "checkout (Rscript tools/check_public_snapshot.R <worktree>).")
+
+.binary_ext <- "[.](png|jpe?g|gif|pdf|mp4|webm|rds|rda|RData|pptx|docx|xlsx|zip|gz|ico|woff2?|ttf|otf)$"
+shipped <- if (file.exists(exclude)) {
+  .d <- listed[endsWith(listed, "/")]
+  tracked[!(tracked %in% listed) &
+          !vapply(tracked, function(t) any(startsWith(t, .d)), logical(1))]
+} else tracked
+for (p in EMBARGO) {
+  hit <- shipped[grepl(p, shipped, perl = TRUE)]
+  if (length(hit)) problems[[paste0("path matches embargo pattern ", p)]] <- hit
+}
+for (f in shipped[!grepl(.binary_ext, shipped, ignore.case = TRUE)]) {
+  path <- file.path(wt, f)
+  if (!file.exists(path)) next
+  txt <- tryCatch(suppressWarnings(readLines(path, warn = FALSE, encoding = "UTF-8")),
+                  error = function(e) character())
+  if (!length(txt)) next
+  for (p in EMBARGO) {
+    ln <- which(grepl(p, txt, perl = TRUE, useBytes = TRUE))
+    if (length(ln))
+      problems[[paste0("content matches embargo pattern ", p)]] <-
+        c(problems[[paste0("content matches embargo pattern ", p)]],
+          paste0(f, ":", ln))
+  }
+}
+
+## Binary documents can carry the same text. Office files are zipped XML and
+## are read here; a PDF is read through pdftools or pdftotext, and when neither
+## is available a shipped PDF is refused rather than waved through. Four
+## tracked PDFs carried embargoed text past the first version of this section.
+.scan_text <- function(label, txt) {
+  for (p in EMBARGO) {
+    if (any(grepl(p, txt, perl = TRUE, useBytes = TRUE)))
+      problems[[paste0("content matches embargo pattern ", p)]] <<-
+        c(problems[[paste0("content matches embargo pattern ", p)]], label)
+  }
+}
+for (f in shipped[grepl("[.](docx|pptx|xlsx)$", shipped, ignore.case = TRUE)]) {
+  path <- file.path(wt, f); if (!file.exists(path)) next
+  td <- tempfile(); dir.create(td)
+  xml <- tryCatch(utils::unzip(path, exdir = td), error = function(e) character())
+  xml <- xml[grepl("[.]xml$", xml)]
+  txt <- unlist(lapply(xml, function(x) gsub("<[^>]+>", " ",
+           paste(readLines(x, warn = FALSE, encoding = "UTF-8"), collapse = " "))))
+  .scan_text(paste0(f, " (office text)"), txt)
+  unlink(td, recursive = TRUE)
+}
+pdfs <- shipped[grepl("[.]pdf$", shipped, ignore.case = TRUE)]
+if (length(pdfs)) {
+  have_pdftools <- requireNamespace("pdftools", quietly = TRUE)
+  pdftotext <- Sys.which("pdftotext")
+  for (f in pdfs) {
+    path <- file.path(wt, f); if (!file.exists(path)) next
+    txt <- if (have_pdftools) {
+      tryCatch(pdftools::pdf_text(path), error = function(e) NULL)
+    } else if (nzchar(pdftotext)) {
+      out <- tempfile(fileext = ".txt")
+      system2(pdftotext, c(shQuote(path), shQuote(out)), stdout = FALSE, stderr = FALSE)
+      if (file.exists(out)) readLines(out, warn = FALSE) else NULL
+    } else NULL
+    if (is.null(txt)) {
+      problems[["PDF that cannot be read (install pdftools or pdftotext)"]] <-
+        c(problems[["PDF that cannot be read (install pdftools or pdftotext)"]], f)
+    } else .scan_text(paste0(f, " (pdf text)"), txt)
+  }
+}
+
+## -- 4. images must be reviewed ------------------------------------------------ #
+## The content scan reads text; it cannot read pixels. On 2026-10-08 the JSS
+## paper's Figure 1 turned out to be another paper's conceptual figure, with
+## that paper's title and empirical results drawn into the PNG; it had shipped
+## since v0.2.0 under a neutral file name. Every shipped image must therefore
+## carry a recorded human/agent review: its SHA-256 listed in the PRIVATE file
+## tools/public-image-review.txt ("<sha256>  <path>  <date>  <note>"). A new
+## or changed image fails here until someone has looked at it.
+digest_sha256 <- function(path) {
+  if (requireNamespace("digest", quietly = TRUE))
+    return(digest::digest(file = path, algo = "sha256"))
+  fail("the image review needs the 'digest' package to hash files")
+}
+REVIEW_FILE <- NULL
+for (cand in c(if (!is.na(.self_dir)) file.path(.self_dir, "public-image-review.txt"),
+               "tools/public-image-review.txt")) {
+  if (!is.null(cand) && file.exists(cand)) { REVIEW_FILE <- cand; break }
+}
+.img_ext <- "[.](png|jpe?g|gif|svg|webp|bmp|tiff?)$"
+imgs <- shipped[grepl(.img_ext, shipped, ignore.case = TRUE)]
+if (length(imgs)) {
+  if (is.null(REVIEW_FILE))
+    fail("cannot read public-image-review.txt; refusing to certify ",
+         length(imgs), " shipped image(s) nobody has reviewed.")
+  rv <- trimws(readLines(REVIEW_FILE, warn = FALSE))
+  rv <- rv[nzchar(rv) & !startsWith(rv, "#")]
+  reviewed <- tolower(sub("\\s.*$", "", rv))
+  for (f in imgs) {
+    path <- file.path(wt, f)
+    if (!file.exists(path)) next
+    h <- tolower(digest_sha256(path))
+    if (!h %in% reviewed)
+      problems[["image not reviewed (add its sha256 to tools/public-image-review.txt after looking at it)"]] <-
+        c(problems[["image not reviewed (add its sha256 to tools/public-image-review.txt after looking at it)"]], f)
+  }
 }
 
 ## -- report ------------------------------------------------------------------ #

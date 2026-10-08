@@ -1,0 +1,68 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: nk-population-search
+title: A population of independent searchers on one NK landscape
+model: NK population of firms (independent local search)
+citations:
+  - key: levinthal_1997
+    text: "Levinthal, D. A. (1997). Adaptation on rugged landscapes. Management Science, 43(7), 934-950."
+    doi: 10.1287/mnsc.43.7.934
+  - key: kauffman_1993
+    text: "Kauffman, S. A. (1993). The Origins of Order: Self-Organization and Selection in Evolution. Oxford University Press."
+    doi: 10.1093/oso/9780195079517.001.0001
+relation: special-case
+statement: >-
+  With M actors on a shared landscape and every network coefficient at zero, each
+  actor's utility depends on its own row only, so the actors search the same NK
+  landscape independently; the multi-actor state space is strictly larger than
+  NK's, and the restriction separates into M copies of the one-actor walk
+  (Property 2 of the proof table).
+restrictions:
+  M: null
+  "N": null
+  K: null
+  W: binary-k-regular
+  beta: null
+  rates: constant
+  notes:
+    - "theta = 0 for every statistic that couples two actors (crowding, contact, imitation)"
+    - "the influence matrix is shared by all actors"
+terms:
+  - class: complementarity
+    status: active
+    effect: XWX
+    value: 1
+    expression: "sum_d f_d(b_i masked by row d of W), for each actor i"
+    construct: fitness on a rugged landscape
+  - class: scope
+    status: zero
+    expression: "0"
+    construct: none
+  - class: crowding
+    status: zero
+    expression: "+0"
+    construct: none (no interaction between searchers)
+  - class: contact
+    status: zero
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: zero
+    expression: "+0"
+    construct: none
+constructs:
+  fitness on a rugged landscape: [complementarity]
+lean:
+  - SaomNK.card_config_gt
+  - SaomNK.isExactPotential_own
+  - SaomNK.IsExactPotential.add
+checks:
+  - nk_to_saomnk
+  - tests/testthat/test-nk-classic.R
+does_not_cover:
+  - "Selection among firms (exit and replication of high performers) is not part of the restriction"
+  - "The engine carries complementarity as the quadratic XWX statistic, not the full NK contribution table"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-07, from inst/proofs/PROOF_TABLE.md Part D and the Lean registry"
+  ai_drafted: true
+  reviewed: false

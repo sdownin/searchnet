@@ -1,8 +1,9 @@
 ###############################################################################
 ## test-searchnet-ergodicity.R
 ##
-## Coverage for searchnet_ergodicity_sweep(), the Theorem 4 (SAOM-QRE
-## equivalence) demonstration.
+## Coverage for searchnet_ergodicity_sweep(), the Property 4 demonstration of
+## independence from initial conditions (a unique stationary law; its Gibbs/QRE
+## form holds only under single-flip revision).
 ##
 ## The function replaced a two-point comparison that printed its own conclusion
 ## unconditionally. These tests are written so that the same failure mode cannot

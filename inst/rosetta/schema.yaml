@@ -1,0 +1,51 @@
+# Entry contract of the translation registry, schema_version "1".
+#
+# rosetta_validate() reads the required fields and the vocabularies below, so
+# this file is the single statement of the contract. One entry per file in
+# entries/ (or entries-private/), named <id>.yaml.
+#
+# Fields
+#   schema_version  "1"
+#   id              kebab-case, equals the file name, never reused
+#   title, model    text
+#   citations       list of {key, text, doi}; published sources only, DOIs
+#                   checked against Crossref before an entry is added
+#   relation        one of `relation` below
+#   statement       one or two sentences: the relation, in the words of the
+#                   SAOM-NK objective and of the source
+#   restrictions    {M, N, K, W, beta, revision_rule, rates, notes}; M is a
+#                   number, "Inf" (the many-actor limit) or null (free); beta
+#                   is a number, "Inf" (the zero-noise limit) or null (free);
+#                   revision_rule is single_flip or multinomial, or omitted
+#                   when the model does not restrict it
+#   terms           list over classes of {class, status, expression,
+#                   construct, effect (optional), value (optional)}; a class
+#                   not listed is read as absent
+#   constructs      map: construct label -> list of class ids
+#   lean            fully qualified declarations of the package's Lean library
+#   lean_external   optional list of {decl, file, root, states} for proofs
+#                   kept outside the package library (not checked)
+#   checks          R function names or test files that exercise the claim
+#   does_not_cover  what the relation does not establish
+#   provenance      {drafted, revised (optional), ai_drafted, reviewed,
+#                   text_from}
+schema_version: "1"
+required: [schema_version, id, title, model, citations, relation, statement,
+           restrictions, terms, lean, does_not_cover, provenance]
+relation:
+  special-case: recovered exactly under the listed restrictions
+  special-case-linearized: recovered after a stated approximation
+  equilibrium-characterization: a solution concept the stationary law satisfies
+  translation: a construct mapped to statistics, with no reduction proved
+  estimation-check: what an estimator reads on panels the model generates
+  comparison: related and discussed, not nested
+  not-carried: outside the framework, stated so
+status:
+  active: the class is in the model with a free or given coefficient
+  fixed: the class is in the model at a value held fixed
+  zero: the class is in the model with coefficient zero
+  absent: the class has no counterpart in the model
+  linearized: the class carries the model's term after a stated approximation
+k_channel: [K_CC, K_AC, K_AA, K_CA, other]
+W: [binary-k-regular, real, zero, any]
+revision_rule: [single_flip, multinomial]

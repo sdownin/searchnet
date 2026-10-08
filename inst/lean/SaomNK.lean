@@ -1,0 +1,33 @@
+-- SaomNK: machine-checked building blocks for stochastic actor-oriented models on NK
+-- landscapes. Shipped with the searchnet R package; see README.md and registry.yml.
+import SaomNK.Core.Indicator
+import SaomNK.Core.Config
+import SaomNK.Core.Flip
+import SaomNK.NK.Influence
+import SaomNK.NK.Fitness
+import SaomNK.NK.PowerKey
+import SaomNK.NK.Table
+import SaomNK.NK.Reduction
+import SaomNK.Stats.Density
+import SaomNK.Stats.InPop
+import SaomNK.Stats.Cycle4
+import SaomNK.Stats.XWX
+import SaomNK.Stats.RowPairStat
+import SaomNK.Potential.Rosenthal
+import SaomNK.Potential.Exact
+import SaomNK.Potential.Nash
+import SaomNK.Choice.Glauber
+import SaomNK.Choice.Metropolis
+import SaomNK.Choice.Logit
+import SaomNK.Choice.Limits
+import SaomNK.Chain.Balance
+import SaomNK.Chain.Restricted
+import SaomNK.Chain.Reachable
+import SaomNK.TwoLayer.Integrability
+import SaomNK.Directional
+import SaomNK.MeanField.TwoBloc
+import SaomNK.MeanField.Landau
+import SaomNK.Compute.RatSpec
+import SaomNK.Compute.Cast
+import SaomNK.Compute.LocalOpt
+import SaomNK.Examples.WeightedOverlap

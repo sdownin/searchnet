@@ -33,7 +33,7 @@ interactions. \emph{Review of Economic Studies}, 68(2), 235--260.
 \code{\link{saomnk_social_multiplier}},
 \code{\link{bd_landau_steepness}},
 \code{\link{verify_brock_durlauf_reduction}};
-\code{vignette("saomnk-brock-durlauf")} for the full Theorem 5
+\code{vignette("saomnk-brock-durlauf")} for the full Property 5
 walkthrough.
 }
 \examples{

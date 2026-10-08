@@ -26,10 +26,16 @@ saomnk_monte_carlo(
 
 \item{waves}{Integer. Number of waves per replication (default \code{2}).}
 
-\item{iterations}{Integer. RSiena iterations per wave (default \code{500}).}
+\item{iterations}{Numeric. Expected decision opportunities per wave, summed
+over actors (default \code{500}): each wave is one unconditional RSiena
+period with basic rate \code{iterations / M}, started from the end of the
+previous wave.  Before 0.11.0 each wave conditioned on the previous
+wave's distance and moved about one tie.}
 
-\item{seed}{Integer. Base random seed; replication \emph{r} uses
-\code{seed + r}.}
+\item{seed}{Integer. Base random seed. Replication \emph{r}'s seed is
+derived from it by a purpose-namespaced hash and recorded in
+\code{env$mc_results[[r]]$seed}; before 0.10.0.9000 it was
+\code{seed + r}, so base seeds 1 and 2 shared all but one replication.}
 
 \item{parallel}{Logical. If \code{TRUE}, run replications in parallel
 using the \pkg{future} back-end (default \code{FALSE}).}
@@ -39,7 +45,9 @@ If \code{NULL}, uses the current \pkg{future} plan.}
 }
 \value{
 The \code{env} object (modified in place) with
-\code{env$mc_results} populated; returned invisibly.
+\code{env$mc_results} populated and the run's provenance in
+\code{env$provenance} (see \code{\link{searchnet_provenance}});
+returned invisibly.
 }
 \description{
 Executes independent replications of a SaoMNK multiwave simulation, each

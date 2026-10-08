@@ -1,0 +1,57 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: k-sociality
+title: "{K} Sociality (actor to actor): rivalry and crowding"
+model: Rivalry, crowding and network externalities
+citations:
+  - key: katz_shapiro_1985
+    text: "Katz, M. L., and Shapiro, C. (1985). Network externalities, competition, and compatibility. American Economic Review, 75(3), 424-440."
+    doi: ~
+  - key: baum_korn_1999
+    text: "Baum, J. A. C., and Korn, H. J. (1999). Dynamics of dyadic competitive interaction. Strategic Management Journal, 20(3), 251-278."
+    doi: "10.1002/(SICI)1097-0266(199903)20:3<251::AID-SMJ23>3.0.CO;2-H"
+relation: translation
+statement: >-
+  Actor-actor overlap maps to indegree popularity (inPop): the change statistic of
+  adding an activity held by n rivals equals the marginal increase in pairwise
+  overlap with them, up to a density shift. A negative coefficient reads as
+  crowding, a positive one as popularity or agglomeration; four-cycles (cycle4)
+  carry repeated contact between pairs of actors.
+restrictions:
+  W: any
+  notes: []
+terms:
+  - class: complementarity
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: scope
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: crowding
+    status: active
+    effect: inPop
+    expression: inPop
+    construct: crowding (negative) or popularity (positive)
+  - class: contact
+    status: active
+    effect: cycle4
+    expression: cycle4
+    construct: multimarket contact
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs:
+  crowding (negative) or popularity (positive): [crowding]
+  multimarket contact: [contact]
+lean: []
+checks: []
+does_not_cover:
+  - "A level of overlap (for example pairwise Jaccard similarity) is a descriptive measure, not a statistic of the objective"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

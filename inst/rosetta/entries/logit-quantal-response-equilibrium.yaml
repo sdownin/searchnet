@@ -1,0 +1,78 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: logit-quantal-response-equilibrium
+title: Logit quantal response equilibrium
+model: Logit QRE
+citations:
+  - key: mckelvey_palfrey_1995
+    text: "McKelvey, R. D., and Palfrey, T. R. (1995). Quantal response equilibria for normal form games. Games and Economic Behavior, 10(1), 6-38."
+    doi: 10.1006/game.1995.1023
+relation: equilibrium-characterization
+statement: >-
+  When every statistic of the objective has an exact potential, single-flip logit
+  revision is reversible for the Gibbs weight exp(beta Phi), so the stationary law
+  of the search is a logit quantal response equilibrium of the potential game
+  (Property 4 of the proof table); as beta grows it concentrates on pure Nash
+  equilibria, which exist.
+restrictions:
+  M: null
+  "N": null
+  W: any
+  beta: null
+  revision_rule: single_flip
+  rates: constant
+  notes:
+    - "finite beta, single-flip logit revision with state-independent rates"
+    - "every active statistic has an exact potential"
+terms:
+  - class: complementarity
+    status: active
+    effect: XWX
+    value: 0.5
+    expression: "own-row fitness term, potential sum_i g(b_i)"
+    construct: interdependence among components
+  - class: scope
+    status: active
+    effect: outAct
+    value: -0.5
+    expression: "own-row degree term"
+    construct: breadth of the actor's portfolio
+  - class: crowding
+    status: active
+    effect: inPop
+    value: -0.2
+    expression: "congestion, Rosenthal potential sum_d n_d (n_d + 1) / 2"
+    construct: congestion on shared components
+  - class: contact
+    status: active
+    effect: cycle4
+    value: 0.1
+    expression: "symmetric pair kernel, potential = number of four-cycles"
+    construct: repeated overlap between pairs of actors
+  - class: imitation
+    status: absent
+    expression: "+0 (actor-specific weights on a shared pair kernel break the potential)"
+    construct: none
+constructs:
+  interdependence among components: [complementarity]
+  breadth of the actor's portfolio: [scope]
+  congestion on shared components: [crowding]
+  repeated overlap between pairs of actors: [contact]
+lean:
+  - SaomNK.Spec.exact_potential
+  - SaomNK.glauber_reversible
+  - SaomNK.detailed_balance_of_potential
+  - SaomNK.global_balance_of_potential
+  - SaomNK.exists_nash_of_exactPotential
+  - SaomNK.mixed_no_exact_potential
+checks:
+  - lean_export_model
+  - tests/testthat/test-lean.R
+does_not_cover:
+  - "Uniqueness of the stationary law is not formalized"
+  - "The engine's RSiena ministep is a multinomial choice among all flips; the proofs cover single-flip logit and Metropolis revision"
+  - "State-dependent rates are outside the proved protocol"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-07, from inst/proofs/PROOF_TABLE.md Part F and the Lean registry"
+  ai_drafted: true
+  reviewed: false

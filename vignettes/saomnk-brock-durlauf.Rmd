@@ -31,15 +31,15 @@ if (requireNamespace("searchnet", quietly = TRUE)) {
 
 # Introduction: Three Foundations, One Engine, One Ancestor
 
-Searchnet is anchored by three theorems, each connecting the SaoMNK
+Searchnet is anchored by three properties, each connecting the SaoMNK
 stochastic actor-oriented bipartite engine to a separate intellectual
 tradition. Together they triangulate the framework's epistemic position:
 
-| Theorem | Tradition | Limit recovered | Source |
+| Property | Tradition | Limit recovered | Source |
 |--------|-----------|-----------------|--------|
-| Theorem 1 (NK Reduction) | Evolutionary biology / strategy (Kauffman, 1993) | Single actor, greedy, no network | `vignette("saomnk-nk-validation")` |
-| Theorem 4 (SAOM--QRE Equivalence) | Statistical mechanics / sociology (Blume, 1993; Snijders, 1996, 2001) | Gibbs stationary distribution under logit choice | `vignette("saomnk-blume-tutorial")` |
-| **Theorem 5 (B&D Recovery)** | **Discrete-choice econometrics (Brock & Durlauf, 2001)** | **Many actors, mean-field, congestion only** | **This vignette** |
+| Property 1 (NK Reduction) | Evolutionary biology / strategy (Kauffman, 1993) | Single actor, greedy, no network | `vignette("saomnk-nk-validation")` |
+| Property 4 (SAOM--QRE Equivalence) | Statistical mechanics / sociology (Blume, 1993; Snijders, 1996, 2001) | Gibbs stationary distribution under single-flip logit choice | `vignette("saomnk-blume-tutorial")` |
+| **Property 5 (B&D Recovery)** | **Discrete-choice econometrics (Brock & Durlauf, 2001)** | **Many actors, mean-field, congestion only** | **This vignette** |
 
 The Kauffman pillar establishes that SaoMNK *contains* the rugged
 landscape model. The Blume pillar establishes that SaoMNK *converges*
@@ -78,17 +78,18 @@ and bridged SAOM to baseline RUM, but did not connect SAOM to the
 social-interactions equilibrium branch.
 
 **SaoMNK completes the bridge.** The duality is statistical-mechanical: the
-SAOM ministep process is *Glauber dynamics* on the underlying potential
-game's Ising-like Hamiltonian, and the Brock-Durlauf rational-expectations
+single-flip SAOM ministep is *Glauber dynamics* on the underlying potential
+game's Ising-like Hamiltonian (the multinomial ministep RSiena uses is not,
+and has no general Gibbs form for $M > 1$), and the Brock-Durlauf rational-expectations
 equilibrium is the *thermodynamic free energy* of that *same* Hamiltonian.
-**Same potential, two views.** Theorem 4 provides the dynamic-equilibrium
-correspondence (Gibbs stationary distribution); Theorem 5 provides the
+**Same potential, two views.** Property 4 provides the dynamic-equilibrium
+correspondence (Gibbs stationary distribution, under single-flip revision); Property 5 provides the
 equilibrium-economic correspondence (B&D mean-field self-consistency). The
-two SAOM-NK theorems together connect McFadden's RUM ancestor to all three
+two SAOM-NK properties together connect McFadden's RUM ancestor to all three
 foundational pillars (sociology / statistical mechanics / economics). The
 formal duality is recorded as `PROOF_TABLE.md` row L17.
 
-The reduction is recorded as Theorem 5 in the proof table
+The reduction is recorded as Property 5 in the proof table
 (`inst/proofs/PROOF_TABLE.md`, Part L). Steps L1--L18 enumerate the
 restrictions, lemmas, corollaries, the McFadden-ancestor / Glauber
 duality, and the reciprocal-citation verification used below; we cite
@@ -151,9 +152,9 @@ $\beta J$ is the only quantity that matters for multiplicity.
 
 ---
 
-# Theorem 5: Recovery via the Congestion Limit
+# Property 5: Recovery via the Congestion Limit
 
-Theorem 5 establishes that the model just stated is a special case of
+Property 5 establishes that the model just stated is a special case of
 SaoMNK. The reduction uses five restrictions, labeled Rb1--Rb5 in
 the proof table (L3--L7).
 
@@ -164,7 +165,11 @@ the proof table (L3--L7).
   has rows indexed by an exchangeable population.
 - **Rb2 (Component independence, L4).** Either $N = 1$, or all
   cross-component coupling terms are zero (so the $N$ components
-  decouple into independent copies of the $N=1$ problem).
+  decouple into independent copies of the $N=1$ problem under
+  single-flip logit revision). *[Revised 2026-10-07.]* Under the RSiena
+  ministep the utilities decouple but the choice rule does not: the $N$
+  components of a row compete for one ministep, so each copy obeys the
+  law $F_N$ below rather than the binary logit.
 - **Rb3 (Mean-field scaling, L5).** The congestion coefficient is
   rescaled as $\beta_{\mathrm{cong}} = J_b\,M/(M-1)$. This is the
   standard Curie-Weiss convention; without it, the social-interaction
@@ -174,7 +179,7 @@ the proof table (L3--L7).
   $\sigma = 2b - 1 \in \{-1, +1\}$. Coefficients transform as
   $J_\sigma = J_b/4$ and $h_\sigma = h_b/2 + J_b/4$.
 - **Rb5 (Finite logit precision, L7).** $\beta \in (0, \infty)$
-  strictly. The greedy limit $\beta \to \infty$ (which gives Theorem 1)
+  strictly. The greedy limit $\beta \to \infty$ (which gives Property 1)
   is excluded; the uniform limit $\beta \to 0$ is also excluded.
 
 ## Lemma 5: Utility reduction (L8)
@@ -195,8 +200,8 @@ Brock & Durlauf utility exactly.
 
 ## Lemma 6: Mean-field self-consistency (L9)
 
-Under Rb1--Rb5, the SaoMNK Gibbs stationary distribution
-(Theorem 4, F7) factorizes componentwise, and within each component
+Under Rb1--Rb5 and single-flip logit revision, the SaoMNK Gibbs stationary distribution
+(Property 4, F7) factorizes componentwise, and within each component
 the stationary mean adoption $m_j^*$ satisfies
 
 $$
@@ -209,11 +214,75 @@ $$
 m_{\sigma,j}^* \;=\; \tanh\bigl(\beta\,h_\sigma \,+\, \beta\,J_\sigma\,m_{\sigma,j}^*\bigr).
 $$
 
-The factorization step uses Theorem 4's potential-game stationary
-distribution (Blume's theorem, F5/F7); the within-component step uses
+The factorization step uses Property 4's potential-game stationary
+distribution (Blume's theorem, F5/F7, which requires single-flip revision); the within-component step uses
 the Curie-Weiss large-deviations theorem (Ellis, 1985, Thm IV.4.1).
 
-## Theorem 5 in plain English
+## Which process: single-flip logit versus the RSiena ministep
+
+*[Revised 2026-10-07. This subsection states the correspondence for the
+process searchnet actually simulates.]*
+
+Lemma 6 and Property 5 are stated for single-flip logit revision. RSiena's
+two-mode ministep, which `saomnk_run()` uses, is different: the selected
+actor chooses among the $N$ toggles of its row and no change. Two facts
+fix the mean-field law of that process (proof table L4, L16).
+
+1. With `inPop` as the social channel (linear on a two-mode dependent
+   variable), adding tie $(i,j)$ changes the objective by
+   $\Delta = h + \theta_{\mathrm{inPop}}\bigl(1 + (M-1)m\bigr)$.
+2. For one actor facing a common $\Delta$, the number of held ties $k$ is
+   a birth-death chain with stationary law
+   $$
+   \pi_k \;\propto\; \binom{N}{k}\, e^{2\Delta k}
+     \bigl(1 + (N-k)e^{\Delta} + k e^{-\Delta}\bigr),
+   $$
+   and the per-tie adoption probability is $F_N(\Delta) = \mathrm{E}[k]/N$.
+
+$F_N$ is the binary logit $\sigma(\Delta)$ at $N = 1$ and only there.
+For every $N$, $F_N(0) = 1/2$ and $F_N'(0)/\sigma'(0) = \kappa_N = 2N/(N+1)$,
+so near $m = 1/2$
+$$
+F_N(\Delta) \;=\; \sigma(\kappa_N \Delta) + \mathcal{O}(\Delta^3),
+$$
+and $F_N(\Delta) \to \sigma(2\Delta)$ as $N \to \infty$. Consequently:
+
+- **$N = 1$:** the simulated process obeys the Brock & Durlauf map
+  exactly in mean field, with $\theta_{\mathrm{inPop}} = J_b/(M-1)$.
+- **$N > 1$:** the simulated mean-field fixed point is
+  $m = F_N\bigl(\beta\Delta(m)\bigr)$, computed by
+  `saomnk_inpop_self_consistency()`. Rescaling to
+  $\theta_{\mathrm{inPop}} = J_b/\bigl(\kappa_N (M-1)\bigr)$ and
+  density $h_b/\kappa_N - \theta_{\mathrm{inPop}}$ (the default
+  `rescale = TRUE` in `verify_brock_durlauf_reduction()`) matches the
+  Brock & Durlauf map **to first order near $m = 1/2$ only**. This is a
+  linearization; away from $m = 1/2$ the two maps differ.
+
+RSiena's bipartite dependent variable does not admit $N \le 2$, so the
+exact $N = 1$ case is not available to the live harness.
+
+```{r ministep-law}
+F_N <- function(delta, N) {
+  k <- 0:N
+  w <- choose(N, k) * exp(2 * delta * k) *
+    (1 + (N - k) * exp(delta) + k * exp(-delta))
+  sum(k * w) / (N * sum(w))
+}
+d <- c(0.1, 0.5, 1.5)
+tab <- t(sapply(c(1, 2, 4, 8), function(N) {
+  kap <- 2 * N / (N + 1)
+  c(N = N, kappa_N = kap,
+    setNames(sapply(d, F_N, N = N), paste0("F_N(", d, ")")),
+    setNames(plogis(kap * d), paste0("sigma(kN*", d, ")")))
+}))
+round(tab, 4)
+```
+
+At $\Delta = 0.1$ the rescaled logit is within $10^{-4}$ of $F_N$ for
+every $N$; at $\Delta = 1.5$ (adoption far from one half) it overstates
+adoption by about 0.03 for $N \ge 2$. At $N = 1$ the two agree exactly.
+
+## Property 5 in plain English
 
 > The Brock & Durlauf (2001) binary discrete-choice-with-social-
 > interactions model is a degenerate special case of SaoMNK. Setting
@@ -221,13 +290,18 @@ the Curie-Weiss large-deviations theorem (Ellis, 1985, Thm IV.4.1).
 > to congestion only, and keeping logit noise interior, the SaoMNK
 > stationary distribution reduces componentwise to the Brock & Durlauf
 > rational-expectations self-consistent equilibrium.
+>
+> *[Revised 2026-10-07.]* This holds for single-flip logit revision, and
+> for the RSiena ministep at $N = 1$. With $N > 1$ components the RSiena
+> ministep reproduces it only after the $\kappa_N$ rescaling and only to
+> first order near $m = 1/2$ (previous subsection).
 
-Combined with Theorem 1 (NK $\subset$ SaoMNK in the $M=1$ greedy
+Combined with Property 1 (NK $\subset$ SaoMNK in the $M=1$ greedy
 limit), SaoMNK is the unique known framework that contains both
 NK landscape search and Brock-Durlauf social-interaction choice as
 special cases of a single continuous-time Markov chain. The two
-reductions are *complementary*: Theorem 1 takes the single-actor
-limit; Theorem 5 takes the many-actor mean-field limit (L10).
+reductions are *complementary*: Property 1 takes the single-actor
+limit; Property 5 takes the many-actor mean-field limit (L10).
 
 ## The factor-of-4 spin-recoding correction (Rb4)
 
@@ -346,22 +420,31 @@ for (k in seq_along(bJ_seq)) {
   }
 }
 
-par(mar = c(4.5, 4.8, 3, 1))
-plot(bJ_seq, m_upper, type = "l", lwd = 2, col = "#2a9d8f",
-     ylim = c(-1.05, 1.05),
-     xlab = expression(beta * J),
-     ylab = expression("Equilibrium magnetization " * m * "*"),
-     main = "Brock-Durlauf Pitchfork Bifurcation (h = 0)")
-lines(bJ_seq, m_lower, lwd = 2, col = "#2a9d8f")
-lines(bJ_seq, m_unstab, lwd = 2, col = "#e76f51", lty = 2)
-abline(v = 1, lwd = 1, col = "#1a365d", lty = 3)
-abline(h = 0, lwd = 0.5, col = "grey60")
-legend("topleft",
-       legend = c("Stable branches", "Unstable m* = 0", expression(beta * J == 1)),
-       col = c("#2a9d8f", "#e76f51", "#1a365d"),
-       lty = c(1, 2, 3), lwd = c(2, 2, 1), bty = "n")
-text(2.4, 0.05, "unstable", col = "#e76f51", cex = 0.85)
-text(0.4, 0.05, "single root", col = "#2a9d8f", cex = 0.85)
+library(ggplot2)
+pal <- searchnet_palette()
+fork <- rbind(
+  data.frame(bJ = bJ_seq, m = m_upper,  branch = "upper",    kind = "Stable branches"),
+  data.frame(bJ = bJ_seq, m = m_lower,  branch = "lower",    kind = "Stable branches"),
+  data.frame(bJ = bJ_seq, m = m_unstab, branch = "unstable", kind = "Unstable m* = 0"))
+ggplot(fork, aes(bJ, m, group = branch, color = kind, linetype = kind)) +
+  geom_hline(yintercept = 0, linewidth = 0.3, color = "grey60") +
+  geom_vline(xintercept = 1, linetype = "dotted", color = "grey30") +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  annotate("text", x = 2.4, y = 0.05, label = "unstable", vjust = -0.4,
+           size = 3, color = pal[["vermillion"]]) +
+  annotate("text", x = 0.4, y = 0.05, label = "single root", vjust = -0.4,
+           size = 3, color = pal[["green"]]) +
+  scale_color_manual(values = c("Stable branches" = pal[["green"]],
+                                "Unstable m* = 0" = pal[["vermillion"]]),
+                     name = NULL) +
+  scale_linetype_manual(values = c("Stable branches" = "solid",
+                                   "Unstable m* = 0" = "dashed"), name = NULL) +
+  coord_cartesian(ylim = c(-1.05, 1.05)) +
+  labs(title = "Brock-Durlauf Pitchfork Bifurcation (h = 0)",
+       subtitle = "Dotted vertical line: beta J = 1",
+       x = expression(beta * J),
+       y = expression("Equilibrium magnetization " * m * "*")) +
+  theme_searchnet()
 ```
 
 **Reading the diagram.** Below $\beta J = 1$, the only solution is
@@ -432,17 +515,18 @@ for (j in seq_along(h_grid)) {
   }
 }
 
-par(mar = c(4.5, 4.8, 3, 1))
-matplot(bJ_seq, mult, type = "l", lwd = 2, lty = 1,
-        col = c("#2a9d8f", "#e76f51", "#1a365d"),
-        xlab = expression(beta * J),
-        ylab = "Social multiplier",
-        main = "Multiplier diverges as the system approaches tipping",
-        log = "y")
-legend("topleft",
-       legend = c(expression(h == 0), expression(h == 0.05), expression(h == 0.15)),
-       col = c("#2a9d8f", "#e76f51", "#1a365d"), lty = 1, lwd = 2, bty = "n")
-abline(v = 1, lty = 3, col = "grey50")
+mult_df <- data.frame(bJ = rep(bJ_seq, length(h_grid)),
+                      multiplier = as.vector(mult),
+                      h = factor(rep(sprintf("h = %g", h_grid), each = length(bJ_seq)),
+                                 levels = sprintf("h = %g", h_grid)))
+ggplot(mult_df, aes(bJ, multiplier, color = h)) +
+  geom_vline(xintercept = 1, linetype = "dotted", color = "grey50") +
+  geom_line(linewidth = 0.9) +
+  scale_y_log10() +
+  scale_color_searchnet(name = NULL) +
+  labs(title = "Multiplier diverges as the system approaches tipping",
+       x = expression(beta * J), y = "Social multiplier (log scale)") +
+  theme_searchnet()
 ```
 
 **Reading the diagram.** All three curves diverge as $\beta J \to 1$
@@ -458,20 +542,22 @@ Brock-Durlauf model (Glaeser & Scheinkman, 2003; Durlauf, 1999).
 
 # Numerical Verification: Dual-Mode Harness (Options B and C)
 
-Theorem 5 is a Tier 1 analytical claim *in the limit* $M \to \infty$.
+Property 5 is a Tier 1 analytical claim *in the limit* $M \to \infty$.
 The package function `verify_brock_durlauf_reduction()` performs the
 verification by sweeping $M$, simulating the SaoMNK CTMC under
 restrictions Rb1--Rb5, and comparing the empirical mean to **two**
 analytical references:
 
-- **Option C reference (B&D fixed point, primary):** what Theorem 5
-  predicts when the parameters keep $m^* \approx 0.5$, where the L16
-  sqrt linearisation is locally accurate. Default
+- **Option C reference (B&D fixed point, primary):** what Property 5
+  predicts when the parameters keep $m^* \approx 0.5$, where the
+  $\kappa_N$ rescaling is accurate to first order *[revised 2026-10-07;
+  previously "the L16 sqrt linearisation"]*. Default
   `(J_b = 0.5, h_b = -0.25)` gives this regime; the harness flags
   `in_BD_regime = TRUE` automatically.
 - **Option B reference (saomnk-inPop fixed point, secondary):** what
-  the live simulation literally obeys at any $(\beta, J_b, h_b)$,
-  computed by `saomnk_inpop_self_consistency()`. This is the binding
+  the live simulation obeys in mean field at any $(\beta, J_b, h_b)$,
+  $m = F_N(\beta\Delta(m))$, computed by
+  `saomnk_inpop_self_consistency()`. This is the binding
   metric outside the Option C regime.
 
 Why two? Because RSiena's `inPop` statistic is sqrt-transformed
@@ -483,6 +569,29 @@ shows up away from that point. Full discussion: `PROOF_TABLE.md` row
 L16. With adequate mixing (`n_steps = 300` ministeps per actor),
 Option C verification gives **agreement to four decimal places at
 $M = 100$** -- empirical $\hat m = 0.5004$ vs B&D $m^* = 0.5$.
+
+> **Correction (2026-10-07).** The premise of the two preceding
+> paragraphs is wrong for current RSiena. On a two-mode dependent variable
+> (RSiena 1.5.0) `inPop` is linear, $s = \sum_j b_{ij} x_{+j}$, and the
+> square-root form is the separate effect `inPopSqrt`. With the linear
+> statistic the B&D coupling is matched exactly by
+> $\theta_{\mathrm{inPop}} = J_b/(M-1)$, with no linearization (proof
+> table L16). The $J_b/\sqrt{2M}$ rescaling, the Option B reference and the
+> `sqrt_correction` argument were derived for `inPopSqrt` and are under
+> review. The output below is stored, not re-run, and predates this
+> correction; it is not evidence for the rescaling.
+>
+> *[Revised 2026-10-07, 0.11.0.]* The review is resolved. The coupling
+> scale is $1/(M-1)$, and the remaining gap is the choice rule: the
+> ministep law is $F_N$, not the logit, so the harness now divides both
+> coefficients by $\kappa_N = 2N/(N+1)$ (previous section). Note what the
+> default run can and cannot show: with $h_b = -J_b/2$, $m = 1/2$ is a
+> fixed point of both maps for any $\kappa_N$, so agreement there checks
+> the symmetry and the coupling scale, not the size of $\kappa_N$. An
+> equilibrium away from $m = 1/2$ is needed for that, and there the
+> rescaled map is only approximate.
+
+> **Rerun 2026-10-07:** stored output, |error| 0.0083 / 0.0042 / 0.0004 at M = 20 / 50 / 100 ("four decimal places") -> re-run with the rescaling of 0.11.0, 0.0271 / 0.0117 / 0.0017; claim no longer supported as stated.
 
 ```{r verify-bd, eval=FALSE, fig.height=5.5}
 # Default Option C regime: J_b=0.5, h_b=-0.25, beta=1, m* ~= 0.5
@@ -497,20 +606,23 @@ print(ver[, c("M", "m_b_empirical", "m_BD_analytical",
               "m_saomnk_analytical", "in_BD_regime",
               "abs_error_BD", "abs_error_saomnk")])
 #>     M m_b_empirical m_BD_analytical m_saomnk_analytical in_BD_regime
-#> 1  20     0.4916667             0.5           0.5032435         TRUE
-#> 2  50     0.4958333             0.5           0.5013185         TRUE
-#> 3 100     0.5004167             0.5           0.5006629         TRUE
+#> 1  20     0.5270833             0.5                 0.5         TRUE
+#> 2  50     0.5116667             0.5                 0.5         TRUE
+#> 3 100     0.5016667             0.5                 0.5         TRUE
 #>   abs_error_BD abs_error_saomnk
-#> 1 0.0083333333     0.0115768420
-#> 2 0.0041666667     0.0054851621
-#> 3 0.0004166667     0.0002462495
-# Agreement to four decimal places at M=100 -- Tier 1 verification of Theorem 5
+#> 1  0.027083333      0.027083333
+#> 2  0.011666667      0.011666667
+#> 3  0.001666667      0.001666667
+# Agreement to four decimal places at M=100 -- Tier 1 verification of Property 5
 ```
 
 For all three $M$ values, `in_BD_regime = TRUE` and both error metrics
 are very small (< 0.012). The empirical converges to $m_{BD} = 0.5$ at
-the standard Curie-Weiss rate as $M$ grows. This confirms Option C
-verification of Theorem 5 to publication-grade numerical precision.
+the standard Curie-Weiss rate as $M$ grows. *[Revised 2026-10-07:
+previously "This confirms Option C verification of Property 5 to
+publication-grade numerical precision."]* Because $m = 1/2$ is a fixed
+point of both maps at this symmetric default, the run confirms
+convergence and symmetry; it does not test the $\kappa_N$ rescaling.
 
 **Mixing-time caveat at very large $M$.** With the same 300 ministeps
 per actor, $M = 200$ shows residual mixing-time bias
@@ -535,29 +647,32 @@ ver_B <- verify_brock_durlauf_reduction(
 # B&D is not the right comparison target outside Option C regime.
 ```
 
+> **Rerun 2026-10-07:** abs_error_BD large outside Option C -> J_b = 2, h_b = -1 gives m_BD = 0.5 (in_BD_regime TRUE), abs_error_BD 0.025 / 0.009 / 0.0006 at M = 20 / 50 / 100; claim no longer supported as stated.
+
 The error column should fall as $\propto 1/\sqrt{M}$ inside the
 Option C regime. Plotting on a log-log scale gives a slope close to
 $-1/2$:
 
 ```{r verify-bd-plot, eval=FALSE, fig.height=5.5}
 # Log-log plot of |error| vs M with the predicted O(M^-1/2) reference line.
-par(mar = c(4.5, 4.8, 3, 1))
-plot(ver$summary$M, ver$summary$abs_error,
-     log = "xy", pch = 19, cex = 1.4, col = "#2a9d8f",
-     xlab = "Population size M",
-     ylab = expression("|" * hat(m) - m * "*|"),
-     main = "Convergence of SaoMNK to the B&D fixed point")
 # Reference line: y = c / sqrt(M), c chosen to pass through the smallest M
 ref_c <- ver$summary$abs_error[1] * sqrt(ver$summary$M[1])
 M_grid <- 10 ^ seq(log10(min(ver$summary$M)),
                    log10(max(ver$summary$M)),
                    length.out = 80)
-lines(M_grid, ref_c / sqrt(M_grid), lwd = 2, lty = 2, col = "#e76f51")
-abline(h = 0, col = "grey80")
-legend("topright",
-       legend = c("Simulation", expression("Reference: " * O(1 / sqrt(M)))),
-       col = c("#2a9d8f", "#e76f51"),
-       pch = c(19, NA), lty = c(NA, 2), lwd = c(NA, 2), bty = "n")
+pal <- searchnet_palette()
+ggplot(ver$summary, aes(M, abs_error)) +
+  geom_line(data = data.frame(M = M_grid, abs_error = ref_c / sqrt(M_grid)),
+            aes(linetype = "Reference: O(1 / sqrt(M))"),
+            color = pal[["vermillion"]], linewidth = 0.9) +
+  geom_point(aes(shape = "Simulation"), color = pal[["green"]], size = 3) +
+  scale_x_log10() + scale_y_log10() +
+  scale_linetype_manual(values = "dashed", name = NULL) +
+  scale_shape_manual(values = 16, name = NULL) +
+  labs(title = "Convergence of SaoMNK to the B&D fixed point",
+       x = "Population size M",
+       y = expression("|" * hat(m) - m * "*|")) +
+  theme_searchnet()
 ```
 
 Two regimes can be visualised on top of this verification.
@@ -600,7 +715,7 @@ traces out this curvature, and the curvature breaks the
 collinearity that produced the reflection problem in the linear
 case.
 
-SaoMNK inherits this identification result through Theorem 5 (L13).
+SaoMNK inherits this identification result through Property 5 (L13).
 Three additional sources of identifying variation become available
 in the bipartite extension:
 
@@ -629,9 +744,8 @@ not exploit.
 
 # Tier 1 Epistemic Classification
 
-Following the AMR three-tier taxonomy (`industrial_policy_AMR/AMR_
-Mathematical_Appendix.Rmd`, Section 1.2; reproduced in L14), formal
-results are classified by how they are established:
+Following the three-tier epistemic taxonomy of the proof table (L14),
+formal results are classified by how they are established:
 
 - **Tier 1: Analytical proof from model assumptions, including
   equilibrium conditions under rational expectations.**
@@ -648,7 +762,7 @@ order parameter (Brock & Durlauf, 2001; Durlauf, 1999). The
 $M \to \infty$ limit is exact in the same sense that the
 expectation operator is exact in any rational-expectations model.
 
-Theorem 5 (L10) inherits Tier 1 status for the *stationary
+Property 5 (L10) inherits Tier 1 status for the *stationary
 distribution* claim. For *finite-$M$ trajectories*, however, only
 Tier 2 status applies: pre-asymptotic mixing time and finite-population
 fluctuations require additional analysis (Levin, Peres & Wilmer, 2017,
@@ -658,17 +772,22 @@ saddle is the natural Tier 2 refinement.
 
 Practical guidance:
 
-| Use case | Theorem 5 status | Recommended tool |
+| Use case | Property 5 status | Recommended tool |
 |---------|------------------|-------------------|
 | Predicting equilibrium $m_j^*$ for large-$M$ populations | Tier 1 (exact) | `bd_self_consistency()` |
 | Predicting comparative-statics $dm^*/dh$, multiplier | Tier 1 (exact) | `saomnk_social_multiplier()` |
 | Predicting finite-$M$ transient dynamics | Tier 2 (approximate) | Direct simulation; verify with `verify_brock_durlauf_reduction()` |
 | Predicting tail events / tunnelling between roots | Tier 3 (emergent) | Long simulation runs; metastability analysis |
 
+*[Revised 2026-10-07.]* The Tier 1 rows describe the model under
+single-flip logit revision. For a run of the RSiena ministep with $N > 1$
+components, the mean-field equilibrium is
+`saomnk_inpop_self_consistency()` (the $F_N$ map), and
+`bd_self_consistency()` describes it only after the $\kappa_N$ rescaling
+and only near $m = 1/2$.
+
 The Landau-Ginzburg expansion of the free energy around the
-self-consistent equilibrium (the same expansion underlying
-Proposition 1d in the AMR Mathematical Appendix) is the bridge from
-Tier 1 to Tier 2. Expanding $\mathcal F(m)$ to fourth order around
+self-consistent equilibrium is the bridge from Tier 1 to Tier 2. Expanding $\mathcal F(m)$ to fourth order around
 $m^*$:
 
 $$
@@ -685,8 +804,7 @@ The quartic coefficient $b$ is **always positive** on $|m^*| < 1$,
 so the equilibrium density is super-Gaussian (flatter centre, steeper
 walls) whenever $|m^*| > 0$. This is the analytical mechanism by
 which positive social interaction frees the basin steepness exponent
-$s$ from the Gaussian default $s = 2$ --- the formal content of
-Proposition 1d in the AMR appendix. The corresponding searchnet
+$s$ from the Gaussian default $s = 2$. The corresponding searchnet
 function is `bd_landau_steepness()`:
 
 ```{r landau-steepness, eval=FALSE}
@@ -716,22 +834,22 @@ The first call corresponds to the disordered regime ($m^* = 0$,
 $s = 2$ Gaussian baseline). The second call corresponds to a strongly
 ordered regime ($|m^*| \approx 0.94$, $s \approx 2.8$ super-Gaussian).
 The chain $\beta_h \uparrow \Rightarrow |m^*| \uparrow \Rightarrow b \uparrow \Rightarrow s \uparrow$
-is the AMR appendix's policy-to-steepness link, recovered here as a
-direct consequence of Theorem 5.
+links the herding coefficient to basin steepness, obtained here as a
+consequence of Property 5.
 
 ---
 
 # Connection to Other Searchnet Results
 
-Theorem 5 sits at one corner of a duality diagram with the other
-foundational theorems:
+Property 5 sits at one corner of a duality diagram with the other
+foundational properties:
 
 ```
                     SaoMNK CTMC
                   (B, theta, beta)
                  /        |        \
                 /         |         \
-   Theorem 1 (NK)   Theorem 4 (QRE)   Theorem 5 (B&D)
+   Property 1 (NK)   Property 4 (QRE)   Property 5 (B&D)
    ----------       ----------         ----------
    M = 1            Any M, beta < inf  M -> infinity
    beta -> infinity Logit ministep     Mean-field
@@ -745,38 +863,38 @@ foundational theorems:
                                         expectations)
 ```
 
-The Theorem 1 ↔ Theorem 5 duality is the most striking. Theorem 1
+The Property 1 ↔ Property 5 duality is the most striking. Property 1
 shrinks the population to a *single greedy* actor and recovers
-NK; Theorem 5 grows the population to *infinitely many noisy*
+NK; Property 5 grows the population to *infinitely many noisy*
 actors and recovers Brock-Durlauf. Both are exact reductions to
 canonical models from neighbouring fields, and both are special
 cases of the same SaoMNK CTMC. The duality justifies two distinct
 empirical strategies in the same framework:
 
-- *Within-actor / single-firm* studies (Theorem 1 limit): NK-style
+- *Within-actor / single-firm* studies (Property 1 limit): NK-style
   search, local-optima trapping, exploration-exploitation
   tradeoff. Use `vignette("saomnk-nk-validation")`.
-- *Cross-actor / many-firm* studies (Theorem 5 limit): peer effects,
+- *Cross-actor / many-firm* studies (Property 5 limit): peer effects,
   tipping points, social multipliers, susceptibility. Use this
   vignette and `bd_self_consistency()` /
   `saomnk_social_multiplier()`.
 
 The intermediate case ($M$ finite, $\beta$ finite, $K$ non-zero) is
 the genuinely new SaoMNK regime: neither Kauffman nor Brock-Durlauf
-covers it. Theorem 4 (QRE equivalence) guarantees that this
+covers it. Property 4 (QRE equivalence) guarantees that this
 intermediate regime is well-posed (stationary distribution exists
-and is Gibbs); the $\{K\}$ framework names the four coupled
+and is unique; it is Gibbs under single-flip revision); the $\{K\}$ framework names the four coupled
 degree statistics that organize its dynamics.
 
 The Brock-Durlauf reduction also sets up a bridge to congestion
 games (Rosenthal, 1973). The H6 congestion term in the SaoMNK
 10-component utility *is* the mean-field social-interaction
-channel of Theorem 5; it is also the canonical congestion-game
+channel of Property 5; it is also the canonical congestion-game
 primitive of Rosenthal's theorem (cited as K1 in Part K of the
 proof table). Existence of pure-strategy Nash equilibria in the
 SaoMNK game thus follows from K1, while the Gibbs/QRE structure
-under noisy logit choice follows from F7 (Theorem 4), and the
-mean-field rational-expectations limit follows from L10 (Theorem 5).
+under noisy single-flip logit choice follows from F7 (Property 4), and the
+mean-field rational-expectations limit follows from L10 (Property 5).
 The three results are mutually consistent and mutually reinforcing.
 
 ---
@@ -803,7 +921,7 @@ The three results are mutually consistent and mutually reinforcing.
 - Pink, S., Kretschmer, D., & Leszczensky, L. (2020). Choice modelling
   in social networks using stochastic actor-oriented models. *Journal
   of Choice Modelling*, 34, 100202. *(The prior one-directional bridge
-  from SAOM to RUM; SaoMNK Theorems 4 and 5 extend it to bidirectional
+  from SAOM to RUM; SaoMNK Properties 4 and 5 extend it to bidirectional
   SAOM $\leftrightarrow$ RUM-with-social-interactions.)*
 - Blume, L. E., & Durlauf, S. N. (2003). Equilibrium concepts for
   social interaction models. *International Game Theory Review*,
@@ -846,15 +964,12 @@ The three results are mutually consistent and mutually reinforcing.
 
 **Companion vignettes.**
 
-- `vignette("saomnk-theory")` --- the $\{K\}$ framework, Theorems
-  1--4, and the overarching theory.
-- `vignette("saomnk-nk-validation")` --- Theorem 1 verification
+- `vignette("saomnk-theory")` --- the $\{K\}$ framework, Properties
+  1--7, and the overarching theory.
+- `vignette("saomnk-nk-validation")` --- Property 1 verification
   (the dual of this vignette in the single-actor limit).
-- `vignette("saomnk-blume-tutorial")` --- Theorem 4 (Gibbs/QRE
+- `vignette("saomnk-blume-tutorial")` --- Property 4 (Gibbs/QRE
   stationary distribution); the prerequisite for Lemma 6 (L9).
-- `vignette("saomnk-amr-basins")` --- the AMR basin-geometry
-  appendix where Proposition 1d (steepness independence under the
-  multi-firm equilibrium) is developed in full.
 
 ```{r session-info}
 sessionInfo()

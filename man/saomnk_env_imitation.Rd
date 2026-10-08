@@ -18,7 +18,7 @@ hard to trace.}
 \item{step}{Optional step index into the environment's state array; the
 current state is used when omitted.}
 
-\item{...}{Passed to \code{\link{saomnk_sim_ego_indist2}}.}
+\item{...}{Passed to \code{\link{saomnk_coholder_similarity}}.}
 }
 \value{
 Numeric vector of length M, or a matrix, per \code{per_component}.
@@ -26,7 +26,7 @@ Numeric vector of length M, or a matrix, per \code{per_component}.
 \description{
 Convenience wrapper that pulls the bipartite state and a performance vector
 out of a \code{SaomNkRSienaBiEnv} and applies
-\code{\link{saomnk_sim_ego_indist2}}.
+\code{\link{saomnk_coholder_similarity}}.
 }
 \examples{
 env <- saomnk_env(M = 5, N = 8, density = 0.3, seed = 1)

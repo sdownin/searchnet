@@ -238,9 +238,19 @@ test_that("saomnk_run forwards theta_matrix and the run uses it", {
   ## The engine stored exactly the matrix it was given ...
   expect_equal(nrow(fx$env$theta_matrix), n)
   expect_equal(unname(fx$env$theta_matrix[, "density"]), unname(tm[, "density"]))
-  ## ... and RSiena used a distinct theta on each of the n runs.
+  ## ... and RSiena used the ramp. Rewritten 2026-10-07 (pre-registration
+  ## G8, listed in advance by the audit): this asserted nrow(thetaUsed) == n,
+  ## one one-ministep run per theta row, which was the replay's own structure.
+  ## Since 0.11.0 each block of identical rows is one segment (one
+  ## unconditional period), and a ramp with more than max_segments = 50
+  ## distinct rows is coarsened to 50 equal-duration segments, each at the
+  ## row at its midpoint.
   tu <- fx$env$rsiena_model$thetaUsed
-  expect_equal(nrow(tu), n)
+  expect_equal(nrow(tu), 50L)
+  expect_equal(nrow(fx$env$path_segments), 50L)
+  expect_equal(sum(fx$env$path_segments$n_rows), n)
+  expect_equal(unname(tu[, "density"]),
+               unname(tm[fx$env$path_segments$theta_row, "density"]))
   expect_gt(length(unique(tu[, which(colnames(tm) == "density")])), 1L)
 })
 

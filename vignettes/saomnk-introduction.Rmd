@@ -184,6 +184,8 @@ env$plot_utility_contributions(loess_span = 0.35, use_thetas = TRUE)
 
 Increase `iterations_per_actor` for richer dynamics:
 
+> **Rerun 2026-10-07:** K_AC wandering 2.1 to 4.1, 13/18 ties at end -> 18/18 ties by step 25 of 330, then flat; claim no longer supported as stated.
+
 ```{r longer-sim, fig.height=5, fig.width=11}
 env2 <- SaomNkRSienaBiEnv$new(environment_parameters)
 

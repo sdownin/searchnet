@@ -209,7 +209,10 @@ saomnk_confirm <- function(env, assent, seed = NULL) {
 #' @param assent A \code{saomnk_assent} object, or NULL for one-sided ties.
 #' @param waves Number of waves.
 #' @param steps_per_actor Micro-steps per actor per wave.
-#' @param seed Base seed; wave \code{w} uses \code{seed + w}.
+#' @param seed Base seed. Wave \code{w}'s simulation seed and confirmation
+#'   seed are derived from it by a purpose-namespaced hash, so the two streams
+#'   never coincide (before 0.10.0.9000 they were \code{seed + w} and
+#'   \code{seed + 1000 * w}, which collide at wave 1000).
 #' @param verbose Print per-wave diagnostics.
 #' @return A list with the per-wave confirmed and proposal matrices, the
 #'   four coupled degree processes for each, and the assent diagnostics.
@@ -232,9 +235,11 @@ saomnk_run_two_sided <- function(env, model, assent = NULL, waves = 5,
   kdeg <- vector("list", waves)
 
   for (w in seq_len(waves)) {
-    saomnk_run(env, model, steps_per_actor = steps_per_actor, seed = seed + w)
+    saomnk_run(env, model, steps_per_actor = steps_per_actor,
+               seed = .searchnet_seed(seed, "two_sided:run", w))
     if (!is.null(assent)) {
-      cf <- saomnk_confirm(env, assent, seed = seed + 1000 * w)
+      cf <- saomnk_confirm(env, assent,
+                           seed = .searchnet_seed(seed, "two_sided:confirm", w))
       proposals[[w]] <- cf$proposal
       diags[[w]] <- cf$diagnostics
     } else {
@@ -252,15 +257,18 @@ saomnk_run_two_sided <- function(env, model, assent = NULL, waves = 5,
                   100 * (if (is.null(d)) 1 else d$confirmation_rate)))
     }
   }
-  list(confirmed = confirmed, proposals = proposals,
-       degrees = do.call(rbind, kdeg),
-       assent_diagnostics = diags)
+  structure(
+    list(confirmed = confirmed, proposals = proposals,
+         degrees = do.call(rbind, kdeg),
+         assent_diagnostics = diags),
+    provenance = .searchnet_provenance(seed = seed, call = match.call())
+  )
 }
 
 #' Four coupled degree processes for a bipartite matrix
 #'
 #' Reports the same quantities used elsewhere in the package and in the
-#' employee-mobility application, so results remain comparable across domains.
+#' two-sided applications, so results remain comparable across domains.
 #' @param A An \eqn{M \times N} binary incidence matrix.
 #' @param wave Wave index recorded in the output.
 #' @return A one-row data frame.

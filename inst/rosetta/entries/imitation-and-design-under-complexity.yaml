@@ -1,0 +1,52 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: imitation-and-design-under-complexity
+title: Imitation and organizational design under complexity
+model: Rivkin imitation; Siggelkow and Rivkin organizational design
+citations:
+  - key: rivkin_2000
+    text: "Rivkin, J. W. (2000). Imitation of complex strategies. Management Science, 46(6), 824-844."
+    doi: "10.1287/mnsc.46.6.824.11940"
+  - key: siggelkow_rivkin_2005
+    text: "Siggelkow, N., and Rivkin, J. W. (2005). Speed and search: Designing organizations for turbulence and complexity. Organization Science, 16(2), 101-122."
+    doi: "10.1287/orsc.1050.0116"
+relation: comparison
+statement: >-
+  Compared, not nested: these models share the NK landscape with SAOM-NK, while
+  SAOM-NK adds a cross-firm coupling of the landscape (inPop) that they do not
+  contain.
+restrictions:
+  W: any
+  notes: []
+terms:
+  - class: complementarity
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: scope
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: crowding
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: contact
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs: {}
+lean: []
+checks: []
+does_not_cover:
+  - "Neither imitation with copying error nor the organizational designs are implemented or reproduced"
+  - "No Lean statement"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

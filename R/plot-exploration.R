@@ -27,6 +27,7 @@ saomnk_plot_exploration_exploitation_consistent <- function(
     plot_file = '',
     plot_dir = NA
 ) {
+  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation_consistent()")
 
   # Get actor strategies - matching the utility plot logic
   if (!identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS'))
@@ -235,8 +236,8 @@ saomnk_plot_exploration_exploitation_consistent <- function(
       geom_rect(
         data = shock_rects,
         aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf),
-        fill = 'darkorange',
-        color = 'orange',
+        fill = 'grey55',
+        color = 'grey40',
         linetype = 2,
         alpha = 0.05
       ) +
@@ -268,7 +269,7 @@ saomnk_plot_exploration_exploitation_consistent <- function(
       x = "Simulation Step",
       y = "Proportion of Activities"
     ) +
-    theme_bw() +
+    theme_searchnet() +
     theme(
       panel.grid.minor = element_blank(),
       legend.position = "bottom",
@@ -309,7 +310,7 @@ saomnk_plot_exploration_exploitation_consistent <- function(
       xlim(ylim) +
       coord_flip() +
       ylab('Proportion Density') +
-      theme_bw() +
+      theme_searchnet() +
       theme(
         strip.background = element_blank(),
         strip.text = element_text(face = "bold"),
@@ -378,6 +379,7 @@ saomnk_plot_exploration_exploitation <- function(
     plot_file = '',
     plot_dir = NA
 ) {
+  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation()")
 
   # Get bipartite network data from chain
   bi_env_arr <- env$bi_env_arr
@@ -547,7 +549,7 @@ saomnk_plot_exploration_exploitation <- function(
         data = shock_rects,
         aes(xmin = start, xmax = end),
         ymin = -Inf, ymax = Inf,
-        fill = 'darkorange',
+        fill = 'grey55',
         alpha = 0.05
       ) +
       geom_text(
@@ -563,13 +565,13 @@ saomnk_plot_exploration_exploitation <- function(
   p <- p +
     scale_color_manual(
       name = "Activity Type",
-      values = c("Exploration" = "#E74C3C",
-                 "Exploitation" = "#3498DB")
+      values = c("Exploration" = "#D55E00",
+                 "Exploitation" = "#56B4E9")
     ) +
     scale_fill_manual(
       name = "Activity Type",
-      values = c("Exploration" = "#E74C3C",
-                 "Exploitation" = "#3498DB"),
+      values = c("Exploration" = "#D55E00",
+                 "Exploitation" = "#56B4E9"),
       guide = "none"
     ) +
     scale_linetype_manual(
@@ -584,7 +586,7 @@ saomnk_plot_exploration_exploitation <- function(
       x = "Simulation Step",
       y = "Proportion of Activities"
     ) +
-    theme_bw() +
+    theme_searchnet() +
     theme(
       legend.position = "bottom",
       legend.box = "horizontal",
@@ -632,6 +634,7 @@ saomnk_plot_exploration_exploitation_phase <- function(
     show_trajectories = TRUE,
     plot_return = TRUE
 ) {
+  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation_phase()")
 
   # Get the metrics using the same calculation as above
   bi_env_arr <- env$bi_env_arr
@@ -687,7 +690,7 @@ saomnk_plot_exploration_exploitation_phase <- function(
       x = "Exploitation (proportion old activities)",
       y = "Exploration (proportion new activities)"
     ) +
-    theme_minimal()
+    theme_searchnet()
 
   # Add trajectories if requested
   if (show_trajectories) {
@@ -740,6 +743,7 @@ saomnk_plot_exploration_exploitation_improved <- function(
     plot_file = '',
     plot_dir = NA
 ) {
+  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation_improved()")
 
   # Get actor strategies
   if (!identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS'))
@@ -845,14 +849,14 @@ saomnk_plot_exploration_exploitation_improved <- function(
         data = shock_rects,
         aes(xmin = start, xmax = end),
         ymin = -Inf, ymax = Inf,
-        fill = '#FFA500',
+        fill = 'grey55',
         alpha = 0.1
       ) +
       geom_vline(
         data = shock_rects,
         aes(xintercept = start),
         linetype = "dotted",
-        color = "darkorange",
+        color = "#E69F00",
         size = 0.8
       ) +
       annotate(
@@ -862,7 +866,7 @@ saomnk_plot_exploration_exploitation_improved <- function(
         label = shock_rects$label[1],
         size = 3.5,
         fontface = "bold",
-        color = "darkorange"
+        color = "#E69F00"
       )
   }
 
@@ -921,13 +925,13 @@ saomnk_plot_exploration_exploitation_improved <- function(
   p_main <- p_main +
     scale_color_manual(
       name = "Strategy Group",
-      values = c("Control (0)" = "#2C3E50",
-                 "Subsidized (100)" = "#E74C3C")
+      values = c("Control (0)" = "#0072B2",
+                 "Subsidized (100)" = "#D55E00")
     ) +
     scale_fill_manual(
       name = "Strategy Group",
-      values = c("Control (0)" = "#2C3E50",
-                 "Subsidized (100)" = "#E74C3C"),
+      values = c("Control (0)" = "#0072B2",
+                 "Subsidized (100)" = "#D55E00"),
       guide = "none"
     ) +
     scale_linetype_manual(
@@ -941,7 +945,7 @@ saomnk_plot_exploration_exploitation_improved <- function(
       x = "Simulation Step",
       y = "Proportion of Activities"
     ) +
-    theme_minimal() +
+    theme_searchnet() +
     theme(
       panel.grid.minor = element_blank(),
       panel.grid.major.x = element_blank(),
@@ -999,7 +1003,7 @@ saomnk_plot_exploration_exploitation_improved <- function(
           data = shock_rects,
           aes(xmin = start, xmax = end),
           ymin = -Inf, ymax = Inf,
-          fill = '#FFA500',
+          fill = 'grey55',
           alpha = 0.1
         )
     }
@@ -1007,8 +1011,8 @@ saomnk_plot_exploration_exploitation_improved <- function(
     p_diff <- p_diff +
       scale_color_manual(
         name = "Activity Type",
-        values = c("Exploitation" = "#3498DB",
-                   "Exploration" = "#E74C3C")
+        values = c("Exploitation" = "#56B4E9",
+                   "Exploration" = "#D55E00")
       ) +
       labs(
         title = "Strategy Differential (Subsidized - Control)",
@@ -1016,7 +1020,7 @@ saomnk_plot_exploration_exploitation_improved <- function(
         x = "Simulation Step",
         y = "Difference in Proportion"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(
         panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),
@@ -1046,6 +1050,7 @@ saomnk_plot_exploration_exploitation_faceted <- function(
     loess_span = 0.3,
     show_points = FALSE
 ) {
+  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation_faceted()")
 
   # Prepare data
   plot_data <- metrics_df %>%
@@ -1078,12 +1083,12 @@ saomnk_plot_exploration_exploitation_faceted <- function(
           ymax = mean_prop + se_prop),
       alpha = 0.2
     ) +
-    geom_line(size = 1.5, color = "#2C3E50") +
+    geom_line(size = 1.5, color = "#0072B2") +
     geom_smooth(
       method = "loess",
       span = loess_span,
       se = FALSE,
-      color = "#E74C3C",
+      color = "#D55E00",
       size = 1,
       linetype = "dashed"
     )
@@ -1104,7 +1109,7 @@ saomnk_plot_exploration_exploitation_faceted <- function(
       x = "Simulation Step",
       y = "Proportion"
     ) +
-    theme_bw() +
+    theme_searchnet() +
     theme(
       strip.text = element_text(face = "bold"),
       strip.background = element_rect(fill = "gray95"),
@@ -1137,6 +1142,7 @@ saomnk_plot_exploration_exploitation_by_strategy <- function(
     plot_file = '',
     plot_dir = NA
 ) {
+  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation_by_strategy()")
 
   # Get actor strategies using the R6 method
   actor_strategies <- env$get_actor_strategies()
@@ -1307,7 +1313,7 @@ saomnk_plot_exploration_exploitation_by_strategy <- function(
         data = shock_rects,
         aes(xmin = start, xmax = end),
         ymin = -Inf, ymax = Inf,
-        fill = 'darkorange',
+        fill = 'grey55',
         alpha = 0.05
       ) +
       geom_text(
@@ -1324,13 +1330,13 @@ saomnk_plot_exploration_exploitation_by_strategy <- function(
   p <- p +
     scale_color_manual(
       name = "Strategy Group",
-      values = c("Strategy 0" = "#3498DB",
-                 "Strategy 100" = "#E74C3C")
+      values = c("Strategy 0" = "#56B4E9",
+                 "Strategy 100" = "#D55E00")
     ) +
     scale_fill_manual(
       name = "Strategy Group",
-      values = c("Strategy 0" = "#3498DB",
-                 "Strategy 100" = "#E74C3C"),
+      values = c("Strategy 0" = "#56B4E9",
+                 "Strategy 100" = "#D55E00"),
       guide = "none"
     ) +
     scale_linetype_manual(
@@ -1345,7 +1351,7 @@ saomnk_plot_exploration_exploitation_by_strategy <- function(
       x = "Simulation Step",
       y = "Proportion of Activities"
     ) +
-    theme_bw() +
+    theme_searchnet() +
     theme(
       legend.position = "right",
       legend.box = "vertical",
@@ -1395,6 +1401,7 @@ saomnk_plot_strategy_exploration_exploitation <- function(
     show_group_means = TRUE,
     group_line_size = 2
 ) {
+  .searchnet_require_path(env, "saomnk_plot_strategy_exploration_exploitation()")
 
   # Use the metrics from the result
   metrics_df <- result$metrics
@@ -1463,13 +1470,13 @@ saomnk_plot_strategy_exploration_exploitation <- function(
   p <- p +
     scale_color_manual(
       name = "Strategy Group",
-      values = c("Strategy 0" = "#3498DB",
-                 "Strategy 100" = "#E74C3C")
+      values = c("Strategy 0" = "#56B4E9",
+                 "Strategy 100" = "#D55E00")
     ) +
     scale_fill_manual(
       name = "Strategy Group",
-      values = c("Strategy 0" = "#3498DB",
-                 "Strategy 100" = "#E74C3C"),
+      values = c("Strategy 0" = "#56B4E9",
+                 "Strategy 100" = "#D55E00"),
       guide = "none"
     ) +
     scale_linetype_manual(
@@ -1483,7 +1490,7 @@ saomnk_plot_strategy_exploration_exploitation <- function(
       x = "Simulation Step",
       y = "Proportion"
     ) +
-    theme_minimal() +
+    theme_searchnet() +
     theme(
       legend.position = "right",
       legend.box = "vertical"
@@ -1505,6 +1512,7 @@ saomnk_plot_subsidized_risk_taking <- function(
     line_size = 2,
     point_alpha = 0.3
 ) {
+  .searchnet_require_path(env, "saomnk_plot_subsidized_risk_taking()")
 
   if (is.null(metrics_df)) {
     metrics_df <- env$calculate_explore_exploit_risk_adjusted()
@@ -1562,12 +1570,12 @@ saomnk_plot_subsidized_risk_taking <- function(
 
   p <- p +
     scale_color_manual(
-      values = c("Control (No Subsidy)" = "#2C3E50",
-                 "Treatment (Subsidized)" = "#E74C3C")
+      values = c("Control (No Subsidy)" = "#0072B2",
+                 "Treatment (Subsidized)" = "#D55E00")
     ) +
     scale_fill_manual(
-      values = c("Control (No Subsidy)" = "#2C3E50",
-                 "Treatment (Subsidized)" = "#E74C3C"),
+      values = c("Control (No Subsidy)" = "#0072B2",
+                 "Treatment (Subsidized)" = "#D55E00"),
       guide = "none"
     ) +
     labs(
@@ -1577,7 +1585,7 @@ saomnk_plot_subsidized_risk_taking <- function(
       y = "Risk-Taking Score",
       color = "Treatment Group"
     ) +
-    theme_minimal() +
+    theme_searchnet() +
     ylim(0, 1)
 
   return(p)
@@ -1592,6 +1600,7 @@ saomnk_plot_did_exploration <- function(
     metrics_df = NULL,
     treatment_time = 50
 ) {
+  .searchnet_require_path(env, "saomnk_plot_did_exploration()")
 
   if (is.null(metrics_df)) {
     metrics_df <- env$calculate_explore_exploit_risk_adjusted()
@@ -1623,15 +1632,15 @@ saomnk_plot_did_exploration <- function(
     geom_errorbar(aes(ymin = mean_risk_taking - se_risk_taking,
                       ymax = mean_risk_taking + se_risk_taking),
                   width = 0.1) +
-    scale_color_manual(values = c("Control" = "#2C3E50",
-                                  "Treated" = "#E74C3C")) +
+    scale_color_manual(values = c("Control" = "#0072B2",
+                                  "Treated" = "#D55E00")) +
     labs(
       title = "Difference-in-Differences: Subsidy Effect on Risk-Taking",
       subtitle = "Comparing subsidized vs non-subsidized firms",
       x = "Period",
       y = "Mean Risk-Taking Score"
     ) +
-    theme_minimal()
+    theme_searchnet()
 
   return(p)
 }
@@ -1648,6 +1657,7 @@ saomnk_plot_exploration_exploitation_subsidies <- function(
     loess_span = 0.3,
     shock_time = NULL
 ) {
+  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation_subsidies()")
 
   if (is.null(metrics_df)) {
     metrics_df <- env$calculate_explore_exploit_risk_adjusted()
@@ -1729,13 +1739,13 @@ saomnk_plot_exploration_exploitation_subsidies <- function(
   p <- p +
     scale_color_manual(
       name = "Strategy Group",
-      values = c("Control (0)" = "#2C3E50",
-                 "Subsidized (100)" = "#E74C3C")
+      values = c("Control (0)" = "#0072B2",
+                 "Subsidized (100)" = "#D55E00")
     ) +
     scale_fill_manual(
       name = "Strategy Group",
-      values = c("Control (0)" = "#2C3E50",
-                 "Subsidized (100)" = "#E74C3C"),
+      values = c("Control (0)" = "#0072B2",
+                 "Subsidized (100)" = "#D55E00"),
       guide = "none"
     ) +
     scale_linetype_manual(
@@ -1749,7 +1759,7 @@ saomnk_plot_exploration_exploitation_subsidies <- function(
       x = "Simulation Step",
       y = "Activity Intensity (Risk-Adjusted)"
     ) +
-    theme_minimal() +
+    theme_searchnet() +
     theme(
       panel.grid.minor = element_blank(),
       legend.position = "bottom",
@@ -1773,6 +1783,7 @@ saomnk_plot_exploration_risk_multiperiod <- function(
     point_alpha = 0.1,
     loess_span = 0.3
 ) {
+  .searchnet_require_path(env, "saomnk_plot_exploration_risk_multiperiod()")
 
   if (is.null(metrics_df)) {
     metrics_df <- env$calculate_explore_exploit_risk_adjusted()
@@ -1848,7 +1859,7 @@ saomnk_plot_exploration_risk_multiperiod <- function(
                xmax = shock_end,
                ymin = -Inf,
                ymax = Inf,
-               fill = "orange",
+               fill = "#E69F00",
                alpha = 0.1) +
       annotate("text",
                x = shock_time + (shock_end - shock_time) / 2,
@@ -1861,12 +1872,12 @@ saomnk_plot_exploration_risk_multiperiod <- function(
   # Format the plot
   p <- p +
     scale_color_manual(
-      values = c("Control (No Subsidy)" = "#2C3E50",
-                 "Treatment (Subsidized)" = "#E74C3C")
+      values = c("Control (No Subsidy)" = "#0072B2",
+                 "Treatment (Subsidized)" = "#D55E00")
     ) +
     scale_fill_manual(
-      values = c("Control (No Subsidy)" = "#2C3E50",
-                 "Treatment (Subsidized)" = "#E74C3C"),
+      values = c("Control (No Subsidy)" = "#0072B2",
+                 "Treatment (Subsidized)" = "#D55E00"),
       guide = "none"
     ) +
     labs(
@@ -1876,7 +1887,7 @@ saomnk_plot_exploration_risk_multiperiod <- function(
       y = "Risk-Taking Score",
       color = "Treatment Group"
     ) +
-    theme_minimal() +
+    theme_searchnet() +
     theme(
       legend.position = "bottom",
       plot.title = element_text(face = "bold", size = 14),
@@ -1897,6 +1908,7 @@ saomnk_plot_exploration_risk_did <- function(
     pre_periods = NULL,
     post_periods = NULL
 ) {
+  .searchnet_require_path(env, "saomnk_plot_exploration_risk_did()")
 
   if (is.null(metrics_df)) {
     metrics_df <- env$calculate_explore_exploit_risk_adjusted()
@@ -1945,15 +1957,15 @@ saomnk_plot_exploration_risk_did <- function(
     geom_errorbar(aes(ymin = mean_risk_taking - se_risk_taking,
                       ymax = mean_risk_taking + se_risk_taking),
                   width = 0.1) +
-    scale_color_manual(values = c("Control" = "#2C3E50",
-                                  "Treated" = "#E74C3C")) +
+    scale_color_manual(values = c("Control" = "#0072B2",
+                                  "Treated" = "#D55E00")) +
     labs(
       title = "Difference-in-Differences: Subsidy Effect on Risk-Taking",
       subtitle = "Comparing subsidized vs non-subsidized firms",
       x = "Period",
       y = "Mean Risk-Taking Score"
     ) +
-    theme_minimal() +
+    theme_searchnet() +
     theme(
       plot.title = element_text(face = "bold", size = 14),
       plot.subtitle = element_text(size = 11)
@@ -1972,6 +1984,7 @@ saomnk_plot_exploration_event_study <- function(
     save_plot = FALSE,
     plot_dir = NULL
 ) {
+  .searchnet_require_path(env, "saomnk_plot_exploration_event_study()")
 
   # Get dynamic results
   ed <- data.table::rbindlist(
@@ -2004,7 +2017,7 @@ saomnk_plot_exploration_event_study <- function(
 
     # Add shock region
     annotate("rect", xmin = -0.5, xmax = Inf, ymin = -Inf, ymax = Inf,
-             fill = 'darkorange', alpha = 0.05) +
+             fill = 'grey55', alpha = 0.05) +
 
     # Add confidence bands and estimates
     geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
@@ -2026,7 +2039,7 @@ saomnk_plot_exploration_event_study <- function(
       subtitle = sim_title_str
     ) +
 
-    theme_minimal() +
+    theme_searchnet() +
     theme(
       strip.background = element_rect(fill = "gray90", color = "gray50"),
       strip.text = element_text(size = 10, face = "bold"),
@@ -2056,6 +2069,7 @@ saomnk_plot_exploration_did_combined <- function(
     save_plot = FALSE,
     plot_dir = NULL
 ) {
+  .searchnet_require_path(env, "saomnk_plot_exploration_did_combined()")
 
   # Create data for all metrics
   all_data <- list()
@@ -2099,7 +2113,7 @@ saomnk_plot_exploration_did_combined <- function(
 
       # Add shock region
       annotate("rect", xmin = -0.5, xmax = Inf, ymin = -Inf, ymax = Inf,
-               fill = 'darkorange', alpha = 0.05) +
+               fill = 'grey55', alpha = 0.05) +
 
       # Add estimates
       geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
@@ -2117,7 +2131,7 @@ saomnk_plot_exploration_did_combined <- function(
       labs(x = NULL, y = "Avg Treatment Effect on Treated (ATT)",
            title = metric) +
 
-      theme_minimal() +
+      theme_searchnet() +
       theme(
         strip.background = element_rect(fill = "gray90"),
         strip.text = element_text(face = "bold"),

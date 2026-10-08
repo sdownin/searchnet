@@ -24,8 +24,7 @@ A ggplot object assembled via \code{cowplot::plot_grid()}.
 }
 \description{
 Creates a 2x2 panel figure showing competitive entry behavior across
-a range of theta_inPop values, following the design from the CD2026
-forbearance spectrum experiment (script 54).
+a range of theta_inPop values (a forbearance-spectrum design).
 }
 \examples{
 \donttest{

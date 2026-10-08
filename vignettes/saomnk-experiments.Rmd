@@ -260,6 +260,8 @@ exp$process_results()
 - **30--50**: moderate dynamics, visible K-4 evolution
 - **100+**: convergence-scale dynamics, needed for equilibrium analysis
 
+> **Rerun 2026-10-07:** no K_AC plateau within 100 per actor -> plateau by about 8 to 17 per actor (introduction, nk-validation, simulation 3.1 runs); claim no longer supported as stated.
+
 ## 5.3 Number of Replications
 
 For statistical inference, use $\geq 30$ replications per condition (Monte

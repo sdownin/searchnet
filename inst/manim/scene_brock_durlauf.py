@@ -1,14 +1,14 @@
 """
 Scene: Brock & Durlauf (2001) Economic Foundation Theorem
 ==========================================================
-Animated visualization of Theorem 5: SaoMNK -> B&D2001 reduction.
+Animated visualization of Property 5: SaoMNK -> B&D2001 reduction.
 
 Shows the canonical pitchfork bifurcation of the self-consistency equation
     m* = tanh(beta*J*m* + beta*h)
 with finite-M SaoMNK CTMC simulation overlays converging to the analytical
 B&D fixed point as M -> infinity.
 
-Companion to Theorem 1 (NK = single-actor, greedy limit) in the searchnet
+Companion to Property 1 (NK = single-actor, greedy limit) in the searchnet
 animation gallery.
 
 Render:
@@ -581,21 +581,21 @@ class BrockDurlaufScene(Scene):
         )
         self.remove(bd_glow)
 
-        # Theorem 5 statement
+        # Property 5 statement
         theorem = Text(
-            "Theorem 5:  SaoMNK contains B&D2001 the same way it contains NK",
+            "Property 5:  SaoMNK contains B&D2001 the same way it contains NK",
             font_size=22, color=COLORS["gold"],
             font="Times New Roman", weight=BOLD,
         ).to_edge(UP, buff=0.5)
 
         # Two-limit summary
         thm1 = MathTex(
-            r"\textbf{Theorem 1:}\;\; \text{NK} = "
+            r"\textbf{Property 1:}\;\; \text{NK} = "
             r"\text{single-actor, greedy limit}\;\;(M=1,\;\beta\to\infty)",
             font_size=26, color=COLORS["text"],
         )
         thm5 = MathTex(
-            r"\textbf{Theorem 5:}\;\; \text{B\&D} = "
+            r"\textbf{Property 5:}\;\; \text{B\&D} = "
             r"\text{many-actor, mean-field limit}\;\;(M\to\infty,\;\text{finite}\;\beta)",
             font_size=26, color=COLORS["text"],
         )
@@ -629,7 +629,7 @@ class BrockDurlaufScene(Scene):
             line_spacing=1.0,
         ).next_to(final_title, DOWN, buff=0.5)
         provenance = Text(
-            "searchnet animation gallery   .   Theorem 5 reduction",
+            "searchnet animation gallery   .   Property 5 reduction",
             font_size=14, color=COLORS["dim"],
             font="Times New Roman",
         ).next_to(citation, DOWN, buff=0.5)

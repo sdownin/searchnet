@@ -240,6 +240,8 @@ The total number of ministeps is `M * steps_per_actor`. With $M = 6$
 actors and `steps_per_actor = 20`, that gives 120 individual decision
 opportunities.
 
+> **Rerun 2026-10-07:** 120 ministeps (fixed) -> 120 expected, 105 realized in the run below; claim no longer supported as stated.
+
 ### The Rate Function: Who Acts Next?
 
 Some actors may be more active than others. The rate function controls
@@ -260,6 +262,8 @@ cat("  With steps_per_actor = 20, total ministeps =",
     env$M * 20, "\n")
 cat("  Each actor gets ~20 decision opportunities\n")
 ```
+
+> **Rerun 2026-10-07:** total ministeps = 120 (fixed) -> 120 expected, 105 realized in the run below; claim no longer supported as stated.
 
 ### The Choice Function: What Do They Do?
 
@@ -372,6 +376,8 @@ initial density of 0.3 (about 30% of ties exist at the start). The
 **Step 3** runs the simulation for 20 ministeps per actor
 ($6 \times 20 = 120$ total ministeps).
 
+> **Rerun 2026-10-07:** 120 total ministeps -> 105 realized (120 expected); claim no longer supported as stated.
+
 ## Inspecting the State After Simulation
 
 ```{r inspect-after}
@@ -455,9 +461,9 @@ than the model.
 
 For the SAOM-NK choice rule the answer is known analytically --- the chain is
 ergodic, so it converges to a unique stationary distribution regardless of
-where it starts (Theorem 4; see `vignette("saomnk-blume-tutorial")`). But
+where it starts (Property 4; see `vignette("saomnk-blume-tutorial")`). But
 "known analytically" is not the same as "true of the code you just ran," and
-the interesting part of the theorem is not *that* the chain forgets its
+the interesting part of the property is not *that* the chain forgets its
 starting point but *how fast*.
 
 `searchnet_ergodicity_sweep()` measures it. Two arms are started at opposite
@@ -484,7 +490,7 @@ erg
 plot(erg)
 ```
 
-A starting gap of 0.70 is erased to around 0.01, and the gap decays as a power
+A starting gap of 0.70 is erased to around 0.002, and the gap decays as a power
 of run length --- shrinking steadily as the chain runs longer.
 
 **Why this is worth showing in a methods session.** The version of this
@@ -492,7 +498,7 @@ demonstration that circulated in earlier releases ran the model once from each
 starting point on a 4 $\times$ 5 grid and then printed the sentence "Both
 converge toward a similar equilibrium density" regardless of what the numbers
 were. It printed that sentence under a gap of 0.10 and under a gap of 0.20. It
-was not wrong about the theorem --- the theorem is true --- but it was not
+was not wrong about the property --- the property is true --- but it was not
 evidence for it either, and the distinction is exactly what we ask of empirical
 work.
 
@@ -785,7 +791,7 @@ This workshop covered the fundamentals. Here is where to dive deeper:
 | Vignette | What You Will Learn |
 |:---------|:-------------------|
 | **Introduction** (`saomnk-introduction`) | Detailed API walkthrough with richer examples |
-| **Theory** (`saomnk-theory`) | Formal mathematical framework, theorems, and proofs |
+| **Theory** (`saomnk-theory`) | Formal mathematical framework, properties, and proofs |
 | **NK Validation** | Classical NK comparison and reduction proof |
 | **Causal Inference** | DID / Synthetic Control / RD pipeline on simulated data |
 

@@ -4,7 +4,7 @@
 \alias{searchnet_causal_plot}
 \title{Plot causal inference results from searchnet}
 \usage{
-searchnet_causal_plot(result, type = NULL)
+searchnet_causal_plot(result, type = NULL, annotate = TRUE)
 }
 \arguments{
 \item{result}{Output from \code{\link{searchnet_did}},
@@ -13,6 +13,11 @@ searchnet_causal_plot(result, type = NULL)
 \item{type}{Character. Auto-detected from the result's class or
 structure.  Can be overridden to one of \code{"did"}, \code{"synth"},
 or \code{"rd"}.}
+
+\item{annotate}{Logical. If \code{TRUE} (default), add reading guides on
+the data: the shock labeled, and for \code{"did"} a note on the
+pre-shock estimates (whether their bands cover zero) and on the average
+effect after the shock. \code{FALSE} omits them.}
 }
 \value{
 A \code{ggplot} object.
@@ -21,6 +26,22 @@ A \code{ggplot} object.
 Unified plotting interface for DID, synthetic control, and RD results
 produced by \code{\link{searchnet_did}}, \code{\link{searchnet_synth}},
 and \code{\link{searchnet_rd}}.
+}
+\details{
+Each plot states its estimate in the title and says how to read the
+figure in the subtitle; the shock is a dashed vermillion line.
+\describe{
+\item{\code{"did"}}{The event-study aggregation of the group-time
+effects (\code{did::aggte(type = "dynamic")}): one point per ministep
+relative to the shock, with its simultaneous confidence band, grey
+before the shock and vermillion after. The title reports the simple
+aggregate ATT and its standard error.}
+\item{\code{"synth"}}{The treated unit (solid, vermillion) against its
+synthetic control (dashed, grey), labeled at the line ends. The title
+reports the mean post-shock gap.}
+\item{\code{"rd"}}{Step means with a local fit on each side of the shock
+step. The title reports the RD estimate and p-value.}
+}
 }
 \examples{
 \dontrun{

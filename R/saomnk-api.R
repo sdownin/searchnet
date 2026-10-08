@@ -62,7 +62,7 @@ NULL
     storage.mode(out) <- "double"
   } else if (is.matrix(x)) {
     stop(lbl, " is a single matrix. A time-varying coupling needs one matrix ",
-         "per period; pass it through `epistasis_matrices` if it is static.",
+         "per period; pass it through `influence_matrices` if it is static.",
          call. = FALSE)
   } else {
     stop(lbl, " must be an N x N x P array or a list of P N x N matrices.",
@@ -240,7 +240,8 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #' @param epistasis_matrix,epistasis_weight,epistasis_matrices,epistasis_weights
 #'   \strong{Deprecated} in 0.4.0; renamed to the four \code{influence_*}
 #'   arguments above.  The old names still work and are passed through
-#'   unchanged, but emit a warning.  The rename corrects a semantic
+#'   unchanged, with a deprecation warning shown once per session for each
+#'   old name.  The rename corrects a semantic
 #'   conflation: \eqn{W} is an influence (interaction) matrix; epistasis is
 #'   what it produces.
 #' @param dyad_covariates Named list of \eqn{M \times N}{M x N} actor-by-
@@ -346,11 +347,18 @@ saomnk_model <- function(density            = -0.5,
   ## warning.
   .dep <- function(old_val, old_nm, new_nm, new_val, default = NULL) {
     if (is.null(old_val)) return(new_val)
-    warning("`", old_nm, "` is deprecated as of searchnet 0.4.0; use `",
-            new_nm, "` instead. W is the influence matrix, ",
-            "the model INPUT; K_CC reports the realized inter-component ",
-            "structure it drives, and epistatic fitness is the XWX effect ",
-            "it carries.", call. = FALSE)
+    ## Once per session per argument, like the package's other deprecated
+    ## aliases: an old script that builds models in a loop is not buried in
+    ## repeats. .searchnet_reset_deprecations() re-arms it.
+    .flag <- paste0("model_", old_nm)
+    if (!isTRUE(.searchnet_deprecation_flags[[.flag]])) {
+      warning("`", old_nm, "` is deprecated as of searchnet 0.4.0; use `",
+              new_nm, "` instead. W is the influence matrix, ",
+              "the model INPUT; K_CC reports the realized inter-component ",
+              "structure it drives, and epistatic fitness is the XWX effect ",
+              "it carries. (Shown once per session.)", call. = FALSE)
+      assign(.flag, TRUE, envir = .searchnet_deprecation_flags)
+    }
     if (identical(new_val, default)) old_val else new_val
   }
   influence_matrix   <- .dep(epistasis_matrix,   "epistasis_matrix",
@@ -620,9 +628,16 @@ saomnk_model <- function(density            = -0.5,
 #'   or raw RSiena effect names (e.g., \code{"inPop"}).
 #' @param parameter Numeric vector (same length as \code{effect}).
 #'   Parameter value(s) during this segment of the simulation.
-#' @param portion Integer. Relative size of this segment (default \code{1}).
+#' @param portion Integer. Relative duration of this segment (default
+#'   \code{1}); since 0.11.0 portions divide model time, not a ministep count.
 #'   For example, two shocks with \code{portion = 1} each split the simulation
 #'   in half; portions of 2 and 1 give a 2/3--1/3 split.
+#' @param new_value \strong{Deprecated} alias for \code{parameter}, accepted
+#'   for older scripts with a once-per-session warning.
+#' @param step Not supported. An absolute switch step cannot be expressed as
+#'   one segment; supplying it stops with the two-shock construction that
+#'   does express it (a baseline segment of \code{portion = s} followed by a
+#'   shocked segment of \code{portion = T - s}).
 #' @return A list with class \code{"saomnk_shock"}.
 #' @export
 #' @examples
@@ -633,7 +648,42 @@ saomnk_model <- function(density            = -0.5,
 #' s2 <- saomnk_shock("density", parameter = -2.0, portion = 1)
 #'
 #' ## Pass both to saomnk_run(shocks = list(s1, s2))
-saomnk_shock <- function(effect, parameter, portion = 1L) {
+saomnk_shock <- function(effect, parameter, portion = 1L,
+                         new_value = NULL, step = NULL) {
+
+  ## -- Compatibility with a form some older scripts use ------------------ ##
+  ## `saomnk_shock(effect, step = s, new_value = v)` was never this function's
+  ## signature (an early README showed it), but scripts copied it. `new_value`
+  ## is unambiguous: it is the segment's parameter value. `step` is not: a
+  ## shock is a SEGMENT whose length is a relative `portion`, and an absolute
+  ## switch step cannot be converted without the run's total ministep count
+  ## and a second (baseline) segment. So `new_value` is shimmed and `step`
+  ## stops with the construction that expresses it.
+  if (!is.null(step)) {
+    stop("`step` is not an argument of saomnk_shock(). A shock is a segment ",
+         "of the run whose length is set by `portion` (relative to the other ",
+         "shocks), not a switch at an absolute step. To switch `", effect[1],
+         "` at ministep s of a T-ministep run, pass two shocks to saomnk_run(): ",
+         "saomnk_shock(\"", effect[1], "\", parameter = <baseline>, portion = s) ",
+         "and saomnk_shock(\"", effect[1], "\", parameter = <new value>, ",
+         "portion = T - s). The value argument is `parameter` (formerly ",
+         "`new_value`).", call. = FALSE)
+  }
+  if (!is.null(new_value)) {
+    if (!missing(parameter))
+      stop("Supply `parameter` or the deprecated `new_value`, not both.",
+           call. = FALSE)
+    if (!isTRUE(.searchnet_deprecation_flags$shock_new_value)) {
+      warning("saomnk_shock(new_value = ) is deprecated; the argument is ",
+              "`parameter`. (This warning is shown once per session.)",
+              call. = FALSE)
+      .searchnet_deprecation_flags$shock_new_value <- TRUE
+    }
+    parameter <- new_value
+  }
+  if (missing(parameter))
+    stop("saomnk_shock() needs `parameter`, the value(s) the effect(s) take ",
+         "during this segment.", call. = FALSE)
 
   stopifnot(is.character(effect), length(effect) >= 1)
   stopifnot(is.numeric(parameter), length(parameter) == length(effect))
@@ -667,22 +717,37 @@ saomnk_shock <- function(effect, parameter, portion = 1L) {
 #' @param env A \code{SaomNkRSienaBiEnv} object created by
 #'   \code{\link{saomnk_env}}.
 #' @param model A structure model created by \code{\link{saomnk_model}}.
-#' @param steps_per_actor Integer. Number of decision-chain micro-steps per
-#'   actor (default \code{30}).  Total simulation steps = \code{M *
-#'   steps_per_actor}.
+#' @param steps_per_actor Numeric. The basic rate summed over the run: the
+#'   EXPECTED number of decision opportunities per actor at zero rate effects
+#'   (default \code{30}).  Since 0.11.0 the run is one unit of model time
+#'   simulated as a genuine SAOM path, so the realized number of ministeps is
+#'   random and rate effects (e.g. \code{RateX}) change it.  Before 0.11.0 this
+#'   was a fixed count of \code{M * steps_per_actor} ministeps, each drawn
+#'   independently from the starting state.
 #' @param seed Integer or \code{NULL}. Random seed for the RSiena simulation
 #'   run.
 #' @param shocks A list of \code{\link{saomnk_shock}} objects defining
 #'   parameter regime changes, or \code{NULL} (default) for no shocks.
-#' @param theta_matrix Optional numeric matrix of per-ministep parameter values
-#'   (\code{iterations} rows x one column per simulated effect), as built by
-#'   \code{\link{saomnk_theta_ramp}} or \code{\link{saomnk_theta_drift}}. When
-#'   supplied it defines the parameter trajectory directly and its row count
-#'   overrides \code{steps_per_actor}. Default \code{NULL}, in which case the
-#'   engine builds a constant theta matrix from \code{model} exactly as before.
+#' @param theta_matrix Optional numeric matrix of parameter values on a time
+#'   grid (\code{iterations} rows x one column per simulated effect), as built
+#'   by \code{\link{saomnk_theta_ramp}} or \code{\link{saomnk_theta_drift}}.
+#'   Row \code{r} applies over the fraction \code{(r - 1, r] / nrow} of the run;
+#'   each block of identical rows is simulated as one segment started from the
+#'   previous segment's end state (at most \code{max_segments = 50} segments; a
+#'   finer schedule is coarsened, with a message).  Its row count sets the
+#'   summed basic rate to \code{nrow(theta_matrix) / M} per actor and overrides
+#'   \code{steps_per_actor}. Default \code{NULL}, in which case the engine
+#'   builds a constant theta matrix from \code{model}.
 #' @param verbose Logical. If \code{TRUE}, print RSiena diagnostic output
 #'   during the simulation (default \code{FALSE}).
+#' @param restart Logical. If \code{TRUE} (default), the run starts from the
+#'   environment's initial matrix (\code{env$bipartite_matrix_init}); if
+#'   \code{FALSE}, it continues from the current state
+#'   (\code{env$bipartite_matrix}), so successive calls form one path.
 #' @return The \code{env} object (modified in place), returned invisibly.
+#'   The run's provenance (searchnet, RSiena and R versions, RNG kind, seed,
+#'   call) is stored in \code{env$provenance}; see
+#'   \code{\link{searchnet_provenance}}.
 #' @export
 #' @examples
 #' env <- saomnk_env(M = 3, N = 6, seed = 1234)
@@ -691,7 +756,8 @@ saomnk_shock <- function(effect, parameter, portion = 1L) {
 #' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
 saomnk_run <- function(env, model, steps_per_actor = 30,
                         seed = NULL, shocks = NULL, theta_matrix = NULL,
-                        verbose = FALSE) {
+                        verbose = FALSE, restart = TRUE) {
+  stopifnot(is.logical(restart), length(restart) == 1L, !is.na(restart))
 
   stopifnot(inherits(env, "SaomNkRSienaBiEnv"))
   stopifnot(is.list(model))
@@ -701,12 +767,16 @@ saomnk_run <- function(env, model, steps_per_actor = 30,
   if (!is.null(shocks)) {
     stopifnot(is.list(shocks))
     theta_shocks <- lapply(shocks, function(s) {
-      ## Strip class to plain list for internal engine
-      as.list(s)
+      ## Strip class to plain list for internal engine. as.list() keeps the
+      ## class of a classed list, so the engine's enriched entries (with
+      ## chain_step_ids and, after fit_rsiena_shocks(), the fitted model)
+      ## used to print through print.saomnk_shock(), which hides them.
+      unclass(s)
     })
   }
 
   run_seed <- if (!is.null(seed)) as.integer(seed) else 123L
+  .call <- match.call()
 
   if (!is.null(theta_matrix)) {
     if (!is.matrix(theta_matrix) || !is.numeric(theta_matrix))
@@ -720,8 +790,14 @@ saomnk_run <- function(env, model, steps_per_actor = 30,
       theta_matrix    = theta_matrix,
       run_seed        = run_seed,
       theta_shocks    = theta_shocks,
-      verbose         = verbose
+      verbose         = verbose,
+      restart         = restart
     )
+    env$provenance <- .searchnet_provenance(
+      seed = run_seed, call = .call, seed_supplied = !is.null(seed),
+      env_seed = env$rsiena_env_seed, grid_rows = nrow(theta_matrix),
+      path = env$searchnet_path_kind, segment_seeds = env$path_segments$seed,
+      realized_ministeps = sum(env$path_segments$n_ministeps))
     return(invisible(env))
   }
 
@@ -730,8 +806,15 @@ saomnk_run <- function(env, model, steps_per_actor = 30,
     iterations_per_actor = as.integer(steps_per_actor),
     run_seed             = run_seed,
     theta_shocks         = theta_shocks,
-    verbose              = verbose
+    verbose              = verbose,
+    restart              = restart
   )
+  env$provenance <- .searchnet_provenance(
+    seed = run_seed, call = .call, seed_supplied = !is.null(seed),
+    env_seed = env$rsiena_env_seed,
+    steps_per_actor = as.integer(steps_per_actor),
+    path = env$searchnet_path_kind, segment_seeds = env$path_segments$seed,
+    realized_ministeps = sum(env$path_segments$n_ministeps))
 
   invisible(env)
 }
@@ -754,15 +837,23 @@ saomnk_run <- function(env, model, steps_per_actor = 30,
 #' @param replications Integer. Number of independent replications
 #'   (default \code{10}).
 #' @param waves Integer. Number of waves per replication (default \code{2}).
-#' @param iterations Integer. RSiena iterations per wave (default \code{500}).
-#' @param seed Integer. Base random seed; replication \emph{r} uses
-#'   \code{seed + r}.
+#' @param iterations Numeric. Expected decision opportunities per wave, summed
+#'   over actors (default \code{500}): each wave is one unconditional RSiena
+#'   period with basic rate \code{iterations / M}, started from the end of the
+#'   previous wave.  Before 0.11.0 each wave conditioned on the previous
+#'   wave's distance and moved about one tie.
+#' @param seed Integer. Base random seed. Replication \emph{r}'s seed is
+#'   derived from it by a purpose-namespaced hash and recorded in
+#'   \code{env$mc_results[[r]]$seed}; before 0.10.0.9000 it was
+#'   \code{seed + r}, so base seeds 1 and 2 shared all but one replication.
 #' @param parallel Logical. If \code{TRUE}, run replications in parallel
 #'   using the \pkg{future} back-end (default \code{FALSE}).
 #' @param workers Integer or \code{NULL}. Number of parallel workers.
 #'   If \code{NULL}, uses the current \pkg{future} plan.
 #' @return The \code{env} object (modified in place) with
-#'   \code{env$mc_results} populated; returned invisibly.
+#'   \code{env$mc_results} populated and the run's provenance in
+#'   \code{env$provenance} (see \code{\link{searchnet_provenance}});
+#'   returned invisibly.
 #' @export
 #' @examples
 #' \dontrun{
@@ -787,6 +878,11 @@ saomnk_monte_carlo <- function(env, model, replications = 10, waves = 2,
     parallel        = parallel,
     workers         = workers
   )
+  env$provenance <- .searchnet_provenance(
+    seed = as.integer(seed), call = match.call(),
+    env_seed = env$rsiena_env_seed,
+    replication_seeds = vapply(env$mc_results, function(r) as.integer(r$seed),
+                               integer(1)))
 
   invisible(env)
 }
@@ -800,21 +896,29 @@ saomnk_monte_carlo <- function(env, model, replications = 10, waves = 2,
 #'
 #' Visualizes the four coupled degree processes---actor scope (\eqn{K_{AC}}),
 #' component popularity (\eqn{K_{CA}}), actor sociality (\eqn{K_{AA}}), and
-#' component epistasis (\eqn{K_{CC}})---over the simulated decision chain.
+#' component coupling (\eqn{K_{CC}})---over the simulated decision chain.
+#' Each panel is labeled with its channel and plain name; the title states
+#' what the run shows, the subtitle how to read the figure, and the caption
+#' lists the model weights. See \code{\link{saomnk_plot_degree_4panel}}.
 #'
 #' @param env A \code{SaomNkRSienaBiEnv} object after running
 #'   \code{\link{saomnk_run}}.
 #' @param smooth Numeric. Loess smoothing span passed to
 #'   \code{plot_degree_4panel} (default \code{0.3}).
-#' @return The plot object (invisibly), or side-effect display.
+#' @param annotate Logical. If \code{TRUE} (default), add reading guides on
+#'   the data (the mean line labeled, and a note marking the level the first
+#'   series settles at or the shock). \code{FALSE} omits them.
+#' @return A ggplot object.
 #' @export
 #' @examples
 #' \dontrun{
 #' saomnk_plot_k4(env, smooth = 0.25)
+#' saomnk_plot_k4(env, annotate = FALSE)
 #' }
-saomnk_plot_k4 <- function(env, smooth = 0.3) {
+saomnk_plot_k4 <- function(env, smooth = 0.3, annotate = TRUE) {
+  .searchnet_require_path(env, "saomnk_plot_k4()")
   stopifnot(inherits(env, "SaomNkRSienaBiEnv"))
-  env$plot_degree_4panel(loess_span = smooth)
+  env$plot_degree_4panel(loess_span = smooth, annotate = annotate)
 }
 
 
@@ -830,16 +934,54 @@ saomnk_plot_k4 <- function(env, smooth = 0.3) {
 #' @param env A \code{SaomNkRSienaBiEnv} object after running
 #'   \code{\link{saomnk_run}}.
 #' @param steps Integer vector of simulation step indices to snapshot, or
-#'   \code{NULL} (default) for five evenly-spaced steps plus the initial state.
-#' @return Called for side effects (plot display).
+#'   \code{NULL} (default) for five evenly-spaced steps. The initial state
+#'   (step 0) is always drawn first.
+#' @param palette Color scheme. \code{"okabe-ito"} (default) is colorblind
+#'   safe: actor strategy groups take Okabe-Ito orange, sky blue, yellow,
+#'   reddish purple and black in level order; components take blue
+#'   (initially unused) and reddish purple (initially used); actors in the
+#'   projection keep their strategy color and are sized by the number of
+#'   actors they share a component with; the component heatmap runs from
+#'   white to Okabe-Ito blue. (Before searchnet 0.11.2.9000 components were
+#'   bluish green and the projection was colored by eigenvector centrality on
+#'   the viridis scale.) \code{"legacy"}
+#'   restores the earlier colors (default ggplot hues for strategies, dark
+#'   green and tan components, a green-to-red centrality gradient and a
+#'   white-to-red heatmap), which are not colorblind safe.
+#' @param node_colors Optional named character vector overriding node colors.
+#'   Names are actor strategy levels (as in
+#'   \code{levels(env$get_actor_strategies())}, \code{"none"} when the model
+#'   has no strategies) and/or \code{"new"} and \code{"old"} for components.
+#'   Unnamed entries or unknown names are an error.
+#' @param draw Logical. If \code{TRUE} (default), draw each snapshot to the
+#'   current device, as before. \code{FALSE} only builds and returns them.
+#' @return Invisibly, a list with one element per snapshot (initial state
+#'   first), each a list with \code{step}; the three panels as ggplot objects
+#'   \code{social}, \code{bipartite} and \code{heatmap}, which can be restyled
+#'   with \code{+} and re-arranged; \code{grob}, the arranged three-panel
+#'   figure (draw it with \code{grid::grid.draw()} or save it with
+#'   \code{ggplot2::ggsave()}); and \code{colors}, the actor and component
+#'   colors used. Before searchnet 0.11.1.9000 the function returned
+#'   \code{NULL}.
 #' @export
 #' @examples
 #' \dontrun{
 #' saomnk_plot_snapshots(env)
 #' saomnk_plot_snapshots(env, steps = c(1, 10, 50))
+#'
+#' ## Restyle: build without drawing, then modify a panel
+#' snaps <- saomnk_plot_snapshots(env, steps = 10, draw = FALSE)
+#' snaps[[2]]$bipartite + ggplot2::labs(title = "Step 10")
+#'
+#' ## Custom node colors, or the pre-0.11.1.9000 look
+#' saomnk_plot_snapshots(env, node_colors = c(new = "black", old = "grey60"))
+#' saomnk_plot_snapshots(env, palette = "legacy")
 #' }
-saomnk_plot_snapshots <- function(env, steps = NULL) {
+saomnk_plot_snapshots <- function(env, steps = NULL, palette = c("okabe-ito", "legacy"),
+                                  node_colors = NULL, draw = TRUE) {
+  .searchnet_require_path(env, "saomnk_plot_snapshots()")
   stopifnot(inherits(env, "SaomNkRSienaBiEnv"))
+  palette <- match.arg(palette)
 
   total_steps <- env$get_step()
   if (total_steps == 0)
@@ -850,8 +992,20 @@ saomnk_plot_snapshots <- function(env, steps = NULL) {
     n_snaps <- min(5L, total_steps)
     steps <- unique(round(seq(1, total_steps, length.out = n_snaps)))
   }
+  if (any(steps < 1 | steps > total_steps))
+    stop(sprintf("steps must lie in 1..%d (the recorded steps).", total_steps))
 
-  env$plot_snapshots(steps)
+  out <- lapply(c(0, steps), function(step) {
+    mat <- if (step == 0) env$bipartite_matrix_init else env$bi_env_arr[, , step]
+    snap <- .snapshot_panels(env, mat, step, palette = palette,
+                             node_colors = node_colors)
+    if (isTRUE(draw)) {
+      grid::grid.newpage()
+      grid::grid.draw(snap$grob)
+    }
+    snap
+  })
+  invisible(out)
 }
 
 
@@ -869,11 +1023,17 @@ saomnk_plot_snapshots <- function(env, steps = NULL) {
 #' @param smooth Numeric. Loess smoothing span (default \code{0.35}).
 #' @param weighted Logical. If \code{TRUE} (default), multiply raw statistics
 #'   by their \eqn{\theta} weights.
-#' @return Called for side effects (plot display).
+#' @param annotate Logical. If \code{TRUE} (default), label the largest term
+#'   and name the shock, if any. See
+#'   \code{\link{saomnk_plot_utility_contributions}}.
+#' @return A ggplot object: one panel per effect, labeled with a plain name,
+#'   and total utility on top.
 #' @export
-saomnk_plot_utility <- function(env, smooth = 0.35, weighted = TRUE) {
+saomnk_plot_utility <- function(env, smooth = 0.35, weighted = TRUE, annotate = TRUE) {
+  .searchnet_require_path(env, "saomnk_plot_utility()")
   stopifnot(inherits(env, "SaomNkRSienaBiEnv"))
-  env$plot_utility_contributions(loess_span = smooth, use_thetas = weighted)
+  env$plot_utility_contributions(loess_span = smooth, use_thetas = weighted,
+                                 annotate = annotate)
 }
 
 
@@ -925,6 +1085,7 @@ saomnk_summary <- function(env) {
 #'   \code{K_CC}.
 #' @export
 saomnk_get_degrees <- function(env) {
+  .searchnet_require_path(env, "saomnk_get_degrees()")
   stopifnot(inherits(env, "SaomNkRSienaBiEnv"))
   list(
     K_AC = env$K_AC_df,
@@ -956,6 +1117,7 @@ saomnk_get_bipartite <- function(env, step = NULL) {
     return(env$bipartite_matrix)
   }
   stopifnot(is.numeric(step), length(step) == 1)
+  .searchnet_require_path(env, "saomnk_get_bipartite()")
   total <- env$get_step()
   if (step < 1 || step > total)
     stop(sprintf("step must be between 1 and %d", total))

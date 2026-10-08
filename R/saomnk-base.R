@@ -69,6 +69,13 @@ SaomNkRSienaBiEnv_base <- R6Class(
     theta_shocks = NULL,
     theta_matrix = NULL,
     #
+    ## State-carrying simulation (0.11.0), see R/searchnet-path.R.
+    searchnet_path_kind = NULL,  ## "genuine" or "independent_draws" (legacy_replay)
+    path_start_matrix = NULL,    ## the state the simulated path actually started from
+    path_segments = NULL,        ## one row per simulated segment (rows, rate, seed, ministeps)
+    behavior_state = NULL,       ## behavior vector at the end of the last run
+    covariate_centering = NULL,  ## the centering RSiena applied to each covariate
+    #
     markets = list(),
     #
     ##----- COVARIATES (expanded slots for multi-W-matrix support) -----------
@@ -254,6 +261,9 @@ SaomNkRSienaBiEnv_base <- R6Class(
     #
     rsiena_run_seed = NULL,
     rsiena_env_seed = NULL,
+    ## Run provenance (versions, RNG kind, seed, call), written by
+    ## saomnk_run() / saomnk_monte_carlo(); see searchnet_provenance().
+    provenance = NULL,
     #
     experiments = list(),
     
@@ -522,6 +532,23 @@ SaomNkRSienaBiEnv_base <- R6Class(
       #   return(NULL)
       # }
 
+      ## A declared effect that cannot be included is a model silently missing
+      ## that effect (the B1 defect class): every result would be reported for a
+      ## specification the user did not ask for. All branches below route their
+      ## failures here, which stops by default; the generic fallback's opt-out
+      ## options(saomnk.skip_missing_effects = TRUE) also covers them.
+      .effect_unavailable <- function(msg) {
+        if (isTRUE(getOption("saomnk.skip_missing_effects", FALSE))) {
+          warning(paste(msg, "(skipping: saomnk.skip_missing_effects = TRUE)"), call. = FALSE)
+        } else {
+          stop(paste0(msg, "\n  The model would otherwise run WITHOUT this effect. ",
+                      "Fix the specification, or set ",
+                      "options(saomnk.skip_missing_effects = TRUE) to skip it."),
+               call. = FALSE)
+        }
+        invisible(NULL)
+      }
+
       ## ---- Theta-storage convention (2026-08-23) ---------------------------
       ## The coefficient (theta) is carried in the effects table's
       ## `initialValue` column, which get_theta_matrix() reads and hands to
@@ -574,7 +601,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
       {
         .needs_cov <- identical(eff$effect, 'RateX')
         if (.needs_cov && (is.null(eff$interaction1) || !nzchar(as.character(eff$interaction1)))) {
-          warning("'RateX' effect skipped: no interaction1 (actor covariate) specified. Declare a covariate first.")
+          .effect_unavailable("'RateX' effect cannot be included: no interaction1 (actor covariate) specified. Declare a covariate first.")
         } else {
           tryCatch({
             .args_inc <- list(self$rsiena_effects, eff$effect, character = TRUE,
@@ -590,7 +617,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
               .set_theta(eff$effect, type = 'rate')
             }
           }, error = function(e) {
-            warning(sprintf("'%s' rate effect failed: %s (is covariate '%s' registered?)",
+            .effect_unavailable(sprintf("'%s' rate effect failed: %s (is covariate '%s' registered?)",
                             eff$effect, e$message,
                             if (is.null(eff$interaction1)) '<none>' else eff$interaction1))
           })
@@ -714,7 +741,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
       {
         ## All covariate-dependent effects require interaction1 (a registered covariate name)
         if (is.null(eff$interaction1) || !nzchar(as.character(eff$interaction1))) {
-          warning(sprintf("'%s' effect skipped: no interaction1 (covariate) specified. Declare a covariate first.", eff$effect))
+          .effect_unavailable(sprintf("'%s' effect cannot be included: no interaction1 (covariate) specified. Declare a covariate first.", eff$effect))
         } else {
           tryCatch({
             ## NOTE: `shortName` is NOT a formal of includeEffects(); passing it there puts
@@ -737,7 +764,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
             self$rsiena_effects <- .set_theta(eff$effect,
                                               interaction1 = eff$interaction1)
           }, error = function(e) {
-            warning(sprintf("'%s' effect failed: %s (is covariate '%s' registered?)",
+            .effect_unavailable(sprintf("'%s' effect failed: %s (is covariate '%s' registered?)",
                             eff$effect, e$message, eff$interaction1))
           })
         }
@@ -747,7 +774,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
       {
         ## XWX requires a coDyadCovar registered as interaction1
         if (is.null(eff$interaction1) || !nzchar(as.character(eff$interaction1))) {
-          warning("XWX effect skipped: no interaction1 (W-matrix covariate) specified. Configure W-matrix first.")
+          .effect_unavailable("XWX effect cannot be included: no interaction1 (W-matrix covariate) specified. Configure W-matrix first.")
         } else {
           tryCatch({
             self$rsiena_effects <- includeEffects(self$rsiena_effects,  XWX,
@@ -757,14 +784,14 @@ SaomNkRSienaBiEnv_base <- R6Class(
             self$rsiena_effects <- .set_theta('XWX',
                                               interaction1 = eff$interaction1)
           }, error = function(e) {
-            warning(sprintf("XWX effect failed: %s (is the W-matrix registered as a coDyadCovar?)", e$message))
+            .effect_unavailable(sprintf("XWX effect failed: %s (is the W-matrix registered as a coDyadCovar?)", e$message))
           })
         }
       }
       else if (eff$effect == 'X')
       {
         if (is.null(eff$interaction1) || !nzchar(as.character(eff$interaction1))) {
-          warning("X effect skipped: no interaction1 covariate specified.")
+          .effect_unavailable("X effect cannot be included: no interaction1 covariate specified.")
         } else {
           tryCatch({
             self$rsiena_effects <- includeEffects(self$rsiena_effects,  X,
@@ -774,7 +801,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
             self$rsiena_effects <- .set_theta('X',
                                               interaction1 = eff$interaction1)
           }, error = function(e) {
-            warning(sprintf("X effect failed: %s", e$message))
+            .effect_unavailable(sprintf("X effect failed: %s", e$message))
           })
         }
       }
@@ -1414,13 +1441,40 @@ SaomNkRSienaBiEnv_base <- R6Class(
     # }
     
     ##
-    get_struct_mod_stats_mat_from_bi_mat = function(bi_env_mat, type='all', .cache=NULL) {
+    ## The effects table get_struct_mod_stats_mat_from_bi_mat() reads, and its
+    ## rows and its empty statistics matrix, built once. They depend only on
+    ## the model and M, not on the state.
+    prepare_struct_mod_stats = function() {
+      theta_df_norates <- self$get_bipartite_effects_theta_df()
+      theta_df_norates$effect <-  theta_df_norates$shortName
+      neffs <- nrow(theta_df_norates)
+      mat <- matrix(rep(0, self$M * neffs ), nrow=self$M, ncol=neffs )
+      colnames(mat) <- theta_df_norates$effect_level
+      rownames(mat) <- 1:self$M
+      list(theta_df = theta_df_norates,
+           items = lapply(seq_len(neffs),
+                          function(i) theta_df_norates[ i , ]),
+           mat_template = mat)
+    },
+
+    ## `.prep`: the value of prepare_struct_mod_stats(), for callers that
+    ## evaluate many states of one model (the ministep-chain replay). It only
+    ## skips rebuilding the effects table, its rows and the empty statistics
+    ## matrix on every call (with `.prep = NULL` they are built here); the
+    ## statistics are computed by the same expressions either way.
+    get_struct_mod_stats_mat_from_bi_mat = function(bi_env_mat, type='all', .cache=NULL, .prep=NULL) {
       #
       ## Bipartite-network effects only: this function computes statistics OF
       ## bi_env_mat, and a coevolving behavior DV's effects are not statistics
       ## of it. Identical to the previous call for single-DV models.
-      theta_df_norates <- self$get_bipartite_effects_theta_df()
-      theta_df_norates$effect <-  theta_df_norates$shortName
+      ## Without `.prep` the table is built here, as it always was (callers
+      ## and tests that supply a minimal `self` rely on that).
+      if (is.null(.prep)) {
+        theta_df_norates <- self$get_bipartite_effects_theta_df()
+        theta_df_norates$effect <-  theta_df_norates$shortName
+      } else {
+        theta_df_norates <- .prep$theta_df
+      }
       #
       ## --- Intermediate result cache (Task 2 optimization) ---
       ## Compute commonly needed matrices once; reuse across effect computations.
@@ -1456,9 +1510,15 @@ SaomNkRSienaBiEnv_base <- R6Class(
       ## `initialValue`, never in `parm` (RSiena's internal '#' parameter).
       effparams <- theta_df_norates$initialValue ##sapply(efflist, function(x) x$parameter, simplify = T)
       #
-      mat <- matrix(rep(0, self$M * neffs ), nrow=self$M, ncol=neffs )
-      colnames(mat) <- theta_df_norates$effect_level
-      rownames(mat) <- 1:self$M
+      ## The empty statistics matrix, with its dimnames, depends only on the
+      ## model and M: built once by prepare_struct_mod_stats().
+      if (!is.null(.prep)) {
+        mat <- .prep$mat_template
+      } else {
+        mat <- matrix(rep(0, self$M * neffs ), nrow=self$M, ncol=neffs )
+        colnames(mat) <- theta_df_norates$effect_level
+        rownames(mat) <- 1:self$M
+      }
       #
       ## Lazy-compute helpers: only materialize social/epistasis when first needed
       .get_social <- function() {
@@ -1469,11 +1529,20 @@ SaomNkRSienaBiEnv_base <- R6Class(
         if (is.null(.cache$epistasis)) .cache$epistasis <<- t(bi_env_mat) %*% bi_env_mat
         .cache$epistasis
       }
+      ## RSiena centers a covariate on its mean unless it was created with
+      ## centered = FALSE, and every covariate effect reads the centered value.
+      ## Using the raw value adds mean(v) times a degree term to the statistic,
+      ## so the egoX, altX, outActX and X columns were off by that much until
+      ## 2026-10-04 (tests/testthat/test-structural-stats-vs-rsiena.R).
+      .rsiena_centered <- function(covar) {
+        v <- as.numeric(covar)
+        if (isFALSE(attr(covar, 'centered'))) v else v - mean(v)
+      }
       #
       for (i in 1:neffs)
       {
         # print(i)
-        item <- theta_df_norates[ i , ]
+        item <- if (is.null(.prep)) theta_df_norates[ i , ] else .prep$items[[ i ]]
         # item <- efflist[[ i ]]
         # print('DEBUG  get_struct_mod_stats_mat_from_bi_mat() ')
         # print(item)
@@ -1494,21 +1563,31 @@ SaomNkRSienaBiEnv_base <- R6Class(
           
         } else if (item$effect == 'inPop' ) {
           
-          mat[ , i] <- c( bi_env_mat %*% (xComponentDegree + 1) )
-          
+          ## s_i = sum_j x_ij x_+j. xComponentDegree is colSums(bi_env_mat), which
+          ## already counts ego, so the former `+ 1` counted ego twice. Sum over
+          ## actors equals RSiena 1.5.0's siena07 target sum_j x_+j^2 (2026-09-15,
+          ## tests/testthat/test-structural-stats-vs-rsiena.R).
+          mat[ , i] <- c( bi_env_mat %*% xComponentDegree )
+
           # else if (item$effect == 'transTriads' ) {
-          #   stat <- 
+          #   stat <-
+        } else if (item$effect == 'inPopSqrt' ) {
+
+          ## s_i = sum_j x_ij sqrt(x_+j), ego counted in x_+j (RSiena 1.5.0 target
+          ## sum_j x_+j^1.5). Previously fell through to "not yet implemented" and
+          ## left the column at 0.
+          mat[ , i] <- rowSums( bi_env_mat * rep(sqrt(xComponentDegree), each = self$M) )
+
         } else if (item$effect == 'cycle4' ) {
 
-            ## OPTIMIZED: reuse cached social projection (B %*% t(B)) instead of recomputing
-            XXt <- .get_social()
-            XXt_squared <- XXt %*% XXt
-            # For each actor, count paths of length 3 that return to the actor
-            # Divide by 2 because each cycle is counted twice for each actor
-            # rowSums of element-wise product extracts diagonal without allocating full product
-            actor_cycles <- rowSums(XXt_squared * XXt) / 2
-            #
-            mat[ , i] <- actor_cycles
+            ## s_i = (1/2) sum_{k != i} choose(ov_ik, 2), ov = B %*% t(B) with the
+            ## diagonal zeroed. Summed over actors this is the number of bipartite
+            ## four-cycles, RSiena 1.5.0's cycle4 target (parameter 1). The former
+            ## rowSums((BB')^2 * BB') / 2 kept the diagonal and counted degenerate
+            ## closed walks.
+            ov <- .get_social()   ## cached; the local copy is modified, not the cache
+            diag(ov) <- 0
+            mat[ , i] <- rowSums( choose(ov, 2) ) / 2
 
         } else if (item$effect == 'egoX') {
           
@@ -1521,10 +1600,12 @@ SaomNkRSienaBiEnv_base <- R6Class(
               length(covar)==self$M  ## array, matrix; vector
             )
           )
-          if( ! checkConform )  
+          if( ! checkConform )
             stop('egoX covar not conformable for multiplication given number of actors')
-          mat[ , i] <- c( covar * xActorDegree ) ##**vector element-wise multiplication by rows of covar matrix, or elements of covar array
-            
+          ## s_i = x_i+ (v_i - vbar), the covariate centered as RSiena centers it;
+          ## sums to RSiena 1.5.0's egoX target.
+          mat[ , i] <- c( .rsiena_centered(covar) * xActorDegree )
+
         } else if (item$effect == 'altX') {
           
           # covar <- item$x
@@ -1538,7 +1619,9 @@ SaomNkRSienaBiEnv_base <- R6Class(
           )
           if( ! checkConform )
             stop('altX covar not conformable for multiplication given number of components or actors')
-          covarComponentMat <- matrix(rep(covar, self$M), nrow=self$M, ncol=self$N, byrow = TRUE)
+          ## s_i = sum_j x_ij (v_j - vbar), the component covariate centered;
+          ## sums to RSiena 1.5.0's altX target.
+          covarComponentMat <- matrix(rep(.rsiena_centered(covar), self$M), nrow=self$M, ncol=self$N, byrow = TRUE)
           mat[ , i] <- rowSums( covarComponentMat * bi_env_mat, na.rm=TRUE ) ##**vector element-wise multiplication by rows of covar matrix, or elements of covar array
           
         } else if (item$effect == 'outActX') { ## interaction1 component_coCovar
@@ -1547,12 +1630,18 @@ SaomNkRSienaBiEnv_base <- R6Class(
           # covar <- item$x
           covar <- self$get_cov_data(item)
           # MxN matrix of row-stacked component covariate (repeated for each actor)
-          covarComponentMat <- matrix(rep(covar, self$M), nrow=self$M, ncol=self$N, byrow = TRUE)
-          ## M-vector of actor's squared sum of component-covariate-weighted component connections (weighted version of the squared degree)
+          covarComponentMat <- matrix(rep(.rsiena_centered(covar), self$M), nrow=self$M, ncol=self$N, byrow = TRUE)
+          ## s_i = x_i+ sum_j x_ij (v_j - vbar); sums to RSiena 1.5.0's outActX
+          ## target for a component covariate at internal parameter 1.
           mat[ , i] <- xActorDegree * rowSums( covarComponentMat * bi_env_mat, na.rm = TRUE)
         
         } else if (item$effect == 'inPopX') { #M-vector of actor strategy covars
 
+          ## NOT RSiena's inPopX. RSiena 1.5.0 offers bipartite inPopX with an
+          ## actor covariate ("ind. pop.^(1/#) weighted v"); on 2026-10-04 its
+          ## siena07 target matched neither this statistic nor its centered or
+          ## ego-excluded variants in every state. Unpinned: do not read this
+          ## column as RSiena's effect.
           # covar <- item$x
           covar <- self$get_cov_data(item)
           ## MxN matrix holding actor strategy covariate as columns stacked for each component
@@ -1566,77 +1655,73 @@ SaomNkRSienaBiEnv_base <- R6Class(
           
           # covar <- item$x
           covar <- self$get_cov_data(item)
-          ## MxM matrix of inter-actor connections weighted by component covarite matrix
-          interactor_cov_w <- bi_env_mat %*% covar %*% t(bi_env_mat)
-          ## covert to M-vector of actor attributes
-          mat[ , i] <- rowSums( interactor_cov_w, na.rm=TRUE ) ##**TODO: CHECK**
-          # mat[ , i] <- colSums( interactor_cov_w, na.rm=T ) ##**TODO: CHECK**
+          W <- matrix(as.numeric(covar), nrow = nrow(covar), ncol = ncol(covar))
+          ## Within-ego: s_i = sum_{j != h} x_ij x_ih w_hj
+          ##           = sum_j x_ij (B W)_ij - sum_j x_ij w_jj.
+          ## The former rowSums(B W B') summed over every actor k, not ego alone.
+          ## Summed over actors this equals RSiena 1.5.0's XWX siena07 target,
+          ## including for asymmetric W with a nonzero diagonal. The raw W is used:
+          ## coDyadCovar's `centered` flag does not change RSiena's XWX target
+          ## (verified 2026-09-15), although it can affect other effects that
+          ## read the same covariate.
+          mat[ , i] <- rowSums( (bi_env_mat %*% W) * bi_env_mat, na.rm=TRUE ) -
+            c( bi_env_mat %*% diag(W) )
           
         }  else if (item$effect == 'X') { ## MxN
           
           # covar <- item$x
           covar <- self$get_cov_data(item)
-          ## MxM matrix of inter-actor connections weighted by component covarite matrix
-          # interactor_cov_w <- bi_env_mat * (covar - mean(c(covar, na.rm=T)) )
-          interactor_cov_w <- bi_env_mat * covar ##**TODO** Not Centered
-          ## covert to M-vector of actor attributes
-          mat[ , i] <- rowSums( interactor_cov_w, na.rm=TRUE ) ##**TODO: CHECK**
-          # stop('implement altX|XWX .')
+          ## s_i = sum_j x_ij (w_ij - wbar) for an actor x component dyadic
+          ## covariate centered on its overall mean, as RSiena centers it; sums to
+          ## RSiena 1.5.0's X target. The uncentered form, marked TODO, stood here
+          ## until 2026-10-04.
+          W <- matrix(.rsiena_centered(covar), nrow = nrow(covar), ncol = ncol(covar))
+          mat[ , i] <- rowSums( bi_env_mat * W, na.rm=TRUE )
 
           
         }   else if (item$effect == 'totInDist2') { 
           
-          ## M-vector
-          covar <- self$get_cov_data(item)
-          # 1xN matrix
-          component_sums_w_by_actor_covar <-  covar %*% bi_env_mat 
-          #
-          compo_w_stacked_mat <- matrix(rep(component_sums_w_by_actor_covar, self$M), byrow=TRUE, ncol=self$N)
-          ## covert to M-vector of actor attributes
-          mat[ , i ] <-  rowSums( compo_w_stacked_mat * bi_env_mat, na.rm=TRUE )
-          # mat[ , i] <- self$getTotInDist2(bi_env_mat, covar, interaction_type = 'absdiff') ##**TODO: CHECK**
-          
-          
+          ## s_i = sum_j x_ij sum_{h != i} x_hj (v_h - vbar): the centered
+          ## covariate summed over the OTHER holders of each component ego holds,
+          ## once per shared component. Sums to RSiena 1.5.0's totInDist2 target.
+          ## Until 2026-10-04 this used the raw covariate and counted ego among
+          ## the holders.
+          v <- .rsiena_centered(self$get_cov_data(item))
+          holder_sums <- c( v %*% bi_env_mat )   ## sum_h x_hj v_h, ego included
+          mat[ , i ] <- c( bi_env_mat %*% holder_sums ) - xActorDegree * v
+
+
         }   else if (item$effect == 'simEgoInDist2') {
 
-          ## M-vector
-          covar <- self$get_cov_data(item)
-          #
-          M <- self$M
-          # Range for similarity normalization
-          xRange <- max(covar) - min(covar)
-
+          ## RSiena 1.5.0's two-mode simEgoInDist2 (actor covariate v):
+          ##   s_i = sum_j x_ij [ 1 - |v_i - vbar_j^(-i)| / R - simMean ],
+          ## vbar_j^(-i) the mean of v over the OTHER holders of j, or the mean of
+          ## v over all actors when nobody else holds j; R = max(v) - min(v);
+          ## simMean the mean of 1 - |v_a - v_b| / R over ordered pairs a != b.
+          ## Translation invariant, so centering does not matter. Sums to the
+          ## siena07 target (tests/testthat/test-structural-stats-vs-rsiena.R).
+          ## Until 2026-10-04 this column held a different statistic: similarity
+          ## to the mean of distance-2 alters in the actor projection, with no
+          ## simMean centering.
+          ##
+          ## saomnk_coholder_similarity() (R/searchnet-imitation.R, formerly
+          ## saomnk_sim_ego_indist2()) is NOT this statistic either.
+          v <- as.numeric(self$get_cov_data(item))
+          xRange <- max(v) - min(v)
           if (xRange == 0) {
-            similarityScores <- numeric(M)
+            ## A constant covariate leaves the similarity undefined (R = 0).
+            mat[ , i ] <- 0
           } else {
-            ## VECTORIZED: replace per-actor loop with matrix algebra
-            ## Social projection S = B %*% t(B): S[i,j] = # shared components between actors i,j
-            S <- .get_social()
-            ## dist1[i,j] = 1 iff actors i,j share at least one component (distance-1 neighbors)
-            dist1 <- (S > 0)
-            diag(dist1) <- FALSE  # exclude self
-            ## dist2_reach[i,j] = 1 iff actor j is reachable from i in exactly 2 hops through
-            ## the social projection (i.e., i shares a component with k, k shares a component with j)
-            S2 <- dist1 %*% dist1  # 2-hop reachability counts in actor space
-            ## dist2_only: reachable in 2 hops but NOT in 1 hop (and not self)
-            dist2_only <- (S2 > 0) & (!dist1)
-            diag(dist2_only) <- FALSE
-            ## For each actor i, compute mean covariate of distance-2 alters
-            ## n_dist2[i] = number of distance-2 alters for actor i
-            n_dist2 <- rowSums(dist2_only)
-            ## sum of covar for dist-2 alters (matrix-vector product)
-            sum_cov_dist2 <- dist2_only %*% covar
-            ## mean covariate of dist-2 alters (avoid div-by-zero for isolated actors)
-            has_dist2 <- (n_dist2 > 0)
-            avgCovAlter <- ifelse(has_dist2, sum_cov_dist2 / n_dist2, 0)
-            ## Similarity: 1 - |ego_cov - avg_alter_cov| / range
-            similarityScores <- ifelse(has_dist2,
-                                       1 - abs(covar - avgCovAlter) / xRange,
-                                       0)
+            pair_sim <- 1 - abs(outer(v, v, '-')) / xRange
+            diag(pair_sim) <- NA
+            simMean <- mean(pair_sim, na.rm = TRUE)
+            n_other <- matrix(xComponentDegree, self$M, self$N, byrow = TRUE) - bi_env_mat
+            sum_other <- matrix(c( v %*% bi_env_mat ), self$M, self$N, byrow = TRUE) -
+              bi_env_mat * v
+            vbar <- ifelse(n_other > 0, sum_other / pmax(n_other, 1), mean(v))
+            mat[ , i ] <- rowSums( bi_env_mat * (1 - abs(v - vbar) / xRange - simMean) )
           }
-          ## covert to M-vector of actor attributes
-          mat[ , i ] <-  similarityScores
-          
+
         }  else if(grepl('[|]', item$effect) | item$effect == 'unspInt' )  {
           
           # cat(sprintf('\n skipping %s interaction to handle via post-hoc multiplication\n', item$effect))

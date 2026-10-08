@@ -102,3 +102,18 @@
 ^_jss_.*\.txt$
 ^\.git$
 ^\.public-exclude$
+
+# Dev tooling and internal notes are not package content (2026-10-07):
+# tools/ holds the private embargo pattern list, which must not ship in a tarball.
+^tools$
+^AI_DRAFTED_EDITS_.*\.md$
+# Lean build trees and machine-specific package overrides (inst/lean ships its sources only)
+^inst/lean/\.lake$
+^inst/lean/\.lake/
+^inst/lean/build$
+^inst/lean/lake-packages$
+
+# Withheld from public (listed in .public-exclude, 2026-10-07): keep it out of the
+# package tarball too, which the JSS build content-gates. The bracket keeps
+# this file itself clear of the gate's word pattern; the regex is unchanged.
+^vignettes/saomnk-a[m]r-basins\.Rmd$

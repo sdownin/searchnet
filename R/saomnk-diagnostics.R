@@ -374,7 +374,7 @@ plot.saomnk_sai <- function(x, type = c("curve", "tile", "forest"),
       ) +
       ggplot2::geom_point(size = 1.5) +
       ggplot2::scale_color_manual(
-        values = c("Significant" = "#2166AC", "Not significant" = "#B2182B"),
+        values = c("Significant" = "#0072B2", "Not significant" = "#D55E00"),
         name = NULL
       ) +
       ggplot2::facet_wrap(~ effect, scales = "free") +
@@ -384,7 +384,7 @@ plot.saomnk_sai <- function(x, type = c("curve", "tile", "forest"),
         x = "Specification rank (by estimate)",
         y = "Estimate"
       ) +
-      ggplot2::theme_minimal() +
+      theme_searchnet() +
       ggplot2::theme(
         strip.text = ggplot2::element_text(face = "bold"),
         legend.position = "bottom"
@@ -410,7 +410,7 @@ plot.saomnk_sai <- function(x, type = c("curve", "tile", "forest"),
       ggplot2::geom_tile(color = "white", linewidth = 0.5) +
       ggplot2::geom_text(ggplot2::aes(label = tile_label), size = 2.5) +
       ggplot2::scale_fill_gradient2(
-        low = "#B2182B", mid = "#F7F7F7", high = "#2166AC",
+        low = "#D55E00", mid = "#FFFFFF", high = "#0072B2",
         midpoint = 0, name = "Direction",
         breaks = c(-1, 0, 1),
         labels = c("Neg. sig.", "Not sig.", "Pos. sig.")
@@ -420,7 +420,7 @@ plot.saomnk_sai <- function(x, type = c("curve", "tile", "forest"),
         x = "Specification",
         y = "Effect"
       ) +
-      ggplot2::theme_minimal() +
+      theme_searchnet() +
       ggplot2::theme(
         axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 7),
         panel.grid = ggplot2::element_blank()
@@ -451,7 +451,7 @@ plot.saomnk_sai <- function(x, type = c("curve", "tile", "forest"),
       ) +
       ggplot2::geom_point(size = 3) +
       ggplot2::scale_color_manual(
-        values = c("Robust" = "#2166AC", "Fragile" = "#B2182B"),
+        values = c("Robust" = "#0072B2", "Fragile" = "#D55E00"),
         name = NULL
       ) +
       ggplot2::labs(
@@ -459,7 +459,7 @@ plot.saomnk_sai <- function(x, type = c("curve", "tile", "forest"),
         x = "Median Estimate",
         y = NULL
       ) +
-      ggplot2::theme_minimal() +
+      theme_searchnet() +
       ggplot2::theme(legend.position = "bottom")
 
     return(p)
@@ -940,19 +940,34 @@ saomnk_extract_estimates_tergm <- function(fit, specification = "tergm") {
     }
   )
 
-  # Standard errors
+  # Standard errors. When they cannot be read they are NA with a warning
+  # saying why; they used to become NA silently, which saomnk_sai() then
+  # treated as missing precision rather than a read failure.
+  se_problem <- NULL
   se <- tryCatch({
     summary_obj <- summary(fit)
     if (is.matrix(summary_obj$coefficients)) {
       summary_obj$coefficients[, "Std. Error"]
-    } else if (!is.null(fit@se)) {
+    } else if (isS4(fit) && !is.null(fit@se)) {
       fit@se
     } else {
+      se_problem <- "the fit's summary carries no coefficient table"
       rep(NA_real_, length(coefs))
     }
   }, error = function(e) {
+    se_problem <<- conditionMessage(e)
     rep(NA_real_, length(coefs))
   })
+  if (is.null(se_problem) && length(se) != length(coefs)) {
+    se_problem <- sprintf("%d standard errors for %d coefficients", length(se), length(coefs))
+    se <- rep(NA_real_, length(coefs))
+  }
+  if (!is.null(se_problem)) {
+    warning(sprintf(paste0("saomnk_extract_estimates_tergm(): standard errors could not be ",
+                           "extracted for specification '%s' (std_error is NA for all %d ",
+                           "effects): %s"),
+                    specification, length(coefs), se_problem), call. = FALSE)
+  }
 
   data.frame(
     effect        = names(coefs),

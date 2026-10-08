@@ -4,8 +4,9 @@
 \alias{mean-field-solver}
 \title{Mean-Field Equilibrium Solver for the SaoMNK Brock-Durlauf Reduction}
 \description{
-Standalone helper operationalizing Theorem~4 of the SaoMNK
-proof set (the Gibbs/Brock-Durlauf equivalence): the mean-field
+Standalone helper operationalizing Property~4 of the SaoMNK
+proof set (the Gibbs/Brock-Durlauf equivalence, under single-flip logit
+revision): the mean-field
 self-consistency equation
 \deqn{m^{*} = \tanh\!\left(\frac{\beta_{\mathrm{eff}}\, m^{*}}{2T}\right)}{
         m* = tanh( beta_eff * m* / (2 * T) )}
@@ -31,13 +32,18 @@ zero-field \emph{linear} Curie--Weiss roots: the reference object of
 PROOF_TABLE.md L16's Option C, valid as a description of the live
 simulation only in the linearised regime near \eqn{p = 1/2} and below
 threshold. It is \emph{not} the stationary law of a simulation run with
-RSiena's \code{inPop}, whose evaluation delta is sqrt-form; that law is
-the Option B fixed point, \code{\link{saomnk_inpop_self_consistency}}.
+RSiena's \code{inPop}; that law is the Option B fixed point,
+\code{\link{saomnk_inpop_self_consistency}} (linear two-mode
+\code{inPop}, ministep choice among \eqn{N} toggles; re-derived
+2026-10-07). These roots also omit the ministep's choice-set factor:
+near \eqn{p = 1/2} the simulated coupling is \eqn{\kappa_N = 2N/(N+1)}
+times the one assumed here, so the threshold is reached at a smaller
+\code{theta_inPop} than \code{above_critical} reports.
 Treating these roots as the prediction for a supercritical \code{inPop}
 run overstates the coupling (the linearised slope at the realized
 equilibrium is the correct local coupling, not
 \eqn{0.5 (M-1) \theta}) and was the source of a persistent spurious
-discrepancy of \eqn{\approx 0.38} in the Theorem 4 empirical check,
+discrepancy of \eqn{\approx 0.38} in the Property 5 (Brock--Durlauf; numbered Theorem 4 at the time) empirical check,
 diagnosed 2026-08-14. \code{diagnose_mean_field_fit()} reports both
 objects and an \code{in_BD_regime} flag.
 }

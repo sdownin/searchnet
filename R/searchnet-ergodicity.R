@@ -2,13 +2,14 @@
 #  searchnet-ergodicity.R
 #
 #  Ergodicity / independence-from-initial-conditions demonstration for the
-#  SAOM-NK choice rule (Theorem 4, SAOM-QRE equivalence).
+#  SAOM-NK choice rule (Property 4, SAOM-QRE equivalence).
 #
 #  WHY THIS FILE EXISTS
 #  --------------------
-#  Blume's result says the logit-response Markov chain is ergodic with a unique
-#  stationary Gibbs distribution, so every starting configuration converges to
-#  the SAME equilibrium distribution. Until v0.9.1 that claim was illustrated in
+#  The logit-response Markov chain is ergodic with a unique stationary
+#  distribution (Gibbs, by Blume's result, only under single-flip revision; the
+#  multinomial ministep has no general Gibbs form for M > 1), so every starting
+#  configuration converges to the SAME equilibrium distribution. Until v0.9.1 that claim was illustrated in
 #  four separate documents (the JSS main paper, its online appendix, the Blume
 #  tutorial vignette, and the proof registry) by the same two-point comparison:
 #  one run from a sparse start, one run from a dense start, on a 4 x 5 = 20-cell
@@ -20,7 +21,7 @@
 #  from a single draw per arm, so there was no sampling distribution to compare
 #  against. It printed the same sentence under a 0.1 gap and under a 0.2 gap.
 #
-#  What actually demonstrates the theorem is the RATE. An ergodic chain forgets
+#  What actually demonstrates the property is the RATE. An ergodic chain forgets
 #  its initial condition geometrically, so the gap between arms should decay
 #  toward zero as run length grows -- and that decay is measurable, falsifiable,
 #  and much more informative than any single pair of numbers. This function
@@ -41,7 +42,7 @@
 #  searchnet_ergodicity_sweep
 # ---------------------------------------------------------------------------- #
 
-#' Measure Independence from Initial Conditions (Theorem 4)
+#' Measure Independence from Initial Conditions (Property 4)
 #'
 #' Runs the same fixed-coefficient model from two or more contrasting starting
 #' densities, at a range of run lengths, with several replicates each, and
@@ -62,7 +63,9 @@
 #' @param start_densities Numeric vector of starting tie probabilities, one per
 #'   arm. Default \code{c(0.1, 0.8)}.
 #' @param run_lengths Integer vector of \code{iterations_per_actor} values to
-#'   sweep. Default \code{c(15, 30, 60, 120, 240)}.
+#'   sweep. Default \code{c(15, 30, 60, 120, 240)}. Since 0.11.0 each value
+#'   is the expected number of opportunities per actor (a basic rate summed
+#'   over the run), not a fixed ministep count.
 #' @param replicates Integer. Independent replicates per arm per run length,
 #'   each with its own initial draw and its own run seed. Default 6. Replicates
 #'   are what turn two numbers into two distributions.
@@ -71,8 +74,11 @@
 #' @param W Optional influence matrix (\code{N x N}) for the \code{XWX} effect.
 #'   Defaults to a block-diagonal matrix with \code{blocks} blocks.
 #' @param blocks Integer. Number of blocks in the default influence matrix.
-#' @param seed Integer. Base seed; replicate and arm indices are offset from it
-#'   so every run is distinct and the whole sweep is reproducible.
+#' @param seed Integer. Base seed. Each run's initial-draw seed and dynamics
+#'   seed are derived from it by a purpose-namespaced hash of (arm, replicate,
+#'   run length), so no two streams share a seed and the whole sweep is
+#'   reproducible. (Before 0.10.0.9000 the seeds were additive offsets, and
+#'   arm 2's initial-draw seed equaled arm 1's dynamics seed.)
 #' @param equivalence_margin Numeric. The declared TOST margin, in density
 #'   units. Default 0.05. Declare it before looking at the result.
 #' @param conf_level Numeric. Confidence level for the equivalence interval.
@@ -170,15 +176,16 @@ searchnet_ergodicity_sweep <- function(M = 12L, N = 15L,
   one_run <- function(p0, arm, rep_i, iters) {
     env <- SaomNkRSienaBiEnv$new(list(
       M = M, N = N, BI_PROB = p0,
-      rand_seed = as.integer(seed + arm * 10000L + rep_i * 100L + iters),
+      rand_seed = .searchnet_seed(seed, "ergodicity:init", arm, rep_i, iters),
       name = sprintf("_erg_a%d_r%02d_i%d_", arm, rep_i, iters)
     ))
     env$search_rsiena(
       sm,
       iterations_per_actor = iters,
-      run_seed      = as.integer(seed + arm * 20000L + rep_i * 100L + iters),
+      run_seed      = .searchnet_seed(seed, "ergodicity:run", arm, rep_i, iters),
       process_chain = TRUE
     )
+    .searchnet_require_path(env, "searchnet_ergodicity_sweep()")
     sum(env$bipartite_matrix) / (M * N)
   }
 
@@ -299,7 +306,8 @@ searchnet_ergodicity_sweep <- function(M = 12L, N = 15L,
                        run_lengths = run_lengths, replicates = replicates,
                        resolution = resolution),
          call = match.call()),
-    class = "searchnet_ergodicity"
+    class = "searchnet_ergodicity",
+    provenance = .searchnet_provenance(seed = seed, call = match.call())
   )
 }
 
@@ -318,7 +326,7 @@ searchnet_ergodicity_sweep <- function(M = 12L, N = 15L,
 print.searchnet_ergodicity <- function(x, ...) {
   cfg <- x$config; v <- x$verdict
 
-  cat("Ergodicity sweep (Theorem 4: independence from initial conditions)\n")
+  cat("Ergodicity sweep (Property 4: independence from initial conditions)\n")
   cat(sprintf("  %d actors x %d components (%d cells; one tie = %.4f density)\n",
               cfg$M, cfg$N, cfg$M * cfg$N, cfg$resolution))
   cat(sprintf("  arms starting at %s, %d replicates each\n",
@@ -367,71 +375,142 @@ print.searchnet_ergodicity <- function(x, ...) {
 # ---------------------------------------------------------------------------- #
 #  plot method
 # ---------------------------------------------------------------------------- #
-
 #' Plot an Ergodicity Sweep
 #'
 #' Two panels: the arms' final densities converging as run length grows, and
 #' the between-arm gap decaying on log-log axes (where geometric decay is a
-#' straight line).
+#' straight line). Drawn with ggplot2 in the package style
+#' (\code{\link{theme_searchnet}}): the low-start arm in Okabe-Ito blue, the
+#' high-start arm in vermillion, each labeled on its dotted starting density
+#' rather than in a legend; the Monte Carlo floor shaded grey; the declared
+#' equivalence margin dashed. Panel titles state the computed result: whether
+#' the arms are equivalent at the longest run (the TOST verdict) and whether
+#' the gap shrinks.
 #'
 #' @param x A \code{searchnet_ergodicity} object.
-#' @param ... Passed to \code{plot}.
-#' @return \code{x}, invisibly.
+#' @param ... Ignored. Kept for compatibility with the \code{plot} generic;
+#'   base-graphics arguments no longer apply.
+#' @param draw Logical. Print the figure. Default \code{TRUE}.
+#' @param annotate Logical. If \code{TRUE} (default), mark the first run
+#'   length at which the between-arm gap falls inside the equivalence margin.
+#' @return \code{x}, invisibly, as before. The figure itself, a two-panel
+#'   ggplot built with \code{cowplot::plot_grid()}, is attached as
+#'   \code{attr(x, "plot")}; restyle or save it from there.
 #' @export
-plot.searchnet_ergodicity <- function(x, ...) {
+plot.searchnet_ergodicity <- function(x, ..., draw = TRUE, annotate = TRUE) {
   cfg <- x$config; s <- x$summary
-  op <- graphics::par(mfrow = c(1, 2), mar = c(4.5, 4.5, 3, 1))
-  on.exit(graphics::par(op), add = TRUE)
+  arm_cols <- searchnet_palette()[c("blue", "vermillion")]
+  starts   <- cfg$start_densities
+  a_lo <- which.min(starts); a_hi <- which.max(starts)
+  arm_lab  <- sprintf("start %.2f", starts)
+  arm_lvls <- arm_lab[c(a_lo, a_hi)]
+  names(arm_cols) <- arm_lvls
+  margin <- x$verdict$margin
+  ink <- "grey20"
 
   ## -- Panel A: the two arms closing -------------------------------------- ##
-  ylim <- range(c(x$runs$final_density, cfg$start_densities))
-  plot(range(s$run_length), ylim, type = "n", log = "x",
-       xlab = "Iterations per actor (log scale)", ylab = "Final density",
-       main = "A. Arms converge", ...)
-  graphics::points(x$runs$run_length, x$runs$final_density,
-                   pch = 16, cex = 0.6,
-                   col = grDevices::adjustcolor(
-                     c("#2166AC", "#B2182B")[x$runs$arm], alpha.f = 0.45))
-  graphics::lines(s$run_length, s$mean_lo, col = "#2166AC", lwd = 2, type = "b", pch = 16)
-  graphics::lines(s$run_length, s$mean_hi, col = "#B2182B", lwd = 2, type = "b", pch = 17)
-  graphics::abline(h = cfg$start_densities, lty = 3, col = "grey55")
-  graphics::legend("right", bty = "n", cex = 0.85,
-                   legend = sprintf("start %.2f", cfg$start_densities),
-                   col = c("#2166AC", "#B2182B"), lwd = 2, pch = c(16, 17))
+  runs <- data.frame(run_length = x$runs$run_length,
+                     final_density = x$runs$final_density,
+                     arm = factor(arm_lab[x$runs$arm], levels = arm_lvls))
+  means <- rbind(
+    data.frame(run_length = s$run_length, mean = s$mean_lo, arm = arm_lvls[1]),
+    data.frame(run_length = s$run_length, mean = s$mean_hi, arm = arm_lvls[2]))
+  means$arm <- factor(means$arm, levels = arm_lvls)
+  start_df <- data.frame(y = sort(starts), arm = factor(arm_lvls, levels = arm_lvls),
+                         label = sprintf("arm starting at %.2f", sort(starts)))
+  pA <- ggplot2::ggplot(runs, ggplot2::aes(.data$run_length, .data$final_density,
+                                               color = .data$arm)) +
+    ggplot2::geom_hline(data = start_df, ggplot2::aes(yintercept = .data$y,
+                                                      color = .data$arm),
+                        linetype = "dotted") +
+    ggplot2::geom_text(data = start_df, ggplot2::aes(x = min(runs$run_length), y = .data$y,
+                                                     label = .data$label),
+                       hjust = 0, vjust = -0.5, size = 3) +
+    ggplot2::geom_point(alpha = 0.45, size = 1.1) +
+    ggplot2::geom_line(data = means, ggplot2::aes(y = .data$mean, group = .data$arm),
+                       linewidth = 0.9) +
+    ggplot2::geom_point(data = means, ggplot2::aes(y = .data$mean, shape = .data$arm), size = 2.2) +
+    ggplot2::scale_x_log10() +
+    ggplot2::scale_color_manual(values = arm_cols, guide = "none") +
+    ggplot2::scale_shape_manual(values = c(16, 17), guide = "none") +
+    ggplot2::labs(title = if (isTRUE(x$verdict$equivalent))
+                    "A. Both starts end at the same density" else
+                    "A. The two starts have not yet met",
+                  subtitle = "Points: replicate runs. Lines: mean of each arm.\nDotted: where each arm starts.",
+                  x = "Iterations per actor (log scale)", y = "Final density") +
+    theme_searchnet()
+  meet <- s$run_length[s$gap > 0 & s$gap < margin]
+  if (isTRUE(annotate) && length(meet)) {
+    L <- min(meet)
+    yL <- mean(c(s$mean_lo[s$run_length == L], s$mean_hi[s$run_length == L]))
+    lo_y <- min(starts); hi_y <- max(starts)
+    yt <- if (yL > mean(c(lo_y, hi_y))) yL - 0.3 * (hi_y - lo_y) else yL + 0.3 * (hi_y - lo_y)
+    pA <- pA +
+      ggplot2::annotate("segment", x = L * 1.35, xend = L * 1.04, y = yt, yend = yL,
+                        color = ink, linewidth = 0.35,
+                        arrow = grid::arrow(length = grid::unit(0.07, "in"), type = "closed")) +
+      ggplot2::annotate("text", x = L * 1.4, y = yt, hjust = 0,
+                        vjust = if (yt < yL) 1 else 0, size = 3, color = ink,
+                        lineheight = 0.95,
+                        label = sprintf("arms within the %.2f margin\nfrom %g iterations", margin, L))
+  }
 
   ## -- Panel B: the gap decaying ------------------------------------------ ##
   pos <- s$gap > 0
-  plot(s$run_length[pos], s$gap[pos], type = "b", log = "xy", pch = 16, lwd = 2,
-       col = "#333333", xlab = "Iterations per actor (log scale)",
-       ylab = "Between-arm gap (log scale)", main = "B. Gap decays geometrically")
-  graphics::abline(h = x$verdict$margin, lty = 2, col = "#B2182B")
-  graphics::text(min(s$run_length[pos]), x$verdict$margin,
-                 sprintf(" equivalence margin %.3f", x$verdict$margin),
-                 adj = c(0, -0.5), cex = 0.75, col = "#B2182B")
-
-  ## Shade the Monte Carlo floor: below it the measured gap is estimator
-  ## noise, so the flattening there is not the chain failing to mix.
+  gap <- data.frame(run_length = s$run_length[pos], gap = s$gap[pos])
+  pB <- ggplot2::ggplot(gap, ggplot2::aes(.data$run_length, .data$gap))
+  subtitle <- NULL
   if (!is.null(x$decay) && is.finite(x$decay$floor)) {
-    graphics::rect(graphics::par("usr")[1], graphics::par("usr")[3], graphics::par("usr")[2],
-                   log10(x$decay$floor),
-                   col = grDevices::adjustcolor("grey60", alpha.f = 0.18),
-                   border = NA)
-    graphics::abline(h = x$decay$floor, lty = 3, col = "grey30")
-    graphics::text(max(s$run_length[pos]), x$decay$floor,
-                   "Monte Carlo floor ", adj = c(1, 1.4), cex = 0.7, col = "grey25")
+    ## Shade the Monte Carlo floor: below it the measured gap is estimator
+    ## noise, so the flattening there is not the chain failing to mix.
+    pB <- pB +
+      ## Drawn past the data extents and clipped by coord_cartesian() below:
+      ## on log axes an infinite rectangle edge is not representable.
+      ggplot2::annotate("rect", xmin = min(gap$run_length) / 10,
+                        xmax = max(gap$run_length) * 10,
+                        ymin = min(c(gap$gap, x$decay$floor)) / 100,
+                        ymax = x$decay$floor, fill = "grey60", alpha = 0.18) +
+      ggplot2::geom_hline(yintercept = x$decay$floor, linetype = "dotted",
+                          color = "grey30") +
+      ggplot2::annotate("text", x = min(gap$run_length), y = x$decay$floor,
+                        label = " Monte Carlo floor (replicate noise)", hjust = 0,
+                        vjust = 1.5, size = 2.8, color = "grey25")
   }
-  ## Redraw over the shading.
-  graphics::lines(s$run_length[pos], s$gap[pos], type = "b", pch = 16,
-                  lwd = 2, col = "#333333")
-
+  pB <- pB +
+    ggplot2::geom_hline(yintercept = margin, linetype = "dashed",
+                        color = arm_cols[[2]]) +
+    ggplot2::annotate("text", x = max(gap$run_length), y = margin,
+                      label = sprintf("equivalence margin %.3f ", margin),
+                      hjust = 1, vjust = -0.5, size = 2.8, color = arm_cols[[2]])
   if (!is.null(x$decay) && !is.na(x$decay$slope)) {
-    graphics::abline(a = stats::coef(stats::lm(
-                       log10(s$gap[pos & s$gap > x$decay$floor]) ~
-                       log10(s$run_length[pos & s$gap > x$decay$floor])))[1],
-                     b = x$decay$slope, col = "#2166AC", lwd = 1.5, lty = 2)
-    graphics::mtext(sprintf("slope %.2f (R^2 = %.3f), fit above floor only",
-                            x$decay$slope, x$decay$r_squared),
-                    side = 3, line = 0.1, cex = 0.75)
+    fit_rows <- gap$gap > x$decay$floor
+    a <- stats::coef(stats::lm(log10(gap$gap[fit_rows]) ~
+                                 log10(gap$run_length[fit_rows])))[1]
+    pB <- pB + ggplot2::geom_abline(intercept = a, slope = x$decay$slope,
+                                    color = arm_cols[[1]], linetype = "dashed",
+                                    linewidth = 0.6)
+    subtitle <- sprintf(paste0("Black: measured gap between the arm means.\n",
+                               "Blue dashed: fit above the floor, slope %.2f (R^2 = %.3f)"),
+                        x$decay$slope, x$decay$r_squared)
   }
+  shrinks <- !is.null(x$decay) && !is.na(x$decay$slope) && x$decay$slope < 0
+  pB <- pB +
+    ggplot2::geom_line(color = "grey20", linewidth = 0.9) +
+    ggplot2::geom_point(color = "grey20", size = 2) +
+    ggplot2::scale_x_log10() + ggplot2::scale_y_log10() +
+    ggplot2::coord_cartesian(
+      xlim = range(gap$run_length),
+      ylim = range(c(gap$gap, margin,
+                     if (!is.null(x$decay) && is.finite(x$decay$floor)) x$decay$floor))) +
+    ggplot2::labs(title = if (shrinks) "B. The gap shrinks as runs get longer" else
+                    "B. Gap between the arms",
+                  subtitle = subtitle,
+                  x = "Iterations per actor (log scale)",
+                  y = "Between-arm gap (log scale)") +
+    theme_searchnet()
+
+  fig <- cowplot::plot_grid(pA, pB, nrow = 1, align = "h", axis = "tb")
+  if (isTRUE(draw)) print(fig)
+  attr(x, "plot") <- fig
   invisible(x)
 }

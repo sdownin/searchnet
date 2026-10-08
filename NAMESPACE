@@ -111,6 +111,15 @@ export(saomnk_empirical_influence)
 export(searchnet_proof)
 
 # ---------------------------------------------------------------------------
+# Shared plot style -- plot-theme.R
+# ---------------------------------------------------------------------------
+export(theme_searchnet)
+export(searchnet_palette)
+export(scale_color_searchnet)
+export(scale_colour_searchnet)
+export(scale_fill_searchnet)
+
+# ---------------------------------------------------------------------------
 # Plot functions -- plot-utility.R
 # ---------------------------------------------------------------------------
 export(saomnk_plot_actor_utility)
@@ -270,7 +279,7 @@ export(saomnk_plot_erosion_simulation)
 export(saomnk_imitation_penalty)
 
 # ---------------------------------------------------------------------------
-# Brock-Durlauf Mean-Field Reduction (Theorem 5) -- searchnet-brock-durlauf.R
+# Brock-Durlauf Mean-Field Reduction (Property 5) -- searchnet-brock-durlauf.R
 # ---------------------------------------------------------------------------
 export(bd_self_consistency)
 export(saomnk_inpop_self_consistency)
@@ -280,7 +289,7 @@ export(bd_landau_steepness)
 export(verify_brock_durlauf_reduction)
 
 # ---------------------------------------------------------------------------
-# Mean-field equilibrium solver (Theorem 4) -- mean_field_solver.R
+# Mean-field equilibrium solver (Property 4) -- mean_field_solver.R
 # ---------------------------------------------------------------------------
 export(solve_mean_field)
 export(nk_dependencies)
@@ -297,7 +306,9 @@ export(searchnet_rd_cross)
 S3method(print,nk_landscape)
 S3method(print,nk_walk)
 
-# K_CA imitation statistic (0.5.0)
+# K_CA imitation statistic (0.5.0); saomnk_sim_ego_indist2 is a deprecated
+# alias of saomnk_coholder_similarity since 2026-10-04 (not RSiena's effect)
+export(saomnk_coholder_similarity)
 export(saomnk_sim_ego_indist2)
 export(saomnk_env_imitation)
 
@@ -390,3 +401,55 @@ export(searchnet_coevolve)
 export(searchnet_coevolve_data)
 export(searchnet_coevolve_effects)
 export(searchnet_coevolve_available_effects)
+
+# ---------------------------------------------------------------------------
+# Engine hygiene: provenance, opportunity table, readback check
+# (searchnet-seeds.R, searchnet-opportunity.R, searchnet-readback.R)
+# ---------------------------------------------------------------------------
+export(searchnet_provenance)
+S3method(print, searchnet_provenance)
+export(searchnet_opportunity_table)
+S3method(print, searchnet_opportunity_table)
+export(searchnet_readback_check)
+S3method(print, searchnet_readback)
+
+# ---------------------------------------------------------------------------
+# Formal verification with Lean 4 (lean-tools.R, lean-export.R; inst/lean)
+# ---------------------------------------------------------------------------
+export(lean_home)
+export(lean_available)
+export(lean_setup)
+export(lean_check)
+export(lean_registry)
+export(lean_declarations)
+export(expect_lean_theorem)
+export(lean_effect_map)
+export(lean_spec)
+export(lean_export_model)
+S3method(print, searchnet_lean_spec)
+
+# Translation registry -- rosetta-registry.R, rosetta-spec.R, rosetta-translate.R,
+# rosetta-plot.R
+export(rosetta_classes)
+export(rosetta_register_class)
+export(rosetta_reset_classes)
+export(rosetta_entries)
+export(rosetta_entry)
+export(rosetta_validate)
+export(rosetta_model)
+export(rosetta_model_from_json)
+export(rosetta_model_to_json)
+export(rosetta_saomnk_model)
+export(rosetta_run)
+export(rosetta_r_code)
+export(rosetta_translate)
+export(rosetta_compare)
+export(rosetta_new_entry)
+export(rosetta_lean)
+export(rosetta_export_json)
+export(rosetta_plot)
+S3method(print, rosetta_entry)
+S3method(print, rosetta_validation)
+S3method(print, rosetta_spec)
+S3method(print, rosetta_translation)
+S3method(print, rosetta_lean)

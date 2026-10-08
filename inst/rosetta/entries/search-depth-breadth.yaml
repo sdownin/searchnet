@@ -1,0 +1,51 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: search-depth-breadth
+title: Search depth versus breadth
+model: Search depth and scope
+citations:
+  - key: katila_ahuja_2002
+    text: "Katila, R., and Ahuja, G. (2002). Something old, something new: A longitudinal study of search behavior and new product introduction. Academy of Management Journal, 45(6), 1183-1194."
+    doi: "10.2307/3069433"
+relation: translation
+statement: >-
+  Search depth (reusing what the firm already holds) maps to the endowment
+  function, search breadth (entering components not held) to the creation
+  function, and outdegree activity (outAct) bounds breadth.
+restrictions:
+  W: any
+  notes:
+    - "statistics without a registered class: endowment function; creation function"
+terms:
+  - class: complementarity
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: scope
+    status: active
+    effect: outAct
+    expression: outAct
+    construct: bounds breadth
+  - class: crowding
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: contact
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs:
+  bounds breadth: [scope]
+lean: []
+checks: []
+does_not_cover:
+  - "Interpretive mapping; no reduction is proved"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

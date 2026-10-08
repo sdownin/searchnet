@@ -1,0 +1,13 @@
+﻿searchnet 0.11.0 | RSiena 1.5.0 | R version 4.5.3 (2026-03-11 ucrt) | Windows 10 x64 | 2026-10-07 21:43:12 
+  density_par=-0.50  pooled=0.953  admissible=FALSE  (99.5s)
+  density_par=-0.75  pooled=0.935  admissible=FALSE  (110.4s)
+  density_par=-1.00  pooled=0.899  admissible=FALSE  (122.7s)
+  density_par=-1.25  pooled=0.828  admissible=FALSE  (106.5s)
+  density_par=-1.50  pooled=0.184  admissible=FALSE  (63.2s)
+  density_par=-1.75  pooled=0.101  admissible=FALSE  (60.7s)
+  density_par=-2.00  pooled=0.065  admissible=FALSE  (66.3s)
+  density_par=-2.50  pooled=0.029  admissible=FALSE  (72.0s)
+  density_par=-3.00  pooled=0.019  admissible=FALSE  (66.7s)
+  density_par=-3.50  pooled=0.014  admissible=FALSE  (70.3s)
+  density_par=-4.00  pooled=0.010  admissible=FALSE  (83.3s)
+NO ADMISSIBLE POINT on the registered grid; original kept.

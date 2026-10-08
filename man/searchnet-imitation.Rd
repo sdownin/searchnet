@@ -7,18 +7,38 @@
 The K_CA channel of the \{K\} interdependence system: the pull an actor feels
 toward components already held by performance-similar peers.
 }
+\section{Not RSiena's simEgoInDist2}{
+
+The statistic here was exported as \code{saomnk_sim_ego_indist2()} until
+2026-10-04, a name taken from RSiena's \code{simEgoInDist2} effect. It does
+not compute that effect, so it now carries the local name
+\code{\link{saomnk_coholder_similarity}}, and the old name is a deprecated
+alias. RSiena 1.5.0's two-mode \code{simEgoInDist2} subtracts one data-level
+constant (the mean similarity over actor pairs) and, where nobody else holds
+a component, compares ego with the covariate mean. This statistic subtracts
+each actor's own mean over the components that have co-holders, and a
+component with no co-holder contributes nothing. On 200 random states the
+two agreed in none, differing by up to 8.09. RSiena's definition is the
+\code{simEgoInDist2} column of the statistic matrix that
+\code{SaomNkRSienaBiEnv} computes, pinned to \code{siena07()} targets in
+\code{tests/testthat/test-structural-stats-vs-rsiena.R}.
+}
+
 \section{Why this is a statistic and not yet an effect}{
 
-RSiena's effect set for a bipartite dependent variable contains 34 short
-names and none of them is a similarity effect; the nearest are \code{inPop_ego}
-and \code{outAct_ego}, which are degree-based. \code{simEgoInDist2} exists for one-mode
-networks only. searchnet's simulation path delegates to \code{siena07()}, so an
-effect that RSiena cannot express cannot enter the evaluation function
-through it.
+Without covariates, RSiena's effect set for a bipartite dependent variable
+has no similarity effect; the nearest are \code{inPop_ego} and \code{outAct_ego},
+which are degree-based. With an actor covariate declared, RSiena 1.5.0 does
+offer \code{simEgoInDist2} for a bipartite dependent variable, but that is the
+different statistic described above. searchnet's simulation path delegates
+to \code{siena07()}, so a statistic that RSiena does not implement cannot enter
+the evaluation function through it.
 
 What is provided here is therefore the STATISTIC, computed natively on any
-bipartite state, matching the definition used by the CD4 procedural engines
-so the two are directly comparable. It makes the K_CA channel measurable in
+bipartite state. It was written to match the imitation block of the CD4
+procedural engines as transcribed on 2026-08-06 into
+\code{tests/testthat/test-imitation.R}; whether those engines still compute
+it is not checked here. It makes the K_CA channel measurable in
 searchnet, where it was previously absent entirely. It does NOT make K_CA
 simulable through \code{saomnk_run()}, and callers must not assume it does.
 Closing that gap needs either a C-level RSiena effect or a searchnet-native

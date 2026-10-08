@@ -299,34 +299,32 @@ searchnet_chain_stats <- function(x,
            "(`search_rsiena()` / `saomnk_run()`), which sets `$chain_stats`.",
            call. = FALSE)
 
-    ## GUARD: `$chain_stats` is not necessarily one SAOM path.
+    ## GUARD: `$chain_stats` must be one SAOM path.
     ##
-    ## search_rsiena_process_ministep_chain() hard-codes `period <- 1`
-    ## (saomnk-class.R:5263) and concatenates EVERY phase-3 run into one frame
-    ## (:5268-5271), then replays the lot cumulatively from
-    ## `bipartite_matrix_init` (:5324-5344). RSiena does not carry state across
-    ## phase-3 runs -- each re-draws from the observed wave-1 state -- so the
-    ## concatenation is a sequence of INDEPENDENT draws replayed as though it
-    ## were sequential.
+    ## Before 0.11.0, search_rsiena() concatenated independent one-ministep
+    ## phase-3 runs, each drawn from the initial state, and replayed them
+    ## cumulatively as though they were sequential. A genuine path deletes a
+    ## lone tie at density = -8 once and never recreates it; that composite
+    ## toggled the same dyad repeatedly. The inflation landed hardest on
+    ## `focusing`, the repeat-pair counter.
     ##
-    ## Demonstrated: initialise with exactly one tie at density = -8. A genuine
-    ## path deletes that tie once and never recreates it; the composite frame
-    ## toggles the same dyad repeatedly and ends holding the tie, which the
-    ## model forbids. The inflation lands hardest on `focusing`, the repeat-pair
-    ## counter -- which is precisely the statistic with the strongest claim to
-    ## being free of what the estimator targeted.
-    ##
-    ## Refuse rather than return numbers that look fine and are not.
+    ## Since 0.11.0 search_rsiena() simulates one unconditional period per
+    ## segment, each started from the previous segment's end, so a chain with
+    ## several entries is still one path, and it is tagged as such. The
+    ## legacy route (path = "legacy_replay") is tagged as independent draws
+    ## and refused. A multi-run chain that carries no tag did not come from
+    ## search_rsiena() and is refused as before.
+    .searchnet_require_path(x, "searchnet_chain_stats()")
     n_runs <- tryCatch(length(x$rsiena_model$chain), error = function(e) NA_integer_)
-    if (!is.na(n_runs) && n_runs > 1L)
+    genuine <- identical(.searchnet_path_kind(x), .SEARCHNET_PATH_GENUINE)
+    if (!genuine && !is.na(n_runs) && n_runs > 1L)
       stop(sprintf(paste0(
-        "this environment's `$chain_stats` concatenates %d phase-3 runs into ",
-        "one frame and replays them cumulatively from the initial matrix. ",
-        "RSiena restarts each run from the observed wave-1 state, so the ",
-        "result is not a single ministep path and its event-ordering ",
-        "statistics are artefacts of the concatenation -- `focusing` most of ",
-        "all. Extract one run at a time from `$rsiena_model$chain[[run]]` and ",
-        "pass each as its own `chain_id`. See the file header."), n_runs),
+        "this environment's `$chain_stats` concatenates %d RSiena runs into ",
+        "one frame, and nothing marks them as one path. RSiena restarts each ",
+        "run from the observed wave-1 state, so its event-ordering statistics ",
+        "would be artifacts of the concatenation -- `focusing` most of all. ",
+        "Extract one run at a time from `$rsiena_model$chain[[run]]` and pass ",
+        "each as its own `chain_id`."), n_runs),
         call. = FALSE)
 
     cs <- x$chain_stats
@@ -356,6 +354,9 @@ searchnet_chain_stats <- function(x,
            "nothing to compute event statistics on.", call. = FALSE)
 
     events <- cbind(as.integer(cs$id_from[keep]), as.integer(cs$id_to[keep]))
+    ## The path starts where the simulation started (`$path_start_matrix`,
+    ## which differs from the initial matrix under restart = FALSE).
+    if (is.null(B0)) B0 <- x$path_start_matrix
     if (is.null(B0)) B0 <- x$bipartite_matrix_init
     if (is.null(B0))
       stop("`x$bipartite_matrix_init` is NULL; supply `B0` explicitly.",

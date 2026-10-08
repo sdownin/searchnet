@@ -5,7 +5,7 @@
 \description{
 Computes the Landau--Ginzburg quartic coefficient
 \deqn{b = \frac{2 \tau (1 + 3 m^{*2})}{(1 - m^{*2})^3}}
-from the AMR herding-steepness derivation, and the predicted basin
+from the herding-steepness derivation, and the predicted basin
 steepness exponent
 \deqn{s = 2 + \frac{b\, \delta_m^{2}}{2(\beta J - 1)}}
 for a small fluctuation \eqn{\delta_m} around the equilibrium.
@@ -45,7 +45,7 @@ Renormalization Group}. Addison--Wesley.
 \code{\link{bd_equilibrium_count}},
 \code{\link{saomnk_social_multiplier}},
 \code{\link{verify_brock_durlauf_reduction}};
-\code{vignette("saomnk-brock-durlauf")} for the full Theorem 5
+\code{vignette("saomnk-brock-durlauf")} for the full Property 5
 walkthrough.
 }
 \examples{

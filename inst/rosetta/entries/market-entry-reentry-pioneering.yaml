@@ -1,0 +1,54 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: market-entry-reentry-pioneering
+title: Market entry, re-entry and pioneering
+model: Market entry, re-entry and pioneering
+citations:
+  - key: haveman_nonnemaker_2000
+    text: "Haveman, H. A., and Nonnemaker, L. (2000). Competition in multiple geographic markets: The impact on growth and market entry. Administrative Science Quarterly, 45(2), 232-267."
+    doi: "10.2307/2667071"
+  - key: lieberman_montgomery_1988
+    text: "Lieberman, M. B., and Montgomery, D. B. (1988). First-mover advantages. Strategic Management Journal, 9(S1), 41-58."
+    doi: "10.1002/smj.4250090706"
+relation: translation
+statement: >-
+  The tie-change event stream separates a firm's first affiliation with a
+  component (entry), re-affiliation after exit (re-entry) and the first
+  affiliation by any firm (pioneering); re-entry is estimable as entrainment
+  (crprod) of B by the cumulative affiliation network, a second, monotone
+  dependent network, so memory enters as structure rather than as a covariate.
+restrictions:
+  W: any
+  notes:
+    - "statistics without a registered class: crprod"
+terms:
+  - class: complementarity
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: scope
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: crowding
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: contact
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs: {}
+lean: []
+checks: []
+does_not_cover:
+  - "Interpretive mapping; no reduction is proved"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

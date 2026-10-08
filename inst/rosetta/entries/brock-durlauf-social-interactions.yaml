@@ -1,0 +1,79 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: brock-durlauf-social-interactions
+title: Discrete choice with social interactions
+model: Brock-Durlauf binary choice with social interactions
+citations:
+  - key: brock_durlauf_2001
+    text: "Brock, W. A., and Durlauf, S. N. (2001). Discrete choice with social interactions. Review of Economic Studies, 68(2), 235-260."
+    doi: 10.1111/1467-937X.00168
+relation: special-case-linearized
+statement: >-
+  With many actors, independent components and only a baseline field and a
+  peer-adoption term, the stationary mean adoption satisfies the mean-field
+  self-consistency m = tanh(beta h + beta J m) of Brock and Durlauf (the
+  Curie-Weiss form), with multiple equilibria exactly when beta J > 1 at zero
+  field (Property 5 of the proof table). RSiena's two-mode inPop statistic is
+  linear in column degree, so the utility carries the coupling exactly
+  (theta_inPop = J_b / (M - 1)). The approximation is in the choice rule: the
+  RSiena ministep over N toggles and no change gives a per-tie law F_N, which
+  matches the binary logit to first order near m = 1/2 after dividing the
+  coefficients by kappa_N = 2N / (N + 1) (Property 5 (iii) and Rb2(b) of the
+  proof table).
+restrictions:
+  M: Inf
+  "N": null
+  W: zero
+  beta: null
+  revision_rule: single_flip
+  rates: constant
+  notes:
+    - "Rb1: M -> infinity with N fixed"
+    - "Rb2: components independent (N = 1, or K = 0 with no other coupling)"
+    - "Rb3: social coefficient scaled per neighbor"
+    - "Rb4: spin recoding sigma = 2b - 1"
+    - "Rb5: finite beta"
+terms:
+  - class: complementarity
+    status: zero
+    expression: "+0 (components independent)"
+    construct: none
+  - class: scope
+    status: active
+    effect: density
+    value: -0.5
+    expression: "private field h = -theta_density"
+    construct: private utility of adoption
+  - class: crowding
+    status: linearized
+    effect: inPop
+    value: 0.3
+    expression: "social interaction J m through the linear inPop statistic (theta_inPop = J_b / (M - 1)); linearized in the ministep choice rule, kappa_N near m = 1/2"
+    construct: conformity (social interaction)
+  - class: contact
+    status: zero
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: zero
+    expression: "+0"
+    construct: none
+constructs:
+  private utility of adoption: [scope]
+  conformity (social interaction): [crowding]
+lean:
+  - SaomNK.MeanField.exists_nonzero_root_iff
+checks:
+  - bd_self_consistency
+  - saomnk_inpop_self_consistency
+  - verify_brock_durlauf_reduction
+  - tests/testthat/test-mean-field.R
+does_not_cover:
+  - "Under the RSiena ministep the per-tie law is F_N, not the binary logit; with coefficients divided by kappa_N = 2N / (N + 1) it matches the Brock-Durlauf map to first order near m = 1/2 only, and away from m = 1/2 the fixed points differ (exact only at N = 1, which the two-mode dependent variable does not admit)"
+  - "The many-actor limit is taken in the proof; finite-M simulations approximate it"
+  - "Rational expectations about the peer mean are replaced by the stationary mean of the search"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-07, from inst/proofs/PROOF_TABLE.md Part L and vignettes/saomnk-brock-durlauf.Rmd"
+  revised: "Claude Opus 5.5 (AI), 2026-10-07: inPop is linear in RSiena 1.5.0 two-mode; the linearization is the kappa_N ministep approximation near m = 1/2 (inst/proofs/PROOF_TABLE.md L4 Rb2(b), L10 (iii), L16)"
+  ai_drafted: true
+  reviewed: false

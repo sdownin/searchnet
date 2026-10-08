@@ -92,66 +92,66 @@ saomnk_run(env, mod, steps_per_actor = 20, seed = 12345,
            shocks = list(s_baseline, s_shocked))
 ```
 
-The shock divides the simulation roughly in half.  We compute the shock step
-as half the total number of steps:
+The shock divides the model time in half. The shock step is the first
+ministep simulated under the shocked parameters, which the engine records on
+the second shock segment:
 
 ```{r shock-step}
 total_steps <- max(env$actor_util_df$chain_step_id)
-shock_step  <- round(total_steps / 2)
+shock_step  <- min(env$theta_shocks[[2]]$chain_step_ids)
 cat("Total steps:", total_steps, "\nShock step:", shock_step, "\n")
 ```
 
 
 # 3. Difference-in-Differences Example
 
-DID requires both treated and control actors.  In this design, we designate
-actors 1--3 as "treated" (most affected by the density shock because of
-their initial positions) and actors 4--6 as controls.
+DID requires both treated and control actors. Every actor in `env` faces the
+density shock, so a split of its actors into "treated" and "control" would
+compare two shocked groups. The controls here are instead the actors of a
+comparison simulation run without the shock: same initial network
+(`seed = 42`), same model, same run seed. `did::att_gt()` also needs at
+least five units in each group, so the two arms of six actors each meet
+its minimum, which three controls drawn from `env` would not.
 
 ```{r did-panel}
-panel_did <- searchnet_causal_panel(
-  env,
-  shock_step     = shock_step,
-  outcome        = "utility",
-  treated_actors = c(1, 2, 3)
-)
+env_ctrl <- saomnk_env(M = 6, N = 8, seed = 42)
+saomnk_run(env_ctrl, mod, steps_per_actor = 20, seed = 12345)
+
+## Shocked arm: all six actors treated at shock_step.
+panel_tr <- searchnet_causal_panel(env, shock_step = shock_step,
+                                   outcome = "utility")
+## Comparison arm: no actor treated; ids 7-12 keep the units distinct.
+panel_co <- searchnet_causal_panel(env_ctrl, shock_step = shock_step,
+                                   outcome = "utility",
+                                   treated_actors = integer(0))
+panel_co$actor_id <- factor(as.integer(as.character(panel_co$actor_id)) + 6L)
+
+## The realized number of ministeps is random; keep the steps both arms reach
+## so the panel is balanced.
+common_steps <- seq_len(min(max(panel_tr$step), max(panel_co$step)))
+panel_did <- rbind(panel_tr[panel_tr$step %in% common_steps, ],
+                   panel_co[panel_co$step %in% common_steps, ])
 
 head(panel_did)
 cat("\nPanel dimensions:", nrow(panel_did), "rows x", ncol(panel_did), "cols\n")
-cat("Treated actors:", sum(panel_did$treated == 1) / length(unique(panel_did$step)),
-    "\nControl actors:", sum(panel_did$treated == 0) / length(unique(panel_did$step)), "\n")
+cat("Treated actors:", length(unique(panel_did$actor_id[panel_did$treated == 1])),
+    "\nControl actors:", length(unique(panel_did$actor_id[panel_did$treated == 0])), "\n")
 ```
 
 Now we run the Callaway & Sant'Anna (2021) estimator:
 
-```{r did-estimate}
-if (requireNamespace("did", quietly = TRUE)) {
-  tryCatch({
-    att <- searchnet_did(panel_did)
-    summary(att)
-  }, error = function(e) {
-    message("DID estimation encountered an issue: ", e$message)
-  })
-} else {
-  message("Package 'did' not installed. Install with: install.packages('did')")
-}
+```{r did-estimate, eval=requireNamespace("did", quietly = TRUE)}
+att <- searchnet_did(panel_did)
+did::aggte(att, type = "simple")
 ```
 
 The event study plot shows the dynamic treatment effect over time:
 
-```{r did-plot, fig.cap="Event study plot from DID estimation"}
-if (requireNamespace("did", quietly = TRUE)) {
-  tryCatch({
-    att <- searchnet_did(panel_did)
-    p <- searchnet_causal_plot(att, type = "did")
-    print(p)
-  }, error = function(e) {
-    message("DID plot skipped: ", e$message)
-  })
-} else {
-  message("Skipping DID plot (package 'did' not installed)")
-}
+```{r did-plot, fig.cap="Event study plot from DID estimation", eval=requireNamespace("did", quietly = TRUE)}
+searchnet_causal_plot(att, type = "did")
 ```
+
+> **Rerun 2026-10-07:** DID chunks printed nothing (searchnet_did() stopped on 3 never-treated actors, below did's minimum of 5, and the chunk's tryCatch hid it) -> shocked arm vs. unshocked comparison arm, 6 actors each, simple ATT on utility -4.24 (SE 0.60); shock step 65, the first shocked ministep, replaces round(129 / 2) = 64.
 
 
 # 4. Synthetic Control Example
@@ -175,39 +175,21 @@ cat("Control units:", paste(setdiff(unique(panel_sc$actor_id[panel_sc$treated ==
 
 Run the synthetic control estimator:
 
-```{r synth-estimate}
-if (requireNamespace("Synth", quietly = TRUE)) {
-  tryCatch({
-    sc_result <- searchnet_synth(
-      panel_sc,
-      treated_unit = 1
-    )
-    cat("Synthetic control weights:\n")
-    print(round(sc_result$synth_out$solution.w, 3))
-    cat("\nPre-treatment MSPE:",
-        mean(sc_result$gap$gap[sc_result$gap$step < shock_step]^2), "\n")
-  }, error = function(e) {
-    message("Synthetic control encountered an issue: ", e$message)
-  })
-} else {
-  message("Package 'Synth' not installed. Install with: install.packages('Synth')")
-}
+```{r synth-estimate, eval=requireNamespace("Synth", quietly = TRUE)}
+sc_result <- searchnet_synth(
+  panel_sc,
+  treated_unit = 1
+)
+cat("Synthetic control weights:\n")
+print(round(sc_result$synth_out$solution.w, 3))
+cat("\nPre-treatment MSPE:",
+    mean(sc_result$gap$gap[sc_result$gap$step < shock_step]^2), "\n")
 ```
 
 Plot the treated vs. synthetic control trajectory:
 
-```{r synth-plot, fig.cap="Treated actor vs. synthetic counterfactual"}
-if (requireNamespace("Synth", quietly = TRUE)) {
-  tryCatch({
-    sc_result <- searchnet_synth(panel_sc, treated_unit = 1)
-    p <- searchnet_causal_plot(sc_result, type = "synth")
-    print(p)
-  }, error = function(e) {
-    message("Synth plot skipped: ", e$message)
-  })
-} else {
-  message("Skipping Synth plot (package 'Synth' not installed)")
-}
+```{r synth-plot, fig.cap="Treated actor vs. synthetic counterfactual", eval=requireNamespace("Synth", quietly = TRUE)}
+searchnet_causal_plot(sc_result, type = "synth")
 ```
 
 
@@ -235,33 +217,15 @@ cat("Post-treatment steps:", sum(unique(panel_rd$step) >= shock_step), "\n")
 
 Run the RD estimator:
 
-```{r rd-estimate}
-if (requireNamespace("rdrobust", quietly = TRUE)) {
-  tryCatch({
-    rd_result <- searchnet_rd(panel_rd)
-    summary(rd_result$rd)
-  }, error = function(e) {
-    message("RD estimation encountered an issue: ", e$message)
-  })
-} else {
-  message("Package 'rdrobust' not installed. Install with: install.packages('rdrobust')")
-}
+```{r rd-estimate, eval=requireNamespace("rdrobust", quietly = TRUE)}
+rd_result <- searchnet_rd(panel_rd)
+summary(rd_result$rd)
 ```
 
 Plot the RD with pre- and post-treatment fitted curves:
 
-```{r rd-plot, fig.cap="Regression discontinuity at the shock step"}
-if (requireNamespace("rdrobust", quietly = TRUE)) {
-  tryCatch({
-    rd_result <- searchnet_rd(panel_rd)
-    p <- searchnet_causal_plot(rd_result, type = "rd")
-    print(p)
-  }, error = function(e) {
-    message("RD plot skipped: ", e$message)
-  })
-} else {
-  message("Skipping RD plot (package 'rdrobust' not installed)")
-}
+```{r rd-plot, fig.cap="Regression discontinuity at the shock step", eval=requireNamespace("rdrobust", quietly = TRUE)}
+searchnet_causal_plot(rd_result, type = "rd")
 ```
 
 
@@ -283,8 +247,9 @@ cat("K_AC panel dimensions:", nrow(panel_kac), "x", ncol(panel_kac), "\n")
 head(panel_kac)
 ```
 
-This panel can be passed to any of `searchnet_did()`, `searchnet_synth()`,
-or `searchnet_rd()` in the same way as the utility panels above.
+This panel can be passed to `searchnet_synth()` or `searchnet_rd()` in the
+same way as the utility panels above, and to `searchnet_did()` once it is
+built from a shocked and a comparison arm as in Section 3.
 
 
 # 7. Comparison: When to Use Which Method

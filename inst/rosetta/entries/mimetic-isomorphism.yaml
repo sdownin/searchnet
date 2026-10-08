@@ -1,0 +1,53 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: mimetic-isomorphism
+title: Mimetic isomorphism
+model: Mimetic isomorphism
+citations:
+  - key: dimaggio_powell_1983
+    text: "DiMaggio, P. J., and Powell, W. W. (1983). The iron cage revisited: Institutional isomorphism and collective rationality in organizational fields. American Sociological Review, 48(2), 147-160."
+    doi: "10.2307/2095101"
+relation: translation
+statement: >-
+  Copying weighted by similarity to peers maps to the imitation class:
+  attraction to components held by actors similar in performance (co-holder
+  performance similarity). RSiena's simEgoInDist2 is a different statistic.
+restrictions:
+  W: any
+  notes:
+    - "statistics without a registered class: simEgoInDist2"
+terms:
+  - class: complementarity
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: scope
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: crowding
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: contact
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: active
+    effect: coholder_similarity
+    expression: "co-holder performance similarity (a statistic, not yet simulable)"
+    construct: similarity-weighted imitation
+constructs:
+  similarity-weighted imitation: [imitation]
+lean: []
+checks:
+  - saomnk_coholder_similarity
+does_not_cover:
+  - "Interpretive mapping; no reduction is proved"
+  - "The co-holder similarity statistic is computed but not simulable through saomnk_run()"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

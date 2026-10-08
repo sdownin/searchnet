@@ -1,5 +1,5 @@
 #' @title Brock--Durlauf Mean-Field Reduction Utilities
-#' @description Functions operationalizing Theorem 5 of the SaoMNK proof
+#' @description Functions operationalizing Property 5 of the SaoMNK proof
 #'   table (Part L), which establishes that SaoMNK reduces to the
 #'   Brock & Durlauf (2001, RES) binary discrete-choice-with-social-
 #'   interactions model in the M -> infinity, congestion-only, mean-field
@@ -10,12 +10,11 @@
 #'   (ii) count equilibria (regime classification), (iii) compute the
 #'   B&D social multiplier from either explicit parameters or a fitted
 #'   SaoMNK environment, (iv) report the Landau-Ginzburg quartic
-#'   coefficient and basin steepness from the AMR herding-steepness
+#'   coefficient and basin steepness from the herding-steepness
 #'   derivation, and (v) verify the M -> infinity reduction empirically
 #'   by comparing simulated mean adoption to the analytical fixed point.
 #'
-#'   See \code{inst/proofs/PROOF_TABLE.md} (Part L, Theorem 5) and the
-#'   AMR mathematical appendix for derivations.
+#'   See \code{inst/proofs/PROOF_TABLE.md} (Part L, Property 5) for derivations.
 #' @name searchnet-brock-durlauf
 NULL
 
@@ -157,89 +156,126 @@ bd_self_consistency <- function(beta, J, h,
 
 #' Solve the SaoMNK-inPop Self-Consistency Equation (Operational Fixed Point)
 #'
-#' Solves the adoption-form fixed-point equation that the live RSiena
-#' bipartite SAOM with only \code{density} and \code{inPop} effects
-#' active actually obeys at stationarity. This is *not* the canonical
-#' Brock & Durlauf (2001) fixed point: B&D assumes a linear peer-mean
-#' coupling \eqn{J m}, while RSiena's \code{inPop} statistic uses the
-#' sqrt-transformed column-degree \eqn{\sqrt{n_j + 1}} as a variance
-#' stabiliser. The two coincide only in the local linearisation around
-#' \eqn{m = 1/2} (\code{PROOF_TABLE.md} row L16); elsewhere the saomnk-inPop
-#' fixed point differs from B&D's, and this function gives the former.
+#' Solves the mean-field fixed point of the live RSiena bipartite SAOM with
+#' only the \code{density} and \code{inPop} effects active. Two facts fix
+#' its form (re-derived 2026-10-07 for searchnet 0.11.0, which simulates
+#' genuine state-carrying paths):
 #'
-#' The fixed-point equation is:
-#' \deqn{m = \sigma\bigl(\beta(h_b + \theta_{\mathrm{inPop}} \sqrt{M m + 1})\bigr)}
-#' where \eqn{\sigma(x) = 1/(1 + e^{-x})} is the logistic function, and
-#' the social-interaction coefficient appears non-linearly through the
-#' sqrt term.
+#' \enumerate{
+#'   \item On a two-mode dependent variable RSiena 1.5.0's \code{inPop} is
+#'     linear, \eqn{s_i = \sum_j x_{ij} x_{+j}} (the square-root form is the
+#'     separate effect \code{inPopSqrt}). Adding tie \eqn{(i,j)} changes the
+#'     objective by \eqn{\Delta = h_b + \theta(n_{-i,j} + 1)}, where
+#'     \eqn{n_{-i,j}} counts the other holders of component \eqn{j}; in mean
+#'     field \eqn{n_{-i,j} = (M-1)m}.
+#'   \item In a SAOM ministep the actor chooses among \eqn{N} toggles and no
+#'     change. For one actor with a common \eqn{\Delta}, the number of held
+#'     ties \eqn{k} is a birth-death chain whose stationary law is
+#'     \deqn{\pi_k \propto \binom{N}{k} e^{2\Delta k}
+#'       \bigl(1 + (N-k)e^{\Delta} + k e^{-\Delta}\bigr),}
+#'     so the per-tie adoption probability is \eqn{F_N(\Delta) = E[k]/N}.
+#'     For \eqn{N = 1} this is exactly the binary logit \eqn{\sigma(\Delta)};
+#'     as \eqn{N \to \infty} it tends to \eqn{\sigma(2\Delta)}; near
+#'     \eqn{m = 1/2} it is \eqn{\sigma(\kappa_N \Delta)} to first order with
+#'     \eqn{\kappa_N = 2N/(N+1)}.
+#' }
 #'
-#' This function is the **Option B** reference for
-#' \code{\link{verify_brock_durlauf_reduction}}: it gives the
-#' theoretical equilibrium that the \emph{live RSiena simulation}
-#' should converge to (matching the simulation's own functional form),
-#' as opposed to \code{\link{bd_self_consistency}} which gives the
-#' B&D limit that holds only in the local-linearisation regime.
+#' The fixed point solved is therefore
+#' \deqn{m = F_N\bigl(\beta(h_b + \theta_{\mathrm{inPop}}(1 + (M-1)m))\bigr).}
+#' Checked against direct simulation of the ministep chain and against
+#' \code{saomnk_run()} at \eqn{M = 12}, \eqn{N = 6}: the map gives 0.998 and
+#' 0.859 where the simulations give 0.99 to 1.00 and 0.84 to 0.86.
 #'
-#' @param beta Numeric inverse-temperature.
+#' Before 0.11.0 this function solved
+#' \eqn{m = \sigma(\beta(h_b + \theta\sqrt{Mm + 1}))}. That form was
+#' identified on the replayed chain, whose terminal state was a draw near
+#' the initial density, and it reads \code{inPop} as \code{inPopSqrt}.
+#'
+#' @param beta Numeric inverse-temperature (scales the objective).
 #' @param theta_inPop Numeric SAOM \code{inPop} coefficient (the
 #'   coefficient passed as \code{popularity} in
 #'   \code{\link{saomnk_model}}).
-#' @param h_b Numeric SAOM \code{density} coefficient (private-utility
-#'   bias in adoption form).
+#' @param h_b Numeric SAOM \code{density} coefficient.
 #' @param M Integer actor count.
+#' @param N Integer component count (the size of each actor's choice set).
+#'   \code{NULL} uses the large-\eqn{N} limit \eqn{\sigma(2\Delta)}; pass the
+#'   environment's \eqn{N} for the finite-choice-set law.
 #' @param x0 Numeric initial guess in \eqn{[0, 1]}; default 0.5.
 #' @param tol Numeric convergence tolerance; default \code{1e-10}.
 #' @param max_iter Integer maximum iterations; default \code{1000}.
-#' @return Adoption-form fixed point \eqn{m^* \in [0, 1]}.  When the
-#'   equation has multiple solutions (rare for inPop given the sqrt
-#'   non-linearity damps positive feedback), the iteration starting
-#'   from \code{x0} converges to one of them; future versions may
-#'   add an \code{all_roots} argument analogous to
-#'   \code{\link{bd_self_consistency}}.
+#' @return Adoption-form fixed point \eqn{m^* \in [0, 1]}. With positive
+#'   \code{theta_inPop} the map is increasing and may have several fixed
+#'   points; iteration from \code{x0} returns the one it reaches. With
+#'   negative \code{theta_inPop} the map is decreasing, the fixed point is
+#'   unique, and it is found by root bracketing if iteration oscillates.
 #' @references
-#'   See \code{PROOF_TABLE.md} row L16 for the linearisation that connects
-#'   this fixed-point equation to the canonical
-#'   Brock & Durlauf (2001) form.
-#' @seealso \code{\link{bd_self_consistency}} for the B&D linear-
-#'   coupling fixed point; \code{\link{verify_brock_durlauf_reduction}}
-#'   for the harness that uses both as comparison targets;
-#'   \code{vignette("saomnk-brock-durlauf")} for the full discussion of
-#'   the B/C tradeoff.
+#'   See \code{PROOF_TABLE.md} row L16 for the change statistic of the
+#'   two-mode \code{inPop} effect.
+#' @seealso \code{\link{bd_self_consistency}} for the B&D binary-logit
+#'   fixed point; \code{\link{verify_brock_durlauf_reduction}}
+#'   for the harness that uses both as comparison targets.
 #' @examples
-#' ## Sub-critical regime around m = 0.5 (Option C regime where B&D
-#' ## linearisation is locally accurate)
-#' theta <- 0.5 / sqrt(2 * 100)        # B&D-rescaled inPop coef
+#' ## Field placing the fixed point at 1/2: Delta(1/2) = 0
+#' M <- 12; theta <- 0.15
 #' saomnk_inpop_self_consistency(beta = 1, theta_inPop = theta,
-#'                                h_b = -0.25, M = 100)
-#' ## Compare to B&D linear form
-#' bd_self_consistency(beta = 1, J = 0.5, h = -0.25, all_roots = FALSE)
+#'                               h_b = -theta * (1 + (M - 1) / 2),
+#'                               M = M, N = 6)
+#' ## Coordination regime: the fixed point is near full adoption
+#' saomnk_inpop_self_consistency(beta = 1, theta_inPop = 0.6, h_b = -1,
+#'                               M = 12, N = 6)
 #' @export
 saomnk_inpop_self_consistency <- function(beta, theta_inPop, h_b, M,
+                                          N = NULL,
                                           x0 = 0.5, tol = 1e-10,
                                           max_iter = 1000L) {
   stopifnot(is.numeric(beta), length(beta) == 1, beta >= 0,
             is.numeric(theta_inPop), length(theta_inPop) == 1,
             is.numeric(h_b), length(h_b) == 1,
             is.numeric(M), length(M) == 1, M >= 2,
+            is.null(N) || (is.numeric(N) && length(N) == 1 && N >= 1),
             is.numeric(x0), length(x0) == 1, x0 >= 0, x0 <= 1,
             is.numeric(tol), length(tol) == 1, tol > 0,
             is.numeric(max_iter), length(max_iter) == 1, max_iter >= 1)
 
-  sigmoid <- function(x) 1 / (1 + exp(-x))
   M_num <- as.numeric(M)
+  F_map <- function(m) {
+    delta <- beta * (h_b + theta_inPop * (1 + (M_num - 1) * m))
+    .saomnk_ministep_adoption(delta, N)
+  }
 
   m <- x0
   for (iter in seq_len(max_iter)) {
-    m_new <- sigmoid(beta * (h_b + theta_inPop * sqrt(M_num * m + 1)))
+    m_new <- F_map(m)
     if (abs(m_new - m) < tol) {
       return(m_new)
     }
     m <- m_new
   }
+  ## A decreasing map (negative theta) can cycle; its fixed point is unique.
+  g <- function(m) m - F_map(m)
+  if (g(0) * g(1) < 0) {
+    return(stats::uniroot(g, c(0, 1), tol = tol)$root)
+  }
   warning("saomnk_inpop_self_consistency: did not converge within ",
           max_iter, " iterations (final |delta| = ",
           format(abs(m_new - m), digits = 3), ")")
   m
+}
+
+## Per-tie stationary adoption probability of one actor's row under the SAOM
+## ministep (choice among N toggles and no change) when every tie has the same
+## objective change `delta` for adding it. N = NULL is the large-N limit.
+.saomnk_ministep_adoption <- function(delta, N = NULL) {
+  if (is.null(N)) return(1 / (1 + exp(-2 * delta)))
+  k <- 0:N
+  ## log(1 + (N-k) e^delta + k e^-delta), computed without overflow
+  lz <- vapply(k, function(kk) {
+    a <- c(0, if (N - kk > 0) log(N - kk) + delta, if (kk > 0) log(kk) - delta)
+    mx <- max(a); mx + log(sum(exp(a - mx)))
+  }, numeric(1))
+  lw <- lchoose(N, k) + 2 * delta * k + lz
+  w <- exp(lw - max(lw))
+  sum(k * w) / (N * sum(w))
 }
 
 
@@ -450,13 +486,11 @@ saomnk_social_multiplier <- function(env = NULL, beta = NULL,
 #' Computes the Landau-Ginzburg quartic coefficient
 #' \deqn{b = \frac{2 \tau (1 + 3 m^{*2})}{(1 - m^{*2})^3}}{
 #'        b = 2 * tau * (1 + 3 * m_star^2) / (1 - m_star^2)^3}
-#' from the AMR herding-steepness derivation, and the predicted basin
+#' from the herding-steepness derivation, and the predicted basin
 #' steepness exponent
 #' \deqn{s = 2 + \frac{b\, \delta_m^{2}}{2(\beta J - 1)}}{
 #'        s = 2 + b * delta_m^2 / (2 * beta * J - 2)}
 #' for a small fluctuation \eqn{\delta_m} around the equilibrium.
-#'
-#' Source: AMR_Mathematical_Appendix.Rmd, line 652.
 #'
 #' Note that for \eqn{|m^*|} close to 1 the formula diverges; the result
 #' is capped at \code{1e6} with a warning.  Likewise, when
@@ -532,7 +566,7 @@ bd_landau_steepness <- function(beta, J, m_star, tau = 1, delta_m = 0.05) {
 #' and runs \code{n_replicates} simulations under congestion-only,
 #' density-only structure models (all NK / scope / herding / synergy /
 #' epistasis effects zeroed).  The empirical end-state mean adoption
-#' is compared to the analytical B&D fixed point predicted by Theorem 5
+#' is compared to the analytical B&D fixed point predicted by Property 5
 #' (Part L of the proof table).  Convergence at rate
 #' \eqn{O(1 / \sqrt{M})} is the headline empirical signature of the
 #' mean-field reduction.
@@ -544,14 +578,15 @@ bd_landau_steepness <- function(beta, J, m_star, tau = 1, delta_m = 0.05) {
 #'   \item \strong{Option C reference (B&D, primary):} the canonical
 #'     Brock and Durlauf (2001) fixed point
 #'     \eqn{m = \sigma(\beta(h + J m))} computed via
-#'     \code{\link{bd_self_consistency}}.  This is what Theorem 5 predicts
-#'     in the regime where the sqrt linearisation of inPop is locally
-#'     accurate (\eqn{m^* \approx 0.5}, achieved by setting
+#'     \code{\link{bd_self_consistency}}.  This is what Property 5 predicts
+#'     in the regime where the first-order rescaling (see
+#'     \code{rescale}) is accurate (\eqn{m^* \approx 0.5}, achieved by setting
 #'     \code{h_b = -J_b / 2} with modest \code{J_b}).
 #'   \item \strong{Option B reference (saomnk-inPop, secondary):} the
-#'     actual fixed point of the live RSiena pipeline,
-#'     \eqn{m = \sigma(\beta(h + \theta\sqrt{Mm + 1}))} computed via
-#'     \code{\link{saomnk_inpop_self_consistency}}.  This is what the
+#'     mean-field fixed point of the live RSiena pipeline, computed via
+#'     \code{\link{saomnk_inpop_self_consistency}} with the linear
+#'     two-mode \code{inPop} statistic and the ministep choice law over
+#'     \eqn{N} toggles.  This is what the
 #'     simulation should match in \emph{any} regime (regardless of where
 #'     \eqn{m^*} sits), and is the correct comparison target outside the
 #'     Option C regime.
@@ -561,41 +596,44 @@ bd_landau_steepness <- function(beta, J, m_star, tau = 1, delta_m = 0.05) {
 #' \code{in_BD_regime = TRUE}) and to \code{m_saomnk_analytical} (always)
 #' is what the harness reports.
 #'
-#' The function is robust to absent or failing simulation back-ends:
-#' if \code{\link{saomnk_env}}, \code{\link{saomnk_model}}, or
-#' \code{\link{saomnk_run}} throw, the offending row's
-#' \code{m_b_empirical} (and derived columns) are returned as
-#' \code{NA} with a warning identifying the failure.
+#' Failed simulation replicates (an error in \code{\link{saomnk_env}},
+#' \code{\link{saomnk_model}}, or \code{\link{saomnk_run}}) are excluded
+#' from \code{m_b_empirical}, counted in \code{n_ok}, listed in
+#' \code{attr(result, "failures")}, and reported by one warning stating
+#' how many of the replicates failed. If every replicate fails the
+#' function stops. A row is \code{NA} only when all of its replicates
+#' failed.
 #'
-#' \strong{Important caveat (L16 honesty gap).} Exact \emph{numerical}
-#' agreement between the live RSiena simulation and the analytical B&D
-#' fixed point is \emph{not} expected and is not what this harness
-#' verifies. RSiena's bipartite \code{inPop} statistic is
-#' sqrt-transformed (\eqn{s = \sum_j b_{ij} \sqrt{n_j + 1}}) for
-#' variance stabilisation, whereas B&D's mean-field uses the linear
-#' coupling \eqn{J \cdot m}. The harness applies a one-step sqrt
-#' linearisation (\code{sqrt_correction = TRUE}) to bring the two
-#' closer, but the residual nonlinearity persists. What the harness
+#' \strong{Important caveat (L16).} RSiena 1.5.0's two-mode \code{inPop}
+#' statistic is linear (\eqn{s = \sum_j b_{ij} x_{+j}}), so the marginal
+#' utility matches B&D's linear coupling with
+#' \eqn{\theta_{\mathrm{inPop}} = J_b/(M-1)}. The choice rule does not:
+#' a SAOM ministep chooses among \eqn{N} toggles and no change, and the
+#' per-tie adoption law is the binary logit only for \eqn{N = 1}. Near
+#' \eqn{m = 1/2} it is \eqn{\sigma(\kappa_N \Delta)} with
+#' \eqn{\kappa_N = 2N/(N+1)}. With \code{rescale = TRUE} (default) the
+#' harness divides both coefficients by \eqn{\kappa_N} and removes the
+#' own-tie constant from the field, so the two agree to first order near
+#' \eqn{m = 1/2}; away from it they differ. What the harness
 #' \emph{does} verify is: (i) the simulation pipeline runs end-to-end
 #' under the Rb1-Rb5 restrictions; (ii) the empirical equilibrium
 #' direction matches B&D theory (\eqn{J_b > 0} drives \eqn{m > 0.5},
 #' \eqn{J_b < 0} drives \eqn{m < 0.5}); (iii) the empirical
 #' equilibrium is stable across simulation seeds. Exact numerical
-#' verification of Theorem 5 requires a native \code{congestion}
-#' RSiena effect (\eqn{s = \sum_j b_{ij} (n_j / M)} without the sqrt
-#' transform); this is on the package roadmap and is documented in
-#' \code{inst/proofs/PROOF_TABLE.md} row L16.
+#' verification of Property 5 would need a single binary choice per
+#' actor (\eqn{N = 1}), which RSiena's bipartite dependent variable
+#' does not admit; see \code{inst/proofs/PROOF_TABLE.md} row L16.
 #'
 #' @param M_seq Integer vector of actor counts (default
 #'   \code{c(50, 100, 200, 500)}).
 #' @param J_b Numeric B&D peer-interaction strength in adoption form.
 #'   Used as the \code{popularity} parameter in
-#'   \code{\link{saomnk_model}} (with the sqrt-linearisation rescaling
-#'   described under \code{sqrt_correction}). Positive \code{J_b} =
+#'   \code{\link{saomnk_model}} (with the rescaling described under
+#'   \code{rescale}). Positive \code{J_b} =
 #'   coordination (peer alignment); negative \code{J_b} =
 #'   anti-coordination (congestion). \strong{Default \code{0.5}}: this
 #'   is the \emph{Option C regime} that keeps \eqn{m^* \approx 0.5}
-#'   (where the sqrt linearisation is locally accurate); large
+#'   (where the first-order rescaling is accurate); large
 #'   \eqn{|J_b|} pushes the equilibrium far from 0.5 where empirical
 #'   and B&D analytical disagree (Option B regime; see L16).
 #' @param h_b Numeric B&D private-utility bias.  Used as the
@@ -612,31 +650,37 @@ bd_landau_steepness <- function(beta, J, m_star, tau = 1, delta_m = 0.05) {
 #'   become independent B&D problems when \code{scope = 0} and
 #'   \code{influence_weight = 0}, providing \eqn{N} statistical replicates
 #'   per simulated environment for free.
-#' @param n_steps Integer ministeps \emph{per actor} per replicate
-#'   (default \code{50}). The CTMC mixing time is approximately
+#' @param n_steps Expected decision opportunities \emph{per actor} per
+#'   replicate (default \code{50}); passed to \code{saomnk_run()} as
+#'   \code{steps_per_actor}, which since 0.11.0 is a basic rate summed over
+#'   one unit of time, not a fixed ministep count. The CTMC mixing time is approximately
 #'   independent of \eqn{M} when measured in steps-per-actor, so this
 #'   parameter controls convergence quality directly. Recommend
 #'   \eqn{\ge 30} for \eqn{|\theta| \le 2}; smaller values risk
-#'   pre-asymptotic bias unrelated to the L16 sqrt gap.
+#'   pre-asymptotic bias.
 #' @param n_replicates Integer number of independent simulation replicates
 #'   per \eqn{M} (default \code{5}).
-#' @param sqrt_correction Logical. RSiena's \code{inPop} statistic
-#'   uses a sqrt transform of column-degree (variance stabiliser), not
-#'   the linear mean-field form B&D assumes. When \code{TRUE} (default),
-#'   the harness applies the L16 linearisation correction by passing
-#'   \code{popularity = J_b / sqrt(2M)} (the rescaling that matches
-#'   the slope of \eqn{\sqrt{Mm+1}} at \eqn{m=1/2}); when \code{FALSE},
-#'   the raw \code{J_b} is used. The corrected version is locally
-#'   accurate near \eqn{m = 1/2} (Option C regime). See
-#'   \code{PROOF_TABLE.md} row L16 for full derivation.
+#' @param rescale Logical. When \code{TRUE} (default) the simulation uses
+#'   \code{popularity} \eqn{\theta = J_b / (\kappa_N (M-1))} and
+#'   \code{density} \eqn{h_b/\kappa_N - \theta}, with
+#'   \eqn{\kappa_N = 2N/(N+1)}, which matches the B&D map
+#'   \eqn{m = \sigma(\beta(h_b + J_b m))} to first order near
+#'   \eqn{m = 1/2}. When \code{FALSE}, \code{J_b} and \code{h_b} are
+#'   passed unchanged.
+#' @param sqrt_correction Deprecated alias of \code{rescale}. Before 0.11.0
+#'   it applied \eqn{J_b/\sqrt{2M}}, a rescaling derived for
+#'   \code{inPopSqrt}; supplying it now sets \code{rescale} with a
+#'   warning.
 #' @param seed Integer random seed (default \code{12345}).
 #' @return A \code{data.frame} with columns (Option B = saomnk-inPop
 #'   reference; Option C = B&D reference):
 #'   \item{M}{Actor count.}
+#'   \item{n_ok}{Number of replicates that ran; \code{m_b_empirical}
+#'     averages these.}
 #'   \item{m_b_empirical}{Mean end-state adoption fraction (in
 #'     \eqn{[0,1]}) averaged across replicates.}
 #'   \item{m_BD_analytical}{Analytical B&D fixed-point adoption
-#'     fraction (Option C reference). Theorem 5 predicts the empirical
+#'     fraction (Option C reference). Property 5 predicts the empirical
 #'     should match this in the Option C regime.}
 #'   \item{m_saomnk_analytical}{Analytical SAOM-inPop fixed-point
 #'     adoption fraction (Option B reference). The empirical should
@@ -648,7 +692,7 @@ bd_landau_steepness <- function(beta, J, m_star, tau = 1, delta_m = 0.05) {
 #'     m_saomnk_analytical)}; small in any regime where the simulation
 #'     converged.}
 #'   \item{in_BD_regime}{Logical: \code{TRUE} when
-#'     \eqn{|m_{BD} - 0.5| < 0.15} so the sqrt linearisation is locally
+#'     \eqn{|m_{BD} - 0.5| < 0.15}, where the first-order rescaling is
 #'     accurate and B&D theory should match empirically.}
 #'   \item{log_M}{\code{log10(M)}.}
 #'   \item{log_error_BD}{\code{log10(abs_error_BD)}.}
@@ -666,7 +710,7 @@ bd_landau_steepness <- function(beta, J, m_star, tau = 1, delta_m = 0.05) {
 #'   \code{\link{bd_equilibrium_count}},
 #'   \code{\link{saomnk_social_multiplier}},
 #'   \code{\link{bd_landau_steepness}};
-#'   \code{vignette("saomnk-brock-durlauf")} for the full Theorem 5
+#'   \code{vignette("saomnk-brock-durlauf")} for the full Property 5
 #'   walkthrough including the Option B / Option C tradeoff.
 #' @keywords utilities
 #' @examples
@@ -691,8 +735,9 @@ verify_brock_durlauf_reduction <- function(M_seq        = c(50, 100, 200, 500),
                                            n_components = 8,
                                            n_steps      = 50,
                                            n_replicates = 5,
-                                           sqrt_correction = TRUE,
-                                           seed         = 12345) {
+                                           rescale      = TRUE,
+                                           seed         = 12345,
+                                           sqrt_correction = NULL) {
 
   stopifnot(is.numeric(M_seq), length(M_seq) >= 1, all(M_seq >= 2))
   stopifnot(is.numeric(J_b),  length(J_b)  == 1)
@@ -701,7 +746,16 @@ verify_brock_durlauf_reduction <- function(M_seq        = c(50, 100, 200, 500),
   stopifnot(is.numeric(n_components), length(n_components) == 1, n_components >= 4)
   stopifnot(is.numeric(n_steps), length(n_steps) == 1, n_steps >= 1)
   stopifnot(is.numeric(n_replicates), length(n_replicates) == 1, n_replicates >= 1)
-  stopifnot(is.logical(sqrt_correction), length(sqrt_correction) == 1)
+  if (!is.null(sqrt_correction)) {
+    warning("`sqrt_correction` is deprecated as of searchnet 0.11.0; use ",
+            "`rescale`. The square-root rescaling it named was derived for ",
+            "inPopSqrt, not the linear two-mode inPop.", call. = FALSE)
+    rescale <- sqrt_correction
+  }
+  stopifnot(is.logical(rescale), length(rescale) == 1)
+  ## First-order slope of the ministep adoption law at m = 1/2
+  ## (see saomnk_inpop_self_consistency()).
+  kappa_N <- 2 * n_components / (n_components + 1)
 
   ## ---- Analytical B&D fixed point (spin -> adoption) -------------------- ##
   ## Sign convention: in the SaoMNK API, "density" multiplies the
@@ -742,7 +796,14 @@ verify_brock_durlauf_reduction <- function(M_seq        = c(50, 100, 200, 500),
   }
 
   ## ---- Per-M empirical loop --------------------------------------------- ##
+  ## Failed replicates are excluded from m_b_empirical and recorded in
+  ## attr(out, "failures"); n_ok says how many replicates each row averages.
+  ## One warning with counts replaces the per-replicate warnings, and a run
+  ## in which every replicate fails stops.
   rows <- vector("list", length(M_seq))
+  failures <- data.frame(M = integer(0), replicate = integer(0),
+                         message = character(0), stringsAsFactors = FALSE)
+  saomnk_ref_failures <- character(0)
 
   for (k in seq_along(M_seq)) {
     M_k <- as.integer(M_seq[k])
@@ -750,39 +811,33 @@ verify_brock_durlauf_reduction <- function(M_seq        = c(50, 100, 200, 500),
     rep_ok    <- logical(n_replicates)
 
     for (r in seq_len(n_replicates)) {
-      this_seed <- as.integer(seed + 1000L * k + r)
+      ## Separate streams for the initial draw and the dynamics; one seed fed
+      ## to both made them the same stream.
+      init_seed <- .searchnet_seed(seed, "brock_durlauf:init", k, r)
+      this_seed <- .searchnet_seed(seed, "brock_durlauf:run", k, r)
 
       sim_p <- tryCatch({
         env_obj <- saomnk_env(M = M_k, N = as.integer(n_components),
-                              density = 0.5, seed = this_seed)
+                              density = 0.5, seed = init_seed)
         ## All NK / scope / herding / synergy effects zeroed; only
-        ## density (h_b) and a popularity-as-congestion proxy (-J_b)
-        ## remain.  Notes:
-        ##  * The SaoMNK API does not expose a top-level "congestion"
-        ##    RSiena effect; popularity (inPop) is the closest mean-field
-        ##    coordination channel.  See L16 for full discussion.
-        ##  * RSiena's inPop is sqrt-transformed (variance stabiliser),
-        ##    so when `sqrt_correction = TRUE` we rescale the coefficient
-        ##    by 1/sqrt(M/2) to recover the linear mean-field form
-        ##    (one-step linearisation per L16).
-        ##  * `influence_matrix = NULL` causes RSiena to drop the
-        ##    density effect ("Effect not found"); we therefore pass a
-        ##    minimal real matrix with `influence_weight = 0`.
-        ## Sign convention: positive J_b = coordination (peer alignment) =
-        ## positive `popularity` coefficient on inPop. Negative J_b =
-        ## anti-coordination (congestion).
+        ## density and inPop remain. The SaoMNK API exposes no top-level
+        ## "congestion" RSiena effect, so inPop is the coordination channel
+        ## (L16). `influence_matrix = NULL` makes RSiena drop the density
+        ## effect ("Effect not found"), so a minimal real matrix is passed
+        ## with `influence_weight = 0`.
         ##
-        ## Rescaling derivation (L16): the inPop statistic
-        ## sqrt(M*m + 1) Taylor-expanded around m=1/2 has slope
-        ## sqrt(M/2), giving sqrt(M*m + 1) ~= sqrt(2M)*m at first order.
-        ## To match B&D's linear J_b*m form near m=1/2, we therefore
-        ## rescale pop_coef = J_b / sqrt(2M).  This factor must be
-        ## reused inside saomnk_inpop_self_consistency() below so the
-        ## Option B reference uses the SAME theta the simulation sees.
-        pop_coef <- if (sqrt_correction) J_b / sqrt(max(2, 2 * M_k)) else J_b
+        ## Rescaling (re-derived 2026-10-07). Two-mode inPop is linear:
+        ## adding tie (i,j) changes the objective by
+        ## h + theta * (n_{-i,j} + 1). The ministep adoption law near
+        ## m = 1/2 is sigmoid(kappa_N * Delta), kappa_N = 2N/(N+1). Matching
+        ## sigmoid(beta * (h_b + J_b m)) to first order gives
+        ## theta = J_b / (kappa_N (M-1)) and h = h_b / kappa_N - theta.
+        ## The Option B reference below uses the same coefficients.
+        pop_coef  <- if (rescale) J_b / (kappa_N * (M_k - 1)) else J_b
+        dens_coef <- if (rescale) h_b / kappa_N - pop_coef else h_b
         N_int    <- as.integer(n_components)
         infl_mat  <- saomnk_block_diagonal(N_int, max(2L, N_int %/% 2L))
-        model <- saomnk_model(density    = h_b,
+        model <- saomnk_model(density    = dens_coef,
                               popularity = pop_coef,
                               scope      = 0,
                               influence_matrix = infl_mat,
@@ -804,9 +859,8 @@ verify_brock_durlauf_reduction <- function(M_seq        = c(50, 100, 200, 500),
         mean(bi)  # average over all M*N cells = grand mean adoption
       },
       error = function(e) {
-        warning("verify_brock_durlauf_reduction: simulation failed for ",
-                "M = ", M_k, ", replicate ", r, ": ",
-                conditionMessage(e))
+        failures[nrow(failures) + 1L, ] <<- list(M_k, as.integer(r),
+                                                 conditionMessage(e))
         NA_real_
       })
 
@@ -824,13 +878,19 @@ verify_brock_durlauf_reduction <- function(M_seq        = c(50, 100, 200, 500),
     ## This is the equilibrium that the live RSiena simulation actually
     ## obeys (matching the simulation's own functional form), as opposed
     ## to m_BD_analytical which holds only in the Option C regime.
-    pop_coef_M <- if (sqrt_correction) J_b / sqrt(max(2, 2 * M_k)) else J_b
+    pop_coef_M  <- if (rescale) J_b / (kappa_N * (M_k - 1)) else J_b
+    dens_coef_M <- if (rescale) h_b / kappa_N - pop_coef_M else h_b
     m_saomnk_analytical <- tryCatch(
       saomnk_inpop_self_consistency(beta        = beta,
                                     theta_inPop = pop_coef_M,
-                                    h_b         = h_b,
-                                    M           = M_k),
-      error = function(e) NA_real_
+                                    h_b         = dens_coef_M,
+                                    M           = M_k,
+                                    N           = n_components),
+      error = function(e) {
+        saomnk_ref_failures <<- c(saomnk_ref_failures,
+                                  sprintf("M = %d: %s", M_k, conditionMessage(e)))
+        NA_real_
+      }
     )
 
     abs_err_BD <- if (is.finite(m_b_emp) && is.finite(m_BD_analytical)) {
@@ -854,6 +914,7 @@ verify_brock_durlauf_reduction <- function(M_seq        = c(50, 100, 200, 500),
 
     rows[[k]] <- data.frame(
       M                   = M_k,
+      n_ok                = sum(rep_ok),
       m_b_empirical       = m_b_emp,
       m_BD_analytical     = m_BD_analytical,
       m_saomnk_analytical = m_saomnk_analytical,
@@ -868,5 +929,34 @@ verify_brock_durlauf_reduction <- function(M_seq        = c(50, 100, 200, 500),
     )
   }
 
-  do.call(rbind, rows)
+  n_total <- length(M_seq) * n_replicates
+  if (nrow(failures) == n_total) {
+    stop(sprintf(paste0("verify_brock_durlauf_reduction: all %d simulation replicates ",
+                        "failed; there is no empirical value to compare. First failure ",
+                        "(M = %d, replicate %d): %s"),
+                 n_total, failures$M[1], failures$replicate[1], failures$message[1]),
+         call. = FALSE)
+  }
+  if (nrow(failures) > 0) {
+    warning(sprintf(paste0("verify_brock_durlauf_reduction: %d of %d simulation replicates ",
+                           "failed and are excluded from m_b_empirical (see the n_ok ",
+                           "column and attr(, \"failures\")). First failure (M = %d, ",
+                           "replicate %d): %s"),
+                    nrow(failures), n_total, failures$M[1], failures$replicate[1],
+                    failures$message[1]),
+            call. = FALSE)
+  }
+  if (length(saomnk_ref_failures) > 0) {
+    warning(sprintf(paste0("verify_brock_durlauf_reduction: the saomnk-inPop analytical ",
+                           "reference could not be computed for %d of %d M values ",
+                           "(m_saomnk_analytical and its errors are NA there): %s"),
+                    length(saomnk_ref_failures), length(M_seq),
+                    paste(saomnk_ref_failures, collapse = "; ")),
+            call. = FALSE)
+  }
+
+  out <- do.call(rbind, rows)
+  attr(out, "failures") <- failures
+  attr(out, "provenance") <- .searchnet_provenance(seed = seed, call = match.call())
+  out
 }

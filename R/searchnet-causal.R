@@ -77,6 +77,7 @@ NULL
 #' }
 searchnet_causal_panel <- function(env, shock_step, outcome = "utility",
                                     treated_actors = NULL) {
+  .searchnet_require_path(env, "searchnet_causal_panel()")
 
   stopifnot(inherits(env, "SaomNkRSienaBiEnv"))
   stopifnot(is.numeric(shock_step), length(shock_step) == 1, shock_step > 0)
@@ -655,11 +656,30 @@ searchnet_rd_cross <- function(panel, running, cutoff,
 #' produced by \code{\link{searchnet_did}}, \code{\link{searchnet_synth}},
 #' and \code{\link{searchnet_rd}}.
 #'
+#' Each plot states its estimate in the title and says how to read the
+#' figure in the subtitle; the shock is a dashed vermillion line.
+#' \describe{
+#'   \item{\code{"did"}}{The event-study aggregation of the group-time
+#'     effects (\code{did::aggte(type = "dynamic")}): one point per ministep
+#'     relative to the shock, with its simultaneous confidence band, grey
+#'     before the shock and vermillion after. The title reports the simple
+#'     aggregate ATT and its standard error.}
+#'   \item{\code{"synth"}}{The treated unit (solid, vermillion) against its
+#'     synthetic control (dashed, grey), labeled at the line ends. The title
+#'     reports the mean post-shock gap.}
+#'   \item{\code{"rd"}}{Step means with a local fit on each side of the shock
+#'     step. The title reports the RD estimate and p-value.}
+#' }
+#'
 #' @param result Output from \code{\link{searchnet_did}},
 #'   \code{\link{searchnet_synth}}, or \code{\link{searchnet_rd}}.
 #' @param type Character. Auto-detected from the result's class or
 #'   structure.  Can be overridden to one of \code{"did"}, \code{"synth"},
 #'   or \code{"rd"}.
+#' @param annotate Logical. If \code{TRUE} (default), add reading guides on
+#'   the data: the shock labeled, and for \code{"did"} a note on the
+#'   pre-shock estimates (whether their bands cover zero) and on the average
+#'   effect after the shock. \code{FALSE} omits them.
 #' @return A \code{ggplot} object.
 #' @export
 #' @examples
@@ -676,7 +696,7 @@ searchnet_rd_cross <- function(panel, running, cutoff,
 #' rd_result <- searchnet_rd(panel)
 #' searchnet_causal_plot(rd_result, type = "rd")
 #' }
-searchnet_causal_plot <- function(result, type = NULL) {
+searchnet_causal_plot <- function(result, type = NULL, annotate = TRUE) {
 
   # -------------------------------------------------------------------
   #  Auto-detect type
@@ -694,6 +714,9 @@ searchnet_causal_plot <- function(result, type = NULL) {
     }
   }
   type <- match.arg(type, choices = c("did", "synth", "rd"))
+  ev  <- .sn_role[["event"]]
+  ink <- .sn_role[["ink"]]
+  x_lab <- "Ministep (one decision opportunity)"
 
   # -------------------------------------------------------------------
   #  DID event study plot
@@ -702,19 +725,106 @@ searchnet_causal_plot <- function(result, type = NULL) {
     if (!requireNamespace("did", quietly = TRUE))
       stop("Package 'did' required for DID plotting.")
     agg <- did::aggte(result, type = "dynamic")
-    p <- did::ggdid(agg) +
-      ggplot2::ggtitle("Event Study: Group-Time ATT") +
-      ggplot2::theme_bw()
+    simple <- tryCatch(did::aggte(result, type = "simple"), error = function(e) NULL)
+    crit <- agg$crit.val.egt
+    if (is.null(crit) || !is.finite(crit)) crit <- stats::qnorm(0.975)
+    es <- data.frame(e = agg$egt, att = agg$att.egt, se = agg$se.egt)
+    es$lo <- es$att - crit * es$se
+    es$hi <- es$att + crit * es$se
+    ## did reports NA standard errors for event times it cannot bootstrap
+    ## (for example the reference period); draw those as points only.
+    es <- es[is.finite(es$att), , drop = FALSE]
+    es$lo[!is.finite(es$lo)] <- es$att[!is.finite(es$lo)]
+    es$hi[!is.finite(es$hi)] <- es$att[!is.finite(es$hi)]
+    es$when <- factor(ifelse(es$e < 0, "before", "after"), levels = c("before", "after"))
+    cols <- c(before = "grey45", after = ev)
+
+    ov <- if (!is.null(simple)) c(simple$overall.att, simple$overall.se) else
+      c(agg$overall.att, agg$overall.se)
+    sig <- is.finite(ov[2]) && abs(ov[1]) > stats::qnorm(0.975) * ov[2]
+    title <- if (sig)
+      sprintf("The shock %s the outcome by %.2f on average (SE %.2f)",
+              if (ov[1] < 0) "lowers" else "raises", abs(ov[1]), ov[2]) else
+      sprintf("No clear average effect of the shock (ATT %.2f, SE %.2f)", ov[1], ov[2])
+    many <- nrow(es) > 40
+    p <- ggplot2::ggplot(es, ggplot2::aes(.data$e, .data$att, color = .data$when,
+                                          fill = .data$when)) +
+      ggplot2::geom_hline(yintercept = 0, color = "grey55", linewidth = 0.4) +
+      ggplot2::geom_vline(xintercept = -0.5, color = ev, linetype = "dashed",
+                          linewidth = 0.6)
+    p <- if (many) {
+      p + ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$lo, ymax = .data$hi,
+                                            group = .data$when),
+                               color = NA, alpha = 0.18) +
+        ggplot2::geom_line(ggplot2::aes(group = .data$when), linewidth = 0.5) +
+        ggplot2::geom_point(size = 0.9)
+    } else {
+      p + ggplot2::geom_errorbar(ggplot2::aes(ymin = .data$lo, ymax = .data$hi),
+                                 width = 0, linewidth = 0.5) +
+        ggplot2::geom_point(size = 1.8)
+    }
+    p <- p +
+      ggplot2::scale_color_manual(values = cols, guide = "none") +
+      ggplot2::scale_fill_manual(values = cols, guide = "none") +
+      ggplot2::labs(
+        title = title,
+        subtitle = paste0(
+          "Effect on treated actors at each ministep before and after the shock ",
+          "(difference-in-differences).\nPoints: estimates; band: 95% simultaneous ",
+          "confidence; grey line: no effect."),
+        x = "Ministeps relative to the shock", y = "Effect on the outcome (ATT)") +
+      theme_searchnet()
+
+    if (isTRUE(annotate)) {
+      pre <- es[es$when == "before", ]
+      post <- es[es$when == "after", ]
+      y_rng <- range(c(es$lo, es$hi, 0), na.rm = TRUE)
+      dy <- diff(y_rng)
+      p <- p + ggplot2::annotate("text", x = -0.5, y = y_rng[2], label = " shock",
+                                 hjust = 0, vjust = 1, color = ev, size = 3.2,
+                                 fontface = "bold")
+      if (nrow(pre)) {
+        cover <- mean(pre$lo <= 0 & pre$hi >= 0, na.rm = TRUE)
+        xs <- stats::median(pre$e)
+        ## The plot extends furthest on the side the effect goes, and the
+        ## pre-shock half of that side is empty: put the note there.
+        up <- !(mean(post$att, na.rm = TRUE) < 0)
+        ## Text starts just inside the average line (or 30% of the range
+        ## out when there is no average line) and grows toward zero; the
+        ## arrow runs beside it, from the text's far end up to zero.
+        y0 <- if (sig && sign(ov[1]) == (if (up) 1 else -1))
+          ov[1] - sign(ov[1]) * 0.06 * dy else (if (up) 0.3 else -0.3) * dy
+        xa <- xs - 0.02 * diff(range(es$e))
+        p <- p + ggplot2::annotate(
+          "text", x = xs, y = y0, hjust = 0, vjust = if (up) 1 else 0,
+          size = 3, color = ink, lineheight = 0.95,
+          label = if (cover >= 0.95)
+            "before the shock: estimates sit on zero,\nas they should (no pre-trend)" else
+            sprintf("before the shock: %.0f%% of bands cover zero;\ncheck for a pre-trend",
+                    100 * cover)) +
+          ggplot2::annotate("segment", x = xa, xend = xa, y = y0,
+                            yend = if (up) 0.04 * dy else -0.04 * dy,
+                            color = ink, linewidth = 0.35,
+                            arrow = grid::arrow(length = grid::unit(0.07, "in"),
+                                                type = "closed"))
+      }
+      if (nrow(post) && sig) {
+        p <- p + ggplot2::geom_hline(yintercept = ov[1], color = ev, linetype = "dotted",
+                                     linewidth = 0.5) +
+          ggplot2::annotate("text", x = min(es$e), y = ov[1],
+                            label = sprintf("average after the shock: %.2f", ov[1]),
+                            hjust = 0, vjust = if (ov[1] < 0) 1.6 else -0.6, size = 3,
+                            color = ev)
+      }
+    }
     return(p)
   }
 
   # -------------------------------------------------------------------
-  #  Synthetic control: treated vs synthetic + gap plot
+  #  Synthetic control: treated vs synthetic
   # -------------------------------------------------------------------
   if (type == "synth") {
     gap <- result$gap
-    shock <- gap$step[which.min(abs(gap$treated - gap$synthetic))]
-    # Use actual shock_step if available from gap data
     if ("shock_step" %in% names(result))
       shock <- result$shock_step
     else
@@ -724,27 +834,39 @@ searchnet_causal_plot <- function(result, type = NULL) {
     plot_df <- data.frame(
       step  = rep(gap$step, 2),
       value = c(gap$treated, gap$synthetic),
-      series = rep(c("Treated", "Synthetic Control"), each = nrow(gap))
+      series = factor(rep(c("Treated", "Synthetic Control"), each = nrow(gap)),
+                      levels = c("Treated", "Synthetic Control"))
     )
+    post_gap <- mean(gap$gap[gap$step >= shock])
+    title <- sprintf("After the shock the treated unit runs %.2f %s its synthetic control",
+                     abs(post_gap), if (post_gap < 0) "below" else "above")
+    ends <- plot_df[plot_df$step == max(plot_df$step), ]
+    ends$label <- c("treated", "synthetic control")[as.integer(ends$series)]
 
     p <- ggplot2::ggplot(plot_df,
-                         ggplot2::aes(x = step, y = value,
-                                      color = series, linetype = series)) +
+                         ggplot2::aes(x = .data$step, y = .data$value,
+                                      color = .data$series, linetype = .data$series)) +
+      ggplot2::geom_vline(xintercept = shock, linetype = "dashed", color = ev,
+                          linewidth = 0.6) +
       ggplot2::geom_line(linewidth = 0.9) +
-      ggplot2::geom_vline(xintercept = shock, linetype = "dashed",
-                          color = "grey40") +
-      ggplot2::annotate("text", x = shock, y = max(plot_df$value),
-                        label = "Shock", hjust = -0.1, vjust = 1,
-                        color = "grey40") +
-      ggplot2::scale_color_manual(values = c("Treated" = "#D55E00",
-                                             "Synthetic Control" = "#0072B2")) +
+      ggplot2::geom_text(data = ends, ggplot2::aes(label = .data$label),
+                         hjust = -0.08, size = 3.2, show.legend = FALSE) +
+      ggplot2::scale_color_manual(values = c("Treated" = ev,
+                                             "Synthetic Control" = "grey35"),
+                                  guide = "none") +
       ggplot2::scale_linetype_manual(values = c("Treated" = "solid",
-                                                "Synthetic Control" = "dashed")) +
-      ggplot2::labs(x = "Simulation Step", y = "Outcome",
-                    title = "Synthetic Control: Treated vs. Counterfactual",
-                    color = NULL, linetype = NULL) +
-      ggplot2::theme_bw() +
-      ggplot2::theme(legend.position = "bottom")
+                                                "Synthetic Control" = "dashed"),
+                                     guide = "none") +
+      ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = c(0.02, 0.2))) +
+      ggplot2::labs(x = x_lab, y = "Outcome", title = title,
+                    subtitle = paste0("Synthetic control: a weighted mix of untreated units ",
+                                      "fit to the treated unit before the shock.\n",
+                                      "The gap after the dashed line is the estimated effect.")) +
+      theme_searchnet()
+    if (isTRUE(annotate))
+      p <- p + ggplot2::annotate("text", x = shock, y = -Inf,
+                                 label = "shock ", hjust = 1, vjust = -0.6, color = ev,
+                                 size = 3.2, fontface = "bold")
     return(p)
   }
 
@@ -753,30 +875,38 @@ searchnet_causal_plot <- function(result, type = NULL) {
   # -------------------------------------------------------------------
   if (type == "rd") {
     agg  <- result$agg_data
+    if (is.null(agg))
+      stop("type = \"rd\" plots the time design of searchnet_rd(); this result ",
+           "has no agg_data.")
     cutoff <- result$shock_step
     rd_obj <- result$rd
-
-    # Extract the RD estimate for annotation
     est  <- rd_obj$coef[1]
     pval <- rd_obj$pv[1]
 
-    p <- ggplot2::ggplot(agg,
-                         ggplot2::aes(x = step, y = mean_outcome)) +
-      ggplot2::geom_point(alpha = 0.5, size = 1.5) +
-      ggplot2::geom_smooth(data = agg[agg$step < cutoff, ],
-                           method = "loess", se = TRUE,
-                           color = "#0072B2", fill = "#0072B2") +
-      ggplot2::geom_smooth(data = agg[agg$step >= cutoff, ],
-                           method = "loess", se = TRUE,
-                           color = "#D55E00", fill = "#D55E00") +
-      ggplot2::geom_vline(xintercept = cutoff, linetype = "dashed",
-                          color = "grey40") +
-      ggplot2::annotate("text", x = cutoff, y = max(agg$mean_outcome, na.rm = TRUE),
-                        label = sprintf("RD est. = %.3f (p = %.3f)", est, pval),
-                        hjust = -0.05, vjust = 1, size = 3.5) +
-      ggplot2::labs(x = "Simulation Step", y = "Mean Outcome",
-                    title = "Regression Discontinuity at Shock Step") +
-      ggplot2::theme_bw()
+    p <- ggplot2::ggplot(agg, ggplot2::aes(x = .data$step, y = .data$mean_outcome)) +
+      ggplot2::geom_vline(xintercept = cutoff, linetype = "dashed", color = ev,
+                          linewidth = 0.6) +
+      ggplot2::geom_point(alpha = 0.5, size = 1.3, color = "grey40") +
+      ggplot2::geom_smooth(data = agg[agg$step < cutoff, ], method = "loess",
+                           formula = y ~ x, se = TRUE, color = "grey25",
+                           fill = "grey60", alpha = 0.25) +
+      ggplot2::geom_smooth(data = agg[agg$step >= cutoff, ], method = "loess",
+                           formula = y ~ x, se = TRUE, color = ev, fill = ev,
+                           alpha = 0.15) +
+      ggplot2::labs(x = x_lab, y = "Mean outcome",
+                    title = sprintf("The outcome %s by %.2f at the shock (RD estimate, %s)",
+                                    if (est < 0) "drops" else "jumps", abs(est),
+                                    if (is.finite(pval) && pval < 0.001) "p < 0.001" else
+                                      sprintf("p = %.3f", pval)),
+                    subtitle = paste0("Points: mean outcome at each ministep.\n",
+                                      "Lines: fits before (grey) and after (vermillion); ",
+                                      "the estimate is the jump at the dashed line.")) +
+      theme_searchnet()
+    if (isTRUE(annotate))
+      p <- p + ggplot2::annotate("text", x = cutoff,
+                                 y = max(agg$mean_outcome, na.rm = TRUE),
+                                 label = " shock", hjust = 0, vjust = 1, color = ev,
+                                 size = 3.2, fontface = "bold")
     return(p)
   }
 }

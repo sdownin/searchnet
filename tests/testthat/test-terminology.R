@@ -3,7 +3,7 @@
 ## Terminology gate: W is the INFLUENCE MATRIX. It is not epistasis, and no
 ## degree measures epistasis.
 ##
-## Standard (author decision 2026-08-21, carried by Paper T / CD2026 707f0b2):
+## Standard (author decision 2026-08-21):
 ## the N x N matrix a user passes in is the influence matrix (the NK
 ## interaction matrix with real-valued entries; Rivkin and Siggelkow's name).
 ## Epistasis names three separate things and W is only the first. K_CC is the
@@ -15,7 +15,7 @@
 ## K" (NK's K) and the adjective "epistatic" are untouched by this rule.
 ##
 ## The rule lives in a test that fails, not in a note that decays: the same
-## discipline as CD2026's borrowed-name registry. The 2026-08-21 audit found 67
+## discipline as a borrowed-name registry. The 2026-08-21 audit found 67
 ## stale uses across R, man, vignettes and proofs AFTER the 0.4.0 API rename had
 ## supposedly settled the question; a note did not hold, a failing test will.
 ###############################################################################

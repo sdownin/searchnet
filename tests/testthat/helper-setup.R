@@ -144,18 +144,16 @@ make_strategy_structure_model <- function(M) {
 }
 
 ## ---- Helper: create and run a tiny simulation, returning the env object ----
-## Wraps the full init + run cycle inside tryCatch for safety.
+## No tryCatch: an init or search_rsiena error FAILS the calling test. It used
+## to be converted into skip(), so a broken simulation path reported as a run
+## of skips instead of failures (the same defect the sourcing note above
+## records for the loader).
 run_tiny_sim <- function(M = 4, N = 8, iterations_per_actor = 5,
                          rand_seed = 42, use_strategy = FALSE) {
   skip_if_not_installed("RSiena")
 
   params <- make_small_environ_params(M = M, N = N, rand_seed = rand_seed)
-  env <- tryCatch(
-    SaomNkRSienaBiEnv$new(params),
-    error = function(e) {
-      skip(paste("searchnet init failed:", e$message))
-    }
-  )
+  env <- SaomNkRSienaBiEnv$new(params)
 
   struct <- if (use_strategy) {
     make_strategy_structure_model(M)
@@ -163,16 +161,11 @@ run_tiny_sim <- function(M = 4, N = 8, iterations_per_actor = 5,
     make_minimal_structure_model()
   }
 
-  tryCatch(
-    env$search_rsiena(
-      structure_model = struct,
-      iterations_per_actor = iterations_per_actor,
-      run_seed = rand_seed,
-      verbose = FALSE
-    ),
-    error = function(e) {
-      skip(paste("search_rsiena failed:", e$message))
-    }
+  env$search_rsiena(
+    structure_model = struct,
+    iterations_per_actor = iterations_per_actor,
+    run_seed = rand_seed,
+    verbose = FALSE
   )
 
   env

@@ -20,7 +20,7 @@
 #'
 #' Derives basin width, depth, and steepness from the three search
 #' parameters (scope cost, synergy, herding) using the analytical
-#' mapping from the AMR manuscript.
+#' mapping in the package's basin-geometry derivation.
 #'
 #' @param scope_cost Numeric scope cost modifier (positive = narrows basin)
 #' @param synergy Numeric synergy modifier (positive = deepens basin)
@@ -70,7 +70,7 @@ saomnk_basin_geometry <- function(scope_cost, synergy, herding,
 #' tradeoff frontier data.
 #'
 #' @param policy_params Named list of policy parameter lists. Each must
-#'   contain scope_cost, synergy, herding. Default uses the AMR paper values.
+#'   contain scope_cost, synergy, herding. Default uses four illustrative policy archetypes.
 #' @return Data frame with columns: policy, label, width, depth, steepness,
 #'   escape_difficulty, scope_cost, synergy, herding
 #' @examples
@@ -184,11 +184,11 @@ saomnk_plot_tradeoff_frontier <- function(tradeoff_data,
     ggplot2::scale_color_manual(values = colors) +
     ggplot2::labs(
       title = title,
-      subtitle = "Each policy type occupies a different position on the tradeoff frontier",
+      subtitle = "Each point: one policy type, placed by the width and depth of its basin",
       x = "Basin Width (Strategic Flexibility)",
       y = "Basin Depth (Fitness Commitment)"
     ) +
-    ggplot2::theme_minimal(base_size = 12) +
+    theme_searchnet(base_size = 12) +
     ggplot2::theme(
       text = ggplot2::element_text(family = "serif"),
       legend.position = "none"
@@ -209,10 +209,10 @@ saomnk_plot_tradeoff_frontier <- function(tradeoff_data,
 
     p <- p +
       ggplot2::annotate("text", x = rbv_row$width, y = rbv_row$depth + 0.06,
-                        label = "RBV optimal\n(deep, narrow)", color = "#d63031",
+                        label = "RBV optimal\n(deep, narrow)", color = "#D55E00",
                         fontface = "italic", size = 3.5) +
       ggplot2::annotate("text", x = dc_row$width, y = dc_row$depth + 0.06,
-                        label = "DC optimal\n(wide, shallow)", color = "#0984e3",
+                        label = "DC optimal\n(wide, shallow)", color = "#0072B2",
                         fontface = "italic", size = 3.5)
   }
 
@@ -256,11 +256,11 @@ saomnk_plot_basin_comparison <- function(tradeoff_data,
     ggplot2::scale_fill_manual(values = colors) +
     ggplot2::labs(
       title = title,
-      subtitle = "Same depth (fitness parity), different geometry",
+      subtitle = "Each curve: one policy type's basin, drawn from its depth, width and steepness",
       x = "Strategy Space",
       y = "Fitness Landscape"
     ) +
-    ggplot2::theme_minimal(base_size = 12) +
+    theme_searchnet(base_size = 12) +
     ggplot2::theme(
       text = ggplot2::element_text(family = "serif"),
       legend.position = "bottom"
@@ -329,18 +329,18 @@ saomnk_plot_erosion_simulation <- function(tradeoff_data,
   ggplot2::ggplot(traj_df, ggplot2::aes(x = period, y = fitness,
                                          color = policy, group = policy)) +
     ggplot2::geom_line(linewidth = 1.2) +
-    ggplot2::geom_vline(xintercept = shock_period, linetype = "dashed", color = "red", alpha = 0.5) +
+    ggplot2::geom_vline(xintercept = shock_period, linetype = "dashed", color = "#D55E00", alpha = 0.5) +
     ggplot2::annotate("text", x = shock_period + 0.5, y = max(traj_df$fitness),
-                      label = "Shock", color = "red", hjust = 0, fontface = "italic") +
+                      label = "Shock", color = "#D55E00", hjust = 0, fontface = "italic") +
     ggplot2::scale_color_manual(values = colors) +
     ggplot2::labs(
       title = title,
-      subtitle = "Pre-shock parity masks post-shock divergence driven by basin geometry",
+      subtitle = "Each line: one policy type's fitness per period; the landscape shifts at the dashed line",
       x = "Period",
       y = "Competitive Fitness",
       color = "Policy Type"
     ) +
-    ggplot2::theme_minimal(base_size = 12) +
+    theme_searchnet(base_size = 12) +
     ggplot2::theme(
       text = ggplot2::element_text(family = "serif"),
       legend.position = "bottom"

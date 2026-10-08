@@ -1,0 +1,43 @@
+searchnet JSS submission bundle -- MANIFEST
+build mode : FULL (all chunks evaluated)
+built      : 2026-10-08 14:42:16 CDT
+git commit : e5e3524 (working tree had uncommitted changes)
+searchnet  : 0.11.2
+RSiena     : 1.5.0
+R          : R version 4.5.3 (2026-03-11 ucrt)
+content gate: passed (embargo-content-patterns.txt, 18 patterns)
+code.html  : included (code.R via knitr::purl, rendered with knitr::spin)
+
+sha256                                                            file
+09dc768b0a28c58efead7a8db603e010376de634ad955e3c709fe0115049da9b  code.html
+3a870ac745074dc4187569229605f72b72d72a48d595eeabfc3fd20e161b987c  code.R
+01b53b0ca246d4cd63a3e2098324df84f2e67c6e44bc80a414903ba58ea8f617  jss.bst
+4c3501470ab22dc15aea5f996d65b7da5d62506bf924f3f3cecdc16bc51edf55  jss.cls
+b9f97c51e25b2fe013c89751788aa71ea6958050b3993993cc2e4fcb0cbcf90c  jsslogo.jpg
+693624f295de74665a4214987a92f2602e2dbe79e776e173f4ab97cc89d70074  replication/benchmark.R
+6714724d2f0b25e7a498cf2f864b5a5a4022d02272a32775143a63eccd0fb7a4  replication/make_figure1_mental_model.R
+210fa680bcb2bcffcb05b30000beb9e1fdd517585927d36e3d89ff0d4596482c  replication/make_k_system_figures.R
+83064e115b85a86f22e6e0f2315aa8c068fa64d71fe4af24d228a196d4204126  replication/README.md
+bcea04b6b7f621703b54942cc8db46388fbf4cebd3723835cd4a3031c4e32377  replication/reproduce_all.R
+61dc15d9a2342cf730431b8e5914d8c39fe8f56ba7c8758aa4dcc2049fd7c158  replication/sessionInfo.R
+01aac7c5e14ebe600a9afeffd8b672da03e669c9d9f09819e856e1efb16bf7a2  searchnet-jss-online-appendix.html
+64be75b28b1e1c24f6ebe37ee7cb67acc2d7d210f017fdb748252531142a3893  searchnet-jss-online-appendix.Rmd
+c374190382e8dfdf916051705425f7e8569d7ee3907bcdae376844e3d0e5f03f  searchnet-jss.pdf
+f683de329c771775092304ffe6f0af1414a7009421e0e9f5e969c73ca9ec8538  searchnet-jss.Rmd
+4235c83cdc2b058abb4a311a9ef180712887490542250d8291516b84c2000410  searchnet-jss.tex
+f7eb120530c0466883056a5bd59555230162c4808caf33d8b8b152efc7874e40  searchnet-jss_files/figure-latex/causal-did-1.pdf
+f866d8e2890ac53f369b1136a451fd78621dc11403cb6285598c1f5f66c11ada  searchnet-jss_files/figure-latex/ergodicity-1.pdf
+080ead4c80902faf87eb266d80e122ad891afcff2b32de18b50a71a0a5f5e6c5  searchnet-jss_files/figure-latex/k4-panel-1.pdf
+357a375737398162e1df8686ea9745a47b3513ce04e454002ace37150254f3ef  searchnet-jss_files/figure-latex/levinthal-degrees-1.pdf
+f40209cb54865bb8bf910a2a7f751175115fa0ff1b1d2bff87799c5341577862  searchnet-jss_files/figure-latex/shock-comparison-1.pdf
+86d110172886297254bd7730ac3b7d3bc73e4bae62b6b1a719baea20bbab2178  searchnet-jss_files/figure-latex/shock-treatment-1.pdf
+810841c734242e200a798ce70355e0ce093b4ef3971de8d4633491e7c35d44aa  searchnet-jss_files/figure-latex/snapshots-1.pdf
+a7036bee81a2c2c56484b73b6bdd3e722581e353b956ff4246e442626ea49ed2  searchnet-jss_files/figure-latex/snapshots-2.pdf
+df9a3b643f5bacf981067705cbf8356ee3aca37bd183a23ac43873e57355c097  searchnet-jss_files/figure-latex/snapshots-3.pdf
+9d39cfb9203d13c9d5109470f03ee28b9ba20c5a8bbba9b6b3c4ce0e652ca61d  searchnet-jss_files/figure-latex/snapshots-4.pdf
+036a00c2545f46ecb6c23dd44f2875b6c7adaacdc277e5f2ee1b7f882d98e951  searchnet-jss_files/figure-latex/utility-1.pdf
+513b0370ffdfd82cf429898566fe145458e8ea142f6da8e2cc3b8a61defe8667  searchnet-jss_files/figures/fig_k_coupling_sim.png
+baf9ccaaa298fa79af82cd6213201657c41ea6abba111d7a7873448ae66d1a0d  searchnet-jss_files/figures/fig_k_shock_relocation.png
+d6fb744b387c908da7e0a5a71bcf725a782dc9411ea81908ec82cf694c30e7dd  searchnet-jss_files/figures/fig1_mental_model.png
+28a9ae9ce951e29bd4397fa6cd330af9f156f1e538b72d522e07aa19f1a79953  searchnet.bib
+7d3777a6b5058870f33112dc10be9437d6e86ee5e30c68a542b708b90bb3e1ed  searchnet_0.11.2.tar.gz

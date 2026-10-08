@@ -2,7 +2,8 @@
 ## test-mean-field.R
 ##
 ## Unit and integration tests for the SaoMNK mean-field equilibrium solver
-## (Theorem 4 of the SaoMNK proof set: Brock--Durlauf reduction of the
+## (Property 5 of the SaoMNK proof set, inst/proofs/PROOF_TABLE.md Part L;
+## Property 5 in the paper: Brock--Durlauf reduction of the
 ## SAOM logit ministep).
 ##
 ## Tests:
@@ -10,7 +11,7 @@
 ##   2. beta_eff = 4T (above critical) => symmetric pair +/- m*
 ##   3. Convergence of fixed-point iteration within tolerance
 ##   4. Integration: simulation with theta_inPop above critical produces a
-##      population mean within 10% of an analytical m* (empirical Theorem 4
+##      population mean within 10% of an analytical m* (empirical Property 5
 ##      check)
 ###############################################################################
 
@@ -128,10 +129,10 @@ test_that("solve_mean_field validates its arguments", {
 # 4. Integration: simulation population mean within 10% of analytical m*
 # ===========================================================================
 ##
-## This is the empirical validation of Theorem 4: when the SaoMNK ministep
-## is run with theta_inPop above the Curie--Weiss threshold, the realized
+## This is the empirical validation of Property 5: when the
+## SaoMNK ministep is run with theta_inPop above the Curie--Weiss threshold, the realized
 ## population mean must concentrate near one of the analytical mean-field
-## fixed points.  We check |m_emp - m_star_closest| < 0.1 in spin form.
+## fixed points.  We check |p_emp - p_binding| < 0.15 in adoption form.
 ##
 ## The test is wrapped in skip_if_not_installed("RSiena") and tryCatch
 ## guards so that environments without RSiena (or transient simulator
@@ -142,26 +143,21 @@ test_that("simulation lands near the binding (Option B) fixed point", {
   ## HISTORY. Until 2026-08-14 this test asserted the simulation lands
   ## within 0.10 (spin) of the LINEAR Curie-Weiss roots at a nominally
   ## supercritical coupling, and was gated behind NOT_CRAN so it never ran.
-  ## When it finally ran it failed at 0.38. Three independent methods
-  ## (adversarial code audit; M-sweep 12..200; exact finite-M Gibbs
-  ## computation) agreed on the diagnosis:
-  ##   - RSiena's inPop evaluation delta is sqrt-form, so the simulated
-  ##     process obeys p = sigmoid(beta*(h_b + theta*sqrt(M*p+1))) -- the
-  ##     Option B object of PROOF_TABLE.md L16 -- not the linear-CW roots.
-  ##     Exact per-column Gibbs laws reject the linear reading at |z| > 80;
-  ##     the sqrt family matches every empirical anchor within 2 SD.
-  ##   - The gap was flat in M (slope +0.035 vs the -0.5 finite-size
-  ##     signature; asymptote ~0.41) and 15x the genuine finite-size budget
-  ##     at M = 12 (0.025), so no tolerance against the old object was
-  ##     defensible.
-  ##   - solve_mean_field() also dropped the density field entirely, and
-  ##     the old root-matching selected the UNSTABLE m = 0 root for 49/76
-  ##     seeds.
-  ## L16 designates Option B "the binding numerical comparison ... what the
-  ## live simulation actually obeys"; the linear-CW object is valid only in
-  ## the sub-threshold near-1/2 regime (Option C, next test), and the
-  ## supercritical pitchfork "cannot be empirically verified via the live
-  ## harness".
+  ## When it finally ran it failed at 0.38. The diagnosis then read RSiena's
+  ## inPop as square-root form and adopted p = sigmoid(beta*(h_b +
+  ## theta*sqrt(M*p+1))) as the binding object (L16 "Option B").
+  ##
+  ## RE-DERIVATION, 2026-10-07. That identification was made on
+  ## search_rsiena()'s replayed chain, whose terminal state is a draw near
+  ## the initial density (audit docs/AUDIT_2026-10-06_replayed_trajectories.md,
+  ## section 7.1), and RSiena 1.5.0's two-mode inPop is linear
+  ## (target sum_j x_+j^2; inPopSqrt is a separate effect). On genuine paths
+  ## the binding object is the mean-field fixed point of the ministep:
+  ## Delta = h_b + theta*((M-1)p + 1) and the per-tie law F_N(Delta) of a
+  ## choice among N toggles and no change (saomnk_inpop_self_consistency()).
+  ## Checked 2026-10-07 at these settings: map 0.998; direct simulation of
+  ## the ministep chain 0.998; saomnk_run() 1.00 (20 steps per actor, six
+  ## seeds) and 0.99 (100 steps per actor). The square-root map gave 0.70.
 
   ## Source the API wrappers (not loaded by helper-setup.R)
   tryCatch(
@@ -182,10 +178,7 @@ test_that("simulation lands near the binding (Option B) fixed point", {
 
   ## The density coefficient is the process's external field (h_b = -1.0
   ## here) and enters the binding fixed point through
-  ## diagnose_mean_field_fit(), which now extracts it from the structure
-  ## model. The old comment claimed -theta*(M+1)/2 was the zero-field
-  ## choice; that expression was wrong on its own terms ((M+1) where the
-  ## solver's convention uses (M-1)) and the value used satisfied neither.
+  ## diagnose_mean_field_fit(), which extracts it from the structure model.
   mod <- saomnk_model(density    = -1.0,
                       popularity = theta_inPop)
 
@@ -201,24 +194,20 @@ test_that("simulation lands near the binding (Option B) fixed point", {
   diag <- env$diagnose_mean_field_fit(T = 1,
                                        theta_inPop_override = theta_inPop)
 
-  ## The diagnostic now reports the binding object itself.
+  ## The diagnostic reports the binding object itself.
   expect_true(diag$above_critical)
   expect_true(is.finite(diag$p_binding))
   expect_true(is.finite(diag$discrepancy_adopt))
 
-  ## TOLERANCE, adoption form, derived rather than chosen: the exact
-  ## finite-M Gibbs law of the sqrt process gives q95 of |p_emp - E[p]| in
-  ## 0.119-0.138 at M = 12, N = 6 (stationary SD 0.061-0.068; empirical
-  ## seed-SD 0.099, the excess being autocorrelation at short chains).
-  ## 0.15 covers q95 plus that excess. Against the OLD object no tolerance
-  ## was defensible -- the gap was flat in M with asymptote ~0.41 -- and
-  ## even against this correct one, 0.10 would fail ~44% of good seeds,
-  ## which is why the bound is 0.15 and not a rounder number.
-  expect_lt(abs(diag$discrepancy_adopt), 0.15)
-
   ## The linear-CW reference is out of its validity regime here and the
   ## diagnostic should say so.
   expect_false(diag$in_BD_regime)
+
+  ## TOLERANCE: the original 0.15 (adoption form), kept unchanged. Its
+  ## derivation (q95 of |p_emp - E[p]| at M = 12, N = 6) was made for a
+  ## stationary state near 1/2; here the fixed point is near 1, where the
+  ## fluctuations are smaller, so 0.15 is conservative.
+  expect_lt(abs(diag$discrepancy_adopt), 0.15)
 })
 
 
@@ -236,20 +225,21 @@ test_that("Option C: sub-threshold linear-CW regime, where B&D applies", {
   ## that regime deliberately: small coupling (beta_eff = (M-1)*theta/2 =
   ## 0.825 < 2, sub-threshold) and a field chosen so the binding fixed
   ## point sits near 1/2. Here the Option B and linear-CW objects must
-  ## agree, and the simulation must land near both -- this is the part of
-  ## the Theorem 4 correspondence the live harness CAN verify, per L16;
-  ## the supercritical pitchfork is not live-verifiable and is no longer
-  ## asserted anywhere in this file.
+  ## agree, and the simulation must land near both.
   M <- 12
   N <- 6
   theta_inPop <- 0.15
-  ## Field placing the binding fixed point near 1/2:
-  ## p = 0.5  =>  h_b = -theta * sqrt(M/2 + 1)  ~= -0.15 * 2.646 = -0.397
-  h_b <- -theta_inPop * sqrt(M / 2 + 1)
+  ## Field placing the binding fixed point at 1/2 (re-derived 2026-10-07
+  ## for the linear two-mode inPop): the ministep law is symmetric about
+  ## Delta = 0, so p = 1/2 when h_b + theta*((M-1)/2 + 1) = 0, i.e.
+  ## h_b = -0.15 * 6.5 = -0.975. The square-root field used before,
+  ## -theta*sqrt(M/2 + 1) = -0.397, puts the binding fixed point at 0.86,
+  ## where genuine paths land (0.84 to 0.86); the sqrt map called it 0.50.
+  h_b <- -theta_inPop * (1 + (M - 1) / 2)
 
   p_star <- saomnk_inpop_self_consistency(beta = 1,
                                           theta_inPop = theta_inPop,
-                                          h_b = h_b, M = M)
+                                          h_b = h_b, M = M, N = N)
   ## Regime sanity: the construction really does sit near 1/2.
   expect_lt(abs(p_star - 0.5), 0.05)
 
@@ -270,8 +260,12 @@ test_that("Option C: sub-threshold linear-CW regime, where B&D applies", {
   expect_false(diag$above_critical)
   expect_true(diag$in_BD_regime)
 
-  ## Same derived tolerance as the binding test above. In this regime the
-  ## zero-theta exact stationary SD of the 6-column average is ~0.059, so
-  ## 0.15 is ~2.5 SD.
+  ## Same tolerance as the binding test above (0.15, unchanged). The old
+  ## note called this ~2.5 SD from the zero-theta SD of the grand mean
+  ## (0.059). With the coupling the stationary SD is larger: over ten other
+  ## seeds (2026-10-07) the gap had SD 0.10 and max 0.18, so 0.15 is about
+  ## 1.5 SD. This is a fixed-seed check (seed 4343: gap 0.01), not a
+  ## seed-robust bound; a seed-robust bound at a single end state would be
+  ## near 0.25.
   expect_lt(abs(diag$discrepancy_adopt), 0.15)
 })

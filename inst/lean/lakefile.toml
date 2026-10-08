@@ -1,0 +1,23 @@
+name = "saomnk"
+version = "0.1.0"
+keywords = ["math", "agent-based-models", "nk-landscapes", "saom"]
+defaultTargets = ["SaomNK"]
+
+# Machine-specific dependency locations never go in this file. To reuse an
+# already-built Mathlib checkout, write `.lake/package-overrides.json` (ignored
+# by git); see README.md, "Reusing an existing Mathlib".
+
+[leanOptions]
+pp.unicode.fun = true
+relaxedAutoImplicit = false
+autoImplicit = false
+weak.linter.mathlibStandardSet = false
+maxSynthPendingDepth = 3
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.34.0-rc2"
+
+[[lean_lib]]
+name = "SaomNK"

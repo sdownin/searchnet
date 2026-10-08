@@ -65,7 +65,7 @@ saomnk_plot_forbearance <- function(env = NULL,
          y = "Competitive entry rate",
          title = "Competitive entry rate over simulation",
          subtitle = sprintf("Rolling window = %d ADD events", window)) +
-    theme_bw() +
+    theme_searchnet() +
     theme(plot.title = element_text(size = 12, face = "bold"))
 
   if (plot_return) return(p)
@@ -78,8 +78,7 @@ saomnk_plot_forbearance <- function(env = NULL,
 #' Plot forbearance spectrum analysis (multi-panel)
 #'
 #' Creates a 2x2 panel figure showing competitive entry behavior across
-#' a range of theta_inPop values, following the design from the CD2026
-#' forbearance spectrum experiment (script 54).
+#' a range of theta_inPop values (a forbearance-spectrum design).
 #'
 #' @param forbearance_sweep_results A data.frame with columns:
 #'   \describe{
@@ -144,7 +143,7 @@ saomnk_plot_forbearance_spectrum <- function(forbearance_sweep_results,
     labs(x = expression(theta[inPop]),
          y = "Competitive entry rate",
          title = "(A) Competitive entry rate") +
-    theme_bw()
+    theme_searchnet()
 
   # ---- Panel B: Mean rivals at entry ----
   p_b <- ggplot(summ, aes(x = theta_inPop, y = rivals_mean)) +
@@ -156,7 +155,7 @@ saomnk_plot_forbearance_spectrum <- function(forbearance_sweep_results,
     labs(x = expression(theta[inPop]),
          y = "Mean rivals at entry",
          title = "(B) Rival density at entry") +
-    theme_bw()
+    theme_searchnet()
 
   # ---- Panel C: Terminal K_AA ----
   if (all(!is.na(summ$kaa_mean))) {
@@ -169,7 +168,7 @@ saomnk_plot_forbearance_spectrum <- function(forbearance_sweep_results,
       labs(x = expression(theta[inPop]),
            y = expression(K[AA]),
            title = "(C) Terminal multi-market contact") +
-      theme_bw()
+      theme_searchnet()
   } else {
     p_c <- ggplot() +
       annotate("text", x = 0.5, y = 0.5, label = "terminal_kaa\nnot available") +
@@ -188,7 +187,7 @@ saomnk_plot_forbearance_spectrum <- function(forbearance_sweep_results,
       labs(x = expression(theta[inPop]),
            y = "Pioneering entry rate",
            title = "(D) Pioneering (empty-activity) entry") +
-      theme_bw()
+      theme_searchnet()
   } else {
     p_d <- ggplot() +
       annotate("text", x = 0.5, y = 0.5, label = "avoidance_rate\nnot available") +
@@ -247,5 +246,5 @@ saomnk_plot_entry_rivalry <- function(entry_log, max_rivals = NULL) {
     labs(x = "Number of rivals present at entry",
          y = "Count of ADD events",
          title = "Distribution of rival presence at entry") +
-    theme_bw()
+    theme_searchnet()
 }

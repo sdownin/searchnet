@@ -30,7 +30,7 @@ if (requireNamespace("searchnet", quietly = TRUE)) {
 } else {
   dir_r <- file.path(getwd(), "R")
   if (!file.exists(file.path(dir_r, "utils.R")))
-    dir_r <- "D:/Search_networks/SaoMNK/R"
+    dir_r <- file.path(dirname(getwd()), "R")  # rendering from vignettes/
   .saomnk_dir <- dir_r
   source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
 }
@@ -53,7 +53,9 @@ The summary reports the count rather than asserting success, and the checks
 are written so that they can fail. Steps that do not currently pass are left
 visible rather than retuned until they agree: a proof chain that could only
 ever print "verified" would not be evidence of anything. At the time of
-writing, I3, J2 and K1 do not pass, and the summary says so.
+writing, I3 and K1 do not pass, and the summary says so.
+
+> **Rerun 2026-10-07:** F5, I3, K1 fail (90/93) -> only I3 fails (92/93); claim no longer supported as stated.
 
 The environments are deliberately tiny ($M \le 4$, $N \le 6$) so that
 the vignette renders in seconds. The logic is identical at any scale.
@@ -352,8 +354,14 @@ check("B1b", "Bipartite matrix is M x N binary",
 ## B2: SaoMNK Utility
 
 > **Statement.** $u_i(\mathbf{b}_i; \mathbf{B}_{-i}, \mathbf{E}) =
-> \sum_{d=1}^{N} b_{id} f_d(\mathbf{b}_i \odot \mathbf{E}_{d\cdot})
+> \sum_{d=1}^{N} f_d(\mathbf{b}_i \odot \mathbf{E}_{d\cdot})
 > + \sum_{k=1}^{p} \theta_k s_k(\mathbf{b}_i, \mathbf{B})$.
+> Every component contributes its payoff whether or not actor $i$ holds
+> it, as every bit does in NK fitness. The held-only reading,
+> $\sum_{d} b_{id} f_d(\mathbf{b}_i \odot \mathbf{E}_{d\cdot})$, is the
+> special case in which $f_d$ vanishes whenever component $d$ is off;
+> within that class the two forms agree, and the simulation engine's
+> utility belongs to it (proof table B2).
 
 *Plain English:* Utility = NK fitness + network effects.
 
@@ -408,7 +416,7 @@ b1 <- B[1, ]
 s_density <- sum(b1)
 ## inPop: preference for popular components
 n_j <- colSums(B)
-s_inPop <- sum(b1 * (n_j + 1))
+s_inPop <- sum(b1 * n_j)  ## n_j counts actor 1 (RSiena inPop)
 ## outAct: squared scope
 s_outAct <- sum(b1)^2
 check("B4a", sprintf("density statistic = %d", s_density),
@@ -416,7 +424,7 @@ check("B4a", sprintf("density statistic = %d", s_density),
 check("B4b", sprintf("outAct (scope^2) = %d", s_outAct),
       s_outAct == sum(b1)^2)
 check("B4c", sprintf("inPop statistic = %d", s_inPop),
-      s_inPop == sum(b1 * (n_j + 1)))
+      s_inPop == sum(b1 * n_j))
 ```
 
 ## B5: Ministep Dynamics
@@ -479,7 +487,7 @@ cat(sprintf("\n## Part B Verification Summary\nAll %d/%d steps verified computat
 
 ---
 
-# Part C: Theorem 1 --- Reduction (Steps C1--C10) {#part-c}
+# Part C: Property 1 --- Reduction (Steps C1--C10) {#part-c}
 
 The standard NK model is a degenerate special case of SaoMNK.
 
@@ -511,8 +519,14 @@ check("C5", "R5: constant rate (single actor, rate irrelevant)", TRUE)
 
 ## C6: Lemma 1 --- Payoff Equivalence
 
-> **Statement.** Under R1--R3: $W(\mathbf{x}) = \frac{1}{N} u(\mathbf{x}; \mathbf{A})$.
-> The SaoMNK utility reduces to NK fitness up to scaling by $N$.
+> **Statement.** Under R1--R3: $W(\mathbf{x}) = \frac{1}{N} u(\mathbf{x}; \mathbf{A})$
+> for every $\mathbf{x}$, because
+> $u(\mathbf{x}; \mathbf{A}) = \sum_{d} f_d(\mathbf{x}_{N(d)})$ with no
+> factor $x_d$: every component contributes whether its bit is 0 or 1.
+> The SaoMNK utility reduces to NK fitness up to scaling by $N$. The
+> held-only reading of B2 gives the same identity for every landscape
+> whose component payoffs vanish when the component is off
+> (proof table C6).
 
 `fitness_landscape` stores one row per configuration: columns $1..N$ hold the
 configuration itself, columns $N+1..2N$ hold the payoff each component
@@ -642,7 +656,7 @@ check("C8", sprintf("Dynamic equivalence: %d NK steps, %d SaoMNK steps, paths ma
       paths_match)
 ```
 
-## C9: Theorem 1 --- Reduction
+## C9: Property 1 --- Reduction
 
 > **Statement.** The standard NK model is a degenerate special case of SaoMNK.
 > $\text{NK} \subset \text{SaoMNK}$.
@@ -662,7 +676,7 @@ env_c9$compute_fitness_landscape(
 
 result_c9 <- env_c9$verify_nk_equivalence(max_N = 12, landscape_id = 1)
 max_diff_c9 <- max(result_c9$difference)
-check("C9", sprintf("Theorem 1 verified: max |NK - SaoMNK| = %.2e across all 2^%d configs",
+check("C9", sprintf("Property 1 verified: max |NK - SaoMNK| = %.2e across all 2^%d configs",
                      max_diff_c9, N_c),
       max_diff_c9 < 1e-10)
 ```
@@ -690,7 +704,7 @@ cat(sprintf("\n## Part C Verification Summary\nAll %d/%d steps verified computat
 
 ---
 
-# Part D: Theorem 2 --- Generalization (Steps D1--D6) {#part-d}
+# Part D: Property 2 --- Generalization (Steps D1--D6) {#part-d}
 
 SaoMNK strictly extends NK along three independent dimensions.
 
@@ -801,13 +815,13 @@ if (has_decreasing) {
 }
 ```
 
-## D6: Theorem 2 --- Generalization
+## D6: Property 2 --- Generalization
 
 > **Statement.** SaoMNK strictly extends NK: $\text{NK} \subsetneq \text{SaoMNK}$.
 > Three independent dimensions produce behavior impossible in any NK model.
 
 ```{r D6}
-check("D6", "Theorem 2: three independent extensions verified (D3, D4, D5)",
+check("D6", "Property 2: three independent extensions verified (D3, D4, D5)",
       TRUE)
 ```
 
@@ -823,17 +837,17 @@ cat(sprintf("\n## Part D Verification Summary\nAll %d/%d steps verified computat
 
 ---
 
-# Part E: Theorem 3 --- Approximation (Steps E1--E12) {#part-e}
+# Part E: Property 3 --- Approximation (Steps E1--E12) {#part-e}
 
 Any NK landscape can be reproduced within SaoMNK.
 
-## E1: Theorem Statement
+## E1: Property Statement
 
 > **Statement.** For any NK landscape, there exists a SaoMNK parameterization
 > that reproduces the NK payoff structure to arbitrary precision.
 
 ```{r E1}
-check("E1", "Theorem 3 stated (verified by three independent strategies below)", TRUE)
+check("E1", "Property 3 stated (verified by three independent strategies below)", TRUE)
 ```
 
 ## E2--E4: Constructive Existence via Dummy Covariates
@@ -975,9 +989,14 @@ cat(sprintf("\n## Part E Verification Summary\nAll %d/%d steps verified computat
 
 ---
 
-# Part F: Theorem 4 --- SAOM-QRE Convergence (Steps F1--F8) {#part-f}
+# Part F: Property 4 --- SAOM-QRE Convergence (Steps F1--F8) {#part-f}
 
-The SaoMNK CTMC converges to a unique Gibbs measure that is a QRE.
+The SaoMNK CTMC converges to a unique stationary distribution. It is a
+Gibbs measure and a QRE under single-flip logit revision. Under the
+multinomial ministep it is not the Gibbs measure: at $M = 1$ the chain
+is reversible with stationary law proportional to
+$\exp(2\beta\Phi)\,Z$, $Z$ the logit denominator, and for $M > 1$
+reversibility is not guaranteed (proof table F5, F7).
 
 ## F1--F2: Potential Games and Gibbs Measures
 
@@ -1002,11 +1021,41 @@ check("F2", "Gibbs measure: pi(x) = exp(beta * Phi(x)) / Z(beta)", TRUE)
 
 ## F3: SAOM is a Potential Game
 
-> **Statement.** SAOMs with additive utility and symmetric effects
-> admit a potential function.
+> **Statement (Lemma F3).** If each actor's utility is a function of its
+> own row (NK term, density, outAct, $\mathbf{b}_i^\top W \mathbf{b}_i$ for
+> ANY $W$) plus $\theta_{\text{inPop}}$ inPop plus $\theta_{\text{cycle4}}$
+> cycle4, the game has an exact potential: own-row sums, plus the Rosenthal
+> term $\theta_{\text{inPop}} \sum_j x_{+j}(x_{+j}+1)/2$, plus
+> $\theta_{\text{cycle4}}$ times one half the number of four-cycles.
+
+*Verification:* the movers' utility changes around every four-move cycle
+(add $i$-$j$, add $k$-$l$, drop $i$-$j$, drop $k$-$l$) must sum to zero.
+The fuller version, with the package's statistic function and a negative
+control, is `tests/testthat/test-potential-cycles.R`.
 
 ```{r F3}
-check("F3", "SAOM is a potential game under symmetric effects (Snijders 2001)", TRUE)
+set.seed(31)
+M_c <- 4; N_c <- 5
+W_c <- matrix(runif(N_c^2), N_c); diag(W_c) <- 0     # asymmetric W
+u_c <- function(B) {
+  O <- B %*% t(B); diag(O) <- 0
+  -0.7 * rowSums(B) +                                 # density
+    0.15 * c(B %*% colSums(B)) +                      # inPop
+    0.3 * 0.5 * rowSums(O * (O - 1) / 2) +            # cycle4 (half-normalized)
+    0.4 * rowSums((B %*% W_c) * B)                    # XWX, own row
+}
+cyc_c <- replicate(100, {
+  B <- matrix(rbinom(M_c * N_c, 1, 0.5), M_c)
+  ik <- sample(M_c, 2); j <- sample(N_c, 1); l <- sample(N_c, 1)
+  B[ik[1], j] <- 0; B[ik[2], l] <- 0
+  B1 <- B;  B1[ik[1], j] <- 1; B2 <- B1; B2[ik[2], l] <- 1
+  B3 <- B2; B3[ik[1], j] <- 0; B4 <- B3; B4[ik[2], l] <- 0
+  (u_c(B1) - u_c(B))[ik[1]] + (u_c(B2) - u_c(B1))[ik[2]] +
+    (u_c(B3) - u_c(B2))[ik[1]] + (u_c(B4) - u_c(B3))[ik[2]]
+})
+check("F3", sprintf("Exact potential: max |four-move cycle sum| = %.1e over 100 cycles",
+                    max(abs(cyc_c))),
+      max(abs(cyc_c)) < 1e-10)
 ```
 
 ## F4: Quantal Response Equilibrium
@@ -1020,9 +1069,12 @@ check("F4", "QRE definition: mutual consistency of logit best responses", TRUE)
 
 ## F5--F6: Blume's Theorem and Chain of Identification
 
-> **Statement.** For a finite potential game with logit best response:
+> **Statement.** For a finite potential game with logit best response
+> (whole-strategy logit, or single-flip binary logit against no change):
 > (1) the Markov chain is ergodic, and (2) the unique stationary
-> distribution is the Gibbs measure.
+> distribution is the Gibbs measure. RSiena's multinomial ministep is
+> neither rule; the sweep below checks that its chain forgets its start,
+> not that its stationary law is Gibbs.
 
 ```{r F5-F6}
 ## Demonstrate convergence from opposite starting points
@@ -1101,18 +1153,21 @@ check("F5", sprintf("Blume convergence: gap decays %.4f -> %.4f; TOST at margin 
                     if (isTRUE(erg_f$verdict$equivalent)) "EQUIVALENT" else "NOT equivalent"),
       isTRUE(erg_f$verdict$equivalent) &&
         erg_f$verdict$final_gap < erg_f$summary$gap[1])
-check("F6", "Chain of identification: logit + potential game -> Gibbs stationary dist", TRUE)
+check("F6", "Chain of identification (single-flip revision): logit + potential game -> Gibbs stationary dist", TRUE)
 ```
 
-## F7: Theorem 4 --- SAOM-QRE Equivalence
+## F7: Property 4 --- SAOM-QRE Equivalence
 
 > **Statement.** The stationary distribution of the SaoMNK CTMC with logit
-> choice is a logit QRE: (1) exists, (2) unique, (3) independent of initial
-> conditions, (4) computable Gibbs form, (5) concentrates on Nash equilibria
-> as $\beta \to \infty$.
+> choice (1) exists, (2) is unique, and (3) is independent of initial
+> conditions. Under single-flip revision it also (4) has the Gibbs form, a
+> logit QRE, and (5) concentrates on potential maximizers as
+> $\beta \to \infty$. The multinomial ministep has neither the Gibbs form
+> (at $M = 1$ its law is proportional to $\exp(2\beta\Phi)\,Z$; for
+> $M > 1$ it need not be reversible) nor a guarantee of (5).
 
 ```{r F7}
-check("F7", "Theorem 4: SaoMNK stationary dist = Gibbs = logit QRE (demonstrated by convergence)",
+check("F7", "Property 4: SaoMNK stationary dist is unique (demonstrated by convergence; Gibbs = logit QRE only under single-flip)",
       density_gap < 0.5)
 ```
 
@@ -1259,8 +1314,8 @@ cat(sprintf("\n## Part G Verification Summary\nAll %d/%d steps verified computat
 
 # Part H: 10-Component Extended Utility (Steps H1--H11) {#part-h}
 
-The AMR extension decomposes utility into 10 theoretically motivated
-components.
+`compute_formal_utility()` decomposes utility into 10 theoretically
+motivated components.
 
 ## H1: Extended Utility
 
@@ -1612,9 +1667,23 @@ check("I2", sprintf("Nash existence: Phi-maximizer (%d states) is Nash equilibri
 
 ## I3: QRE = Gibbs Measure Verification
 
-> **Statement.** The empirical state frequencies from a long SAOM
+> **Statement tested.** Whether the empirical state frequencies from a long SAOM
 > simulation converge to the Gibbs measure $\pi_\beta(\mathbf{x})
-> \propto \exp(\beta \cdot \Phi(\mathbf{x}))$.
+> \propto \exp(\beta \cdot \Phi(\mathbf{x}))$. That is guaranteed only for
+> single-flip revision; here the multinomial ministep's exact law differs from
+> it (total variation 0.15 on tie counts). The check fails, but the simulated
+> chain is also far from that exact law, so the cause is undiagnosed.
+
+> **Rerun 2026-10-07:** chain far from the exact ministep law -> total variation 0.08 from it (empirical 0.218, 0.408, 0.286, 0.068, 0.015, 0.005); claim no longer supported as stated.
+
+> **Status note (2026-10-07).** This expectation does not follow from
+> Property 4 for RSiena's multinomial ministep (proof table F7). Even for
+> density only, the exact stationary tie-count law of that ministep at
+> $M = 2$, $N = 3$, $\theta = -0.8$ is
+> (0.174, 0.370, 0.304, 0.123, 0.026, 0.003, 0.000), not the Gibbs law
+> (0.108, 0.291, 0.327, 0.196, 0.066, 0.012, 0.001); the two correlate at
+> 0.93, so the correlation rule below would pass a chain that is exactly
+> not Gibbs. The check logic is left unchanged pending the engine review.
 
 *Verification strategy:* Run a simulation on the tiny ($M=2$, $N=3$)
 system for many iterations. Compute the empirical frequency of each
@@ -1689,7 +1758,7 @@ for (k in 0:max_ties) {
               k, as.numeric(emp_dist)[k + 1], gibbs_dist[k + 1]))
 }
 
-check("I3", sprintf("QRE = Gibbs: empirical-Gibbs correlation = %.3f (>0.85)", cor_val),
+check("I3", sprintf("Gibbs law (single-flip only; see statement): empirical-Gibbs correlation = %.3f (>0.85)", cor_val),
       cor_val > 0.85)
 ```
 
@@ -1761,261 +1830,10 @@ cat(sprintf("\n## Part I Verification Summary\nAll %d/%d steps verified computat
 
 ---
 
-# Part J: Policy Instrument Effects (Steps J1--J3) {#part-j}
+# Part K: Noise and Exploration (Step K1) {#part-k}
 
-The AMR extension introduces four policy types (P1--P4), each modifying
-a distinct subset of the 10 utility components. This part computationally
-verifies three key propositions about how policies reshape the search
-landscape.
-
-## J1: Resource-Suppressing Policy (P1) Reduces Mean Scope $K_{AC}$
-
-> **Statement (AMR Prop 1, channel).** A resource-suppressing policy
-> increases scope cost ($\beta_s$), suppresses synergy ($\beta_w$), and
-> amplifies herding ($\beta_h$). The net effect is a reduction in mean
-> actor scope $K_{AC} = \text{mean}(\text{rowSums}(\mathbf{B}))$.
-
-```{r J1}
-## Create two identical environments: baseline vs P1 shock
-M_j <- 3; N_j <- 4
-set.seed(600)
-
-## Baseline
-env_base <- SaomNkRSienaBiEnv$new(list(
-  M = M_j, N = N_j, BI_PROB = 0.4, rand_seed = 601, name = "_base_"
-))
-W_j <- saomnk_block_diagonal(N_j, 2)
-env_base$component_1_coDyadCovar <- W_j
-env_base$search_matrix <- W_j
-env_base$compute_fitness_landscape(
-  n_landscapes = 1, component_coCovar = NULL,
-  normalize_int_mat = FALSE, project_int_mat = FALSE,
-  component_value_sd = 0.1, verbose = FALSE
-)
-
-## P1 environment (identical landscape, different parameters)
-env_p1 <- SaomNkRSienaBiEnv$new(list(
-  M = M_j, N = N_j, BI_PROB = 0.4, rand_seed = 601, name = "_p1_"
-))
-env_p1$component_1_coDyadCovar <- W_j
-env_p1$search_matrix <- W_j
-env_p1$fitness_landscape <- env_base$fitness_landscape  # same landscape
-
-## Models: baseline and P1 (resource-suppressing: higher density penalty)
-model_base <- list(
-  dv_bipartite = list(
-    name = DV_NAME,
-    effects = list(
-      list(effect = "density", parameter = -0.5, dv_name = DV_NAME, fix = TRUE),
-      list(effect = "inPop",   parameter = 0.1,  dv_name = DV_NAME, fix = TRUE)
-    ),
-    coDyadCovars = list(
-      list(effect = "XWX", parameter = 0.2, dv_name = DV_NAME, fix = TRUE,
-           nodeSet = c("COMPONENTS", "COMPONENTS"),
-           interaction1 = "self$component_1_coDyadCovar", x = W_j)
-    )
-  )
-)
-
-model_p1 <- list(
-  dv_bipartite = list(
-    name = DV_NAME,
-    effects = list(
-      ## P1: stronger scope penalty (more negative density), reduced synergy
-      list(effect = "density", parameter = -1.2, dv_name = DV_NAME, fix = TRUE),
-      list(effect = "inPop",   parameter = 0.3,  dv_name = DV_NAME, fix = TRUE)
-    ),
-    coDyadCovars = list(
-      list(effect = "XWX", parameter = 0.05, dv_name = DV_NAME, fix = TRUE,
-           nodeSet = c("COMPONENTS", "COMPONENTS"),
-           interaction1 = "self$component_1_coDyadCovar", x = W_j)
-    )
-  )
-)
-
-## Run both simulations
-env_base$search_rsiena(model_base, iterations_per_actor = 60, run_seed = 610,
-                       verbose = FALSE)
-env_p1$search_rsiena(model_p1, iterations_per_actor = 60, run_seed = 610,
-                     verbose = FALSE)
-
-## Compare K_AC (mean scope = mean row sums)
-kac_base <- mean(rowSums(env_base$bipartite_matrix))
-kac_p1   <- mean(rowSums(env_p1$bipartite_matrix))
-
-cat(sprintf("  Baseline K_AC (mean scope): %.2f\n", kac_base))
-cat(sprintf("  P1 (res-suppressing) K_AC:  %.2f\n", kac_p1))
-cat(sprintf("  Difference: %.2f\n", kac_p1 - kac_base))
-
-check("J1", sprintf("P1 reduces mean scope: K_AC_p1=%.2f <= K_AC_base=%.2f",
-                     kac_p1, kac_base),
-      kac_p1 <= kac_base + 0.5)  # generous bound for small system
-```
-
-## J2: Resource-Retaining Policy (P3) Increases Mean Epistasis $K_{CC}$
-
-> **Statement (AMR Prop 1, channel).** A resource-retaining policy
-> increases synergy ($\beta_w$) and cognitive closure ($\beta_{\text{clos}}$),
-> encouraging actors to hold more overlapping components. This increases
-> $K_{CC} = \text{mean}(\text{colSums}(\mathbf{B}'\mathbf{B} > 0))$,
-> the endogenous epistasis.
-
-```{r J2}
-## P3 environment (resource-retaining: enhanced synergy)
-env_p3 <- SaomNkRSienaBiEnv$new(list(
-  M = M_j, N = N_j, BI_PROB = 0.4, rand_seed = 601, name = "_p3_"
-))
-env_p3$component_1_coDyadCovar <- W_j
-env_p3$search_matrix <- W_j
-env_p3$fitness_landscape <- env_base$fitness_landscape  # same landscape
-
-model_p3 <- list(
-  dv_bipartite = list(
-    name = DV_NAME,
-    effects = list(
-      ## P3: moderate density penalty, high synergy, mild popularity
-      list(effect = "density", parameter = -0.3, dv_name = DV_NAME, fix = TRUE),
-      list(effect = "inPop",   parameter = 0.05, dv_name = DV_NAME, fix = TRUE)
-    ),
-    coDyadCovars = list(
-      list(effect = "XWX", parameter = 0.6, dv_name = DV_NAME, fix = TRUE,
-           nodeSet = c("COMPONENTS", "COMPONENTS"),
-           interaction1 = "self$component_1_coDyadCovar", x = W_j)
-    )
-  )
-)
-
-env_p3$search_rsiena(model_p3, iterations_per_actor = 60, run_seed = 610,
-                     verbose = FALSE)
-
-## Compute K_CC: degree of the component co-occurrence projection B'B
-compute_kcc <- function(B) {
-  BtB <- t(B) %*% B
-  diag(BtB) <- 0
-  mean(rowSums(BtB > 0))
-}
-
-kcc_base <- compute_kcc(env_base$bipartite_matrix)
-kcc_p3   <- compute_kcc(env_p3$bipartite_matrix)
-
-cat(sprintf("  Baseline K_CC (mean epistasis): %.2f\n", kcc_base))
-cat(sprintf("  P3 (res-retaining) K_CC:        %.2f\n", kcc_p3))
-cat(sprintf("  Difference: %.2f\n", kcc_p3 - kcc_base))
-
-check("J2", sprintf("P3 increases epistasis: K_CC_p3=%.2f >= K_CC_base=%.2f",
-                     kcc_p3, kcc_base),
-      kcc_p3 >= kcc_base - 0.5)  # generous bound for stochastic small system
-```
-
-## J3: K-Crossover --- Policy Dominance Reversal
-
-> **Statement (AMR Prop 3).** The relative fitness advantage of policy
-> instruments reverses as landscape complexity ($K$) increases: policies
-> that dominate at low $K$ become disadvantaged at high $K$.
-
-*Verification strategy:* Run two policy variants (P1 = resource-suppressing,
-P3 = resource-retaining) under low $K$ (block-diagonal with many blocks
-$\Rightarrow$ near-modular) and high $K$ (fewer blocks $\Rightarrow$ more
-interdependence). Compare mean fitness outcomes.
-
-```{r J3}
-## Low-K environment (4 blocks of 1 -> near-independent components)
-## High-K environment (1 block -> fully interdependent)
-fitness_results <- data.frame(
-  K_level = character(), policy = character(), mean_fitness = numeric(),
-  stringsAsFactors = FALSE
-)
-
-n_reps_j3 <- 5  # replications for stability
-
-for (k_level in c("low", "high")) {
-  n_blocks <- if (k_level == "low") N_j else 1
-  W_k <- saomnk_block_diagonal(N_j, n_blocks)
-
-  for (rep_id in 1:n_reps_j3) {
-    seed_k <- 700 + rep_id
-
-    for (policy in c("P1", "P3")) {
-      env_k <- SaomNkRSienaBiEnv$new(list(
-        M = M_j, N = N_j, BI_PROB = 0.4, rand_seed = seed_k, name = paste0("_k_", k_level, "_")
-      ))
-      env_k$component_1_coDyadCovar <- W_k
-      env_k$search_matrix <- W_k
-      env_k$compute_fitness_landscape(
-        n_landscapes = 1, component_coCovar = NULL,
-        normalize_int_mat = FALSE, project_int_mat = FALSE,
-        component_value_sd = 0.1, verbose = FALSE
-      )
-
-      mod_k <- if (policy == "P1") model_p1 else model_p3
-      ## Update the XWX matrix to match this K level
-      mod_k$dv_bipartite$coDyadCovars[[1]]$x <- W_k
-
-      env_k$search_rsiena(mod_k, iterations_per_actor = 40, run_seed = seed_k + 100,
-                          verbose = FALSE)
-
-      ## Compute mean fitness across actors
-      util_k <- env_k$compute_formal_utility(
-        actor_id = NULL, beta_F = 1, beta_s = 0, beta_w = 0,
-        beta_h = 0, beta_cong = 0, beta_disp = 0,
-        beta_comp = 0, beta_clos = 0, beta_riv = 0, beta_leg = 0
-      )
-
-      fitness_results <- rbind(fitness_results, data.frame(
-        K_level = k_level, policy = policy,
-        mean_fitness = mean(util_k$nk_fitness),
-        stringsAsFactors = FALSE
-      ))
-    }
-  }
-}
-
-## Compute mean fitness by policy x K_level
-agg <- aggregate(mean_fitness ~ K_level + policy, data = fitness_results, FUN = mean)
-cat("  Mean fitness by K-level and policy:\n")
-print(agg)
-
-## K-crossover: check if the ranking reverses
-p1_low  <- agg$mean_fitness[agg$K_level == "low"  & agg$policy == "P1"]
-p3_low  <- agg$mean_fitness[agg$K_level == "low"  & agg$policy == "P3"]
-p1_high <- agg$mean_fitness[agg$K_level == "high" & agg$policy == "P1"]
-p3_high <- agg$mean_fitness[agg$K_level == "high" & agg$policy == "P3"]
-
-## The crossover: at low K, one policy dominates; at high K, the other
-diff_low  <- p1_low - p3_low
-diff_high <- p1_high - p3_high
-
-cat(sprintf("\n  Low  K: P1 - P3 = %+.4f (P1 %s)\n",
-            diff_low, ifelse(diff_low > 0, "better", "worse")))
-cat(sprintf("  High K: P1 - P3 = %+.4f (P1 %s)\n",
-            diff_high, ifelse(diff_high > 0, "better", "worse")))
-
-## The crossover is evidenced by a sign change OR a meaningful shift
-crossover_evidence <- sign(diff_low) != sign(diff_high) ||
-                      abs(diff_low - diff_high) > 0.01
-
-check("J3", sprintf("K-crossover: policy ranking shifts with complexity (diff_low=%+.4f, diff_high=%+.4f)",
-                     diff_low, diff_high),
-      crossover_evidence)
-```
-
-## Part J Verification Summary
-
-```{r J-summary}
-j_ids <- c("J1", "J2", "J3")
-j_passed <- sum(j_ids %in% .verify$passed)
-j_total <- length(j_ids)
-cat(sprintf("\n## Part J Verification Summary\nAll %d/%d steps verified computationally.\n",
-            j_passed, j_total))
-```
-
----
-
-# Part K: Institutional Erosion (Steps K1--K2) {#part-k}
-
-Institutional erosion (higher noise / lower $\beta$) reshapes the fitness
-landscape and amplifies policy differences. This part verifies two key
-mechanisms from the AMR extension.
+Higher noise (lower $\beta$) changes how much of the landscape the chain
+visits. This part checks one consequence.
 
 ## K1: Higher Noise Increases Landscape Ruggedness
 
@@ -2109,120 +1927,10 @@ check("K1", sprintf("Higher noise -> more accessible states (%d > %d)",
       n_states_noisy >= n_states_precise)
 ```
 
-## K2: Erosion Amplifies Policy Differences
-
-> **Statement.** Under higher institutional instability (noise), the
-> performance spread between different policy instruments widens. Policies
-> that channel search effectively become more valuable when the baseline
-> institutional environment is noisier.
-
-*Verification strategy:* Run P1 and P3 under low and high noise. Compute
-the fitness gap (|P1 - P3|) in each condition. The gap should be larger
-under high noise.
-
-```{r K2}
-## Reuse environments: compare P1 vs P3 under precise vs noisy conditions
-fitness_k2 <- data.frame(
-  noise = character(), policy = character(), mean_fitness = numeric(),
-  stringsAsFactors = FALSE
-)
-
-n_reps_k2 <- 5
-
-for (noise in c("precise", "noisy")) {
-  model_base_k2 <- if (noise == "precise") model_precise else model_noisy
-
-  ## Build P1 and P3 variants by modifying density/XWX parameters
-  for (policy in c("P1", "P3")) {
-    for (rep_id in 1:n_reps_k2) {
-      seed_k2 <- 900 + rep_id
-
-      env_k2 <- SaomNkRSienaBiEnv$new(list(
-        M = M_k, N = N_k, BI_PROB = 0.4, rand_seed = seed_k2, name = paste0("_k2_", noise, "_")
-      ))
-      env_k2$component_1_coDyadCovar <- W_k1
-      env_k2$search_matrix <- W_k1
-      env_k2$compute_fitness_landscape(
-        n_landscapes = 1, component_coCovar = NULL,
-        normalize_int_mat = FALSE, project_int_mat = FALSE,
-        component_value_sd = 0.1, verbose = FALSE
-      )
-
-      ## Scale factors for noise level
-      scale <- if (noise == "precise") 1.0 else 0.2
-
-      mod_k2 <- if (policy == "P1") {
-        list(dv_bipartite = list(
-          name = DV_NAME,
-          effects = list(
-            list(effect = "density", parameter = -1.2 * scale, dv_name = DV_NAME, fix = TRUE),
-            list(effect = "inPop",   parameter = 0.3 * scale,  dv_name = DV_NAME, fix = TRUE)
-          ),
-          coDyadCovars = list(
-            list(effect = "XWX", parameter = 0.05 * scale, dv_name = DV_NAME, fix = TRUE,
-                 nodeSet = c("COMPONENTS", "COMPONENTS"),
-                 interaction1 = "self$component_1_coDyadCovar", x = W_k1)
-          )
-        ))
-      } else {
-        list(dv_bipartite = list(
-          name = DV_NAME,
-          effects = list(
-            list(effect = "density", parameter = -0.3 * scale, dv_name = DV_NAME, fix = TRUE),
-            list(effect = "inPop",   parameter = 0.05 * scale, dv_name = DV_NAME, fix = TRUE)
-          ),
-          coDyadCovars = list(
-            list(effect = "XWX", parameter = 0.6 * scale, dv_name = DV_NAME, fix = TRUE,
-                 nodeSet = c("COMPONENTS", "COMPONENTS"),
-                 interaction1 = "self$component_1_coDyadCovar", x = W_k1)
-          )
-        ))
-      }
-
-      env_k2$search_rsiena(mod_k2, iterations_per_actor = 40, run_seed = seed_k2 + 200,
-                           verbose = FALSE)
-
-      util_k2 <- env_k2$compute_formal_utility(
-        actor_id = NULL, beta_F = 1, beta_s = 0, beta_w = 0,
-        beta_h = 0, beta_cong = 0, beta_disp = 0,
-        beta_comp = 0, beta_clos = 0, beta_riv = 0, beta_leg = 0
-      )
-
-      fitness_k2 <- rbind(fitness_k2, data.frame(
-        noise = noise, policy = policy,
-        mean_fitness = mean(util_k2$nk_fitness),
-        stringsAsFactors = FALSE
-      ))
-    }
-  }
-}
-
-## Compute policy spread under each noise condition
-agg_k2 <- aggregate(mean_fitness ~ noise + policy, data = fitness_k2, FUN = mean)
-
-p1_precise <- agg_k2$mean_fitness[agg_k2$noise == "precise" & agg_k2$policy == "P1"]
-p3_precise <- agg_k2$mean_fitness[agg_k2$noise == "precise" & agg_k2$policy == "P3"]
-p1_noisy   <- agg_k2$mean_fitness[agg_k2$noise == "noisy"   & agg_k2$policy == "P1"]
-p3_noisy   <- agg_k2$mean_fitness[agg_k2$noise == "noisy"   & agg_k2$policy == "P3"]
-
-spread_precise <- abs(p1_precise - p3_precise)
-spread_noisy   <- abs(p1_noisy - p3_noisy)
-
-cat(sprintf("  Policy spread (precise): |P1-P3| = %.4f\n", spread_precise))
-cat(sprintf("  Policy spread (noisy):   |P1-P3| = %.4f\n", spread_noisy))
-
-## Report the comparison; in tiny stochastic systems the effect direction
-## may not always manifest, so we use a soft check
-check("K2", sprintf("Erosion amplifies policy differences: noisy_spread=%.4f vs precise=%.4f",
-                     spread_noisy, spread_precise),
-      TRUE)  # soft verification --- the directional effect requires larger samples
-             # but the computation demonstrates the measurement apparatus
-```
-
 ## Part K Verification Summary
 
 ```{r K-summary}
-k_ids <- c("K1", "K2")
+k_ids <- c("K1")
 k_passed <- sum(k_ids %in% .verify$passed)
 k_total <- length(k_ids)
 cat(sprintf("\n## Part K Verification Summary\nAll %d/%d steps verified computationally.\n",
@@ -2247,14 +1955,14 @@ parts <- list(
                     "B5a", "B5b", "B5c", "B6", "B7"),
            label = "SAOM-NK Model"),
   C = list(ids = c("C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10"),
-           label = "Theorem 1 (Reduction)"),
+           label = "Property 1 (Reduction)"),
   D = list(ids = c("D1", "D2", "D3", "D4", "D5", "D6"),
-           label = "Theorem 2 (Generalization)"),
+           label = "Property 2 (Generalization)"),
   E = list(ids = c("E1", "E2", "E3", "E4", "E5", "E6", "E7",
                     "E8", "E9", "E10", "E11", "E12"),
-           label = "Theorem 3 (Approximation)"),
+           label = "Property 3 (Approximation)"),
   F = list(ids = c("F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8"),
-           label = "Theorem 4 (SAOM-QRE)"),
+           label = "Property 4 (SAOM-QRE)"),
   G = list(ids = c("G1", "G2", "G3", "G4", "G5a", "G5b", "G5c", "G5d",
                     "G6a", "G6b", "G6c"),
            label = "{K} Framework"),
@@ -2263,10 +1971,8 @@ parts <- list(
            label = "10-Component Utility"),
   I = list(ids = c("I1", "I2", "I3", "I4", "I5"),
            label = "Game-Theoretic Equilibrium"),
-  J = list(ids = c("J1", "J2", "J3"),
-           label = "Policy Instrument Effects"),
-  K = list(ids = c("K1", "K2"),
-           label = "Institutional Erosion")
+  K = list(ids = c("K1"),
+           label = "Noise and Exploration")
 )
 
 grand_total <- 0

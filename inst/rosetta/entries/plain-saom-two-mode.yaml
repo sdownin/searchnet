@@ -1,0 +1,70 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: plain-saom-two-mode
+title: Stochastic actor-oriented model of a two-mode network
+model: SAOM for two-mode network dynamics
+citations:
+  - key: snijders_2001
+    text: "Snijders, T. A. B. (2001). The statistical evaluation of social network dynamics. Sociological Methodology, 31(1), 361-395."
+    doi: 10.1111/0081-1750.00099
+  - key: snijders_vandebunt_steglich_2010
+    text: "Snijders, T. A. B., van de Bunt, G. G., and Steglich, C. E. G. (2010). Introduction to stochastic actor-based models for network dynamics. Social Networks, 32(1), 44-60."
+    doi: 10.1016/j.socnet.2009.02.004
+relation: special-case
+statement: >-
+  Setting the influence matrix to zero removes the fitness term, and what remains
+  is the ordinary SAOM objective of a two-mode network: degree, popularity and
+  four-cycle statistics under RSiena's multinomial ministep.
+restrictions:
+  M: null
+  "N": null
+  W: zero
+  beta: null
+  revision_rule: multinomial
+  rates: constant
+  notes:
+    - "W = 0: no fitness term"
+terms:
+  - class: complementarity
+    status: zero
+    expression: "+0 (W = 0)"
+    construct: none
+  - class: scope
+    status: active
+    effect: outAct
+    value: -0.5
+    expression: "theta_outAct s_outAct (outdegree activity)"
+    construct: breadth of the actor's portfolio
+  - class: crowding
+    status: active
+    effect: inPop
+    value: -0.2
+    expression: "theta_inPop s_inPop (indegree popularity)"
+    construct: preference for popular components
+  - class: contact
+    status: active
+    effect: cycle4
+    value: 0.1
+    expression: "theta_cycle4 s_cycle4 (four-cycles)"
+    construct: closure between actor pairs
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs:
+  breadth of the actor's portfolio: [scope]
+  preference for popular components: [crowding]
+  closure between actor pairs: [contact]
+lean:
+  - SaomNK.Spec.exact_potential
+  - SaomNK.isExactPotential_cycle4
+checks:
+  - saomnk_run
+  - tests/testthat/test-structural-stats-vs-rsiena.R
+does_not_cover:
+  - "Estimation: the entry states the simulation model, not the method-of-moments estimator"
+  - "Rate effects and creation or endowment splits are not represented"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-07"
+  ai_drafted: true
+  reviewed: false

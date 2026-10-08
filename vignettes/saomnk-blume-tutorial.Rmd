@@ -29,7 +29,7 @@ if (requireNamespace("searchnet", quietly = TRUE)) {
 } else {
   dir_r <- file.path(getwd(), "R")
   if (!file.exists(file.path(dir_r, "utils.R")))
-    dir_r <- "D:/Search_networks/SaoMNK/R"
+    dir_r <- file.path(dirname(getwd()), "R")  # rendering from vignettes/
   .saomnk_dir <- dir_r
   source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
 }
@@ -37,6 +37,12 @@ if (requireNamespace("searchnet", quietly = TRUE)) {
 library(Matrix)
 
 DV_NAME <- "self$bipartite_rsienaDV"
+
+## Check-time budget. A CRAN check (NOT_CRAN unset) builds this vignette on
+## reduced grids so that it finishes in about a minute; with NOT_CRAN=true
+## (devtools, local builds) every chunk runs at full size. Measured
+## 2026-10-07: build 337 s full, 81 s reduced (tangled code 49 s reduced).
+.full_run <- identical(Sys.getenv("NOT_CRAN"), "true")
 ```
 
 # Introduction: The Convergence Problem
@@ -54,11 +60,13 @@ the long-run behavior of the system is completely characterized by a
 **Gibbs distribution** --- the same probability distribution that governs
 the arrangement of atoms in a magnet.
 
-This result is the theoretical foundation for Theorem 4 (SAOM--QRE
+This result is the theoretical foundation for Property 4 (SAOM--QRE
 Equivalence) in the searchnet framework. It is why the searchnet CTMC
-ministep process has a well-defined stationary distribution, and why that
-distribution corresponds to a Quantal Response Equilibrium (McKelvey &
-Palfrey, 1995).
+ministep process has a well-defined stationary distribution. Its Gibbs form,
+and its reading as a Quantal Response Equilibrium (McKelvey &
+Palfrey, 1995), hold for single-flip logit revision; the multinomial
+ministep that RSiena and searchnet use has a unique stationary law but, for
+$M > 1$, no general Gibbs form.
 
 This tutorial walks through Blume's result at three levels of depth,
 then demonstrates it with working searchnet code.
@@ -148,9 +156,10 @@ room), not on the starting arrangement.
 For searchnet, this means:
 
 > **No matter where you start, the simulation converges to the same
-> long-run distribution of configurations.** That distribution is
-> predictable, computable, and corresponds to a well-known equilibrium
-> concept (QRE).
+> long-run distribution of configurations.** Under single-flip revision
+> that distribution is the Gibbs measure, a well-known equilibrium
+> concept (QRE); searchnet's multinomial ministep keeps the uniqueness but
+> not, in general, the Gibbs form.
 
 ## A Small Example: Watch It Converge
 
@@ -168,7 +177,11 @@ it forgets *at a rate*. Two endpoints throw that rate away.
 
 So instead of two runs, we sweep the run length. `searchnet_ergodicity_sweep()`
 runs both arms at several chain lengths with several replicates each, and
-measures how fast the gap between them closes:
+measures how fast the gap between them closes. (Under a CRAN check this chunk
+runs on an $8 \times 10$ grid with a 0.10 margin, the same margin-to-tie ratio,
+to keep check time down. With three replicates and a longest run of 72 that
+reduced run can report NOT EQUIVALENT; the discussion below describes the
+full $12 \times 15$ run, which needs `NOT_CRAN=true`.)
 
 <!-- purl=FALSE: this chunk runs in full when the vignette is built, which is
      where its output comes from. It is excluded from the tangled script so
@@ -176,14 +189,25 @@ measures how fast the gap between them closes:
      time; nothing later in the vignette depends on `erg`. -->
 
 ```{r novice-convergence, fig.height=5.5, fig.width=11, purl=FALSE}
-erg <- searchnet_ergodicity_sweep(
-  M = 12, N = 15,                    # 180 cells, so one tie moves density by 0.006
-  start_densities = c(0.1, 0.8),     # a gap of 0.70 to erase
-  run_lengths = c(8, 15, 30, 60, 120),  # four doublings, to see a rate
-  replicates = 5,
-  equivalence_margin = 0.05,         # we declare this BEFORE looking
-  seed = 42
-)
+if (.full_run) {
+  erg <- searchnet_ergodicity_sweep(
+    M = 12, N = 15,                    # 180 cells, so one tie moves density by 0.006
+    start_densities = c(0.1, 0.8),     # a gap of 0.70 to erase
+    run_lengths = c(8, 15, 30, 60, 120),  # four doublings, to see a rate
+    replicates = 5,
+    equivalence_margin = 0.05,         # we declare this BEFORE looking
+    seed = 42
+  )
+} else {
+  erg <- searchnet_ergodicity_sweep(   # reduced grid for CRAN check time
+    M = 8, N = 10,                     # 80 cells, one tie = 0.0125
+    start_densities = c(0.1, 0.8),
+    run_lengths = c(8, 24, 72),
+    replicates = 3,
+    equivalence_margin = 0.10,         # eight ties, same ratio as the full run
+    seed = 42
+  )
+}
 
 erg
 plot(erg)
@@ -193,7 +217,9 @@ plot(erg)
 > statistically indistinguishable, and the gap between them shrinks as a
 > power of run length --- roughly halving each time the chain runs twice as
 > long. The equilibrium depends on the model parameters ($\theta$, $\beta$),
-> not on where the simulation started. That is the Gibbs measure at work.
+> not on where the simulation started. That is ergodicity at work.
+
+> **Rerun 2026-10-07:** gap roughly halving per doubling (slope -0.74) -> slope -3.04, gap at the Monte Carlo floor by run length 60; claim no longer supported as stated.
 
 Three things about this output are worth pointing out, because they are what
 separate a measurement from an illustration.
@@ -304,9 +330,14 @@ many standard effects (density, reciprocity, transitivity, popularity)
 yield potential games.
 
 Since the SAOM is a potential game and uses logit choice (the
-conditional logit ministep rule), **Blume's theorem applies directly**:
-the SAOM CTMC has a unique stationary distribution, and it is the Gibbs
-measure over network configurations.
+conditional logit ministep rule), the SAOM CTMC has a unique stationary
+distribution. **Blume's theorem gives it the Gibbs form only under
+single-flip revision**; the multinomial ministep (all toggles plus pass)
+that RSiena and searchnet use has, for $M > 1$, no general Gibbs form.
+`tests/testthat/test-potential-cycles.R` computes an $M = 2$, $N = 3$
+example exactly: as $\beta$ grows, the stationary mass on the potential
+maximizer rises toward 1 under single-flip revision and falls toward 0 under
+the multinomial ministep.
 
 For searchnet, this means:
 
@@ -316,7 +347,7 @@ For searchnet, this means:
    multiple competing ones)
 3. **Independence from initial conditions**: Every starting
    configuration converges to the same $\pi_\beta$
-4. **Computability**: The distribution has the known Gibbs form, so
+4. **Computability** (single-flip revision only): The distribution has the known Gibbs form, so
    its properties can be analyzed
 
 ## The QRE Interpretation
@@ -327,9 +358,10 @@ player's randomization is consistent with logit best response to the
 others' randomized strategies.
 
 The logit QRE of a potential game is precisely the Gibbs measure from
-Blume's theorem. This gives us a game-theoretic *name* for what the
-simulation converges to: the simulation finds the logit QRE of the
-underlying network game.
+Blume's theorem. This gives us a game-theoretic *name* for what a
+single-flip logit chain converges to. The multinomial ministep that
+searchnet simulates also has a unique stationary law, but for $M > 1$ it
+is not in general the Gibbs measure, so the name is not guaranteed there.
 
 | Concept | Physics Term | Game Theory Term | Searchnet Term |
 |:--------|:------------|:----------------|:--------------|
@@ -373,8 +405,8 @@ compute_potential <- function(B, theta_d, theta_e, W_mat) {
 }
 
 # ── Run simulation many times and count configuration frequencies ──
-n_runs <- 8
-n_iters <- 80
+n_runs <- if (.full_run) 8 else 4
+n_iters <- if (.full_run) 80 else 40
 
 # Collect final configurations
 final_configs <- list()
@@ -427,7 +459,7 @@ cat("  SD Phi:  ", round(sd(potentials), 2), "\n\n")
 cat("Final densities:\n")
 cat("  Density:", round(densities, 2), "\n")
 cat("  Mean:   ", round(mean(densities), 2), "\n\n")
-cat("The Gibbs measure pi(x) ~ exp(beta * Phi(x)) predicts that\n")
+cat("Under single-flip revision, the Gibbs measure pi(x) ~ exp(beta * Phi(x)) predicts that\n")
 cat("configurations with higher Phi are visited more frequently.\n")
 cat("The simulation concentrates on high-potential configurations.\n")
 ```
@@ -489,6 +521,11 @@ $$\frac{q(\mathbf{x} \to \mathbf{x}')}{q(\mathbf{x}' \to \mathbf{x})} = \frac{\s
 By the potential game property, this equals
 $\exp\bigl(\beta[\Phi(\mathbf{x}') - \Phi(\mathbf{x})]\bigr) = \pi_\beta(\mathbf{x}') / \pi_\beta(\mathbf{x})$,
 which is the detailed balance condition. $\square$
+
+The cancellation needs the same logit denominator at $\mathbf{x}$ and
+$\mathbf{x}'$, as in single-flip revision. The multinomial SAOM ministep
+normalizes over each state's own toggles plus pass, so for $M > 1$
+detailed balance and the Gibbs form fail in general.
 
 ## The Partition Function and Free Energy
 
@@ -570,7 +607,8 @@ weight them:
 This is precisely what happens in a searchnet simulation: the system
 spends most of its time near good configurations, occasionally
 transitions between basins of attraction of different local optima,
-and the time-averaged distribution converges to the Gibbs measure.
+and the time-averaged distribution converges to the unique stationary
+distribution, which is the Gibbs measure under single-flip revision.
 
 ## Bipartite SAOM and Blume's Guarantee
 
@@ -583,11 +621,15 @@ through the following chain:
 2. **Potential game structure**: For effects where the marginal utility
    of changing $b_{ij}$ can be written as a marginal change in a global
    function $\Phi(\mathbf{B})$, the bipartite SAOM is a potential game.
-   Standard effects (density, XWX with symmetric $W$, etc.) satisfy this.
-3. **Logit choice**: The conditional logit ministep rule is exactly the
-   logit best-response rule from Blume's theorem
-4. **Blume applies**: Therefore the CTMC has a unique stationary
-   distribution that is the Gibbs measure over bipartite configurations
+   Own-row effects (the NK term, density, outAct, XWX
+   $\mathbf{b}_i^\top W \mathbf{b}_i$ with any $W$) plus inPop and cycle4
+   satisfy this (Lemma F3 in the proof table).
+3. **Logit choice**: The conditional logit ministep rule is a logit
+   response over the current state's toggles plus pass, not single-flip
+   revision
+4. **What applies**: The CTMC has a unique stationary distribution; it is
+   the Gibbs measure over bipartite configurations under single-flip
+   revision, but not in general under the multinomial ministep with $M > 1$
 
 The extension from Blume's original lattice setting (infinite players,
 nearest-neighbor interaction) to the finite bipartite network is
@@ -595,15 +637,18 @@ straightforward: the finite state space guarantees ergodicity and
 uniqueness without the infinite-volume complications that Blume
 addressed with the DLR (Dobrushin--Lanford--Ruelle) framework.
 
-**Important caveat:** Not all SAOM effects yield potential games. Effects
-like `simEgoInDist2` (imitation based on similarity) and `cycle4`
-(structural closure) introduce asymmetries that can violate the potential
-game condition. When such effects are included, Blume's exact Gibbs
-characterization may not hold, though the Markov chain remains ergodic
+**Important caveat:** Not all SAOM effects yield potential games. `cycle4`
+does: its potential is one half the number of four-cycles. Effects whose
+pair weights differ by actor are not covered by Lemma F3: ego- or
+alter-covariate weighted popularity (`inPopX`), RSiena's `simEgoInDist2`
+(which RSiena 1.5.0 offers on bipartite dependent variables with an actor
+covariate), and searchnet's own imitation statistic
+`saomnk_coholder_similarity()` (formerly `saomnk_sim_ego_indist2()`; it is
+not RSiena's `simEgoInDist2`). When such effects are included, Blume's exact
+Gibbs characterization may not hold, though the Markov chain remains ergodic
 (hence still has *a* stationary distribution --- just not necessarily one
-with a closed-form Gibbs representation). For the standard searchnet
-effects used in this tutorial (density, inPop, XWX with symmetric $W$),
-the potential game property is satisfied.
+with a closed-form Gibbs representation). For the effects used in this
+tutorial (density, inPop, XWX), the potential game property is satisfied.
 
 ## Mixing Time: How Long Until Convergence?
 
@@ -685,26 +730,29 @@ for (idx in seq_along(init_probs)) {
 }
 
 # ── Visualize convergence ──────────────────────────────────────────
-par(mfrow = c(1, 2), mar = c(4.5, 4.5, 3, 1))
+library(ggplot2)
+pal <- searchnet_palette()
+conv_df <- data.frame(init = init_probs, density = final_densities,
+                      scope = final_scope_mean)
 
-plot(init_probs, final_densities,
-     type = "b", pch = 19, col = "#2a9d8f", lwd = 2,
-     xlab = "Initial Density", ylab = "Final Density",
-     main = "Convergence: Density",
-     ylim = c(0, 1))
-abline(h = mean(final_densities), lty = 2, col = "#e76f51")
-legend("topright",
-       legend = paste("Equilibrium ~", round(mean(final_densities), 2)),
-       col = "#e76f51", lty = 2, bty = "n")
+conv_panel <- function(y, ylab, title, col) {
+  eq <- mean(conv_df[[y]])
+  ggplot(conv_df, aes(init, .data[[y]])) +
+    geom_hline(aes(yintercept = eq,
+                   linetype = paste("Equilibrium ~", round(eq, 2))),
+               color = pal[["vermillion"]]) +
+    geom_line(color = col, linewidth = 0.9) +
+    geom_point(color = col, size = 2.2) +
+    scale_linetype_manual(values = "dashed", name = NULL) +
+    labs(title = title, x = "Initial Density", y = ylab) +
+    theme_searchnet()
+}
 
-plot(init_probs, final_scope_mean,
-     type = "b", pch = 19, col = "#1b3a5c", lwd = 2,
-     xlab = "Initial Density", ylab = "Mean Final K_AC (Scope)",
-     main = "Convergence: Scope")
-abline(h = mean(final_scope_mean), lty = 2, col = "#e76f51")
-legend("topright",
-       legend = paste("Equilibrium ~", round(mean(final_scope_mean), 2)),
-       col = "#e76f51", lty = 2, bty = "n")
+cowplot::plot_grid(
+  conv_panel("density", "Final Density", "Convergence: Density", pal[["green"]]) +
+    coord_cartesian(ylim = c(0, 1)),
+  conv_panel("scope", "Mean Final K_AC (Scope)", "Convergence: Scope", pal[["blue"]]),
+  nrow = 1, align = "h", axis = "tb")
 ```
 
 > **Interpretation:** Regardless of whether we start nearly empty
@@ -736,7 +784,7 @@ base_epist <- 0.25
 # Scale factors ~ different effective beta
 # (Scaling all theta by c is equivalent to multiplying beta by c)
 scales <- c(0.2, 0.5, 1.0, 2.0, 4.0)
-n_reps <- 4
+n_reps <- if (.full_run) 4 else 2
 
 results_d2 <- data.frame(
   scale = rep(scales, each = n_reps),
@@ -790,30 +838,35 @@ agg_d2 <- aggregate(
   FUN = function(x) c(mean = mean(x), sd = sd(x))
 )
 
-par(mfrow = c(1, 2), mar = c(4.5, 4.5, 3, 1))
+pal <- searchnet_palette()
+scale_lab <- expression("Scale factor " * (phantom() %prop% beta))
 
 # Density spread
 dens_means <- agg_d2$final_density[, "mean"]
 dens_sds   <- agg_d2$final_density[, "sd"]
-plot(scales, dens_means,
-     type = "b", pch = 19, col = "#2a9d8f", lwd = 2,
-     xlab = expression("Scale factor " * (phantom() %prop% beta)),
-     ylab = "Mean Final Density",
-     main = "Temperature Effect on Density",
-     ylim = range(c(dens_means - dens_sds, dens_means + dens_sds), na.rm = TRUE))
-arrows(scales, dens_means - dens_sds, scales, dens_means + dens_sds,
-       angle = 90, code = 3, length = 0.05, col = "#2a9d8f")
-
 # Scope heterogeneity
 scope_means <- agg_d2$final_scope_sd[, "mean"]
-plot(scales, scope_means,
-     type = "b", pch = 19, col = "#e76f51", lwd = 2,
-     xlab = expression("Scale factor " * (phantom() %prop% beta)),
-     ylab = "SD of Final K_AC (Scope)",
-     main = "Temperature Effect on Scope Heterogeneity")
+temp_df <- data.frame(scale = scales, dens = dens_means, sd = dens_sds,
+                      scope = scope_means)
+
+p_dens <- ggplot(temp_df, aes(scale, dens)) +
+  geom_errorbar(aes(ymin = dens - sd, ymax = dens + sd), width = 0.08,
+                color = pal[["green"]]) +
+  geom_line(color = pal[["green"]], linewidth = 0.9) +
+  geom_point(color = pal[["green"]], size = 2.2) +
+  labs(title = "Temperature Effect on Density", x = scale_lab,
+       y = "Mean Final Density") +
+  theme_searchnet()
+p_scope <- ggplot(temp_df, aes(scale, scope)) +
+  geom_line(color = pal[["vermillion"]], linewidth = 0.9) +
+  geom_point(color = pal[["vermillion"]], size = 2.2) +
+  labs(title = "Temperature Effect on Scope Heterogeneity", x = scale_lab,
+       y = "SD of Final K_AC (Scope)") +
+  theme_searchnet()
+cowplot::plot_grid(p_dens, p_scope, nrow = 1, align = "h", axis = "tb")
 ```
 
-> **Interpretation:** At low $\beta$ (scale = 0.2), the Gibbs
+> **Interpretation:** At low $\beta$ (scale = 0.2), the stationary
 > distribution is diffuse---the simulation explores broadly and
 > outcomes vary across runs. At high $\beta$ (scale = 4.0), the
 > distribution sharpens---the simulation concentrates on
@@ -882,41 +935,42 @@ ties_dn <- get_chain_ties(env_dn)
 sp_dist <- table(factor(ties_sp, levels = 0:max_ties_d3)) / length(ties_sp)
 dn_dist <- table(factor(ties_dn, levels = 0:max_ties_d3)) / length(ties_dn)
 
-par(mfrow = c(1, 1), mar = c(5, 4.5, 3, 1))
-
-barplot_mat <- rbind(
-  "From sparse (5%)" = as.numeric(sp_dist),
-  "From dense (95%)" = as.numeric(dn_dist)
+dist_df <- data.frame(
+  ties  = factor(rep(0:max_ties_d3, 2), levels = 0:max_ties_d3),
+  freq  = c(as.numeric(sp_dist), as.numeric(dn_dist)),
+  start = factor(rep(c("From sparse (5%)", "From dense (95%)"),
+                     each = max_ties_d3 + 1),
+                 levels = c("From sparse (5%)", "From dense (95%)"))
 )
 
-bp <- barplot(barplot_mat,
-        beside = TRUE,
-        names.arg = 0:max_ties_d3,
-        col = c("#2a9d8f", "#e76f51"),
-        xlab = "Number of Ties in Configuration",
-        ylab = "Frequency (post burn-in)",
-        main = "Blume Convergence: Same Distribution from Opposite Starts",
-        legend.text = TRUE,
-        args.legend = list(x = "topright", bty = "n"))
+ggplot(dist_df, aes(ties, freq, fill = start)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.8) +
+  scale_fill_manual(values = unname(searchnet_palette()[c("green", "vermillion")]),
+                    name = NULL) +
+  labs(title = "Blume Convergence: Same Distribution from Opposite Starts",
+       x = "Number of Ties in Configuration", y = "Frequency (post burn-in)") +
+  theme_searchnet()
 
 ks <- max(abs(cumsum(as.numeric(sp_dist)) - cumsum(as.numeric(dn_dist))))
 cat(sprintf("KS distance between sparse-start and dense-start chains: %.3f\n", ks))
 cat("Both chains converge to the same stationary distribution,\n")
-cat("confirming Blume's theorem: the Gibbs measure is unique.\n")
+cat("consistent with a unique stationary distribution (this does not test the Gibbs form).\n")
 # dummy reference to keep variable in scope
 theta_dens_d3 <- -0.6
 ```
 
-> **Interpretation:** The barplot compares the exact Gibbs distribution
-> (computed analytically) with the empirical distribution from simulation
-> runs. The close match confirms that the searchnet CTMC is indeed
-> sampling from the Gibbs measure, as Blume's theorem predicts.
+> **Interpretation:** The barplot compares the empirical tie-count
+> distributions of the sparse-start and dense-start chains. The close match
+> shows both reach the same stationary distribution, as uniqueness predicts;
+> it does not test the Gibbs form.
+
+> **Rerun 2026-10-07:** KS 0.128, close match -> KS 0.439, mean ties 5.87 (sparse start) vs 4.18 (dense start); claim no longer supported as stated.
 
 ## Demo 4: Phase Transition --- Order Emerging from Randomness
 
 We sweep $\beta$ from low to high and track how the structure of the
 equilibrium changes. At low $\beta$, the configuration is random. At
-high $\beta$, structure emerges as the Gibbs measure concentrates on
+high $\beta$, structure emerges as the stationary distribution concentrates on
 organized configurations.
 
 ```{r demo4-phase-transition, fig.height=7, fig.width=7}
@@ -929,8 +983,9 @@ iters_d4 <- 60
 W_d4 <- create_block_diag(N_d4, round(N_d4 / 2))
 
 # Sweep effective beta via parameter scaling
-beta_scales <- c(0.1, 0.3, 0.5, 0.8, 1.0, 1.5, 2.0, 3.0, 5.0)
-n_reps_d4 <- 3
+beta_scales <- if (.full_run) c(0.1, 0.3, 0.5, 0.8, 1.0, 1.5, 2.0, 3.0, 5.0) else
+  c(0.1, 0.5, 1.0, 2.0, 5.0)
+n_reps_d4 <- if (.full_run) 3 else 1
 
 phase_results <- data.frame(
   beta_scale = numeric(),
@@ -991,40 +1046,45 @@ agg_phase <- aggregate(
   data = phase_results, FUN = mean
 )
 
-par(mfrow = c(2, 2), mar = c(4.5, 4.5, 3, 1))
+pal <- searchnet_palette()
+beta_lab <- expression(beta ~ "(effective rationality)")
+beta_panel <- function(y, ylab, title, col) {
+  ggplot(agg_phase, aes(beta_scale, .data[[y]])) +
+    geom_line(color = col, linewidth = 0.9) +
+    geom_point(color = col, size = 2.2) +
+    labs(title = title, x = beta_lab, y = ylab) +
+    theme_searchnet(base_size = 10)
+}
 
 # K_CC (epistasis / order parameter)
-plot(agg_phase$beta_scale, agg_phase$mean_kcc,
-     type = "b", pch = 19, col = "#e76f51", lwd = 2,
-     xlab = expression(beta ~ "(effective rationality)"),
-     ylab = expression("Mean " * K[CC]),
-     main = expression("Order Parameter: " * K[CC] * " vs " * beta))
-abline(v = 1.0, lty = 3, col = "gray50")
-text(1.0, max(agg_phase$mean_kcc) * 0.9, expression(beta^"*" * " ~ 1.0"),
-     pos = 4, col = "gray50", cex = 0.8)
+p_kcc <- beta_panel("mean_kcc", expression("Mean " * K[CC]),
+                    expression("Order Parameter: " * K[CC] * " vs " * beta),
+                    pal[["vermillion"]]) +
+  geom_vline(xintercept = 1.0, linetype = "dotted", color = "grey50") +
+  annotate("text", x = 1.0, y = max(agg_phase$mean_kcc) * 0.9,
+           label = "beta^'*' ~ '~ 1.0'", parse = TRUE, hjust = -0.1,
+           size = 3, color = "grey50")
 
 # Density
-plot(agg_phase$beta_scale, agg_phase$mean_density,
-     type = "b", pch = 19, col = "#2a9d8f", lwd = 2,
-     xlab = expression(beta ~ "(effective rationality)"),
-     ylab = "Mean Density",
-     main = expression("Density vs " * beta))
+p_dens4 <- beta_panel("mean_density", "Mean Density",
+                      expression("Density vs " * beta), pal[["green"]])
 
 # Scope heterogeneity
-plot(agg_phase$beta_scale, agg_phase$scope_sd,
-     type = "b", pch = 19, col = "#1b3a5c", lwd = 2,
-     xlab = expression(beta ~ "(effective rationality)"),
-     ylab = "SD of K_AC (Scope)",
-     main = expression("Scope Heterogeneity vs " * beta))
+p_scope4 <- beta_panel("scope_sd", "SD of K_AC (Scope)",
+                       expression("Scope Heterogeneity vs " * beta), pal[["blue"]])
 
 # Phase diagram: density vs K_CC
-plot(agg_phase$mean_density, agg_phase$mean_kcc,
-     type = "b", pch = 19, col = "#7b2d8e", lwd = 2,
-     xlab = "Mean Density", ylab = expression("Mean " * K[CC]),
-     main = "Phase Diagram: Density vs Epistasis")
-text(agg_phase$mean_density, agg_phase$mean_kcc,
-     labels = round(agg_phase$beta_scale, 1),
-     pos = 3, cex = 0.7, col = "gray40")
+p_phase <- ggplot(agg_phase, aes(mean_density, mean_kcc)) +
+  geom_path(color = pal[["purple"]], linewidth = 0.9) +
+  geom_point(color = pal[["purple"]], size = 2.2) +
+  geom_text(aes(label = round(beta_scale, 1)), vjust = -0.9, size = 2.6,
+            color = "grey40") +
+  labs(title = "Phase Diagram: Density vs Epistasis", x = "Mean Density",
+       y = expression("Mean " * K[CC])) +
+  theme_searchnet(base_size = 10)
+
+cowplot::plot_grid(p_kcc, p_dens4, p_scope4, p_phase, ncol = 2,
+                   align = "hv", axis = "tblr")
 ```
 
 > **Interpretation:** As $\beta$ increases (moving from random to
@@ -1051,13 +1111,13 @@ McKelvey &       Logit QRE = Gibbs measure of a potential game
 Palfrey (1995):
 
 Searchnet:       Bipartite SAOM + conditional logit ministeps
-                    → potential game + logit best response
-                    → Blume's theorem applies
-                    → unique stationary distribution (Gibbs/QRE)
+                    → potential game + multinomial logit response
+                    → unique stationary distribution (ergodic chain)
+                    → Gibbs/QRE form only under single-flip revision
                     → simulation converges regardless of starting point
 ```
 
-This chain is formalized as Theorem 4 (SAOM--QRE Equivalence) in the
+This chain is formalized as Property 4 (SAOM--QRE Equivalence) in the
 searchnet theory vignette (`vignette("saomnk-theory")`).
 
 ---
@@ -1072,7 +1132,7 @@ searchnet theory vignette (`vignette("saomnk-theory")`).
 - Brock, W. A., & Durlauf, S. N. (2001). Discrete choice with social
   interactions. *Review of Economic Studies*, 68(2), 235--260.
   *(Provides the economic foundation for SaoMNK's social-interaction
-  channel; recovered as Theorem 5 in the M -> infinity, congestion-only,
+  channel; recovered as Property 5 in the M -> infinity, congestion-only,
   mean-field limit. See `vignette("saomnk-brock-durlauf")` for the full
   reduction.)*
 - Durlauf, S. N. (1999). How can statistical mechanics contribute to

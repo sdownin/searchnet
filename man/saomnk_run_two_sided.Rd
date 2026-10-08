@@ -25,7 +25,10 @@ saomnk_run_two_sided(
 
 \item{steps_per_actor}{Micro-steps per actor per wave.}
 
-\item{seed}{Base seed; wave \code{w} uses \code{seed + w}.}
+\item{seed}{Base seed. Wave \code{w}'s simulation seed and confirmation
+seed are derived from it by a purpose-namespaced hash, so the two streams
+never coincide (before 0.10.0.9000 they were \code{seed + w} and
+\code{seed + 1000 * w}, which collide at wave 1000).}
 
 \item{verbose}{Print per-wave diagnostics.}
 }

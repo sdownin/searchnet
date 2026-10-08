@@ -576,7 +576,7 @@ class DetailedBalanceScene(BaseSearchnetScene):
 
         # ── Key message ───────────────────────────────────────────────
         message = Text(
-            "Forward and backward rates balance: this is why the simulation converges",
+            "Forward and backward rates balance under single-flip logit revision",
             font_size=16, color=C["text_light"],
             font="Times New Roman", weight=BOLD,
         ).to_edge(DOWN, buff=0.12)
@@ -893,7 +893,7 @@ class ChainOfReasoningScene(BaseSearchnetScene):
             "Logit best response  +  Potential game",
             "Stationary distribution = Gibbs measure",
             "SAOM + additive utility = Potential game",
-            "searchnet CTMC converges to QRE",
+            "searchnet CTMC converges (QRE only if single-flip)",
         ]
         step_colors = [C["teal"], C["amber"], C["coral"], C["highlight"]]
 

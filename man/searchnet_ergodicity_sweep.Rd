@@ -2,7 +2,7 @@
 % Please edit documentation in R/searchnet-ergodicity.R
 \name{searchnet_ergodicity_sweep}
 \alias{searchnet_ergodicity_sweep}
-\title{Measure Independence from Initial Conditions (Theorem 4)}
+\title{Measure Independence from Initial Conditions (Property 4)}
 \usage{
 searchnet_ergodicity_sweep(
   M = 12L,
@@ -32,7 +32,9 @@ by 0.05, which is coarser than any equivalence margin worth declaring.}
 arm. Default \code{c(0.1, 0.8)}.}
 
 \item{run_lengths}{Integer vector of \code{iterations_per_actor} values to
-sweep. Default \code{c(15, 30, 60, 120, 240)}.}
+sweep. Default \code{c(15, 30, 60, 120, 240)}. Since 0.11.0 each value
+is the expected number of opportunities per actor (a basic rate summed
+over the run), not a fixed ministep count.}
 
 \item{replicates}{Integer. Independent replicates per arm per run length,
 each with its own initial draw and its own run seed. Default 6. Replicates
@@ -46,8 +48,11 @@ Defaults to a block-diagonal matrix with \code{blocks} blocks.}
 
 \item{blocks}{Integer. Number of blocks in the default influence matrix.}
 
-\item{seed}{Integer. Base seed; replicate and arm indices are offset from it
-so every run is distinct and the whole sweep is reproducible.}
+\item{seed}{Integer. Base seed. Each run's initial-draw seed and dynamics
+seed are derived from it by a purpose-namespaced hash of (arm, replicate,
+run length), so no two streams share a seed and the whole sweep is
+reproducible. (Before 0.10.0.9000 the seeds were additive offsets, and
+arm 2's initial-draw seed equaled arm 1's dynamics seed.)}
 
 \item{equivalence_margin}{Numeric. The declared TOST margin, in density
 units. Default 0.05. Declare it before looking at the result.}

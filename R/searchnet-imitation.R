@@ -3,17 +3,35 @@
 #' The K_CA channel of the \{K\} interdependence system: the pull an actor feels
 #' toward components already held by performance-similar peers.
 #'
+#' @section Not RSiena's simEgoInDist2:
+#' The statistic here was exported as \code{saomnk_sim_ego_indist2()} until
+#' 2026-10-04, a name taken from RSiena's \code{simEgoInDist2} effect. It does
+#' not compute that effect, so it now carries the local name
+#' \code{\link{saomnk_coholder_similarity}}, and the old name is a deprecated
+#' alias. RSiena 1.5.0's two-mode \code{simEgoInDist2} subtracts one data-level
+#' constant (the mean similarity over actor pairs) and, where nobody else holds
+#' a component, compares ego with the covariate mean. This statistic subtracts
+#' each actor's own mean over the components that have co-holders, and a
+#' component with no co-holder contributes nothing. On 200 random states the
+#' two agreed in none, differing by up to 8.09. RSiena's definition is the
+#' \code{simEgoInDist2} column of the statistic matrix that
+#' \code{SaomNkRSienaBiEnv} computes, pinned to \code{siena07()} targets in
+#' \code{tests/testthat/test-structural-stats-vs-rsiena.R}.
+#'
 #' @section Why this is a statistic and not yet an effect:
-#' RSiena's effect set for a bipartite dependent variable contains 34 short
-#' names and none of them is a similarity effect; the nearest are `inPop_ego`
-#' and `outAct_ego`, which are degree-based. `simEgoInDist2` exists for one-mode
-#' networks only. searchnet's simulation path delegates to `siena07()`, so an
-#' effect that RSiena cannot express cannot enter the evaluation function
-#' through it.
+#' Without covariates, RSiena's effect set for a bipartite dependent variable
+#' has no similarity effect; the nearest are `inPop_ego` and `outAct_ego`,
+#' which are degree-based. With an actor covariate declared, RSiena 1.5.0 does
+#' offer `simEgoInDist2` for a bipartite dependent variable, but that is the
+#' different statistic described above. searchnet's simulation path delegates
+#' to `siena07()`, so a statistic that RSiena does not implement cannot enter
+#' the evaluation function through it.
 #'
 #' What is provided here is therefore the STATISTIC, computed natively on any
-#' bipartite state, matching the definition used by the CD4 procedural engines
-#' so the two are directly comparable. It makes the K_CA channel measurable in
+#' bipartite state. It was written to match the imitation block of the CD4
+#' procedural engines as transcribed on 2026-08-06 into
+#' \code{tests/testthat/test-imitation.R}; whether those engines still compute
+#' it is not checked here. It makes the K_CA channel measurable in
 #' searchnet, where it was previously absent entirely. It does NOT make K_CA
 #' simulable through `saomnk_run()`, and callers must not assume it does.
 #' Closing that gap needs either a C-level RSiena effect or a searchnet-native
@@ -24,22 +42,27 @@
 NULL
 
 
-#' Similarity-weighted imitation statistic for a bipartite state
+#' Co-holder performance similarity (imitation statistic) for a bipartite state
 #'
 #' For actor \code{i} and component \code{j}, let the co-holders of \code{j} be
 #' the other actors currently holding it. The statistic is the centered
 #' performance similarity between \code{i} and the mean performance of those
 #' co-holders, summed over the components \code{i} holds:
 #'
-#' \deqn{s_i(z) = \sum_j z_{ij} [ sim(v_i, \check{v}_j) - \overline{sim} ]}
+#' \deqn{s_i(z) = \sum_j z_{ij} [ sim(v_i, \check{v}_j) - \overline{sim}_i ]}
 #'
-#' with \eqn{sim(v_i, \check{v}_j) = (\Delta - |v_i - \check{v}_j|) / \Delta}
-#' and \eqn{\Delta} the range of performance across actors.
+#' with \eqn{sim(v_i, \check{v}_j) = (\Delta - |v_i - \check{v}_j|) / \Delta},
+#' \eqn{\Delta} the range of performance across actors, and
+#' \eqn{\overline{sim}_i} the mean of \eqn{sim(v_i, \check{v}_j)} over the
+#' components that have co-holders.
 #'
 #' Components with no co-holders contribute nothing: they are invisible rather
-#' than unattractive, which is the behavior the CD4 engines implement and is
-#' what distinguishes imitation from popularity. Centering follows the RSiena
-#' convention that evaluation effects carry no intercept.
+#' than unattractive, which is the behavior the CD4 engines implemented when
+#' this was written and is what distinguishes imitation from popularity.
+#' Centering is on each actor's own mean, \eqn{\overline{sim}_i}. That is NOT
+#' RSiena's convention: RSiena's \code{simEgoInDist2} subtracts a single
+#' data-level constant, which is one of the reasons this statistic is not that
+#' effect (see \link{searchnet-imitation}).
 #'
 #' @param bi_mat Binary actor-by-component matrix (M x N).
 #' @param performance Numeric vector of length M, one performance value per
@@ -61,14 +84,20 @@ NULL
 #' from the mean used for centering; treating it as a zero would drag the
 #' center down and make held-but-unpopular components look repellent.
 #'
+#' @section Deprecated alias:
+#' \code{saomnk_sim_ego_indist2()} is the pre-2026-10-04 name and is kept as a
+#' deprecated alias: same arguments, same return value, plus a one-time
+#' deprecation warning per session. The name was RSiena's, and the statistic
+#' is not RSiena's \code{simEgoInDist2}, which is why it changed.
+#'
 #' @examples
 #' set.seed(1)
 #' B <- matrix(rbinom(40, 1, 0.3), nrow = 5)
-#' saomnk_sim_ego_indist2(B, performance = runif(5))
+#' saomnk_coholder_similarity(B, performance = runif(5))
 #'
 #' @export
-saomnk_sim_ego_indist2 <- function(bi_mat, performance,
-                                   per_component = FALSE) {
+saomnk_coholder_similarity <- function(bi_mat, performance,
+                                       per_component = FALSE) {
 
   bi_mat <- as.matrix(bi_mat)
   storage.mode(bi_mat) <- "numeric"
@@ -119,12 +148,25 @@ saomnk_sim_ego_indist2 <- function(bi_mat, performance,
   }, numeric(1))
 }
 
+#' @rdname saomnk_coholder_similarity
+#' @export
+saomnk_sim_ego_indist2 <- function(bi_mat, performance, per_component = FALSE) {
+  if (!isTRUE(.searchnet_deprecation_flags$sim_ego_indist2)) {
+    .Deprecated("saomnk_coholder_similarity", package = "searchnet",
+                msg = paste0("saomnk_sim_ego_indist2() is deprecated; use ",
+                             "saomnk_coholder_similarity(). The statistic is not ",
+                             "RSiena's simEgoInDist2 effect, whose name it carried."))
+    .searchnet_deprecation_flags$sim_ego_indist2 <- TRUE
+  }
+  saomnk_coholder_similarity(bi_mat, performance, per_component = per_component)
+}
+
 
 #' Imitation statistic for a searchnet environment
 #'
 #' Convenience wrapper that pulls the bipartite state and a performance vector
 #' out of a \code{SaomNkRSienaBiEnv} and applies
-#' \code{\link{saomnk_sim_ego_indist2}}.
+#' \code{\link{saomnk_coholder_similarity}}.
 #'
 #' @param env A \code{SaomNkRSienaBiEnv}.
 #' @param performance Optional numeric vector of length M. When omitted, actor
@@ -134,7 +176,7 @@ saomnk_sim_ego_indist2 <- function(bi_mat, performance,
 #'   hard to trace.
 #' @param step Optional step index into the environment's state array; the
 #'   current state is used when omitted.
-#' @param ... Passed to \code{\link{saomnk_sim_ego_indist2}}.
+#' @param ... Passed to \code{\link{saomnk_coholder_similarity}}.
 #'
 #' @return Numeric vector of length M, or a matrix, per \code{per_component}.
 #' @examples
@@ -156,5 +198,5 @@ saomnk_env_imitation <- function(env, performance = NULL, step = NULL, ...) {
             "statistic.")
   }
 
-  saomnk_sim_ego_indist2(bi, performance, ...)
+  saomnk_coholder_similarity(bi, performance, ...)
 }

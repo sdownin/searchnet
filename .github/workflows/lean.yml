@@ -1,0 +1,45 @@
+name: lean
+
+# Builds the SaomNK Lean library shipped in inst/lean and audits the axioms of
+# every theorem and lemma. Runs only when the Lean sources change.
+
+on:
+  push:
+    paths:
+      - "inst/lean/**"
+      - ".github/workflows/lean.yml"
+  pull_request:
+    paths:
+      - "inst/lean/**"
+      - ".github/workflows/lean.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build SaomNK (lake exe cache get, lake build)
+        uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: inst/lean
+          use-mathlib-cache: true
+          build: true
+          test: false
+          lint: false
+
+      - name: Axiom audit
+        working-directory: inst/lean
+        run: |
+          lake env lean Axioms.lean | tee axioms.out
+          n=$(grep -c "depends on axioms\|does not depend on any axioms" axioms.out)
+          echo "audited declarations: $n"
+          test "$n" -gt 0
+          if grep "depends on axioms" axioms.out \
+               | sed 's/.*\[\(.*\)\]/\1/' | tr ',' '\n' | sed 's/^ *//' \
+               | grep -v -x -e propext -e Classical.choice -e Quot.sound | grep .; then
+            echo "::error::non-standard axiom (sorryAx, native_decide, or a user axiom) found"
+            exit 1
+          fi

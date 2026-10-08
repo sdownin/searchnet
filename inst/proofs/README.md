@@ -5,7 +5,7 @@ for the SaoMNK framework.
 
 ## Files
 
-- **saomnk_nk_equivalence_proof.tex** -- Formal proofs of Theorems 1-3
+- **saomnk_nk_equivalence_proof.tex** -- Formal proofs of Properties 1-3
   (Reduction, Generalization, Approximation) establishing NK as a special case
   of SaoMNK.
 
@@ -13,7 +13,7 @@ for the SaoMNK framework.
   all formal results.
 
 - **saomnk_proof_tutorial.Rmd** -- Interactive R tutorial walking through the
-  three theorems with computational verification.
+  three properties with computational verification.
 
 ## Access from R
 

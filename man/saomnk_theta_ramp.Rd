@@ -23,7 +23,11 @@ saomnk_theta_ramp(
 \item{structure_model}{A structure model list (as built by
 \code{\link{saomnk_model}}). Ignored if \code{theta_matrix} is supplied.}
 
-\item{iterations}{Integer. Number of ministeps (rows of the theta matrix).}
+\item{iterations}{Integer. Rows of the theta matrix: a time grid over one
+unit of model time, and \code{iterations / M} is the summed basic rate
+per actor when the matrix is passed to \code{saomnk_run()}. Since 0.11.0
+a row is not a ministep; each block of identical rows is one simulated
+segment, at most 50 per run.}
 
 \item{changes}{A list of change specifications. Each element is a list with:
 \describe{

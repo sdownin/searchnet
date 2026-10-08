@@ -23,6 +23,7 @@ saomnk_plot_bipartite_ring_markets <- function(env,
                                                 center_radius = 4,
                                                 market_alpha = 0.2,
                                                 epistatic_int_mat = NULL) {
+  .searchnet_require_path(env, "saomnk_plot_bipartite_ring_markets()")
 
   affiliation_array <- env$bi_env_arr
 
@@ -159,7 +160,7 @@ saomnk_plot_bipartite_ring_markets <- function(env,
   groups_not_unique <- groups_all[which( ! groups_all %in% unique(component_data$primary_group))]
 
 
-  group_colors <- RColorBrewer::brewer.pal(num_groups, 'Accent')
+  group_colors <- searchnet_palette("categorical", num_groups)
   market_regions <- list()
 
   # For each group, create a convex hull around its components
@@ -386,7 +387,7 @@ saomnk_plot_bipartite_ring_markets <- function(env,
   }
 
   # Generate a palette for strategies
-  strategy_colors <- scales::hue_pal()(length(unique(actor_strategies)))
+  strategy_colors <- searchnet_palette("categorical", length(unique(actor_strategies)))
   names(strategy_colors) <- rev(unique(actor_strategies))
 
   # Create multi-membership visualization for components
@@ -469,7 +470,7 @@ saomnk_plot_bipartite_ring_markets <- function(env,
     ylim(-ring_radius * 1.2, ring_radius * 1.2) +
     labs(title = "Market Entry and Repositioning: Actors and Components",
          subtitle = paste0(M, " actors and ", N, " components with decision paths (", S, " steps)")) +
-    theme_minimal() +
+    theme_searchnet() +
     theme(legend.position = "bottom",
           panel.grid.minor = element_blank(),
           axis.title = element_blank(),
@@ -509,6 +510,7 @@ saomnk_plot_bipartite_ring_markets_animation <- function(env,
                                                           animation_fps = 10,
                                                           animation_duration = 10,
                                                           epistatic_int_mat = NULL) {
+  .searchnet_require_path(env, "saomnk_plot_bipartite_ring_markets_animation()")
 
   # Load required libraries if not already loaded
   if (!requireNamespace("gganimate", quietly = TRUE)) {
@@ -641,7 +643,7 @@ saomnk_plot_bipartite_ring_markets_animation <- function(env,
   component_data$primary_group <- sapply(component_to_groups, function(x) ifelse(length(x) == 1, x[1], NA))
 
   # Generate unique colors for each group
-  group_colors <- RColorBrewer::brewer.pal(num_groups, 'Accent')
+  group_colors <- searchnet_palette("categorical", num_groups)
 
   # Create market region data (one region per group)
   market_regions <- list()
@@ -852,7 +854,7 @@ saomnk_plot_bipartite_ring_markets_animation <- function(env,
   }
 
 
-  strategy_colors <- scales::hue_pal()(length(unique(actor_strategies)))
+  strategy_colors <- searchnet_palette("categorical", length(unique(actor_strategies)))
   names(strategy_colors) <- unique(actor_strategies)
 
 
@@ -924,7 +926,7 @@ saomnk_plot_bipartite_ring_markets_animation <- function(env,
     ylim(-ring_radius * 1.2, ring_radius * 1.2) +
     labs(title = "Market Entry and Repositioning: Actors and Components",
          subtitle = "Step: {closest_state}") +
-    theme_minimal() +
+    theme_searchnet() +
     theme(legend.position = "bottom",
           panel.grid.minor = element_blank(),
           axis.title = element_blank(),
@@ -988,6 +990,7 @@ saomnk_plot_market_entry_survival <- function(env,
                                                cumulative = FALSE,
                                                conf_level = 0.95,
                                                return_data = FALSE) {
+  .searchnet_require_path(env, "saomnk_plot_market_entry_survival()")
   if (is.null(env$experiments) || is.null(env$experiments[[experiment_name]]))
     stop('market_entry experiment not available. First call mcsim_market_entry()')
 
@@ -1030,9 +1033,9 @@ saomnk_plot_market_entry_survival <- function(env,
        limits = c(0, 1),
        breaks = seq(0, 1, by = 0.25)
      ) +
-     ggplot2::scale_color_brewer(palette = "Set1", name = "Actor ID") +
-     ggplot2::scale_fill_brewer(palette = "Set1", name = "Actor ID") +
-     ggplot2::theme_minimal() +
+     scale_color_searchnet(name = "Actor ID") +
+     scale_fill_searchnet(name = "Actor ID") +
+     theme_searchnet() +
      ggplot2::theme(
        legend.position = "right",
        panel.grid.minor = ggplot2::element_blank(),
@@ -1059,9 +1062,9 @@ saomnk_plot_market_entry_survival <- function(env,
        limits = c(0, 1),
        breaks = seq(0, 1, by = 0.25)
      ) +
-     ggplot2::scale_color_brewer(palette = "Set1", name = "Actor ID") +
-     ggplot2::scale_fill_brewer(palette = "Set1", name = "Actor ID") +
-     ggplot2::theme_minimal() +
+     scale_color_searchnet(name = "Actor ID") +
+     scale_fill_searchnet(name = "Actor ID") +
+     theme_searchnet() +
      ggplot2::theme(
        legend.position = "right",
        panel.grid.minor = ggplot2::element_blank(),
@@ -1089,6 +1092,7 @@ saomnk_plot_market_entry_survival_strategy <- function(env,
                                                         cumulative = FALSE,
                                                         conf_level = 0.95,
                                                         return_data = FALSE) {
+  .searchnet_require_path(env, "saomnk_plot_market_entry_survival_strategy()")
   if (is.null(env$experiments) || is.null(env$experiments[[experiment_name]]))
     stop('market_entry experiment not available. First call mcsim_market_entry()')
 
@@ -1148,7 +1152,7 @@ saomnk_plot_market_entry_survival_strategy <- function(env,
         limits = c(0, 1),
         breaks = seq(0, 1, by = 0.25)
       ) +
-      ggplot2::theme_minimal() +
+      theme_searchnet() +
       ggplot2::theme(
         legend.position = "right",
         panel.grid.minor = ggplot2::element_blank(),
@@ -1189,9 +1193,9 @@ saomnk_plot_market_entry_survival_strategy <- function(env,
         limits = c(0, 1),
         breaks = seq(0, 1, by = 0.25)
       ) +
-      ggplot2::scale_color_brewer(palette = "Set1", name = "Actor ID") +
-      ggplot2::scale_fill_brewer(palette = "Set1", name = "Actor ID") +
-      ggplot2::theme_minimal() +
+      scale_color_searchnet(name = "Actor ID") +
+      scale_fill_searchnet(name = "Actor ID") +
+      theme_searchnet() +
       ggplot2::theme(
         legend.position = "right",
         panel.grid.minor = ggplot2::element_blank(),
@@ -1372,9 +1376,9 @@ saomnk_plot_market_entry_survival_v0 <- function(env,
       limits = c(0, 1),
       breaks = seq(0, 1, by = 0.25)
     ) +
-    ggplot2::scale_color_brewer(palette = "Set1", name = "Actor ID") +
-    ggplot2::scale_fill_brewer(palette = "Set1", name = "Actor ID") +
-    ggplot2::theme_minimal() +
+    scale_color_searchnet(name = "Actor ID") +
+    scale_fill_searchnet(name = "Actor ID") +
+    theme_searchnet() +
     ggplot2::theme(
       legend.position = "right",
       panel.grid.minor = ggplot2::element_blank(),

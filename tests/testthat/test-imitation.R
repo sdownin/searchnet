@@ -1,7 +1,9 @@
-test_that("saomnk_sim_ego_indist2 matches the CD4 canonical definition", {
-  # Reference transcribed from the CD2026 procedural engine's inline
-  # simEgoInDist2 block. Kept as a literal transcription rather than a call so
-  # the test does not depend on that project being present.
+test_that("saomnk_coholder_similarity matches the reference engine block transcribed 2026-08-06", {
+  # Reference transcribed on 2026-08-06 from an independent procedural engine's
+  # inline imitation block, then named simEgoInDist2. Neither is RSiena's
+  # simEgoInDist2 (see test-structural-stats-vs-rsiena.R). Kept as a literal
+  # transcription rather than a call so the test does not depend on that
+  # project being present.
   cd4_ref <- function(B, perf, i) {
     M <- nrow(B); N <- ncol(B)
     rivals <- setdiff(seq_len(M), i)
@@ -22,7 +24,7 @@ test_that("saomnk_sim_ego_indist2 matches the CD4 canonical definition", {
     M <- sample(3:8, 1); N <- sample(4:12, 1)
     B <- matrix(rbinom(M * N, 1, runif(1, .2, .7)), nrow = M)
     perf <- runif(M, 0, 10)
-    mine <- saomnk_sim_ego_indist2(B, perf, per_component = TRUE)
+    mine <- saomnk_coholder_similarity(B, perf, per_component = TRUE)
     for (i in seq_len(M)) {
       ref <- cd4_ref(B, perf, i)
       expect_equal(is.na(mine[i, ]), is.na(ref))
@@ -34,7 +36,7 @@ test_that("saomnk_sim_ego_indist2 matches the CD4 canonical definition", {
 
 test_that("components with no co-holders are invisible, not unattractive", {
   B <- matrix(0, 3, 4); B[1, 1] <- 1; B[2, 2] <- 1; B[3, 2] <- 1
-  sm <- saomnk_sim_ego_indist2(B, c(1, 2, 3), per_component = TRUE)
+  sm <- saomnk_coholder_similarity(B, c(1, 2, 3), per_component = TRUE)
   expect_true(is.na(sm[1, 1]))   # nobody else holds component 1
   expect_false(is.na(sm[2, 2]))  # actor 3 also holds component 2
 })
@@ -42,15 +44,27 @@ test_that("components with no co-holders are invisible, not unattractive", {
 test_that("identical performance yields no pull on any component", {
   set.seed(1)
   B <- matrix(rbinom(40, 1, 0.4), nrow = 5)
-  expect_true(all(abs(saomnk_sim_ego_indist2(B, rep(3, 5))) < 1e-12))
+  expect_true(all(abs(saomnk_coholder_similarity(B, rep(3, 5))) < 1e-12))
 })
 
 test_that("a single actor feels no imitation pull", {
-  expect_equal(saomnk_sim_ego_indist2(matrix(c(1, 0, 1), nrow = 1), 1), 0)
+  expect_equal(saomnk_coholder_similarity(matrix(c(1, 0, 1), nrow = 1), 1), 0)
 })
 
 test_that("malformed input errors rather than recycling", {
   B <- matrix(rbinom(20, 1, .5), nrow = 4)
-  expect_error(saomnk_sim_ego_indist2(B, runif(3)), "length")
-  expect_error(saomnk_sim_ego_indist2(B, c(NA, runif(3))), "NA")
+  expect_error(saomnk_coholder_similarity(B, runif(3)), "length")
+  expect_error(saomnk_coholder_similarity(B, c(NA, runif(3))), "NA")
+})
+
+test_that("saomnk_sim_ego_indist2() is a warning alias of saomnk_coholder_similarity()", {
+  set.seed(5)
+  B <- matrix(rbinom(40, 1, 0.4), nrow = 5)
+  perf <- runif(5)
+  ## The alias warns once per session; reset so this test is order-independent.
+  .searchnet_reset_deprecations()
+  expect_warning(old <- saomnk_sim_ego_indist2(B, perf), "saomnk_coholder_similarity")
+  expect_identical(old, saomnk_coholder_similarity(B, perf))
+  expect_silent(old_pc <- saomnk_sim_ego_indist2(B, perf, per_component = TRUE))
+  expect_identical(old_pc, saomnk_coholder_similarity(B, perf, per_component = TRUE))
 })

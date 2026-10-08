@@ -16,6 +16,6 @@ A one-row data frame.
 }
 \description{
 Reports the same quantities used elsewhere in the package and in the
-employee-mobility application, so results remain comparable across domains.
+two-sided applications, so results remain comparable across domains.
 }
 \keyword{internal}

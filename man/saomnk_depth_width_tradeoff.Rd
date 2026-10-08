@@ -8,7 +8,7 @@ saomnk_depth_width_tradeoff(policy_params = .policy_params)
 }
 \arguments{
 \item{policy_params}{Named list of policy parameter lists. Each must
-contain scope_cost, synergy, herding. Default uses the AMR paper values.}
+contain scope_cost, synergy, herding. Default uses four illustrative policy archetypes.}
 }
 \value{
 Data frame with columns: policy, label, width, depth, steepness,

@@ -108,3 +108,34 @@ test_that("searchnet_did() succeeds once the never-treated group meets did::att_
   expect_false(inherits(att, "error"))
   expect_true(inherits(att, "MP"))
 })
+
+
+## Regression (2026-10-07): the causal-inference vignette wrapped
+## searchnet_did() in tryCatch(..., error = message) under message = FALSE, so
+## the error above (3 never-treated actors) left its DID chunks empty without
+## a word. The vignette now builds a shocked and a comparison arm and lets
+## errors through. This checks that searchnet_did() recovers a planted effect.
+test_that("searchnet_did() recovers a planted ATT on a tiny panel", {
+  skip_if_not_installed("did")
+  set.seed(7)
+  n_units <- 12L; n_steps <- 10L; onset <- 6L; effect <- 2
+  panel <- expand.grid(actor_id = factor(seq_len(n_units)), step = seq_len(n_steps))
+  tr <- as.integer(panel$actor_id) <= 6L
+  panel$treated     <- as.integer(tr)
+  panel$first_treat <- ifelse(tr, onset, 0L)
+  panel$outcome     <- 0.3 * panel$step + 0.1 * as.integer(panel$actor_id) +
+    rnorm(nrow(panel), sd = 0.05) + ifelse(tr & panel$step >= onset, effect, 0)
+
+  att <- suppressWarnings(searchnet_did(panel))
+  expect_s3_class(att, "MP")
+  simple <- suppressWarnings(did::aggte(att, type = "simple"))
+  expect_equal(simple$overall.att, effect, tolerance = 0.05)
+  ## Pre-period group-time effects are placebos and sit near zero.
+  pre <- att$att[att$t < onset]
+  expect_true(all(abs(pre) < 0.2))
+
+  ## A null planted effect is estimated near zero, not manufactured.
+  panel$outcome <- panel$outcome - ifelse(tr & panel$step >= onset, effect, 0)
+  simple0 <- suppressWarnings(did::aggte(searchnet_did(panel), type = "simple"))
+  expect_lt(abs(simple0$overall.att), 0.1)
+})

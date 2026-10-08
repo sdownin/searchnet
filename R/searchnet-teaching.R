@@ -452,27 +452,39 @@ searchnet_classroom_advance <- function(classroom, force = FALSE) {
 
       # Modify model parameters based on shock type
       # (density becomes more negative = higher costs)
+      ## The effects live in model$dv_bipartite$effects. This used to write to
+      ## model$effects[[1]], which does not exist on a saomnk_model, so the
+      ## shock created a stray entry and the density never changed.
       shock_density_modifier <- -1 * shock_row$magnitude
-      classroom$model$effects[[1]]$parameter <-
-        classroom$model$effects[[1]]$parameter + shock_density_modifier
+      effs <- classroom$model$dv_bipartite$effects
+      i_dens <- which(vapply(effs, function(e) identical(e$effect, "density"),
+                             logical(1)))
+      if (length(i_dens) != 1L)
+        stop("searchnet_classroom_advance(): the model has no single density ",
+             "effect for the scheduled shock to change.", call. = FALSE)
+      classroom$model$dv_bipartite$effects[[i_dens]]$parameter <-
+        effs[[i_dens]]$parameter + shock_density_modifier
     }
   }
 
   # ---- Run AI decisions via SAOM ministeps ----
   # The AI actors follow the stochastic logit choice rule.
   # We run a limited number of ministeps to simulate AI decision-making.
+  ## restart = FALSE: the round continues from the current board (last
+  ## round's end plus this round's student moves). With the default
+  ## restart = TRUE every round restarted from the initial matrix and erased
+  ## the student moves applied above (2026-10-07). An error here stops the
+  ## round: it used to become a warning and the round was scored on the
+  ## student moves alone.
   ai_steps <- classroom$steps_per_round * classroom$n_ai
   if (ai_steps > 0) {
-    tryCatch({
-      saomnk_run(
-        classroom$env, classroom$model,
-        steps_per_actor = classroom$steps_per_round,
-        seed = (classroom$seed %||% 42) + next_round * 100
-      )
-    }, error = function(e) {
-      warning("AI decision step encountered an error: ", e$message,
-              "\nContinuing with student decisions only.")
-    })
+    saomnk_run(
+      classroom$env, classroom$model,
+      steps_per_actor = classroom$steps_per_round,
+      seed = (classroom$seed %||% 42) + next_round * 100,
+      restart = FALSE
+    )
+    .searchnet_require_path(classroom$env, "searchnet_classroom_advance()")
   }
 
   # ---- Compute round metrics ----
@@ -489,27 +501,31 @@ searchnet_classroom_advance <- function(classroom, force = FALSE) {
   )
 
   # Compute utility (simplified: scope benefit - crowding cost)
+  ## The influence matrix W and its weight live in the model's XWX entry,
+  ## model$dv_bipartite$coDyadCovars. This read model$influence_matrix and
+  ## model$effects, neither of which a saomnk_model has, so W fell back to the
+  ## identity, sum(W[held, held]) - length(held) was 0, and the epistasis
+  ## bonus was 0 for every firm in every round.
+  xwx <- Filter(function(e) identical(e$effect, "XWX"),
+                classroom$model$dv_bipartite$coDyadCovars)
+  if (length(xwx) != 1L)
+    stop(sprintf(paste0("searchnet_classroom_advance(): the model has %d XWX ",
+                        "(influence-matrix) entries; the leaderboard's epistasis ",
+                        "bonus needs exactly one."), length(xwx)), call. = FALSE)
+  W <- as.matrix(xwx[[1]]$x)
+  xwx_weight <- xwx[[1]]$parameter
+  if (!identical(dim(W), c(ncol(B_now), ncol(B_now))) || !is.numeric(xwx_weight))
+    stop(sprintf(paste0("searchnet_classroom_advance(): the influence matrix is %s ",
+                        "but the board has %d components."),
+                 paste(dim(W), collapse = " x "), ncol(B_now)), call. = FALSE)
   popularity_vec <- colSums(B_now)
   for (i in seq_len(nrow(B_now))) {
     held <- which(B_now[i, ] == 1)
     util <- length(held) * 0.5  # base scope value
     if (length(held) > 0) {
-      # Epistasis bonus from block structure
-      W <- classroom$model$influence_matrix %||% diag(ncol(B_now))
-      if (!is.null(W) && nrow(W) == ncol(B_now)) {
-        epist_bonus <- sum(W[held, held]) - length(held)  # exclude diagonal
-        # Safely get XWX weight from model
-        xwx_weight <- 0.1  # default
-        if (is.list(classroom$model$effects)) {
-          for (.eff in classroom$model$effects) {
-            if (is.list(.eff) && identical(.eff$effect, "XWX")) {
-              xwx_weight <- .eff$parameter %||% 0.1
-              break
-            }
-          }
-        }
-        util <- util + epist_bonus * xwx_weight
-      }
+      # Epistasis bonus from block structure (off-diagonal W among held components)
+      epist_bonus <- sum(W[held, held]) - sum(diag(W)[held])
+      util <- util + epist_bonus * xwx_weight
       # Crowding penalty
       crowd_penalty <- sum(popularity_vec[held] - 1) * 0.1
       util <- util - crowd_penalty

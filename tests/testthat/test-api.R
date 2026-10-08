@@ -369,6 +369,7 @@ test_that("influence_* arguments work without warning", {
 })
 
 test_that("deprecated epistasis_* arguments warn but still work", {
+  .searchnet_reset_deprecations()
   W <- saomnk_block_diagonal(8, 2)
   expect_warning(saomnk_model(density = -0.5, epistasis_matrix = W),
                  "deprecated")

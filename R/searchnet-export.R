@@ -35,6 +35,7 @@ NULL
   if (!inherits(env, "SaomNkRSienaBiEnv")) {
     stop("'env' must be a SaomNkRSienaBiEnv object.", call. = FALSE)
   }
+  .searchnet_require_path(env, "searchnet_export_*()")
   for (fld in fields) {
     if (is.null(env[[fld]])) {
       stop(

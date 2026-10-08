@@ -26,7 +26,11 @@ saomnk_theta_drift(
 \item{structure_model}{A structure model list. Ignored if
 \code{theta_matrix} is supplied.}
 
-\item{iterations}{Integer. Number of ministeps (rows of the theta matrix).}
+\item{iterations}{Integer. Rows of the theta matrix: a time grid over one
+unit of model time, and \code{iterations / M} is the summed basic rate
+per actor when the matrix is passed to \code{saomnk_run()}. Since 0.11.0
+a row is not a ministep; each block of identical rows is one simulated
+segment, at most 50 per run.}
 
 \item{effect}{Character. Effect name (RSiena shortName) or exact
 \code{effect_level} to make volatile.}

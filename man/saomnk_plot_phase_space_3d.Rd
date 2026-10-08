@@ -60,6 +60,15 @@ Each point is one actor at one timestep. Trajectories show evolution over time.
 Color encodes time (early = cool, late = warm), strategy type, actor identity,
 or exploration/exploitation phase.
 }
+\details{
+The interactive 3D view stays a \pkg{plotly} figure: ggplot2 has no 3D
+coordinate system, and a static projection would lose the rotation the
+figure exists for. Its colors, grid and fonts follow the package style
+(\code{\link{theme_searchnet}}, \code{\link{searchnet_palette}}): time runs
+from Okabe-Ito blue to vermillion, groups take the Okabe-Ito categorical
+colors. Without \pkg{plotly} the fallback is a ggplot2 figure of the three
+2D projections in the package theme.
+}
 \examples{
 \donttest{
 env <- saomnk_env(M = 4, N = 6, seed = 42)

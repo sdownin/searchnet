@@ -151,7 +151,7 @@ saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy <- functio
     ggridges::scale_fill_cyclical(
       breaks = strat_break,
       labels = strat_labs,
-      values = scales::hue_pal()(length(levels(actor_strat))),
+      values = searchnet_palette("categorical", length(levels(actor_strat))),
       guide = "legend"
     ) +
     labs(
@@ -167,7 +167,7 @@ saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy <- functio
     ) +
     geom_vline(xintercept = 0, linetype=1) +
     coord_cartesian(clip = "off") +
-    ggridges::theme_ridges(grid = TRUE, center=TRUE) +
+    theme_searchnet() +
     theme(legend.position = 'bottom')
   if(show_strategy_means) {
     plt.dr <- plt.dr +
@@ -294,7 +294,7 @@ saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary <- function(env,
     plt <- plt + geom_point(aes(color=component_id), alpha=point_alpha, shape=1, size=point_size, show.legend = FALSE)
   if(env$exists(smooth_method))
     plt <- plt + geom_smooth(aes(color=component_id, fill=component_id), method = smooth_method, linewidth=.5, alpha=.09, show.legend = FALSE, se=FALSE)
-  plt <- plt + theme_bw() +
+  plt <- plt + theme_searchnet() +
     ylim(y_lim) +
     ylab(y_lab) +
     xlab('Actor Decision Chain Ministep') +
@@ -321,7 +321,7 @@ saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary <- function(env,
     coord_flip() +
     facet_grid(wave_id ~ .) +
     ylab('K_CC Density') +
-    theme_bw() + theme(
+    theme_searchnet() + theme(
       strip.background = element_blank(),
       strip.text = element_blank(),
       panel.grid.minor = element_blank(),
@@ -405,7 +405,7 @@ saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary <- function(env,
     plt <- plt + geom_point(aes(color=component_id), alpha=point_alpha, shape=1, size=point_size, show.legend = FALSE)
   if(env$exists(smooth_method))
     plt <- plt + geom_smooth(aes(color=component_id, fill=component_id), method = smooth_method, linewidth=.5, alpha=.09, se=FALSE, show.legend = FALSE)
-  plt <- plt + theme_bw() +
+  plt <- plt + theme_searchnet() +
     ylim(y_lim) +
     ylab(y_lab) +
     xlab('Actor Decision Chain Ministep') +
@@ -436,7 +436,7 @@ saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary <- function(env,
     coord_flip() +
     facet_grid(wave_id ~ .) +
     ylab('K_CA Density') +
-    theme_bw() + theme(
+    theme_searchnet() + theme(
       strip.background = element_blank(),
       strip.text = element_blank(),
       panel.grid.minor = element_blank(),
@@ -517,7 +517,7 @@ saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary <- function(env,
     plt <- plt + geom_point(aes(color=strategy), alpha=point_alpha, shape=1, size=point_size)
   if(env$exists(smooth_method))
     plt <- plt + geom_smooth(aes(linetype=actor_id, color=strategy, fill=strategy), method = smooth_method, linewidth=1, alpha=.09)
-  plt <- plt + theme_bw() +
+  plt <- plt + theme_searchnet() +
     ylim(y_lim) +
     ylab(y_lab) +
     xlab('Actor Decision Chain Ministep') +
@@ -548,7 +548,7 @@ saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary <- function(env,
     coord_flip() +
     facet_grid(wave_id ~ .) +
     ylab('K_AC Density') +
-    theme_bw() + theme(
+    theme_searchnet() + theme(
       strip.background = element_blank(),
       strip.text = element_blank(),
       panel.grid.minor = element_blank(),
@@ -629,7 +629,7 @@ saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary <- function(env,
     plt <- plt + geom_point(aes(color=strategy), alpha=point_alpha, shape=1, size=point_size)
   if(env$exists(smooth_method))
     plt <- plt + geom_smooth(aes(linetype=actor_id, color=strategy, fill=strategy), method = smooth_method, linewidth=1, alpha=.09)
-  plt <- plt + theme_bw() +
+  plt <- plt + theme_searchnet() +
     ylim(y_lim) +
     ylab(y_lab) +
     xlab('Actor Decision Chain Ministep') +
@@ -660,7 +660,7 @@ saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary <- function(env,
     coord_flip() +
     facet_grid(wave_id ~ .) +
     ylab('K_AA Density') +
-    theme_bw() + theme(
+    theme_searchnet() + theme(
       strip.background = element_blank(),
       strip.text = element_blank(),
       panel.grid.minor = element_blank(),
@@ -757,7 +757,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_strategy_summary <- function(e
   plt <- plt + geom_smooth(aes(x=chain_step_id, y=utility_mean), method = smooth_method, span=loess_span,
                            data=dat %>% group_by(chain_step_id)%>%dplyr::summarize(utility_mean=mean(utility)),
                            color='black', linetype=1, alpha=.1)
-  plt <- plt + theme_bw() +
+  plt <- plt + theme_searchnet() +
     ylim(util_lim) +
     ylab(util_lab) +
     xlab('Actor Decision Chain Ministep') +
@@ -798,7 +798,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_strategy_summary <- function(e
     coord_flip() +
     facet_grid(wave_id ~ .) +
     ylab('Actor Utility Density') +
-    theme_bw() + theme(
+    theme_searchnet() + theme(
       strip.background = element_blank(),
       strip.text = element_blank(),
       panel.grid.minor = element_blank(),
@@ -854,7 +854,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_by_strategy <- function(env,
     plt <- plt + geom_point(aes(color=strategy), alpha=.25, shape=1, size=2)
   if(env$exists(smooth_method))
     plt <- plt + geom_smooth(aes(linetype=actor_id, color=strategy), method = smooth_method, linewidth=1, alpha=.15)
-  plt <- plt + theme_bw()
+  plt <- plt + theme_searchnet()
   # Add marginal density plots
   plt <- ggExtra::ggMarginal(plt, type = "density", margins = "y")
 
@@ -898,7 +898,7 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_density_by_strategy <- functio
     geom_density(alpha=.1, linewidth=1)  +
     facet_grid( wave_id ~ chain_half) +
     geom_vline(data = stratmeans, aes(xintercept = mean, color=strategy), linetype=2, linewidth=.9) +
-    theme_bw() +
+    theme_searchnet() +
     ggtitle(sprintf('Strategy: %s\nStructure: %s',
                     paste( paste(paste(strateffs, stratparams, sep='='), stratfixs, sep='' ), collapse = '; '),
                     paste( paste(paste(structeffs, structparams, sep='='), structfixs, sep=''), collapse = '; ')

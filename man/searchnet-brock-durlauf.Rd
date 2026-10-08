@@ -4,7 +4,7 @@
 \alias{searchnet-brock-durlauf}
 \title{Brock--Durlauf Mean-Field Reduction Utilities}
 \description{
-Functions operationalizing Theorem 5 of the SaoMNK proof
+Functions operationalizing Property 5 of the SaoMNK proof
 table (Part L), which establishes that SaoMNK reduces to the
 Brock & Durlauf (2001, RES) binary discrete-choice-with-social-
 interactions model in the M -> infinity, congestion-only, mean-field
@@ -15,10 +15,9 @@ self-consistency equation for the equilibrium magnetization,
 (ii) count equilibria (regime classification), (iii) compute the
 B&D social multiplier from either explicit parameters or a fitted
 SaoMNK environment, (iv) report the Landau-Ginzburg quartic
-coefficient and basin steepness from the AMR herding-steepness
+coefficient and basin steepness from the herding-steepness
 derivation, and (v) verify the M -> infinity reduction empirically
 by comparing simulated mean adoption to the analytical fixed point.
 
-See \code{inst/proofs/PROOF_TABLE.md} (Part L, Theorem 5) and the
-AMR mathematical appendix for derivations.
+See \code{inst/proofs/PROOF_TABLE.md} (Part L, Property 5) for derivations.
 }

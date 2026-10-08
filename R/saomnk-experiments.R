@@ -32,6 +32,7 @@ SaoMNKexperiments <- R6Class("SaoMNKexperiments",
 
                                # --- Results Storage ---
                                simulation_results = list(), # Stores minimal data by default
+                               failures = NULL, # data.frame(run, seed, stage, message) of failed runs
                                aggregated_util_df = NULL,
                                aggregated_entry_df = NULL,
                                aggregated_first_entries = NULL,
@@ -120,6 +121,17 @@ SaoMNKexperiments <- R6Class("SaoMNKexperiments",
 
                                  # --- Simulation Loop ---
                                  temp_results <- list()
+                                 ## A failed run used to be warned about and dropped, so
+                                 ## process_results() summarized whatever survived as if it
+                                 ## were the full set. Failures are now recorded here and
+                                 ## reported with counts once the loop ends.
+                                 failures <- data.frame(run = integer(0), seed = integer(0),
+                                                        stage = character(0), message = character(0),
+                                                        stringsAsFactors = FALSE)
+                                 .record_failure <- function(stage, e) {
+                                   failures[nrow(failures) + 1L, ] <<- list(i, run_seed_i, stage,
+                                                                           conditionMessage(e))
+                                 }
                                  if(!self$verbose_run) pb <- utils::txtProgressBar(min = 0, max = self$n_simulations, style = 3) # Progress bar only if not verbose
 
                                  for (i in 1:self$n_simulations) {
@@ -131,8 +143,8 @@ SaoMNKexperiments <- R6Class("SaoMNKexperiments",
                                      # Use the determined class generator
                                      SaoMNK_class$new(self$base_environ_params)
                                    }, error = function(e) {
-                                     warning(paste("Failed to initialize SaoMNK object for run", i, "seed", run_seed_i, ":", e$message))
-                                     return(NULL) # Skip this run if initialization fails
+                                     .record_failure("initialize", e)
+                                     NULL
                                    })
 
                                    # Proceed only if initialization was successful
@@ -148,8 +160,8 @@ SaoMNKexperiments <- R6Class("SaoMNKexperiments",
                                        )
                                        TRUE # Indicate success
                                      }, error = function(e) {
-                                       warning(paste("Simulation run", i, "seed", run_seed_i, "failed during search_rsiena:", e$message))
-                                       FALSE # Indicate failure
+                                       .record_failure("search_rsiena", e)
+                                       FALSE
                                      })
 
                                      # Store results only if simulation succeeded
@@ -174,6 +186,26 @@ SaoMNKexperiments <- R6Class("SaoMNKexperiments",
                                    if(!self$verbose_run) utils::setTxtProgressBar(pb, i) # Update progress bar
                                  } # End simulation loop
                                  if(!self$verbose_run) close(pb) # Close progress bar
+
+                                 self$failures <- failures
+                                 if (nrow(failures) == self$n_simulations) {
+                                   stop(sprintf(paste0("All %d simulation runs failed; no results stored. ",
+                                                       "First failure (run %d, seed %d, %s): %s"),
+                                                self$n_simulations, failures$run[1], failures$seed[1],
+                                                failures$stage[1], failures$message[1]),
+                                        call. = FALSE)
+                                 }
+                                 if (nrow(failures) > 0) {
+                                   warning(sprintf(paste0("%d of %d simulation runs failed and are excluded ",
+                                                          "from the results (%s); see $failures. ",
+                                                          "First failure: %s"),
+                                                   nrow(failures), self$n_simulations,
+                                                   paste(sprintf("%s: %d", names(table(failures$stage)),
+                                                                 as.integer(table(failures$stage))),
+                                                         collapse = ", "),
+                                                   failures$message[1]),
+                                           call. = FALSE)
+                                 }
 
                                  self$simulation_results <- temp_results
                                  cat(sprintf("\nSimulations complete. %d results stored.\n", length(self$simulation_results)))
@@ -431,9 +463,9 @@ SaoMNKexperiments <- R6Class("SaoMNKexperiments",
                                      limits = c(0, 1),
                                      breaks = seq(0, 1, by = 0.25)
                                    ) +
-                                   ggplot2::scale_color_brewer(palette = "Set1", name = "Actor ID") + # Or another suitable palette
-                                   ggplot2::scale_fill_brewer(palette = "Set1", name = "Actor ID") +  # Match fill palette
-                                   ggplot2::theme_minimal() +
+                                   scale_color_searchnet(name = "Actor ID") + # Or another suitable palette
+                                   scale_fill_searchnet(name = "Actor ID") +  # Match fill palette
+                                   theme_searchnet() +
                                    ggplot2::theme(
                                      legend.position = "right",
                                      panel.grid.minor = ggplot2::element_blank(),

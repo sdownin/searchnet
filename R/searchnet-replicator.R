@@ -248,7 +248,7 @@ saomnk_plot_replicator <- function(replicator_result,
       y = "Population Share",
       color = "Policy Type"
     ) +
-    ggplot2::theme_minimal(base_size = 12) +
+    theme_searchnet(base_size = 12) +
     ggplot2::theme(
       text = ggplot2::element_text(family = "serif"),
       legend.position = "bottom"
@@ -304,7 +304,7 @@ saomnk_plot_simplex <- function(replicator_result,
       y = paste0(y_type, " Share")
     ) +
     ggplot2::coord_equal() +
-    ggplot2::theme_minimal(base_size = 12) +
+    theme_searchnet(base_size = 12) +
     ggplot2::theme(text = ggplot2::element_text(family = "serif"))
 }
 
@@ -357,7 +357,7 @@ saomnk_plot_elo <- function(tournament_result,
       x = "Policy Type",
       y = "ELO Rating"
     ) +
-    ggplot2::theme_minimal(base_size = 12) +
+    theme_searchnet(base_size = 12) +
     ggplot2::theme(
       text = ggplot2::element_text(family = "serif"),
       legend.position = "none"

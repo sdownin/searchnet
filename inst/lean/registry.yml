@@ -1,0 +1,414 @@
+# Registry of machine-checked results in the SaomNK Lean library.
+#
+# One entry per headline declaration (lemmas that only serve a proof are not
+# listed; `searchnet::lean_declarations()` lists all of them, and Axioms.lean
+# audits all of them). Read with `searchnet::lean_registry()`.
+#
+#   decl         fully qualified Lean name
+#   module       Lean module
+#   kind         definition | statistic | potential | chain | limit | nash |
+#                integrability | mean-field | compute | convention
+#   statement    the claim, in words
+#   proof_table  step identifiers in inst/proofs/PROOF_TABLE.md this result
+#                underwrites ("M" and "N" are the part-level identifiers for
+#                two-layer integrability and the creation/endowment boundary;
+#                step numbers inside those parts are assigned by the table)
+#   tests        testthat files that exercise the same claim numerically
+#   r_functions  R functions whose behavior the result concerns
+#
+# Every declaration below depends only on propext, Classical.choice and
+# Quot.sound (checked by `searchnet::lean_check()`); none uses sorry or
+# native_decide.
+
+version: 1
+lean_toolchain: leanprover/lean4:v4.34.0-rc2
+mathlib: v4.34.0-rc2
+
+results:
+
+  # --- configurations and the NK landscape ---------------------------------
+  - decl: SaomNK.card_config
+    module: SaomNK.Core.Config
+    kind: definition
+    statement: "The configuration space {0,1}^(M x N) has 2^(MN) elements."
+    proof_table: [A2, A3]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.card_config_gt
+    module: SaomNK.Core.Config
+    kind: definition
+    statement: "For M >= 2 and N >= 1 the multi-actor state space is strictly larger than NK's."
+    proof_table: [D3]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.isKRegular_zero_iff
+    module: SaomNK.NK.Influence
+    kind: definition
+    statement: "K = 0 regularity holds iff the influence pattern is the identity."
+    proof_table: [A5, A6]
+    tests: [tests/testthat/test-nk-classic.R]
+    r_functions: [nk_dependencies, nk_landscape]
+  - decl: SaomNK.isKRegular_full_iff
+    module: SaomNK.NK.Influence
+    kind: definition
+    statement: "K = N - 1 regularity holds iff every component influences every component."
+    proof_table: [A5, A6]
+    tests: [tests/testthat/test-nk-classic.R]
+    r_functions: [nk_dependencies, nk_landscape]
+  - decl: SaomNK.nkTermFull_eq_mul_nkFitness
+    module: SaomNK.NK.Fitness
+    kind: definition
+    statement: "The NK term sum_d f_d(b masked by E_d) is N times NK fitness."
+    proof_table: [A7, A8]
+    tests: [tests/testthat/test-nk-equivalence.R]
+    r_functions: [nk_fitness]
+  - decl: SaomNK.heldOnly_eq_full_of_vanishing
+    module: SaomNK.NK.Fitness
+    kind: definition
+    statement: "If each payoff vanishes when its own component is off, the held-only NK term equals the full NK term."
+    proof_table: [B2]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.nkTermFull_in_dummy_span
+    module: SaomNK.NK.Fitness
+    kind: definition
+    statement: "Any NK term is an exact linear combination of masked-configuration dummies."
+    proof_table: [E2]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.codeLSB_eq_sum
+    module: SaomNK.NK.PowerKey
+    kind: convention
+    statement: "The LSB code of a row is sum_j b_j 2^j; the engine's landscape table row is 1 + sum_d b_d 2^(d-1)."
+    proof_table: [A10, B3]
+    tests: [tests/testthat/test-lean.R]
+    r_functions: [SaomNkRSienaBiEnv$compute_formal_utility]
+  - decl: SaomNK.codeMSB_eq_sum
+    module: SaomNK.NK.PowerKey
+    kind: convention
+    statement: "The MSB code is the classical power key sum_j b_j 2^(N-1-j)."
+    proof_table: [A9, B3]
+    tests: [tests/testthat/test-lean.R, tests/testthat/test-nk-classic.R]
+    r_functions: [nk_code, nk_bits, SaomNkRSienaBiEnv$power_key_index]
+  - decl: SaomNK.codeEquiv
+    module: SaomNK.NK.PowerKey
+    kind: convention
+    statement: "The LSB code is a bijection between rows and Fin (2^N)."
+    proof_table: [A9]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.tableRowSum_enumerate
+    module: SaomNK.NK.Table
+    kind: convention
+    statement: "Enumerating a raw power-key payoff table reproduces the NK term at every configuration."
+    proof_table: [A10]
+    tests: []
+    r_functions: [SaomNkRSienaBiEnv$fitness_landscape]
+  - decl: SaomNK.nkTermFull_tableLookup
+    module: SaomNK.NK.Table
+    kind: convention
+    statement: "For a table consistent with the influence pattern, the row sum is the NK term."
+    proof_table: [A10]
+    tests: [tests/testthat/test-lean.R]
+    r_functions: [lean_export_model]
+
+  # --- reduction ----------------------------------------------------------------
+  - decl: SaomNK.utility_eq_nkFitness
+    module: SaomNK.NK.Reduction
+    kind: limit
+    statement: "Under one actor, E = G and zero network coefficients, the utility equals N times NK fitness."
+    proof_table: [C1, C2, C3, C6]
+    tests: [tests/testthat/test-nk-equivalence.R]
+    r_functions: [nk_to_saomnk, nk_verify_reduction]
+  - decl: SaomNK.logitProb_tendsto_one
+    module: SaomNK.Choice.Limits
+    kind: limit
+    statement: "As beta grows, a unique improving best flip is chosen with probability tending to one."
+    proof_table: [C4, C8, C9]
+    tests: [tests/testthat/test-nk-equivalence.R]
+    r_functions: [SaomNkRSienaBiEnv$compute_choice_probabilities, nk_walk]
+  - decl: SaomNK.stayProb_tendsto_one
+    module: SaomNK.Choice.Limits
+    kind: limit
+    statement: "As beta grows with every change negative, no-change has probability tending to one (local optimum)."
+    proof_table: [C8, C9]
+    tests: [tests/testthat/test-nk-equivalence.R]
+    r_functions: [SaomNkRSienaBiEnv$compute_choice_probabilities]
+  - decl: SaomNK.improvementStep_is_saom_limit
+    module: SaomNK.Choice.Limits
+    kind: limit
+    statement: "One-flip improvement search on any payoff profile is the zero-noise limit of single-flip SAOM search (Metropolis)."
+    proof_table: [C9]
+    tests: []
+    r_functions: [nk_walk]
+  - decl: SaomNK.logitProb_pos
+    module: SaomNK.Choice.Logit
+    kind: limit
+    statement: "At finite beta every flip, improving or not, has positive probability."
+    proof_table: [D2, D5]
+    tests: []
+    r_functions: [SaomNkRSienaBiEnv$compute_choice_probabilities]
+
+  # --- statistics and potentials ---------------------------------------------
+  - decl: SaomNK.CoreSpec.landscape_endogeneity
+    module: SaomNK.Potential.Exact
+    kind: statistic
+    statement: "A rival adding an activity the focal actor holds changes the focal utility by exactly theta_inPop."
+    proof_table: [D1, D4]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.IsExactPotential.add
+    module: SaomNK.Potential.Exact
+    kind: potential
+    statement: "Exact potentials add: the extension rule for new statistics."
+    proof_table: [F1]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.isExactPotential_own
+    module: SaomNK.Potential.Exact
+    kind: potential
+    statement: "Any actor-indexed own-row term (NK, density, outAct, XWX, egoX, altX) has the potential sum_m g_m(b_m)."
+    proof_table: [F3, E5]
+    tests: []
+    r_functions: [lean_spec]
+  - decl: SaomNK.isExactPotential_inPopW
+    module: SaomNK.Potential.Exact
+    kind: potential
+    statement: "Activity-weighted crowding has the Rosenthal potential sum_d v_d n_d (n_d + 1) / 2."
+    proof_table: [F3, H6]
+    tests: []
+    r_functions: [saomnk_inpop_self_consistency]
+  - decl: SaomNK.isExactPotential_rowPair
+    module: SaomNK.Potential.Exact
+    kind: potential
+    statement: "Any statistic built from a symmetric function of two actors' rows has an exact potential."
+    proof_table: [F3]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.isExactPotential_cycle4
+    module: SaomNK.Potential.Exact
+    kind: potential
+    statement: "The four-cycle count has the potential 'number of four-cycles'."
+    proof_table: [F3]
+    tests: [tests/testthat/test-structural-stats-vs-rsiena.R]
+    r_functions: []
+  - decl: SaomNK.Spec.exact_potential
+    module: SaomNK.Potential.Exact
+    kind: potential
+    statement: "The regular SAOM-NK evaluation function (own-row + crowding + symmetric pair kernel) is an exact potential game."
+    proof_table: [F3]
+    tests: [tests/testthat/test-lean.R]
+    r_functions: [lean_spec, lean_export_model]
+  - decl: SaomNK.CoreSpec.exact_potential
+    module: SaomNK.Potential.Exact
+    kind: potential
+    statement: "Core specification (NK, density, outAct, inPop): U_i(B') - U_i(B) = Phi(B') - Phi(B) for any unilateral deviation."
+    proof_table: [F3]
+    tests: []
+    r_functions: [SaomNkRSienaBiEnv$compute_formal_utility]
+  - decl: SaomNK.mixed_no_exact_potential
+    module: SaomNK.Stats.RowPairStat
+    kind: potential
+    statement: "Actor-specific weights on a shared symmetric pair kernel with nonzero interaction contrast destroy the exact potential."
+    proof_table: []
+    tests: []
+    r_functions: []
+  - decl: SaomNK.flipPotential_unique
+    module: SaomNK.Chain.Reachable
+    kind: potential
+    statement: "Two exact potentials of the same profile differ by a constant."
+    proof_table: [F1]
+    tests: []
+    r_functions: []
+
+  # --- equilibria ------------------------------------------------------------------
+  - decl: SaomNK.exists_nash_of_exactPotential
+    module: SaomNK.Potential.Nash
+    kind: nash
+    statement: "Every exact potential game on the configuration space has a pure-strategy Nash equilibrium."
+    proof_table: [K1]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.flipStable_iff_localMax
+    module: SaomNK.Potential.Nash
+    kind: nash
+    statement: "Single-flip-stable configurations are exactly the local maxima of the potential."
+    proof_table: [K1, A11]
+    tests: [tests/testthat/test-lean.R]
+    r_functions: [nk_local_optima]
+
+  # --- chain ------------------------------------------------------------------------
+  - decl: SaomNK.glauber_reversible
+    module: SaomNK.Choice.Glauber
+    kind: chain
+    statement: "Binary-logit acceptance is reversible for the Gibbs weight exp(beta Phi)."
+    proof_table: [F2, F5]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.metropolis_reversible
+    module: SaomNK.Choice.Metropolis
+    kind: chain
+    statement: "Metropolis acceptance is reversible for the Gibbs weight exp(beta Phi)."
+    proof_table: [F2]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.detailed_balance_of_potential
+    module: SaomNK.Chain.Balance
+    kind: chain
+    statement: "With a flip potential and a reversible acceptance rule, the Gibbs weight satisfies detailed balance on every flip, for any state-independent proposal rates."
+    proof_table: [F5, F7]
+    tests: [tests/testthat/test-searchnet-ergodicity.R]
+    r_functions: [searchnet_ergodicity_sweep]
+  - decl: SaomNK.global_balance_of_potential
+    module: SaomNK.Chain.Balance
+    kind: chain
+    statement: "The Gibbs weight is stationary for the single-flip generator (pi Q = 0)."
+    proof_table: [F5, F7]
+    tests: [tests/testthat/test-searchnet-ergodicity.R]
+    r_functions: [searchnet_ergodicity_sweep]
+  - decl: SaomNK.reachable_restricted
+    module: SaomNK.Chain.Restricted
+    kind: chain
+    statement: "Under structural zeros and ones the feasible set is connected by single flips of free entries."
+    proof_table: []
+    tests: []
+    r_functions: []
+  - decl: SaomNK.global_balance_restricted
+    module: SaomNK.Chain.Restricted
+    kind: chain
+    statement: "The Gibbs weight restricted to the feasible set is stationary for the restricted generator."
+    proof_table: []
+    tests: []
+    r_functions: []
+  - decl: SaomNK.reachable
+    module: SaomNK.Chain.Reachable
+    kind: chain
+    statement: "Every configuration is reachable from every other by single flips (irreducibility)."
+    proof_table: [F7]
+    tests: []
+    r_functions: []
+
+  # --- two layers and directional effects --------------------------------------
+  - decl: SaomNK.TwoLayer.integrability_sufficient
+    module: SaomNK.TwoLayer.Integrability
+    kind: integrability
+    statement: "With symmetric cross-layer coupling and potential-form relational own terms, the joint potential is exact."
+    proof_table: [M]
+    tests: []
+    r_functions: [searchnet_coevolve]
+  - decl: SaomNK.TwoLayer.integrability_necessary
+    module: SaomNK.TwoLayer.Integrability
+    kind: integrability
+    statement: "An exact potential for the two-layer process forces theta_AB = theta_BA."
+    proof_table: [M]
+    tests: []
+    r_functions: [searchnet_coevolve]
+  - decl: SaomNK.TwoLayer.cycle_affinity
+    module: SaomNK.TwoLayer.Integrability
+    kind: integrability
+    statement: "Around the elementary four-move cycle the change statistics sum to (theta_BA - theta_AB) B_kj."
+    proof_table: [M]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.TwoLayer.symmetric_of_reversible_total
+    module: SaomNK.TwoLayer.Integrability
+    kind: integrability
+    statement: "If the two-layer chain is reversible for any positive measure, theta_AB = theta_BA (Kolmogorov form)."
+    proof_table: [M]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.TwoLayer.egoCovariate_not_ownAPotential
+    module: SaomNK.TwoLayer.Integrability
+    kind: integrability
+    statement: "An ego covariate on the relational degree with non-constant covariate admits no common potential."
+    proof_table: [M]
+    tests: []
+    r_functions: [lean_export_model]
+  - decl: SaomNK.dir_integrability_necessary
+    module: SaomNK.Directional
+    kind: integrability
+    statement: "An exact potential forces creation and endowment change statistics to agree on every move."
+    proof_table: [N]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.dir_integrability_sufficient
+    module: SaomNK.Directional
+    kind: integrability
+    statement: "If creation and endowment agree, the core potential plus summed creation is exact."
+    proof_table: [N]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.dir_four_cycle_wedge
+    module: SaomNK.Directional
+    kind: integrability
+    statement: "A constant creation/endowment wedge w gives four-step cycle affinity exactly 2w."
+    proof_table: [N]
+    tests: []
+    r_functions: []
+
+  # --- mean field --------------------------------------------------------------------
+  - decl: SaomNK.MeanField.exists_nonzero_root_iff
+    module: SaomNK.MeanField.TwoBloc
+    kind: mean-field
+    statement: "m = tanh(c m) has a nonzero solution iff c > 1 (the multiplicity threshold)."
+    proof_table: [L9, L11]
+    tests: [tests/testthat/test-mean-field.R]
+    r_functions: [solve_mean_field, verify_brock_durlauf_reduction]
+  - decl: SaomNK.MeanField.aligned_state_exists_iff
+    module: SaomNK.MeanField.TwoBloc
+    kind: mean-field
+    statement: "Two blocs with zero fields: a nonzero aligned equilibrium exists iff J + Jx > 1."
+    proof_table: [L11]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.MeanField.polarized_state_exists_iff
+    module: SaomNK.MeanField.TwoBloc
+    kind: mean-field
+    statement: "Two blocs with zero fields: a nonzero polarized equilibrium exists iff J - Jx > 1."
+    proof_table: [L11]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.MeanField.symmetric_state_stable_iff_root
+    module: SaomNK.MeanField.TwoBloc
+    kind: mean-field
+    statement: "The aligned equilibrium is linearly stable iff (J + Jx)(1 - m^2) < 1 (Jx >= 0)."
+    proof_table: [L11]
+    tests: []
+    r_functions: []
+  - decl: SaomNK.MeanField.Landau.argmin_pm_of_neg
+    module: SaomNK.MeanField.Landau
+    kind: mean-field
+    statement: "For a < 0 the Landau quartic a x^2 + b x^4 has two minimizers +-sqrt(-a/(2b)) and the origin is above them."
+    proof_table: []
+    tests: []
+    r_functions: [bd_landau_steepness]
+
+  # --- computation -----------------------------------------------------------------
+  - decl: SaomNK.RatSpec.cast_utility
+    module: SaomNK.Compute.Cast
+    kind: compute
+    statement: "The computable rational utility is the cast of the general real-valued utility."
+    proof_table: []
+    tests: [tests/testthat/test-lean.R]
+    r_functions: [lean_export_model]
+  - decl: SaomNK.RatSpec.exact_potentialQ
+    module: SaomNK.Compute.Cast
+    kind: compute
+    statement: "Every exported rational model is an exact potential game, in Q."
+    proof_table: [F3]
+    tests: [tests/testthat/test-lean.R]
+    r_functions: [lean_export_model]
+  - decl: SaomNK.RatSpec.nkQ_eq_nkFitness
+    module: SaomNK.Compute.Cast
+    kind: compute
+    statement: "If the exported table is consistent with E (decidable), the exported NK term is NK fitness."
+    proof_table: [A8, A10]
+    tests: [tests/testthat/test-lean.R]
+    r_functions: [lean_export_model]
+  - decl: SaomNK.RatSpec.countLocalOpt_eq_card
+    module: SaomNK.Compute.LocalOpt
+    kind: compute
+    statement: "The enumerated local-optima count equals the number of flip-stable configurations of the general model."
+    proof_table: [K1]
+    tests: [tests/testthat/test-lean.R]
+    r_functions: [lean_export_model, nk_local_optima]

@@ -148,7 +148,7 @@ actor-component incidence matrix required by `searchnet`.
 
 ```{r env-from-data, purl=FALSE}
 ## mi_data: a list with adjacency matrices and node attributes per wave
-## (e.g., from the airline ORM study or supply chain panel data)
+## (e.g., from an empirical panel)
 env_data <- empirical_to_saomnk_env(mi_data, wave = 5)
 
 ## Inspect the resulting environment

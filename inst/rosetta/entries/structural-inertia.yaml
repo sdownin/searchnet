@@ -1,0 +1,49 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: structural-inertia
+title: Structural inertia
+model: Structural inertia
+citations:
+  - key: hannan_freeman_1984
+    text: "Hannan, M. T., and Freeman, J. (1984). Structural inertia and organizational change. American Sociological Review, 49(2), 149-164."
+    doi: "10.2307/2095567"
+relation: translation
+statement: >-
+  Inertia maps to the endowment function: maintaining a tie is valued
+  separately from creating it, and a high endowment value means ties resist
+  dissolution.
+restrictions:
+  W: any
+  notes:
+    - "statistics without a registered class: endowment function"
+terms:
+  - class: complementarity
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: scope
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: crowding
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: contact
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs: {}
+lean: []
+checks: []
+does_not_cover:
+  - "Interpretive mapping; no reduction is proved"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

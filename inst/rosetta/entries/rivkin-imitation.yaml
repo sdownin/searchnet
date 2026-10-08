@@ -1,0 +1,67 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: rivkin-imitation
+title: Imitation of complex strategies
+model: Rivkin imitation on NK landscapes
+citations:
+  - key: rivkin_2000
+    text: "Rivkin, J. W. (2000). Imitation of complex strategies. Management Science, 46(6), 824-844."
+    doi: 10.1287/mnsc.46.6.824.11940
+  - key: rivkin_siggelkow_2007
+    text: "Rivkin, J. W., and Siggelkow, N. (2007). Patterned interactions in complex systems: Implications for exploration. Management Science, 53(7), 1068-1085."
+    doi: 10.1287/mnsc.1060.0626
+relation: comparison
+statement: >-
+  An imitator that copies a successful firm's configuration on an NK landscape
+  shares the fitness term with SAOM-NK, but copying a whole configuration is not
+  a single-flip choice; the closest SAOM-NK term is the co-holder similarity
+  statistic, which attracts an actor to components held by similar performers.
+  The two are related, not nested.
+restrictions:
+  M: null
+  "N": null
+  W: binary-k-regular
+  beta: null
+  rates: any
+  notes:
+    - "imitation is a jump to another firm's configuration, with copying errors"
+terms:
+  - class: complementarity
+    status: active
+    effect: XWX
+    value: 1
+    expression: "NK fitness, the same landscape for leader and imitator"
+    construct: complexity of the strategy (K)
+  - class: scope
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: crowding
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: contact
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: active
+    effect: coholder_similarity
+    value: 0.2
+    expression: "copy a leader's configuration (not a statistic of the objective)"
+    construct: imitation of a successful rival
+constructs:
+  complexity of the strategy (K): [complementarity]
+  imitation of a successful rival: [imitation]
+lean: []
+checks:
+  - saomnk_coholder_similarity
+  - tests/testthat/test-imitation.R
+does_not_cover:
+  - "Whole-configuration copying is a multi-flip move; SAOM-NK ministeps change one tie"
+  - "The co-holder similarity statistic is computed but not simulable through saomnk_run()"
+  - "Copying errors and the leader's selection rule have no SAOM-NK counterpart"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-07"
+  ai_drafted: true
+  reviewed: false

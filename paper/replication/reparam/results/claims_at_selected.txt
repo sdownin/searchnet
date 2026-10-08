@@ -1,0 +1,78 @@
+searchnet 0.11.0 | RSiena 1.5.0 | R version 4.5.3 (2026-03-11 ucrt) | Windows 10 x64 | 2026-10-07 21:58:50 
+
+=== 1. K-system figures ===
+coupling figure: selected density -2.00, popularity 0.15 (D1)
+relocation figure: original density -5.00, popularity 0.15 (no admissible point)
+coupling: initial means  0.05 / 0.04 / 0.05 / 0.04 
+coupling: terminal means 6.2 / 5.17 / 16.95 / 16.54 
+coupling: min pairwise correlation 0.976; realized ministeps 796; final density 0.258
+     control sparsity popularity
+K_AC   0.150        0     14.150
+K_CA   0.125        0     11.792
+K_AA   0.150        0     20.000
+K_CC   0.125        0     14.625
+ordered sparsity < control < popularity, by dimension:  K_AC TRUE, K_CA TRUE, K_AA TRUE, K_CC TRUE 
+shock after ministep 405; arms identical before it: TRUE
+final densities by arm: 0.006 / 0 / 0.59 
+
+=== 2. Endogenous illustration ===
+selected density -0.50, popularity 0.05, scope 0.025
+final K_AC by egoX group (-1 / 0 / +1): 4.75 / 3.25 / 6.5 
+final K_CC across components: range 4-11, SD 1.88; final density 0.403; ministeps 388
+pattern shown (strict order and +1 minus -1 >= 2): FALSE
+
+=== 3. Appendix Theorem 2 example ===
+selected density -1.25, inPop 0.10, outAct 0.05
+character(0)
+final K_AC by actor: 3 2 1 5 
+final K_CA by component: 2 1 1 3 0 4 
+final K_CC by component: 4 4 4 4 0 4 
+final density 0.458; ministeps 113
+pattern shown (max K_AC < 6 and K_CA takes >= 2 values): TRUE
+
+=== 4. Ergodicity sweep ===
+density_par -0.50 (original kept: no admissible point)
+Ergodicity sweep (Theorem 4: independence from initial conditions)
+  12 actors x 15 components (180 cells; one tie = 0.0056 density)
+  arms starting at 0.10 and 0.80, 10 replicates each
+
+  run length   mean(lo)   mean(hi)        gap
+          15     0.7533     0.9478     0.1944
+          30     0.9478     0.9594     0.0117
+          60     0.9544     0.9583     0.0039
+         120     0.9594     0.9494     0.0100
+         240     0.9556     0.9583     0.0028
+
+  initial gap 0.7000 --> final gap 0.0028  (99.6% collapse)
+  Monte Carlo floor (10 replicates): 0.0047
+  decay above the floor: log(gap) ~ -1.24 * log(iterations), R^2 = 0.617
+  (fit on 3 point(s); 60, 240 excluded as at-or-below the floor)
+
+  TOST at 240 iterations, margin +/- 0.050, 90% CI [-0.0130, 0.0074]:
+  EQUIVALENT -- the arms are statistically indistinguishable at the
+  declared margin. The chain has forgotten where it started.
+  run_length         gap   mean_lo   mean_hi  sd_pooled
+1         15 0.194444444 0.7533333 0.9477778 0.04324778
+2         30 0.011666667 0.9477778 0.9594444 0.01739657
+3         60 0.003888889 0.9544444 0.9583333 0.01636035
+4        120 0.010000000 0.9594444 0.9494444 0.01276301
+5        240 0.002777778 0.9555556 0.9583333 0.01312727
+List of 5
+ $ slope    : num -1.24
+ $ r_squared: num 0.617
+ $ n_points : int 3
+ $ floor    : num 0.00468
+ $ excluded : int [1:2] 60 240
+final gap 0.0028; collapse 99.6%
+
+=== 5. Held parameters: regime statistics ===
+API run (criteria of 2.2):
+  density_final n_boundary toggles_per_actor ministeps seg1_ministeps
+1     0.9791667          6                21       256            256
+  seg2_ministeps
+1             NA
+Shock illustration baseline (criteria of 2.1 control arm):
+  density_final n_boundary toggles_per_actor ministeps seg1_ministeps
+1     0.9166667          3          52.66667       486            486
+  seg2_ministeps
+1             NA

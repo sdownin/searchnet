@@ -1,0 +1,50 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: strategic-momentum
+title: Momentum and repetitive action
+model: Strategic momentum
+citations:
+  - key: amburgey_miner_1992
+    text: "Amburgey, T. L., and Miner, A. S. (1992). Strategic momentum: The effects of repetitive, positional, and contextual momentum on merger activity. Strategic Management Journal, 13(5), 335-348."
+    doi: "10.1002/smj.4250130503"
+relation: translation
+statement: >-
+  Activity begets activity through the actor-level rate function (heterogeneous
+  rates of change) and the scope statistic outAct.
+restrictions:
+  W: any
+  notes:
+    - "statistics without a registered class: rate function"
+terms:
+  - class: complementarity
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: scope
+    status: active
+    effect: outAct
+    expression: outAct
+    construct: scope
+  - class: crowding
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: contact
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs:
+  scope: [scope]
+lean: []
+checks: []
+does_not_cover:
+  - "Interpretive mapping; no reduction is proved"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

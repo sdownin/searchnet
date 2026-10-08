@@ -1,6 +1,6 @@
 ---
 title: "How SaoMNK Generalizes the NK Model: A Tutorial"
-subtitle: "Online Appendix — Proof Walkthrough with Worked Examples"
+subtitle: "Proof Walkthrough with Worked Examples (numbering follows inst/proofs/PROOF_TABLE.md)"
 author: "Stephen Downing"
 date: "`r Sys.Date()`"
 output:
@@ -34,9 +34,9 @@ from complexity theory (Kauffman, 1993; Levinthal, 1997).
 
 | Result | Plain-English Statement |
 |--------|------------------------|
-| **Theorem 1 (Reduction)** | Standard NK is a *special case* of SaoMNK. Set five switches to their extreme positions, and SaoMNK collapses exactly to NK. |
-| **Theorem 2 (Generalization)** | SaoMNK can do things NK *cannot*: multiple actors, endogenous landscape co-evolution, and bounded rationality. |
-| **Theorem 3 (Approximation)** | For any NK landscape you can dream up, there exists an SaoMNK parameterization that reproduces it. |
+| **Property 1 (Reduction)** | Standard NK is a *special case* of SaoMNK. Set five switches to their extreme positions, and SaoMNK collapses exactly to NK. |
+| **Property 2 (Generalization)** | SaoMNK can do things NK *cannot*: multiple actors, endogenous landscape co-evolution, and bounded rationality. |
+| **Property 3 (Approximation)** | For any NK landscape you can dream up, there exists an SaoMNK parameterization that reproduces it. |
 
 The takeaway: **every NK result you already know is automatically a special case of SaoMNK**, and SaoMNK opens doors that NK cannot.
 
@@ -161,7 +161,7 @@ saomnk_calc_fit <- function(N, NK_land, inter_m, x, Power_key) {
 
 ---
 
-# Theorem 1: NK is a Special Case of SaoMNK
+# Property 1: NK is a Special Case of SaoMNK
 
 ## The Five Restrictions
 
@@ -401,11 +401,11 @@ legend("topleft", "Perfect agreement (y = x)", col = "red", lty = 2, lwd = 2, bt
 ```
 
 Every point sits exactly on the 45-degree line. The two models produce identical
-results. **Theorem 1 is verified computationally.**
+results. **Property 1 is verified computationally.**
 
 ---
 
-# Theorem 2: SaoMNK Strictly Extends NK
+# Property 2: SaoMNK Strictly Extends NK
 
 SaoMNK extends NK along three **independent** dimensions. Each one introduces
 dynamics that are provably impossible in standard NK.
@@ -532,7 +532,7 @@ that is central to the organizational learning literature.
 
 ---
 
-# Theorem 3: Approximation
+# Property 3: Approximation
 
 **Claim:** For *any* NK(N,K) landscape, there exists an SaoMNK parameterization
 that reproduces it exactly (or to arbitrary precision).
@@ -717,7 +717,7 @@ Trajectories become more volatile and final fitness drops. **None of this is pos
 
 ---
 
-# Summary: The Three Theorems at a Glance
+# Summary: The Three Properties at a Glance
 
 ```{r summary-table, echo=FALSE}
 summary <- data.frame(

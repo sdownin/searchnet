@@ -1,0 +1,53 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: exploration-and-local-search
+title: Exploration, exploitation and local search
+model: Exploration, exploitation and local search
+citations:
+  - key: march_1991
+    text: "March, J. G. (1991). Exploration and exploitation in organizational learning. Organization Science, 2(1), 71-87."
+    doi: "10.1287/orsc.2.1.71"
+  - key: levinthal_march_1993
+    text: "Levinthal, D. A., and March, J. G. (1993). The myopia of learning. Strategic Management Journal, 14(S2), 95-112."
+    doi: "10.1002/smj.4250141009"
+relation: translation
+statement: >-
+  Translated, not reduced: exploration and exploitation map to the creation
+  function (entering components not held) and the endowment function
+  (maintaining held components); local search is the single-flip ministep
+  itself, one component changed per opportunity and evaluated myopically.
+restrictions:
+  W: any
+  notes:
+    - "statistics without a registered class: creation function; endowment function"
+terms:
+  - class: complementarity
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: scope
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: crowding
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: contact
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs: {}
+lean: []
+checks: []
+does_not_cover:
+  - "Nothing is proved or reproduced; the mappings are interpretive"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

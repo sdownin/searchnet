@@ -1,0 +1,62 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: k-epistasis
+title: "{K} Epistasis (component to component): complementarity among activities"
+model: Complementarities among activities
+citations:
+  - key: milgrom_roberts_1990
+    text: "Milgrom, P., and Roberts, J. (1990). The economics of modern manufacturing: Technology, strategy, and organization. American Economic Review, 80(3), 511-528."
+    doi: ~
+  - key: milgrom_roberts_1995
+    text: "Milgrom, P., and Roberts, J. (1995). Complementarities and fit: Strategy, structure, and organizational change in manufacturing. Journal of Accounting and Economics, 19(2-3), 179-208."
+    doi: "10.1016/0165-4101(94)00382-F"
+  - key: kauffman_1993
+    text: "Kauffman, S. A. (1993). The Origins of Order: Self-Organization and Selection in Evolution. Oxford University Press."
+    doi: "10.1093/oso/9780195079517.001.0001"
+  - key: rivkin_2000
+    text: "Rivkin, J. W. (2000). Imitation of complex strategies. Management Science, 46(6), 824-844."
+    doi: "10.1287/mnsc.46.6.824.11940"
+  - key: porter_siggelkow_2008
+    text: "Porter, M. E., and Siggelkow, N. (2008). Contextuality within activity systems and sustainability of competitive advantage. Academy of Management Perspectives, 22(2), 34-56."
+    doi: "10.5465/amp.2008.32739758"
+relation: translation
+statement: >-
+  Complementarity among activities is the influence matrix W in the NK term,
+  estimable as RSiena's XWX closure with W as a component-by-component dyadic
+  covariate.
+restrictions:
+  W: any
+  notes: []
+terms:
+  - class: complementarity
+    status: active
+    effect: XWX
+    expression: "NK term under W (XWX in the engine)"
+    construct: fitness under W
+  - class: scope
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: crowding
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: contact
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs:
+  fitness under W: [complementarity]
+lean: []
+checks: []
+does_not_cover:
+  - "XWX is the engine's quadratic form; the NK term carries higher-order structure that XWX does not"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

@@ -4,17 +4,53 @@
 \alias{saomnk_plot_snapshots}
 \title{Plot Network Snapshots}
 \usage{
-saomnk_plot_snapshots(env, steps = NULL)
+saomnk_plot_snapshots(
+  env,
+  steps = NULL,
+  palette = c("okabe-ito", "legacy"),
+  node_colors = NULL,
+  draw = TRUE
+)
 }
 \arguments{
 \item{env}{A \code{SaomNkRSienaBiEnv} object after running
 \code{\link{saomnk_run}}.}
 
 \item{steps}{Integer vector of simulation step indices to snapshot, or
-\code{NULL} (default) for five evenly-spaced steps plus the initial state.}
+\code{NULL} (default) for five evenly-spaced steps. The initial state
+(step 0) is always drawn first.}
+
+\item{palette}{Color scheme. \code{"okabe-ito"} (default) is colorblind
+safe: actor strategy groups take Okabe-Ito orange, sky blue, yellow,
+reddish purple and black in level order; components take blue
+(initially unused) and reddish purple (initially used); actors in the
+projection keep their strategy color and are sized by the number of
+actors they share a component with; the component heatmap runs from
+white to Okabe-Ito blue. (Before searchnet 0.11.2.9000 components were
+bluish green and the projection was colored by eigenvector centrality on
+the viridis scale.) \code{"legacy"}
+restores the earlier colors (default ggplot hues for strategies, dark
+green and tan components, a green-to-red centrality gradient and a
+white-to-red heatmap), which are not colorblind safe.}
+
+\item{node_colors}{Optional named character vector overriding node colors.
+Names are actor strategy levels (as in
+\code{levels(env$get_actor_strategies())}, \code{"none"} when the model
+has no strategies) and/or \code{"new"} and \code{"old"} for components.
+Unnamed entries or unknown names are an error.}
+
+\item{draw}{Logical. If \code{TRUE} (default), draw each snapshot to the
+current device, as before. \code{FALSE} only builds and returns them.}
 }
 \value{
-Called for side effects (plot display).
+Invisibly, a list with one element per snapshot (initial state
+first), each a list with \code{step}; the three panels as ggplot objects
+\code{social}, \code{bipartite} and \code{heatmap}, which can be restyled
+with \code{+} and re-arranged; \code{grob}, the arranged three-panel
+figure (draw it with \code{grid::grid.draw()} or save it with
+\code{ggplot2::ggsave()}); and \code{colors}, the actor and component
+colors used. Before searchnet 0.11.1.9000 the function returned
+\code{NULL}.
 }
 \description{
 Renders bipartite network snapshots at selected simulation steps, together
@@ -24,5 +60,13 @@ with their unipartite projections (social and epistasis networks).
 \dontrun{
 saomnk_plot_snapshots(env)
 saomnk_plot_snapshots(env, steps = c(1, 10, 50))
+
+## Restyle: build without drawing, then modify a panel
+snaps <- saomnk_plot_snapshots(env, steps = 10, draw = FALSE)
+snaps[[2]]$bipartite + ggplot2::labs(title = "Step 10")
+
+## Custom node colors, or the pre-0.11.1.9000 look
+saomnk_plot_snapshots(env, node_colors = c(new = "black", old = "grey60"))
+saomnk_plot_snapshots(env, palette = "legacy")
 }
 }

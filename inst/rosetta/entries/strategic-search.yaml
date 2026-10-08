@@ -1,0 +1,76 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: strategic-search
+title: "Strategic search: internal fit and market positioning"
+model: Giustiziero, Kaul and Martignoni strategic search
+citations:
+  - key: giustiziero_kaul_martignoni_2026
+    text: "Giustiziero, G., Kaul, A., and Martignoni, D. (2026). Strategic search: Adaptation of internal fit and market positioning under competition. Strategic Management Journal, advance online publication (published online 4 September 2026; volume, issue and pages not yet assigned)."
+    doi: "10.1002/smj.70122"
+relation: special-case-linearized
+statement: >-
+  With the positioning payoff linearized as internal fit minus c times the summed
+  similarity to the M - 1 rivals (similarity is the share of the N activities on
+  which two firms agree, shared absences included), a flip of activity j changes
+  the summed similarity by (2 n - (M - 1)) / N for n rivals holding j, which is the
+  change statistic of density plus two-mode inPop: theta_density = c (M + 1) / N
+  and theta_inPop = -2c / N per holder of the activity, the moving firm itself
+  included. Strategic search is then the NK fit term plus density plus negative
+  crowding, and its keep-if-not-worse search is the zero-noise (beta -> infinity)
+  limit of single-flip revision with Metropolis acceptance; with logit acceptance
+  the limit agrees except at ties.
+restrictions:
+  M: null
+  "N": null
+  W: any
+  beta: Inf
+  revision_rule: single_flip
+  rates: constant
+  notes:
+    - "positioning term linearized: payoff = fit - c * sum over rivals k of similarity(i, k)"
+    - "contact and imitation weights 0"
+    - "beta -> infinity; keep-if-not-worse search is the Metropolis limit"
+terms:
+  - class: complementarity
+    status: active
+    effect: XWX
+    value: 1
+    expression: "Delta F(s_i): internal fit; their K interactions are the entries of W"
+    construct: internal fit
+  - class: scope
+    status: linearized
+    effect: density
+    value: 0.3
+    expression: "+c (M + 1) / N per activity added (agreement on shared absences counts toward similarity)"
+    construct: market positioning (constant part)
+  - class: crowding
+    status: linearized
+    effect: inPop
+    value: -0.2
+    expression: "-2c / N per holder of the activity, the adding firm included (rivals' holdings repel)"
+    construct: market positioning (similarity to rivals)
+  - class: contact
+    status: zero
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: zero
+    expression: "+0 (imitation is not modeled)"
+    construct: none
+constructs:
+  internal fit: [complementarity]
+  market positioning (similarity to rivals): [scope, crowding]
+lean:
+  - SaomNK.improvementStep_is_saom_limit
+  - SaomNK.improvementStep_is_saom_limit_glauber
+checks: []
+does_not_cover:
+  - "The nonlinear form of their positioning payoff (competition through equilibrium profit) is not mapped; only the linearized similarity form is"
+  - "At ties, logit acceptance (probability 1/2) differs from their accept-if-not-worse rule; only the Metropolis limit reproduces it there"
+  - "Their published results are not reproduced by the package"
+  - "Volume, issue and pages of the citation were not assigned when it was checked against Crossref (2026-10-08)"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

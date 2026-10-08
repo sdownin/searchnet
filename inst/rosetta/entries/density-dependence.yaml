@@ -1,0 +1,54 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: density-dependence
+title: Density dependence
+model: Density dependence (organizational ecology)
+citations:
+  - key: hannan_carroll_1992
+    text: "Hannan, M. T., and Carroll, G. R. (1992). Dynamics of Organizational Populations: Density, Legitimation, and Competition. Oxford University Press."
+    doi: "10.1093/oso/9780195071917.001.0001"
+  - key: greve_2000
+    text: "Greve, H. R. (2000). Market niche entry decisions: Competition, learning, and strategy in Tokyo banking, 1894-1936. Academy of Management Journal, 43(5), 816-836."
+    doi: "10.2307/1556412"
+relation: translation
+statement: >-
+  Legitimation and crowding at the level of a component map to indegree
+  popularity on component occupancy: inPop, or its concave variant inPopSqrt.
+  A positive coefficient reads as legitimation, a negative one as crowding.
+restrictions:
+  W: any
+  notes: []
+terms:
+  - class: complementarity
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: scope
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: crowding
+    status: active
+    effect: inPop
+    expression: inPop
+    construct: crowding or legitimation
+  - class: contact
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs:
+  crowding or legitimation: [crowding]
+lean: []
+checks: []
+does_not_cover:
+  - "Interpretive mapping; no reduction is proved"
+  - "The non-monotone density curve (legitimation at low density, competition at high density) needs both inPop and inPopSqrt"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

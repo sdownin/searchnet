@@ -48,7 +48,11 @@ exported <- grab("^export[(]")
 s3 <- vapply(strsplit(grab("^S3method[(]"), ","), function(p)
   paste(trimws(p), collapse = "."), character(1))
 
-missing <- setdiff(tagged, c(exported, s3))
+# exportPattern("<regex>") exports every matching name; count those too.
+pats <- gsub('^"|"$', "", grab("^exportPattern[(]"))
+by_pattern <- tagged[vapply(tagged, function(f) any(vapply(pats, grepl, logical(1), x = f)),
+                            logical(1))]
+missing <- setdiff(tagged, c(exported, s3, by_pattern))
 
 if (length(missing)) {
   cat("NAMESPACE OUT OF SYNC:", length(missing),

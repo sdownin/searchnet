@@ -162,7 +162,7 @@ SaomNkRSienaBiEnv <- R6Class(
         for (i in 1:ncompo_coCovar) {
           property <- sprintf('component_%s_coCovar', i)
           eff <- structure_model$dv_bipartite$coCovars[[ component_coCovar_ids[i] ]]
-          self[[property]] <- coCovar(eff$x, nodeSet = c('COMPONENTS'))
+          self[[property]] <- coCovar(eff$x, centered = .searchnet_covariate_centered(self, eff), nodeSet = c('COMPONENTS'))
           input_varlist[[sprintf('self$%s',property)]] <-  self[[property]]
         }
       }
@@ -174,7 +174,7 @@ SaomNkRSienaBiEnv <- R6Class(
           ## clobbered the coCovar slot and left the varCovar reference unresolved.
           property <- sprintf('component_%s_varCovar', i)
           eff <- structure_model$dv_bipartite$varCovars[[ component_varCovar_ids[i] ]]
-          self[[property]] <- varCovar(eff$x, nodeSet = c('COMPONENTS'))
+          self[[property]] <- varCovar(eff$x, centered = .searchnet_covariate_centered(self, eff), nodeSet = c('COMPONENTS'))
           input_varlist[[sprintf('self$%s',property)]] <-  self[[property]]
         }
       }
@@ -206,7 +206,7 @@ SaomNkRSienaBiEnv <- R6Class(
             stop(sprintf('Cannot distinguish actors from components for dimensions M=%s,N=%s; provide nodeSet for effect %s.',
                          self$M, self$N, eff$effect))
           }
-          self[[property]] <- coDyadCovar(eff$x, nodeSet = nodeSet)
+          self[[property]] <- coDyadCovar(eff$x, centered = .searchnet_covariate_centered(self, eff, monadic = FALSE), nodeSets = nodeSet)
           input_varlist[[sprintf('self$%s',property)]] <-  self[[property]]
         }
       }
@@ -215,7 +215,7 @@ SaomNkRSienaBiEnv <- R6Class(
           property <- sprintf('component_%s_varDyadCovar', i)
           ## Exact [[ ]] for the same reason as coDyadCovars above.
           eff <- structure_model$dv_bipartite[["varDyadCovars"]][[ component_varDyadCovar_ids[i] ]]
-          self[[property]] <- varDyadCovar(eff$x, nodeSet = c('COMPONENTS','COMPONENTS'))
+          self[[property]] <- varDyadCovar(eff$x, centered = .searchnet_covariate_centered(self, eff, monadic = FALSE), nodeSets = c('COMPONENTS','COMPONENTS'))
           input_varlist[[sprintf('self$%s',property)]] <-  self[[property]]
         }
       }
@@ -231,7 +231,7 @@ SaomNkRSienaBiEnv <- R6Class(
             warning(sprintf("Covariate '%s' has no x values, using zeros for M=%d actors", property, self$M))
             rep(0, self$M)
           }
-          self[[property]] <- coCovar(cov_values, nodeSet = c('ACTORS'))
+          self[[property]] <- coCovar(cov_values, centered = .searchnet_covariate_centered(self, eff), nodeSet = c('ACTORS'))
           input_varlist[[sprintf('self$%s',property)]] <-  self[[property]]
         }
       }
@@ -240,7 +240,7 @@ SaomNkRSienaBiEnv <- R6Class(
           ## _varCovar suffix, not _coCovar -- see the component varCovar loop above.
           property <- sprintf('strat_%s_varCovar', i)
           eff <- structure_model$dv_bipartite$varCovars[[ strat_varCovar_ids[i] ]]
-          self[[property]] <- varCovar(eff$x, nodeSet = c('ACTORS'))
+          self[[property]] <- varCovar(eff$x, centered = .searchnet_covariate_centered(self, eff), nodeSet = c('ACTORS'))
           input_varlist[[sprintf('self$%s',property)]] <-  self[[property]]
         }
       }
@@ -268,7 +268,7 @@ SaomNkRSienaBiEnv <- R6Class(
             stop(sprintf('Cannot distinguish actors from components for dimensions M=%s,N=%s; provide nodeSet for effect %s.',
                          self$M, self$N, eff$effect))
           }
-          self[[property]] <- coDyadCovar(eff$x, nodeSet = nodeSet)
+          self[[property]] <- coDyadCovar(eff$x, centered = .searchnet_covariate_centered(self, eff, monadic = FALSE), nodeSets = nodeSet)
           input_varlist[[sprintf('self$%s',property)]] <-  self[[property]]
         }
       }
@@ -277,7 +277,7 @@ SaomNkRSienaBiEnv <- R6Class(
           property <- sprintf('strat_%s_varDyadCovar', i)
           ## Exact [[ ]] for the same reason as coDyadCovars above.
           eff <- structure_model$dv_bipartite[["varDyadCovars"]][[ strat_varDyadCovar_ids[i] ]]
-          self[[property]] <- varDyadCovar(eff$x, nodeSet = c('ACTORS','ACTORS'))
+          self[[property]] <- varDyadCovar(eff$x, centered = .searchnet_covariate_centered(self, eff, monadic = FALSE), nodeSets = c('ACTORS','ACTORS'))
           input_varlist[[sprintf('self$%s',property)]] <-  self[[property]]
         }
       }
@@ -361,7 +361,7 @@ SaomNkRSienaBiEnv <- R6Class(
         for (i in 1:ncompo_coCovar) {
           property <- sprintf('component_%s_coCovar', i)
           eff <- structure_model$dv_bipartite$coCovars[[ component_coCovar_ids[i] ]]
-          input_varlist[[sprintf('%s',property)]] <-  coCovar(eff$x, nodeSet = c('COMPONENTS'))
+          input_varlist[[sprintf('%s',property)]] <-  coCovar(eff$x, centered = .searchnet_covariate_centered(self, eff), nodeSet = c('COMPONENTS'))
         }
       }
       if (ncompo_varCovar) {
@@ -371,7 +371,7 @@ SaomNkRSienaBiEnv <- R6Class(
           ## answered to interaction1 = "self$component_i_varCovar".
           property <- sprintf('component_%s_varCovar', i)
           eff <- structure_model$dv_bipartite$varCovars[[ component_varCovar_ids[i] ]]
-          input_varlist[[sprintf('%s',property)]] <- varCovar(eff$x, nodeSet = c('COMPONENTS'))
+          input_varlist[[sprintf('%s',property)]] <- varCovar(eff$x, centered = .searchnet_covariate_centered(self, eff), nodeSet = c('COMPONENTS'))
         }
       }
       if (ncompo_coDyadCovar) {
@@ -402,7 +402,7 @@ SaomNkRSienaBiEnv <- R6Class(
             stop(sprintf('Cannot distinguish actors from components for dimensions M=%s,N=%s; provide nodeSet for effect %s.',
                          self$M, self$N, eff$effect))
           }
-          input_varlist[[sprintf('%s',property)]] <-  coDyadCovar(eff$x, nodeSet = nodeSet)
+          input_varlist[[sprintf('%s',property)]] <-  coDyadCovar(eff$x, centered = .searchnet_covariate_centered(self, eff, monadic = FALSE), nodeSets = nodeSet)
         }
       }
       if (ncompo_varDyadCovar) {
@@ -410,7 +410,7 @@ SaomNkRSienaBiEnv <- R6Class(
           property <- sprintf('component_%s_varDyadCovar', i)
           ## Exact [[ ]] for the same reason as coDyadCovars above.
           eff <- structure_model$dv_bipartite[["varDyadCovars"]][[ component_varDyadCovar_ids[i] ]]
-          input_varlist[[sprintf('%s',property)]] <-  varDyadCovar(eff$x, nodeSet = c('COMPONENTS','COMPONENTS'))
+          input_varlist[[sprintf('%s',property)]] <-  varDyadCovar(eff$x, centered = .searchnet_covariate_centered(self, eff, monadic = FALSE), nodeSets = c('COMPONENTS','COMPONENTS'))
         }
       }
       ##-------------------------------------------------------------
@@ -418,7 +418,7 @@ SaomNkRSienaBiEnv <- R6Class(
         for (i in 1:nstrat_coCovar) {
           property <- sprintf('strat_%s_coCovar', i)
           eff <- structure_model$dv_bipartite$coCovars[[ strat_coCovar_ids[i] ]]
-          input_varlist[[sprintf('%s',property)]] <-  coCovar(eff$x, nodeSet = c('ACTORS'))
+          input_varlist[[sprintf('%s',property)]] <-  coCovar(eff$x, centered = .searchnet_covariate_centered(self, eff), nodeSet = c('ACTORS'))
         }
       }
       if (nstrat_varCovar) {
@@ -426,7 +426,7 @@ SaomNkRSienaBiEnv <- R6Class(
           ## _varCovar suffix, not _coCovar -- see the component varCovar loop above.
           property <- sprintf('strat_%s_varCovar', i)
           eff <- structure_model$dv_bipartite$varCovars[[ strat_varCovar_ids[i] ]]
-          input_varlist[[sprintf('%s',property)]] <- varCovar(eff$x, nodeSet = c('ACTORS'))
+          input_varlist[[sprintf('%s',property)]] <- varCovar(eff$x, centered = .searchnet_covariate_centered(self, eff), nodeSet = c('ACTORS'))
         }
       }
       if (nstrat_coDyadCovar) {
@@ -453,7 +453,7 @@ SaomNkRSienaBiEnv <- R6Class(
             stop(sprintf('Cannot distinguish actors from components for dimensions M=%s,N=%s; provide nodeSet for effect %s.',
                          self$M, self$N, eff$effect))
           }
-          input_varlist[[sprintf('%s',property)]] <-  coDyadCovar(eff$x, nodeSet = nodeSet)
+          input_varlist[[sprintf('%s',property)]] <-  coDyadCovar(eff$x, centered = .searchnet_covariate_centered(self, eff, monadic = FALSE), nodeSets = nodeSet)
         }
       }
       if (nstrat_varDyadCovar) {
@@ -461,7 +461,7 @@ SaomNkRSienaBiEnv <- R6Class(
           property <- sprintf('strat_%s_varDyadCovar', i)
           ## Exact [[ ]] for the same reason as coDyadCovars above.
           eff <- structure_model$dv_bipartite[["varDyadCovars"]][[ strat_varDyadCovar_ids[i] ]]
-          input_varlist[[sprintf('%s',property)]] <-  varDyadCovar(eff$x, nodeSet = c('ACTORS','ACTORS'))
+          input_varlist[[sprintf('%s',property)]] <-  varDyadCovar(eff$x, centered = .searchnet_covariate_centered(self, eff, monadic = FALSE), nodeSets = c('ACTORS','ACTORS'))
         }
       }
       ##------------------------------------------------------------
@@ -1164,6 +1164,12 @@ SaomNkRSienaBiEnv <- R6Class(
         stop('theta_shocks list is empty. No shocks to process.')
       if (is.null(theta_shocks[[1]]$effect) && is.null(theta_shocks[[1]]$effect_level))
         stop('theta_shocks must have either `effect` or `effect_level`')
+      if (length(theta_shocks) == 1L)
+        warning("theta_shocks has one entry, so its values cover the whole run ",
+                "and there is no break. Shocks are consecutive segments: to ",
+                "switch mid-run, pass a baseline segment first, e.g. ",
+                "list(<baseline, portion = 1>, <shocked, portion = 1>).",
+                call. = FALSE)
       effectvar <- ifelse(
         all(sapply(theta_shocks, function(shock_item) !is.null(shock_item$effect_level) )),
         'effect_level', ## User can provide effect_level "egoX_1","egoX_2",..., if multiple of that type of effect are shocked 
@@ -1198,6 +1204,7 @@ SaomNkRSienaBiEnv <- R6Class(
         }
         
         prev_counter <-  counter
+        if (is.null(theta_shocks[[ii]]$portion)) theta_shocks[[ii]]$portion <- 1
         counter <- counter + (theta_shocks[[ii]]$portion * chunksteps)
         start <- prev_counter + 1
         end   <- counter
@@ -1222,6 +1229,31 @@ SaomNkRSienaBiEnv <- R6Class(
       if (is.null(theta_shocks[[1]]$chain_step_ids)) {
         theta_shocks <- self$preprocess_theta_shocks(theta_shocks, nrow(theta_matrix))
       }
+      ## Validate every shock against the grid BEFORE writing anything. This
+      ## loop used to skip a shock whose effect_level matched no column, and a
+      ## spec without `parameter` never reached it either, so a malformed
+      ## schedule ran as an unshocked model without a word (2026-10-07).
+      .cols <- colnames(theta_matrix)
+      for (i_shock in seq_along(theta_shocks)) {
+        sh <- theta_shocks[[i_shock]]
+        lv <- sh$effect_level
+        bad <- setdiff(lv, .cols)
+        if (length(bad))
+          stop(sprintf(paste0(
+            "theta_shocks[[%d]]: effect_level %s matches no theta column. ",
+            "Available columns: %s."), i_shock,
+            paste0("'", bad, "'", collapse = ", "),
+            paste0("'", .cols, "'", collapse = ", ")), call. = FALSE)
+        if (is.null(sh$parameter) || !is.numeric(sh$parameter) ||
+            length(sh$parameter) != length(lv))
+          stop(sprintf(paste0(
+            "theta_shocks[[%d]] needs a numeric `parameter` with one value per ",
+            "effect (%d)%s."), i_shock, length(lv),
+            if (any(c("new_parameter", "new_value", "value") %in% names(sh)))
+              sprintf("; found `%s`, which is not read (the field is `parameter`)",
+                      intersect(c("new_parameter", "new_value", "value"), names(sh))[1])
+            else ""), call. = FALSE)
+      }
       portions <- sum(sapply(theta_shocks, function(x)ifelse(is.null(x$portion),1,x$portion)))
       chunksteps <- floor(nrow(theta_matrix) / portions)
       remainder <- nrow(theta_matrix) - (chunksteps * portions)
@@ -1231,8 +1263,7 @@ SaomNkRSienaBiEnv <- R6Class(
           shock_rows  <- theta_shocks[[ i_shock ]]$chain_step_ids
           theta_matrix_names <- colnames(theta_matrix)
           effect_col <- which(  theta_matrix_names  == theta_shocks[[ i_shock ]]$effect_level[ j_effect ] )
-          if (length(shock_rows) && length(effect_col))
-            theta_matrix[shock_rows, effect_col] <- theta_shocks[[ i_shock ]]$parameter[ j_effect ]
+          theta_matrix[shock_rows, effect_col] <- theta_shocks[[ i_shock ]]$parameter[ j_effect ]
         }
       }
       ## if remainder, fill matrix remainder rows with the last set row
@@ -1248,7 +1279,199 @@ SaomNkRSienaBiEnv <- R6Class(
     
     
     ############################################################################
-    search_rsiena = function(structure_model, 
+    ## ------------------------------------------------------------------------
+    ## search_rsiena(): simulate one unit of model time as a genuine SAOM path
+    ## ------------------------------------------------------------------------
+    ## Time semantics (0.11.0). The step count (`iterations_per_actor`, or
+    ## `iterations / M`, or nrow(theta_matrix) / M) is the basic rate summed
+    ## over the run: the EXPECTED number of opportunities per actor at zero
+    ## rate effects. The realized number of ministeps is random, and rate
+    ## effects change it. The theta matrix keeps one row per step as a time
+    ## grid: a block of identical rows is one segment, simulated as one
+    ## unconditional RSiena period started from the previous segment's end
+    ## state. See R/searchnet-path.R.
+    ##
+    ## `path = "legacy_replay"` runs the pre-0.11.0 route, which replays
+    ## independent one-ministep draws as a path. It warns on every call, and
+    ## every path consumer refuses its output. It exists only to reproduce
+    ## archived numbers.
+    search_rsiena = function(structure_model,
+                             array_bi_net=NULL, ## starting matrices; wave 1 is the start state
+                             theta_matrix=NULL, ## per-step theta grid; replaces parameter values in structure_model
+                             theta_shocks=NULL, ## list of parameter shocks (effects, parameter values, portions of the run)
+                             iterations=NULL,   ## replaced by nrow(theta_matrix) if theta_matrix is not null
+                             iterations_per_actor=NULL, ## Overrides "iterations" if not NULL
+                             run_seed=123,
+                             process_chain=TRUE,
+                             get_eff_doc=FALSE,
+                             plot_save=FALSE,
+                             return_plot=FALSE,
+                             verbose=FALSE,
+                             digits=3,
+                             restart=TRUE,
+                             path=c("genuine", "legacy_replay"),
+                             max_segments=50L
+    ) {
+      path <- match.arg(path)
+      if (path == "legacy_replay") {
+        return(self$search_rsiena_legacy_replay(
+          structure_model = structure_model, array_bi_net = array_bi_net,
+          theta_matrix = theta_matrix, theta_shocks = theta_shocks,
+          iterations = iterations, iterations_per_actor = iterations_per_actor,
+          run_seed = run_seed, process_chain = process_chain,
+          get_eff_doc = get_eff_doc, plot_save = plot_save,
+          return_plot = return_plot, verbose = verbose, digits = digits,
+          restart = restart))
+      }
+
+      ## RSiena's sienaDataCreate() cannot handle a single-actor (M=1)
+      ## bipartite dependent variable. Landscape analysis supports M=1; SAOM
+      ## simulation requires M >= 2.
+      if (self$M < 2)
+        stop("search_rsiena() requires M >= 2 actors: RSiena's ",
+             "sienaDataCreate() does not support single-actor bipartite ",
+             "networks. Landscape methods (compute_fitness_landscape, ",
+             "verify_nk_equivalence) remain available for M = 1.")
+      if (!is.numeric(max_segments) || length(max_segments) != 1L || max_segments < 1)
+        stop("`max_segments` must be a single positive integer.")
+
+      self$searchnet_path_kind <- .SEARCHNET_PATH_GENUINE
+
+      ## The state the path starts from. restart = TRUE resets to the initial
+      ## matrix; restart = FALSE continues from the current state, and the
+      ## replay starts from that state too (it used to start from the initial
+      ## matrix regardless).
+      if (restart)
+        self$set_system_from_bipartite_matrix(self$bipartite_matrix_init)
+      if (!is.null(array_bi_net)) {
+        B_start <- if (length(dim(array_bi_net)) == 3L) array_bi_net[, , 1] else as.matrix(array_bi_net)
+      } else {
+        if (is.null(self$bipartite_matrix))
+          stop('bipartite_matrix is not set and no array_bi_net provided.')
+        B_start <- self$bipartite_matrix
+      }
+      B_start <- matrix(as.numeric(B_start), self$M, self$N)
+
+      ## Behavior start: the declared values, or the carried state when
+      ## continuing (restart = FALSE).
+      beh_start <- NULL
+      if (.searchnet_has_behavior(structure_model)) {
+        decl <- structure_model$dv_behavior$values
+        beh_start <- as.numeric(if (is.matrix(decl)) decl[, 1L] else decl)
+        if (!restart && !is.null(self$behavior_state) &&
+            length(self$behavior_state) == length(beh_start))
+          beh_start <- as.numeric(self$behavior_state)
+      }
+
+      ## The time grid (rows of theta_matrix) and the summed basic rate.
+      iterations <- if (!is.null(theta_matrix)) {
+        nrow(theta_matrix)
+      } else if (!is.null(iterations_per_actor)) {
+        (iterations_per_actor * self$M)
+      } else if (!is.null(iterations)) {
+        iterations
+      } else {
+        (self$M * self$N) ## default: N expected opportunities per actor
+      }
+      iterations <- as.integer(round(iterations))
+      if (iterations < 1L) stop("The run must have at least one step.")
+      per_actor_total <- iterations / self$M
+
+      self$config_structure_model <- structure_model
+      input_effs <- self$get_input_from_structure_model(structure_model)
+
+      ##--------- I-II. RSIENA DATA AND EFFECTS AT THE START STATE ----------
+      decl_beh_values <- if (.searchnet_has_behavior(structure_model)) structure_model$dv_behavior$values else NULL
+      .searchnet_prepare_period_data(self, structure_model, B_start,
+                                     beh = if (restart) NULL else beh_start,
+                                     verbose = verbose)
+      self$covariate_centering <- .searchnet_centering_table(self$rsiena_data)
+      if (verbose) {
+        cat('\n\nself$rsiena_data : \n\n'); print(self$rsiena_data)
+        cat('\n\nself$rsiena_effects : \n\n'); print(self$rsiena_effects)
+      }
+
+      ##---------- III. PARAMETERS (THETA GRID) ------------------------------
+      if (is.null(theta_matrix)) {
+        theta_matrix <- self$get_theta_matrix(input_effs, iterations, verbose = verbose)
+      }
+      shock_breaks <- integer(0)
+      if (!is.null(theta_shocks) && length(theta_shocks)) {
+        theta_shocks <- self$preprocess_theta_shocks(theta_shocks, iterations)
+        theta_matrix <- self$shock_theta_matrix(theta_matrix, theta_shocks)
+        shock_breaks <- vapply(theta_shocks, function(s) min(s$chain_step_ids), numeric(1))
+      }
+      self$theta_matrix <- theta_matrix
+      segments <- .searchnet_segments(theta_matrix, breaks = shock_breaks,
+                                      max_segments = as.integer(max_segments))
+
+      ##---------- IV. SIMULATE THE PATH, SEGMENT BY SEGMENT -----------------
+      self$rsiena_run_seed <- run_seed
+      res <- .searchnet_simulate_path(
+        self, structure_model, theta_matrix, per_actor_total, run_seed,
+        B_start = B_start, beh_start = beh_start, segments = segments,
+        verbose = verbose)
+      self$rsiena_model  <- .searchnet_composite_fit(res)
+      self$path_segments <- res$segments
+      self$path_start_matrix <- B_start
+      self$provenance <- .searchnet_provenance(
+        seed = run_seed, call = NULL, path = .SEARCHNET_PATH_GENUINE,
+        basic_rate_per_actor = per_actor_total,
+        segment_seeds = res$segments$seed,
+        realized_ministeps = sum(res$segments$n_ministeps))
+      self$behavior_state <- if (!is.null(beh_start)) res$beh_ends[[length(res$beh_ends)]] else NULL
+      ## set_behavior_rsienaDV() records the values it was built from; restore
+      ## the declared ones so the environment describes the model, not a segment.
+      if (!is.null(decl_beh_values)) self$behavior_values <- decl_beh_values
+
+      ## Shocks were declared on the time grid; their consumers index the
+      ## path's ministeps. Map each shock to the ministeps of its segments, and
+      ## keep the grid rows as `theta_row_ids`.
+      if (!is.null(theta_shocks) && length(theta_shocks)) {
+        seg_of_step <- rep(res$segments$segment_id, res$segments$n_ministeps)
+        mid <- floor((res$segments$row_start + res$segments$row_end) / 2)
+        for (i in seq_along(theta_shocks)) {
+          rows <- theta_shocks[[i]]$chain_step_ids
+          theta_shocks[[i]]$theta_row_ids <- rows
+          segs <- res$segments$segment_id[mid %in% rows]
+          theta_shocks[[i]]$chain_step_ids <- which(seg_of_step %in% segs)
+        }
+        self$theta_shocks <- theta_shocks
+      }
+
+      ##----------- V. THE PATH OBJECTS -----------------------------------------
+      ## The environment is left in RSiena's end state of the last segment,
+      ## whether or not the chain is processed.
+      self$set_system_from_bipartite_matrix(res$ends[[length(res$ends)]])
+      if (process_chain) {
+        self$search_rsiena_process_ministep_chain(verbose, start_matrix = B_start)
+        ## get_chain_stats_list() prints a percentage every 100 ministeps;
+        ## genuine paths run the whole chain through it, so keep it quiet
+        ## unless verbose (it filled knitted output with progress lines).
+        tryCatch(
+          if (verbose) self$search_rsiena_process_stats()
+          else utils::capture.output(self$search_rsiena_process_stats()),
+          ## A warning, not a verbose-only message: a failure here leaves
+          ## actor_util_df and the K-4 tables from a previous run (or NULL),
+          ## and the causal and classroom helpers read them (2026-10-07).
+          error = function(e) {
+            warning("search_rsiena(): chain statistics were not computed (",
+                    conditionMessage(e), "); actor_util_df and the K-4 ",
+                    "tables do not describe this run.", call. = FALSE)
+          }
+        )
+      }
+      if (verbose)
+        print(res$segments)
+      invisible(self)
+    },
+    ############################################################################
+
+
+    ## The pre-0.11.0 route, kept only to reproduce archived numbers. Its
+    ## output is NOT a path: every phase-3 run is one ministep from wave 1, and
+    ## the runs are replayed cumulatively as though they were sequential.
+    search_rsiena_legacy_replay = function(structure_model,
                              array_bi_net=NULL, ## starting matrices for the simulation
                              theta_matrix=NULL, ## variable theta matrix replaces parameter values in structure_model
                              theta_shocks=NULL, ## list of parameter shocks (effects, parameter values, portions of simulation)
@@ -1275,10 +1498,18 @@ SaomNkRSienaBiEnv <- R6Class(
              "networks. Landscape methods (compute_fitness_landscape, ",
              "verify_nk_equivalence) remain available for M = 1.")
 
+      .searchnet_warn_not_a_path()
+      ## Set before the data are built: the legacy route keeps RSiena's
+      ## default covariate centering, so archived numbers reproduce.
+      self$searchnet_path_kind <- .SEARCHNET_PATH_LEGACY
+      self$path_segments <- NULL
+
       ##system restart to reset init on search
       if(restart)
         self$set_system_from_bipartite_matrix(self$bipartite_matrix_init)
-      
+      ## The legacy replay always started from the initial matrix.
+      self$path_start_matrix <- self$bipartite_matrix_init
+
       ## Set iterations (steps in simulated decision chain; rows of theta_matrix)
       iterations <- if (!is.null(theta_matrix)) {
         nrow(theta_matrix)
@@ -1402,14 +1633,10 @@ SaomNkRSienaBiEnv <- R6Class(
       if(process_chain){
         ## Process the decision ministep chain
         ##  (C++ output to R data.frame: reindexing C++'s 0-index Actor IDs to R's 1-index)
-        self$search_rsiena_process_ministep_chain(verbose)
-        ## Compute actor and component statistics (may fail gracefully for minimal models)
-        tryCatch(
-          self$search_rsiena_process_stats(),
-          error = function(e) {
-            if(verbose) message("Note: chain stats processing skipped: ", e$message)
-          }
-        )
+        self$search_rsiena_process_ministep_chain(verbose,
+                                                  start_matrix = self$bipartite_matrix_init)
+        ## Statistics are not computed: search_rsiena_process_stats() refuses
+        ## the legacy replay, because it is not a path.
         if (!is.null(self$bi_env_arr) && length(dim(self$bi_env_arr)) == 3) {
           new_bi_env_matrix <- self$bi_env_arr[,, dim(self$bi_env_arr)[3] ]
           self$set_system_from_bipartite_matrix( new_bi_env_matrix )
@@ -1428,20 +1655,25 @@ SaomNkRSienaBiEnv <- R6Class(
     add_gof_to_rsiena_shocks = function(theta_shocks=NULL) {
       if (is.null(theta_shocks))
         theta_shocks <- self$theta_shocks
-      graphics::par(mfrow=c(2,2))
       for (i in 1:length(theta_shocks)) {
         rsiena_model <- theta_shocks[[ i ]]$rsiena_model
         gof.od <- RSiena::sienaGOF(rsiena_model, OutdegreeDistribution, levls=0:(self$N-1), varName = 'bipartite_rsienaDV')
-        print(plot(gof.od, main=sprintf('GOF: Outdegree Distribution, i=%s',i)))
+        print(.searchnet_gof_ggplot(gof.od, sprintf('GOF: Outdegree Distribution, i=%s',i)))
         gof.id <- RSiena::sienaGOF(rsiena_model, IndegreeDistribution, levls=0:(self$M-1), varName = 'bipartite_rsienaDV')
-        print(plot(gof.id, main=sprintf('GOF: Indegree Distribution, i=%s',i)))
+        print(.searchnet_gof_ggplot(gof.id, sprintf('GOF: Indegree Distribution, i=%s',i)))
         theta_shocks[[ i ]]$convergence <- list(
           tconv = rsiena_model$tconv, 
           tconv_max = rsiena_model$tconv.max[1],
           check_tconv_lt10= all( abs(rsiena_model$tconv) <  0.1 ),
           check_tconv_max_lt25 = abs( rsiena_model$tconv.max[1] ) < 0.25,
-          checK_AAll = ( abs(rsiena_model$tconv) <  0.1 && abs(rsiena_model$tconv.max[1]) < 0.25 )
+          ## all(): `tconv` has one entry per estimated effect, and `&&` on a
+          ## vector longer than 1 is an error in R >= 4.3, so this line made
+          ## every multi-effect fit_rsiena_shocks(add_gof = TRUE) call fail.
+          ## The key was also mangled to `checK_AAll`; it is kept as an alias.
+          check_all = ( isTRUE(all(abs(rsiena_model$tconv) <  0.1)) &&
+                          isTRUE(abs(rsiena_model$tconv.max[1]) < 0.25) )
         )
+        theta_shocks[[ i ]]$convergence$checK_AAll <- theta_shocks[[ i ]]$convergence$check_all
         print( theta_shocks[[ i ]]$convergence )
         theta_shocks[[ i ]]$rsiena_gof <- list(OutdegreeDistribution = gof.od, IndegreeDistribution  = gof.id)
         ##-----------------------------------
@@ -1451,7 +1683,8 @@ SaomNkRSienaBiEnv <- R6Class(
     
     
     get_K4_df = function(type='all') {
-      
+      .searchnet_require_path(self, "get_K4_df()")
+
       if (grepl('new', type, ignore.case = TRUE)) {
         
         Kdf <- self$K_AC_NEW_df %>% mutate(effect='K_AC', node_type='Actor', dyad_type='2-mode  (bipartite)')  %>% 
@@ -1583,21 +1816,21 @@ SaomNkRSienaBiEnv <- R6Class(
         ggplot(aes(x=shock_id, y=value, color=strategy,fill=strategy)) + 
         geom_point(position='jitter', alpha=.1) + geom_boxplot(aes(shape=shock_label), alpha=.2) + 
         ggtitle(sprintf('Utility by Exogenous Shock\n%s', sim_title_str)) +
-        theme_bw()
+        theme_searchnet()
       
       pk <- Kdf %>% filter(effect %in% c('K_AC','K_AA')) %>%
         ggplot(aes(x=shock_id, y=value, color=node_group,fill=node_group)) + 
         geom_point(position='jitter', alpha=.1) + geom_boxplot(aes(shape=shock_label), alpha=.2) + 
         facet_grid(effect ~ ., scales='free_y') +
         ggtitle(sprintf('Actor and Component Degrees by Exogenous Shock\n%s', sim_title_str)) +
-        theme_bw()
+        theme_searchnet()
       
       ps <- statdf %>% 
         ggplot(aes(x=shock_id, y=value, color=strategy,fill=strategy)) + 
         geom_point(position='jitter', alpha=.1) + geom_boxplot(aes(shape=shock_label), alpha=.2) + 
         facet_grid(effect_level ~ ., scales='free_y') +
         ggtitle(sprintf('Actor Utility Contribution (statistic * theta) by Exogenous Shock\n%s', sim_title_str)) +
-        theme_bw()
+        theme_searchnet()
       
       
       return(list(pu=pu, pk=pk, ps=ps))
@@ -1848,7 +2081,16 @@ SaomNkRSienaBiEnv <- R6Class(
       
       # Prepare data for DiD analysis (following compute_K_shocks pattern)
       test_list <- list()
-      
+      ## Pairs that were skipped or whose estimation failed. These were
+      ## reported only when verbose; a failed att_gt() then fell back to a
+      ## simple before/after contrast (assigned inside the error handler, so it
+      ## never even reached the result). They are now recorded and reported.
+      failures <- data.frame(test_key = character(0), stage = character(0),
+                             message = character(0), stringsAsFactors = FALSE)
+      .record <- function(key, stage, msg) {
+        failures[nrow(failures) + 1L, ] <<- list(key, stage, msg)
+      }
+
       # Get unique treatment/control strategies
       treatment_strategies <- unique(Kdf_new$strategy[Kdf_new$treatment_group > 0])
       control_strategies <- unique(Kdf_new$strategy[Kdf_new$treatment_group == 0])
@@ -1882,18 +2124,14 @@ SaomNkRSienaBiEnv <- R6Class(
             treated_groups <- did_dat$treatment_group[did_dat$treatment_group > 0]
             
             if (length(treated_groups) == 0) {
-              if (verbose) {
-                cat("\nNo treated units found for", trt_lvl, "vs", ctrl_lvl, "\n")
-              }
-              next  # Skip to next iteration
+              .record(test_key, "skipped", "no treated units")
+              next
             }
-            
+
             first_treated_step <- min(treated_groups)
-            
+
             if (!is.finite(first_treated_step)) {
-              if (verbose) {
-                cat("\nInvalid first_treated_step for", trt_lvl, "vs", ctrl_lvl, "\n")
-              }
+              .record(test_key, "skipped", "first treated step is not finite")
               next
             }
             
@@ -1908,9 +2146,8 @@ SaomNkRSienaBiEnv <- R6Class(
               length()
             
             if (pre_periods < 2) {
-              if (verbose) {
-                cat("\nInsufficient pre-treatment periods (", pre_periods, ") for", trt_lvl, "vs", ctrl_lvl, ". Need at least 2.\n")
-              }
+              .record(test_key, "skipped",
+                      sprintf("%d pre-treatment period(s); at least 2 needed", pre_periods))
               next
             }
             
@@ -1972,8 +2209,8 @@ SaomNkRSienaBiEnv <- R6Class(
             did_attgt <- NULL
             did_group <- NULL
             did_dyna <- NULL
-            
-            tryCatch({
+
+            did_err <- tryCatch({
               did_attgt <- did::att_gt(
                 yname = 'value_mean',
                 tname = 'chain_step_id',
@@ -2000,45 +2237,14 @@ SaomNkRSienaBiEnv <- R6Class(
               # Aggregate results with na.rm = TRUE
               did_group <- did::aggte(did_attgt, type = 'group', na.rm = TRUE, cband = FALSE)
               did_dyna <- did::aggte(did_attgt, type = 'dynamic', na.rm = TRUE)
-              
-            }, error = function(e) {
-              if (verbose) {
-                cat("\nError in DiD estimation for", test_key, ":\n")
-                cat(e$message, "\n")
-              }
-              
-              # Try simple before/after comparison as fallback
-              simple_did <- did_dat %>%
-                mutate(post = chain_step_id >= first_treated_step) %>%
-                group_by(strategy, post) %>%
-                summarise(mean_value = mean(value_mean, na.rm = TRUE), .groups = 'drop') %>%
-                pivot_wider(names_from = post, values_from = mean_value, names_prefix = "period_")
-              
-              if (nrow(simple_did) == 2 && all(c("period_FALSE", "period_TRUE") %in% names(simple_did))) {
-                treatment_effect <- (simple_did$period_TRUE[simple_did$strategy == trt_lvl] - 
-                                       simple_did$period_FALSE[simple_did$strategy == trt_lvl]) -
-                  (simple_did$period_TRUE[simple_did$strategy == ctrl_lvl] - 
-                     simple_did$period_FALSE[simple_did$strategy == ctrl_lvl])
-              } else {
-                treatment_effect <- NA
-              }
-              
-              did_group <- list(
-                overall.att = treatment_effect,
-                overall.se = NA,
-                note = "Simple DiD calculation due to estimation error",
-                error = e$message
-              )
-              did_dyna <- list(
-                egt = numeric(0),
-                att.egt = numeric(0),
-                se.egt = numeric(0),
-                note = "Insufficient variation for dynamic DiD estimation"
-              )
-            })
-            
-            # test_key already defined above
-            
+              NULL
+            }, error = function(e) e)
+
+            if (!is.null(did_err)) {
+              .record(test_key, "did_failed", conditionMessage(did_err))
+              next
+            }
+
             test_list[[test_key]] <- list(
               treatment_strategy = trt_lvl,
               control_strategy = ctrl_lvl,
@@ -2054,10 +2260,25 @@ SaomNkRSienaBiEnv <- R6Class(
           }
         }
       }
-      
+
+      if (nrow(failures) > 0) {
+        n_pairs <- length(test_list) + nrow(failures)
+        detail <- paste(sprintf("%s [%s]: %s", failures$test_key, failures$stage,
+                                failures$message), collapse = "; ")
+        if (length(test_list) == 0)
+          stop(sprintf("test_shocks_new_components(): none of %d treatment/control pair(s) produced a DiD estimate. %s",
+                       n_pairs, detail), call. = FALSE)
+        warning(sprintf(paste0("test_shocks_new_components(): %d of %d treatment/control pair(s) ",
+                               "have no DiD estimate (%d skipped, %d failed); see ",
+                               "attr(result, \"failures\"). %s"),
+                        nrow(failures), n_pairs, sum(failures$stage == "skipped"),
+                        sum(failures$stage == "did_failed"), detail),
+                call. = FALSE)
+      }
+      attr(test_list, "failures") <- failures
       return(test_list)
     },
-    
+
     plot_K_attribute_shocks = function(K_type = 'K_AC', new_components = NULL, 
                                        plot_type = c("raw", "did", "both")) {
 
@@ -2137,7 +2358,7 @@ SaomNkRSienaBiEnv <- R6Class(
           geom_line(size = 1.2) +
           geom_ribbon(aes(ymin = mean_degree - se, ymax = mean_degree + se, fill = treatment), 
                       alpha = 0.2, color = NA) +
-          geom_vline(xintercept = shock_times, linetype = "dashed", color = "red", size = 1) +
+          geom_vline(xintercept = shock_times, linetype = "dashed", color = "#D55E00", size = 1) +
           labs(
             title = sprintf("%s for New Components Only (C%d-C%d)", 
                             K_type, 
@@ -2148,7 +2369,7 @@ SaomNkRSienaBiEnv <- R6Class(
             color = "Group",
             fill = "Group"
           ) +
-          theme_minimal() +
+          theme_searchnet() +
           theme(
             plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
             legend.position = "bottom"
@@ -2165,7 +2386,7 @@ SaomNkRSienaBiEnv <- R6Class(
           ggplot(aes(x = chain_step_id, y = value, color = group)) +
           geom_line(size = 1.2) +
           geom_hline(yintercept = 0, linetype = "solid", color = "gray50") +
-          geom_vline(xintercept = shock_times, linetype = "dashed", color = "red", size = 1) +
+          geom_vline(xintercept = shock_times, linetype = "dashed", color = "#D55E00", size = 1) +
           annotate("text", x = shock_times + 10, y = min(did_data$treated_normalized, na.rm = TRUE) * 0.5,
                    label = "Treatment effect\n(negative = less exploration)", 
                    hjust = 0, vjust = 0.5, size = 3) +
@@ -2179,7 +2400,7 @@ SaomNkRSienaBiEnv <- R6Class(
             y = "Degree Difference from Control Baseline",
             color = "Group"
           ) +
-          theme_minimal() +
+          theme_searchnet() +
           theme(
             plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
             plot.subtitle = element_text(hjust = 0.5, size = 11, face = "italic"),
@@ -2199,27 +2420,27 @@ SaomNkRSienaBiEnv <- R6Class(
         p1 <- plot_data %>%
           ggplot(aes(x = chain_step_id, y = mean_degree, color = treatment)) +
           geom_line(size = 1) +
-          geom_vline(xintercept = shock_times, linetype = "dashed", color = "red", size = 0.8) +
+          geom_vline(xintercept = shock_times, linetype = "dashed", color = "#D55E00", size = 0.8) +
           labs(
             title = "Raw Values",
             x = "Chain Step",
             y = "Average Degree",
             color = "Group"
           ) +
-          theme_minimal() +
+          theme_searchnet() +
           scale_y_continuous(limits = c(0, NA))
         
         p2 <- did_data %>%
           ggplot(aes(x = chain_step_id)) +
-          geom_line(aes(y = diff_adjusted), size = 1.2, color = "darkblue") +
+          geom_line(aes(y = diff_adjusted), size = 1.2, color = "#0072B2") +
           geom_hline(yintercept = 0, linetype = "solid", color = "gray50") +
-          geom_vline(xintercept = shock_times, linetype = "dashed", color = "red", size = 0.8) +
+          geom_vline(xintercept = shock_times, linetype = "dashed", color = "#D55E00", size = 0.8) +
           labs(
             title = "Treatment Effect (Treated - Control)",
             x = "Chain Step",
             y = "Difference in Degrees"
           ) +
-          theme_minimal()
+          theme_searchnet()
         
         p <- p1 / p2 + 
           patchwork::plot_annotation(
@@ -2295,7 +2516,7 @@ SaomNkRSienaBiEnv <- R6Class(
         annotate("text", x = 5, y = max(c(top_data$value, 0.1)) * 0.8, 
                  label = "subsidy", hjust = 0, vjust = 1, size = 3) +
         labs(title = "K_AC_NEW", x = "", y = "") +
-        theme_minimal() +
+        theme_searchnet() +
         theme(
           panel.background = element_rect(fill = "white", color = "black", size = 0.5),
           panel.grid.major = element_line(color = "gray90", size = 0.3),
@@ -2318,7 +2539,7 @@ SaomNkRSienaBiEnv <- R6Class(
         annotate("text", x = 5, y = min(y_range) * 0.8, 
                  label = "treatment_100__control_0", hjust = 0, vjust = 1, size = 3) +
         labs(title = "K_AC_NEW", x = "", y = "") +
-        theme_minimal() +
+        theme_searchnet() +
         theme(
           panel.background = element_rect(fill = "white", color = "black", size = 0.5),
           panel.grid.major = element_line(color = "gray90", size = 0.3),
@@ -2335,7 +2556,7 @@ SaomNkRSienaBiEnv <- R6Class(
         p_bottom <- p_bottom +
           annotate("text", x = mean(range(bottom_data$chain_step_id)), y = 0,
                    label = "No variation: Treatment and control have identical outcomes",
-                   hjust = 0.5, vjust = 0.5, size = 3, color = "red", fontface = "italic")
+                   hjust = 0.5, vjust = 0.5, size = 3, color = "#D55E00", fontface = "italic")
       }
       
       # Y-axis labels
@@ -2919,7 +3140,7 @@ SaomNkRSienaBiEnv <- R6Class(
         sim_title_str <- self$get_structure_model_param_str()
         
         nstrats <- length(levels(self$get_actor_strategies()))
-        color_manual <- scales::hue_pal()(nstrats)[2:nstrats]
+        color_manual <- searchnet_palette("categorical", nstrats)[2:nstrats]
         
         
         ##------------------- Plot 1 --------------------------------------------
@@ -2937,7 +3158,7 @@ SaomNkRSienaBiEnv <- R6Class(
           scale_color_manual(values = color_manual) +
           scale_fill_manual(values = color_manual) +
           # scale_color_grey() +  ##, direction = -1 ## reverse 
-          theme_bw() + theme(legend.position = 'none') +
+          theme_searchnet() + theme(legend.position = 'none') +
           labs(
             title = sprintf('%s',sim_title_str), ##'Multiperiod Diff-in-Diff\nPointwise Estimates and Bootstrapped 95CI ',
             y = 'Avg. Treatment Effect on Treated (ATT)',
@@ -2959,7 +3180,7 @@ SaomNkRSienaBiEnv <- R6Class(
           scale_fill_manual(values = color_manual) +
           # facet_grid(test_id ~ stat_type, scales='free') +
           facet_grid(  test_id ~ component_type , scales = 'free_y') +
-          theme_bw() + theme(legend.position = 'bottom') +
+          theme_searchnet() + theme(legend.position = 'bottom') +
           labs(
             y = 'Avg. Treatment Effect on Treated (ATT)',
             x = sprintf('Event Time\n(Shock Starts at Simulated Decision Chain Step %s)',  first_shock_on_step),
@@ -2980,7 +3201,7 @@ SaomNkRSienaBiEnv <- R6Class(
           suppressMessages({  layout1 <- ggplot_build(plt1)$layout  })
           y_maxs1 <- unlist(lapply(layout1$panel_params, function(x) rep(  max(x$y.range),  nrow(shock_rects1)) ))
           plt1 <- plt1 + geom_rect(data=shock_rects1, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf),
-                                   fill='darkorange', color='orange',linetype=2,  alpha=.05)
+                                   fill = 'grey55', color = 'grey40',linetype=2,  alpha=.05)
           plt1 <- plt1 + geom_text(data = shock_rects1, aes(x = (start + end) / 2, y = y_maxs1, label = label),
                                    vjust = 0, size = 2.7, color='black') #fontface = "bold"
           
@@ -2994,7 +3215,7 @@ SaomNkRSienaBiEnv <- R6Class(
           suppressMessages({  layout2 <- ggplot_build(plt2)$layout  })
           y_maxs2 <- unlist(lapply(layout2$panel_params, function(x) rep(  max(x$y.range),  nrow(shock_rects2)) ))
           plt2 <- plt2 + geom_rect(data=shock_rects2, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf),
-                                   fill='darkorange', color='orange',linetype=2,  alpha=.05)
+                                   fill = 'grey55', color = 'grey40',linetype=2,  alpha=.05)
           plt2 <- plt2 + geom_text(data = shock_rects2, aes(x = (start + end) / 2, y = y_maxs2, label = label),
                                    vjust = 0, size = 2.7, color='black') #fontface = "bold"
         }
@@ -3071,7 +3292,7 @@ SaomNkRSienaBiEnv <- R6Class(
         sim_title_str <- self$get_structure_model_param_str()
         
         nstrats <- length(levels(self$get_actor_strategies()))
-        color_manual <- scales::hue_pal()(nstrats)[2:nstrats]
+        color_manual <- searchnet_palette("categorical", nstrats)[2:nstrats]
         
         
         ##------------------- Plot 1 --------------------------------------------
@@ -3089,7 +3310,7 @@ SaomNkRSienaBiEnv <- R6Class(
           scale_color_manual(values = color_manual) +
           scale_fill_manual(values = color_manual) +
           # scale_color_grey() +  ##, direction = -1 ## reverse 
-          theme_bw() + theme(legend.position = 'none') +
+          theme_searchnet() + theme(legend.position = 'none') +
           labs(
             title = sprintf('%s',sim_title_str), ##'Multiperiod Diff-in-Diff\nPointwise Estimates and Bootstrapped 95CI ',
             y = 'Avg. Treatment Effect on Treated (ATT)',
@@ -3111,7 +3332,7 @@ SaomNkRSienaBiEnv <- R6Class(
           scale_fill_manual(values = color_manual) +
           # facet_grid(test_id ~ stat_type, scales='free') +
           facet_wrap(stat_type ~ component_type, scales = 'free_y') +
-          theme_bw() + theme(legend.position = 'bottom') +
+          theme_searchnet() + theme(legend.position = 'bottom') +
           labs(
             y = 'Avg. Treatment Effect on Treated (ATT)',
             x = sprintf('Event Time\n(Shock Starts at Simulated Decision Chain Step %s)',  first_shock_on_step),
@@ -3132,7 +3353,7 @@ SaomNkRSienaBiEnv <- R6Class(
           suppressMessages({  layout1 <- ggplot_build(plt1)$layout  })
           y_maxs1 <- unlist(lapply(layout1$panel_params, function(x) rep(  max(x$y.range),  nrow(shock_rects1)) ))
           plt1 <- plt1 + geom_rect(data=shock_rects1, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf),
-                                   fill='darkorange', color='orange',linetype=2,  alpha=.05)
+                                   fill = 'grey55', color = 'grey40',linetype=2,  alpha=.05)
           plt1 <- plt1 + geom_text(data = shock_rects1, aes(x = (start + end) / 2, y = y_maxs1, label = label),
                                    vjust = 0, size = 2.7, color='black') #fontface = "bold"
           
@@ -3146,7 +3367,7 @@ SaomNkRSienaBiEnv <- R6Class(
           suppressMessages({  layout2 <- ggplot_build(plt2)$layout  })
           y_maxs2 <- unlist(lapply(layout2$panel_params, function(x) rep(  max(x$y.range),  nrow(shock_rects2)) ))
           plt2 <- plt2 + geom_rect(data=shock_rects2, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf),
-                                   fill='darkorange', color='orange',linetype=2,  alpha=.05)
+                                   fill = 'grey55', color = 'grey40',linetype=2,  alpha=.05)
           plt2 <- plt2 + geom_text(data = shock_rects2, aes(x = (start + end) / 2, y = y_maxs2, label = label),
                                    vjust = 0, size = 2.7, color='black') #fontface = "bold"
         }
@@ -3212,7 +3433,7 @@ SaomNkRSienaBiEnv <- R6Class(
         sim_title_str <- self$get_structure_model_param_str()
         
         nstrats <- length(levels(self$get_actor_strategies()))
-        color_manual <- scales::hue_pal()(nstrats)[2:nstrats]
+        color_manual <- searchnet_palette("categorical", nstrats)[2:nstrats]
         
         
         ##------------------- Plot 1 --------------------------------------------
@@ -3228,7 +3449,7 @@ SaomNkRSienaBiEnv <- R6Class(
           scale_color_manual(values = color_manual) +
           scale_fill_manual(values = color_manual) +
           # scale_color_grey() +  ##, direction = -1 ## reverse 
-          theme_bw() + theme(legend.position = 'none') +
+          theme_searchnet() + theme(legend.position = 'none') +
           labs(
             title = sprintf('%s',sim_title_str), ##'Multiperiod Diff-in-Diff\nPointwise Estimates and Bootstrapped 95CI ',
             y = 'Avg. Treatment Effect on Treated (ATT)',
@@ -3249,7 +3470,7 @@ SaomNkRSienaBiEnv <- R6Class(
           scale_fill_manual(values = color_manual) +
           # facet_grid(test_id ~ stat_type, scales='free') +
           facet_wrap(test_id ~ stat_type, scales = 'free_y') +
-          theme_bw() + theme(legend.position = 'bottom') +
+          theme_searchnet() + theme(legend.position = 'bottom') +
           labs(
             y = 'Avg. Treatment Effect on Treated (ATT)',
             x = sprintf('Event Time\n(Shock Starts at Simulated Decision Chain Step %s)',  first_shock_on_step),
@@ -3270,7 +3491,7 @@ SaomNkRSienaBiEnv <- R6Class(
           suppressMessages({  layout1 <- ggplot_build(plt1)$layout  })
           y_maxs1 <- unlist(lapply(layout1$panel_params, function(x) rep(  max(x$y.range),  nrow(shock_rects1)) ))
           plt1 <- plt1 + geom_rect(data=shock_rects1, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf),
-                                   fill='darkorange', color='orange',linetype=2,  alpha=.05)
+                                   fill = 'grey55', color = 'grey40',linetype=2,  alpha=.05)
           plt1 <- plt1 + geom_text(data = shock_rects1, aes(x = (start + end) / 2, y = y_maxs1, label = label),
                                    vjust = 0, size = 2.7, color='black') #fontface = "bold"
           
@@ -3284,7 +3505,7 @@ SaomNkRSienaBiEnv <- R6Class(
           suppressMessages({  layout2 <- ggplot_build(plt2)$layout  })
           y_maxs2 <- unlist(lapply(layout2$panel_params, function(x) rep(  max(x$y.range),  nrow(shock_rects2)) ))
           plt2 <- plt2 + geom_rect(data=shock_rects2, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf),
-                                   fill='darkorange', color='orange',linetype=2,  alpha=.05)
+                                   fill = 'grey55', color = 'grey40',linetype=2,  alpha=.05)
           plt2 <- plt2 + geom_text(data = shock_rects2, aes(x = (start + end) / 2, y = y_maxs2, label = label),
                                    vjust = 0, size = 2.7, color='black') #fontface = "bold"
         }
@@ -3354,7 +3575,10 @@ SaomNkRSienaBiEnv <- R6Class(
         stop('theta_shocks is not set.')
       if (is.null(self$theta_shocks[[1]]$chain_step_ids))
         stop('theta_shocks missing chain_step_ids.')
-      
+      if (is.null(self$bi_env_arr) || length(dim(self$bi_env_arr)) != 3L)
+        stop('bi_env_arr is missing; run the simulation with its ministep chain processed first.')
+      stopifnot(is.numeric(n_obs), length(n_obs) == 1L, n_obs >= 2)
+
       limit_obs <- 30
       max_obs <- ifelse( dim(self$bi_env_arr)[3] <= limit_obs, dim(self$bi_env_arr)[3],  limit_obs )
         
@@ -3366,9 +3590,14 @@ SaomNkRSienaBiEnv <- R6Class(
         ## all step ids in this shock period
         shock_step_ids <- theta_shock$chain_step_ids
         ## observation step ids to use for RSiena estimation of the model
-        obs_step_ids <- round(seq(min(shock_step_ids), max(shock_step_ids), length.out=n_obs))
+        ## unique(): a segment shorter than n_obs rounds to repeated step ids,
+        ## which would hand RSiena duplicated waves.
+        obs_step_ids <- unique(round(seq(min(shock_step_ids), max(shock_step_ids), length.out=n_obs)))
         if (length(obs_step_ids) > max_obs)
           obs_step_ids <- obs_step_ids[ 1:max_obs ]
+        if (length(obs_step_ids) < 2L)
+          stop(sprintf('shock segment %d spans %d ministep(s); at least 2 observations are needed to estimate it.',
+                       i, length(shock_step_ids)))
         bi_env_obs <- self$bi_env_arr[ , , obs_step_ids ]
         rsiena_model <- self$fit_rsiena_static(bi_env_obs, theta_shock, verbose=verbose)
         # #
@@ -3457,19 +3686,26 @@ SaomNkRSienaBiEnv <- R6Class(
     
     
     plot_snapshots = function(snapshot_ids=c(), include_init=TRUE) {
-      if(!length(snapshot_ids)) 
+      ## Since searchnet 0.11.2.9000 each snapshot is drawn by the same
+      ## builder as saomnk_plot_snapshots() (.snapshot_panels(), in
+      ## R/plot-snapshots.R); the legacy layout is still available from
+      ## plot_bipartite_system_from_mat().
+      if(!length(snapshot_ids))
         snapshot_ids <- c(1, 2, dim(self$bi_env_arr)[3]  )
       if(include_init)
         snapshot_ids <- c(0, snapshot_ids)
-      for (i in 1:length(snapshot_ids)) {
-        step <- snapshot_ids[ i ]
+      out <- lapply(snapshot_ids, function(step) {
         mat <- if (step == 0) {
           self$bipartite_matrix_init
         } else {
           self$bi_env_arr[,,step]
         }
-        self$plot_bipartite_system_from_mat(mat, step)
-      }
+        snap <- .snapshot_panels(self, mat, step)
+        grid::grid.newpage()
+        grid::grid.draw(snap$grob)
+        snap
+      })
+      invisible(out)
     },
     
     
@@ -3808,7 +4044,6 @@ SaomNkRSienaBiEnv <- R6Class(
 
     # =========================================================================
     # Formal SAOM-NK-Logit / RUM Mathematical Methods
-    # (aligned with AMR Mathematical Appendix canonical framework)
     # =========================================================================
 
     #' Compute the NK power key index for epistasis masking
@@ -3842,7 +4077,7 @@ SaomNkRSienaBiEnv <- R6Class(
     },
 
 
-    #' Compute the full 10-component utility function from the AMR Mathematical Appendix
+    #' Compute the full 10-component utility function
     #'
     #' @description
     #' Evaluates the canonical utility decomposition:
@@ -4105,7 +4340,7 @@ SaomNkRSienaBiEnv <- R6Class(
     },
 
 
-    #' Verify Theorem 1 (Reduction): SaoMNK with M=1, theta=0, beta->inf recovers NK
+    #' Verify Property 1 (Reduction): SaoMNK with M=1, theta=0, beta->inf recovers NK
     #'
     #' @description
     #' Exhaustively enumerates all \eqn{2^N} binary configurations and compares
@@ -4310,7 +4545,7 @@ SaomNkRSienaBiEnv <- R6Class(
           
           plt <- actfit_long %>% ggplot(aes(x=value))+ # geom_density() + 
             geom_histogram() +
-            facet_grid(dist ~ name, scales='free_x') + theme_bw() + 
+            facet_grid(dist ~ name, scales='free_x') + theme_searchnet() + 
             ggtitle(sprintf('Utility Transition Paths: Actor %s, Step %s', actor_id, step_id))
           
           pltlist[[ length(pltlist)+1 ]] <- plt
@@ -4344,7 +4579,7 @@ SaomNkRSienaBiEnv <- R6Class(
         geom_density(alpha=.3, size=1) + 
         facet_grid(chain_step_id ~ actor_id, scales = 'free') +
         ggtitle('Fitness Values by Distance (# tie changes) from Current Configuration') +
-        theme_bw()
+        theme_searchnet()
       
       return(list(
         utilist = utilist,
@@ -4464,6 +4699,12 @@ SaomNkRSienaBiEnv <- R6Class(
     },
     
     
+    ## Multiwave route (0.11.0). Wave w is one unconditional RSiena period
+    ## started from the end of wave w - 1, with basic rate `iterations / M`,
+    ## so `iterations` is the expected number of opportunities per wave summed
+    ## over actors. Before 0.11.0 every wave conditioned on the distance the
+    ## previous wave travelled and the state advanced by about one tie per
+    ## wave. Wave seeds are drawn from `rand_seed` (no seed arithmetic).
     search_rsiena_multiwave_run = function(structure_model,
                                            waves=2,
                                            iterations=1000,
@@ -4473,98 +4714,28 @@ SaomNkRSienaBiEnv <- R6Class(
                                            digits=3,
                                            rand_seed=123,
                                            dir_output=NA,
-                                           file_output=NA) {
-      bipartite_matrix_0 <- self$bipartite_matrix
-      ##--1. INIT RSiena Model: set $rsiena_data --------
-      self$init_rsiena_model_from_structure_model_bipartite_matrix(structure_model, bipartite_matrix_0, self$rsiena_env_seed)
-      print('self$rsiena_data : ')
-      print(self$rsiena_data)
-      ##  2. Init effects
-      self$rsiena_effects <- getEffects(self$rsiena_data)
-      ##  3. Add effects from structure_model list
-      self$add_rsiena_effects(structure_model)
-      ##  4. RSiena Algorithm 
-      .projdir <- ifelse(is.na(dir_output), getwd(), dir_output)
-      .projname <-  ifelse(!is.na(file_output), file_output, as.character(as.numeric(Sys.time())))
-      self$rsiena_algorithm <- sienaAlgorithmCreate(projname=file.path( .projdir,  sprintf('%s.log', .projname) ), ## rsiena project log filename
-                                                    simOnly = TRUE,
-                                                    nsub = rsiena_phase2_nsub,
-                                                    n3 = iterations,
-                                                    seed = rand_seed)
-      ## 5. Run RSiena simulation
-      self$rsiena_model <- siena07(self$rsiena_algorithm,
-                                   data = self$rsiena_data, 
-                                   effects = self$rsiena_effects,
-                                   batch = TRUE,
-                                   returnDeps = returnDeps, 
-                                   returnChains = returnChains,
-                                   returnDataFrame = TRUE, ##**TODO** CHECK
-                                   returnLoglik = TRUE #,  ##**TODO** CHECK
-      )   # returnChains = returnChains
-      
-      # Summarize and plot results
-      mod_summary <- summary(self$rsiena_model)
-      if(!is.null(mod_summary))
-        print(mod_summary)
-      print(screenreg(list(self$rsiena_model), single.row = TRUE, digits = digits))
-      
-      # 6. Update System
-      ## update simulation object environment from RSiena simulation model
-      new_bi_env_igraph <- self$get_bipartite_igraph_from_rsiena_model()
-      self$set_system_from_bipartite_igraph( new_bi_env_igraph )
-      
-      # sink() ## write output text to file
-      for (w in 1:waves){
-        bipartite_matrix_previous <- if(w == 1){ bipartite_matrix_0 }else{ self$bipartite_matrix_waves[[w-1]] }
-        ##--1. INIT RSiena Model--------
-        self$init_multiwave_rsiena_model_from_structure_model_bipartite_matrix(structure_model,
-                                                                               bipartite_matrix_previous, ## matrix1 (previous)
-                                                                               self$bipartite_matrix,     ## matrix2 (latest)
-                                                                               self$rsiena_env_seed)
-        print('self$rsiena_data : ')
-        print(self$rsiena_data)
-        ##  2. Init effects
-        self$rsiena_effects <- getEffects(self$rsiena_data)
-        ##  3. Add effects from model objective function list
-        self$add_rsiena_effects(structure_model)
-        ##  4. RSiena Algorithm
-        self$rsiena_algorithm <- sienaAlgorithmCreate(projname=file.path(self$DIR_OUTPUT,
-                                                              sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP)),
-                                                      simOnly = TRUE,
-                                                      nsub = rsiena_phase2_nsub,
-                                                      n3 = iterations,
-                                                      seed = rand_seed)
-        ## 5. Run RSiena simulation
-        self$rsiena_model <- siena07(self$rsiena_algorithm,
-                                     data = self$rsiena_data, 
-                                     effects = self$rsiena_effects,
-                                     batch = TRUE,
-                                     returnDeps = returnDeps, 
-                                     returnChains = returnChains,
-                                     returnDataFrame = TRUE, ##**TODO** CHECK
-                                     returnLoglik = TRUE #,  ##**TODO** CHECK
-        )   # returnChains = returnChains
-        
-        # Summarize and plot results
-        mod_summary <- summary(self$rsiena_model)
-        if(!is.null(mod_summary))
-          print(mod_summary)
-        print(screenreg(list(self$rsiena_model), single.row = TRUE, digits = digits))
-        
-        ## 6. Update System
-        ## update simulation object environment from RSiena simulation model
-        new_bi_env_igraph <- self$get_bipartite_igraph_from_rsiena_model()
-        self$set_system_from_bipartite_igraph( new_bi_env_igraph )
-        
-        ##---------- 2. Waves 2,3,4,... in Multiwave Simulation -------------------
-        
-        self$rsiena_model_waves[[w]] <- self$rsiena_model
-        self$bipartite_matrix_waves[[w]] <- self$bipartite_matrix
-        
-      }
-      
+                                           file_output=NA,
+                                           verbose=FALSE,
+                                           iterations_per_actor=NULL, ## search_rsiena() naming: iterations = this * M
+                                           run_seed=NULL) {           ## search_rsiena() naming for rand_seed
+      .args <- .searchnet_multiwave_resolve(self, iterations, !missing(iterations),
+                                            iterations_per_actor,
+                                            rand_seed, !missing(rand_seed), run_seed)
+      iterations <- .args$iterations
+      rand_seed  <- .args$rand_seed
+      .why <- "each wave is one unconditional RSiena period that always returns its chain and networks."
+      .searchnet_ignored_arg("returnDeps", returnDeps, TRUE, .why)
+      .searchnet_ignored_arg("returnChains", returnChains, TRUE, .why)
+      .searchnet_ignored_arg("rsiena_phase2_nsub", rsiena_phase2_nsub, 1, .why)
+      .searchnet_ignored_arg("rsiena_n2start_scale", rsiena_n2start_scale, 1, .why)
+      .searchnet_ignored_arg("dir_output", dir_output, NA, "no RSiena log file is written.")
+      .searchnet_ignored_arg("file_output", file_output, NA, "no RSiena log file is written.")
+      self$rsiena_model_waves <- list()
+      self$bipartite_matrix_waves <- list()
+      .searchnet_multiwave_append(self, structure_model, waves = waves,
+                                  iterations = iterations, rand_seed = rand_seed,
+                                  verbose = verbose)
     },
-
 
     ## ---- Parallel Monte Carlo replications --------------------------------
     ##
@@ -4591,11 +4762,11 @@ SaomNkRSienaBiEnv <- R6Class(
           structure_model,
           waves       = waves,
           iterations  = iterations,
-          rand_seed   = rand_seed + rep_id
+          rand_seed   = .searchnet_seed(rand_seed, "monte_carlo:rep", rep_id)
         )
         list(
           rep_id          = rep_id,
-          seed            = rand_seed + rep_id,
+          seed            = .searchnet_seed(rand_seed, "monte_carlo:rep", rep_id),
           bipartite_final = env_rep$bipartite_matrix,
           bipartite_waves = env_rep$bipartite_matrix_waves,
           rsiena_model    = tryCatch(env_rep$rsiena_model, error = function(e) NULL)
@@ -4629,50 +4800,35 @@ SaomNkRSienaBiEnv <- R6Class(
     },
 
 
-    #**TODO**
+    ## Continue a multiwave run by `waves` more waves from its current state.
     search_rsiena_multiwave_extend = function(waves=1,
                                                iterations=1000,
                                                returnDeps=TRUE,
                                                returnChains=TRUE,
-                                               rsiena_phase2_nsub=1, rsiena_n2start_scale=1, 
+                                               rsiena_phase2_nsub=1, rsiena_n2start_scale=1,
                                                digits=3,
-                                               rand_seed=123) {
-      ##  4. RSiena Algorithm 
-      self$rsiena_algorithm <- sienaAlgorithmCreate(projname=file.path(self$DIR_OUTPUT,
-                                                              sprintf('%s_%s',self$SIM_NAME,self$TIMESTAMP)),
-                                                    simOnly = TRUE,
-                                                    nsub = rsiena_phase2_nsub,
-                                                    n3 = iterations,
-                                                    seed = rand_seed)
-      ## 5. Run RSiena simulation
-      self$rsiena_model <- siena07(self$rsiena_algorithm,
-                                   data = self$rsiena_data, 
-                                   effects = self$rsiena_effects,
-                                   batch = TRUE,
-                                   returnDeps = returnDeps, 
-                                   returnChains = returnChains,
-                                   returnDataFrame = TRUE, ##**TODO** CHECK
-                                   returnLoglik = TRUE ,  ##**TODO** CHECK
-                                   prevAns= self$rsiena_model
-      )   # returnChains = returnChains
-      
-      # Summarize and plot results
-      mod_summary <- summary(self$rsiena_model)
-      if(!is.null(mod_summary))
-        print(mod_summary)
-      print(screenreg(list(self$rsiena_model), single.row = TRUE, digits = digits))
-      
-      # 6. Update System
-      ## update simulation object environment from RSiena simulation model
-      new_bi_env_igraph <- self$get_bipartite_igraph_from_rsiena_model()
-      self$set_system_from_bipartite_igraph( new_bi_env_igraph )
-      
-      #                                returnDataFrame = TRUE, ##**TODO** CHECK
-      #                                returnLoglik = TRUE #,  ##**TODO** CHECK
-      
+                                               rand_seed=123,
+                                               verbose=FALSE,
+                                               iterations_per_actor=NULL,
+                                               run_seed=NULL) {
+      if (is.null(self$config_structure_model))
+        stop("Run search_rsiena_multiwave_run() before extending it.")
+      .args <- .searchnet_multiwave_resolve(self, iterations, !missing(iterations),
+                                            iterations_per_actor,
+                                            rand_seed, !missing(rand_seed), run_seed)
+      iterations <- .args$iterations
+      rand_seed  <- .args$rand_seed
+      .why <- "each wave is one unconditional RSiena period that always returns its chain and networks."
+      .searchnet_ignored_arg("returnDeps", returnDeps, TRUE, .why)
+      .searchnet_ignored_arg("returnChains", returnChains, TRUE, .why)
+      .searchnet_ignored_arg("rsiena_phase2_nsub", rsiena_phase2_nsub, 1, .why)
+      .searchnet_ignored_arg("rsiena_n2start_scale", rsiena_n2start_scale, 1, .why)
+      .searchnet_multiwave_append(self, self$config_structure_model, waves = waves,
+                                  iterations = iterations, rand_seed = rand_seed,
+                                  verbose = verbose)
     },
-    
-    
+
+
     search_rsiena_multiwave_process_results = function(progress_callback = NULL) {
       actor_wave_stats <- list()
       actor_wave_util <- list()
@@ -4683,10 +4839,12 @@ SaomNkRSienaBiEnv <- R6Class(
       K_wave_C <- list()
       for (w in 1:length(self$rsiena_model_waves)) {
         rsiena_model_w <- self$rsiena_model_waves[[ w ]]
-        bipartite_igraph_w <- self$get_bipartite_igraph_from_rsiena_model(rsiena_model_w)
-        self$set_system_from_bipartite_igraph( bipartite_igraph_w )
+        ## Each wave is its own path, replayed from that wave's start.
+        self$rsiena_model <- rsiena_model_w
+        start_w <- if (!is.null(rsiena_model_w$searchnet_start)) rsiena_model_w$searchnet_start
+                   else if (w == 1) self$bipartite_matrix_init else self$bipartite_matrix_waves[[w - 1]]
         ## 3. Process chain of simulation ministeps
-        self$search_rsiena_process_ministep_chain()
+        self$search_rsiena_process_ministep_chain(verbose = FALSE, start_matrix = start_w)
         ## 4. Process actor statistics (e.g., utility)
         self$search_rsiena_process_stats(progress_callback = progress_callback)
         ##**TODO**
@@ -4711,6 +4869,9 @@ SaomNkRSienaBiEnv <- R6Class(
       self$K_wave_B1 <- data.table::rbindlist( K_wave_B1 ) 
       self$K_wave_B2 <- data.table::rbindlist( K_wave_B2 ) 
       self$K_wave_C  <- data.table::rbindlist( K_wave_C ) 
+      ## Leave the environment at the end of the last wave.
+      .nw <- length(self$rsiena_model_waves)
+      if (.nw) self$set_system_from_bipartite_matrix(self$bipartite_matrix_waves[[.nw]])
     },
     
     
@@ -4754,9 +4915,12 @@ SaomNkRSienaBiEnv <- R6Class(
       if ( is.null(self$chain_stats) )
         stop('chain_stats missing; run simulation with returnChains=TRUE in order to compute actor utility')
       interaction_effnames <- sapply(self$config_structure_model$dv_bipartite$interactions, function(x) x$effect)
-      bi_env_mat <- self$bipartite_matrix_init
-      new_components <- which(colSums(self$bipartite_matrix_init) == 0)
-      old_components <- which(colSums(self$bipartite_matrix_init) >  0)
+      ## The path starts where the simulation started (0.11.0): with
+      ## restart = FALSE that is the current state, not the initial matrix.
+      .path_start <- if (!is.null(self$path_start_matrix)) self$path_start_matrix else self$bipartite_matrix_init
+      bi_env_mat <- .path_start
+      new_components <- which(colSums(.path_start) == 0)
+      old_components <- which(colSums(.path_start) >  0)
       
       ## remove chain entries where no change was made (keep if !stability )
       ## Keep all steps (including no-change for forbearance measures)
@@ -4834,21 +4998,33 @@ SaomNkRSienaBiEnv <- R6Class(
       ## Diff-based storage (Task 4 memory optimization)
       bi_env_changes <- matrix(NA_integer_, nrow = nchains, ncol = 3)
       colnames(bi_env_changes) <- c("step", "actor_i", "comp_j")
-      stats_li <- list()
-      util_li  <- list()
-      util_diff_li <- list()
-      K_AA_li <- list()
-      K_AC_li <- list()
-      K_CA_li <- list()
-      K_CC_li <- list()
-      K_AA_NEW_li <- list()
-      K_AC_NEW_li <- list()
-      K_AA_OLD_li <- list()
-      K_AC_OLD_li <- list()
-      K_CA_NEW_li <- list()
-      K_CC_NEW_li <- list()
-      K_CA_OLD_li <- list()
-      K_CC_OLD_li <- list()
+      ## Per-step results are kept as plain vectors in preallocated lists and
+      ## the long tables are assembled once after the loop (2026-10-07). They
+      ## used to be built as one data.frame per step and per table, which cost
+      ## more than the statistics themselves; the values are the same vectors.
+      stat_vals    <- vector("list", nchains)
+      util_vals    <- vector("list", nchains)
+      K_AA_vals    <- vector("list", nchains)
+      K_AC_vals    <- vector("list", nchains)
+      K_CA_vals    <- vector("list", nchains)
+      K_CC_vals    <- vector("list", nchains)
+      K_AA_NEW_vals <- vector("list", nchains)
+      K_AC_NEW_vals <- vector("list", nchains)
+      K_CA_NEW_vals <- vector("list", nchains)
+      K_CC_NEW_vals <- vector("list", nchains)
+      K_AA_OLD_vals <- vector("list", nchains)
+      K_AC_OLD_vals <- vector("list", nchains)
+      K_CA_OLD_vals <- vector("list", nchains)
+      K_CC_OLD_vals <- vector("list", nchains)
+      ## The ministep frame's columns, read once instead of a row per step.
+      .stab_vec  <- tiechdf$stability
+      ## %in%, not ==: matches identical() for an NA name, as the row test did.
+      .is_beh_vec <- as.character(tiechdf$dv_varname) %in% .SEARCHNET_BEHAVIOR_DV_NAME
+      .from_vec  <- tiechdf$id_from
+      .to_vec    <- tiechdf$id_to
+      ## The effects table, built once rather than at every ministep.
+      .stats_prep <- self$prepare_struct_mod_stats()
+      .int_vars <- lapply(interaction_effnames, function(x) strsplit(x, '[|]')[[1]])
 
       ## ========================================================================
       ## RANK-1 INCREMENTAL UPDATE OPTIMIZATION
@@ -4930,51 +5106,14 @@ SaomNkRSienaBiEnv <- R6Class(
         K_CC_OLD_vec <- colSums(search_old > 0)
       }
 
-      ## --- Pre-allocate template data frames (created once, filled per step) ---
-      ## stat grid: M actors x ntheta effects
-      tpl_statgrid <- data.frame(
-        chain_step_id = rep(0L, M * ntheta),
-        actor_id      = rep(1:M, times = ntheta),
-        effect_level  = rep(theta_levels_norates, each = M),
-        stringsAsFactors = FALSE
-      )
+      ## --- Long-table key columns of one step (filled per step after the loop) ---
+      ## stat grid: M actors x ntheta effects, actor fastest
+      tpl_stat_actor <- rep(1:M, times = ntheta)
+      tpl_stat_level <- rep(theta_levels_norates, each = M)
       ## Map effect_level -> effect_name (computed once)
       eff_level_to_name <- theta_df_norates$shortName
       names(eff_level_to_name) <- theta_df_norates$effect_level
-      tpl_statgrid$effect_name <- eff_level_to_name[tpl_statgrid$effect_level]
-      ## util grids: M actors
-      tpl_utilgrid <- data.frame(
-        chain_step_id = rep(0L, M),
-        actor_id      = 1:M,
-        stringsAsFactors = FALSE
-      )
-      ## K_AA/K_AC grids: M actors
-      tpl_actor_grid <- data.frame(
-        chain_step_id = rep(0L, M),
-        actor_id      = 1:M,
-        stringsAsFactors = FALSE
-      )
-      ## K_CA/K_CC grids: N components
-      tpl_comp_grid <- data.frame(
-        chain_step_id = rep(0L, N),
-        component_id  = 1:N,
-        stringsAsFactors = FALSE
-      )
-      ## NEW/OLD component grids
-      if (has_new) {
-        tpl_comp_new_grid <- data.frame(
-          chain_step_id = rep(0L, n_new),
-          component_id  = 1:n_new,
-          stringsAsFactors = FALSE
-        )
-      }
-      if (has_old) {
-        tpl_comp_old_grid <- data.frame(
-          chain_step_id = rep(0L, n_old),
-          component_id  = 1:n_old,
-          stringsAsFactors = FALSE
-        )
-      }
+      tpl_stat_name <- eff_level_to_name[tpl_stat_level]
 
       ## --- Helper: rank-1 update of a symmetric projection matrix + K-degree vector ---
       ## Updates proj_mat (symmetric, zero diagonal) and k_vec (positive-entry count per row)
@@ -4987,7 +5126,7 @@ SaomNkRSienaBiEnv <- R6Class(
 
       for (i in 1:nchains) {
 
-        mstep <- tiechdf[i,]
+        stab_i <- .stab_vec[i]
 
         if(i %% 100 == 0 | i == nchains) cat(sprintf('\n %.2f%s', 100*i/nchains,'%'))
         ## Fire progress callback periodically (~20 times over full loop)
@@ -4999,10 +5138,9 @@ SaomNkRSienaBiEnv <- R6Class(
         ## Behavior-DV ministeps change an actor attribute, not a tie: their
         ## id_to is a behavior value and must never be toggled as a component.
         ## No-op for chains without a behavior DV.
-        if ( ! mstep$stability &&
-             ! identical(as.character(mstep$dv_varname), .SEARCHNET_BEHAVIOR_DV_NAME) ) {
-          actor_i <- mstep$id_from
-          comp_j  <- mstep$id_to
+        if ( ! stab_i && ! .is_beh_vec[i] ) {
+          actor_i <- .from_vec[i]
+          comp_j  <- .to_vec[i]
           ## Record change for diff-based storage
           bi_env_changes[i, ] <- c(i, actor_i, comp_j)
           ## Determine delta BEFORE toggling
@@ -5148,41 +5286,25 @@ SaomNkRSienaBiEnv <- R6Class(
           }
         } ## end if (!stability)
 
-        ## --- Compute statmat using pre-computed sums (avoids full recompute) ---
-        ## Pass pre-computed row_sums and col_sums to avoid O(M*N) recomputation
-        statmat <- self$get_struct_mod_stats_mat_from_bi_mat( bi_env_mat )
+        ## --- Statistics of this step's state ---
+        statmat <- self$get_struct_mod_stats_mat_from_bi_mat( bi_env_mat, .prep = .stats_prep )
         ### ADD INTERACTIONS
         if (length(interaction_effnames)) {
           for (int_i in 1:length(interaction_effnames)) {
-            vars <- strsplit(interaction_effnames[int_i],'[|]')[[1]]
+            vars <- .int_vars[[int_i]]
             statmat[ , interaction_effnames[int_i] ] <- statmat[ , vars[1] ] *  statmat[ , vars[2] ]
           }
         }
+        if (length(statmat) != M * ntheta)
+          stop(sprintf('the statistics matrix has %d columns; the effects table has %d.',
+                       ncol(statmat), ntheta))
 
-        ## --- Fill pre-allocated data frames instead of expand.grid per step ---
-        step_statgrid <- tpl_statgrid
-        step_statgrid$chain_step_id <- i
-        step_statgrid$value <- c( statmat )
-        step_statgrid$value_contributions <- c(sweep(statmat, 2, theta_mat[i, ], "*"))
-        step_statgrid$stability <- mstep$stability
-        stats_li[[i]] <- step_statgrid
+        ## --- Store this step's vectors; the long tables are built after the loop ---
+        stat_vals[[i]] <- c( statmat )
         bi_env_arr[ , , i]  <- bi_env_mat
-        ## Add utilities to array
-        util <- c( statmat %*% theta_mat[i, ] )
-        step_utilgrid <- tpl_utilgrid
-        step_utilgrid$chain_step_id <- i
-        step_utilgrid$utility <- util
-        step_utilgrid$stability <- mstep$stability
-        util_li[[i]] <- step_utilgrid
-        step_util_diffgrid <- tpl_utilgrid
-        step_util_diffgrid$chain_step_id <- i
-        step_util_diffgrid$utility <- if(i == 1){ NA } else { util - util_lag }
-        step_util_diffgrid$stability <- mstep$stability
-        util_diff_li[[i]] <- step_util_diffgrid
-        ######
-        ## update utility lag for next period difference (applies to i>1)
-        util_lag <- util
-        ######
+        ## Utilities: one matrix-vector product per step, as before, so the
+        ## floating-point summation is unchanged.
+        util_vals[[i]] <- c( statmat %*% theta_mat[i, ] )
 
         ## --- K-stats from incrementally maintained projection matrices ---
         ## NOTE: The original code counts ALL positive entries per row/col of the
@@ -5192,133 +5314,122 @@ SaomNkRSienaBiEnv <- R6Class(
         ## diagonal contribution back: +1 if the sum is positive.
         ##
         ## K_AA: actor-actor degree from social projection (already maintained)
-        K_AA_grid <- tpl_actor_grid
-        K_AA_grid$chain_step_id <- i
-        K_AA_grid$value <- K_AA_vec + as.integer(row_sums > 0)
-        K_AA_grid$stability <- mstep$stability
-        K_AA_li[[i]] <- K_AA_grid
+        K_AA_vals[[i]] <- K_AA_vec + as.integer(row_sums > 0)
         ## K_AC: actor-component degree = row_sums (# components per actor)
-        K_AC_grid <- tpl_actor_grid
-        K_AC_grid$chain_step_id <- i
-        K_AC_grid$value <- as.integer(row_sums)
-        K_AC_grid$stability <- mstep$stability
-        K_AC_li[[i]] <- K_AC_grid
+        K_AC_vals[[i]] <- as.integer(row_sums)
         ## K_CA: component-actor degree = col_sums (# actors per component)
-        K_CA_grid <- tpl_comp_grid
-        K_CA_grid$chain_step_id <- i
-        K_CA_grid$value <- as.integer(col_sums)
-        K_CA_grid$stability <- mstep$stability
-        K_CA_li[[i]] <- K_CA_grid
+        K_CA_vals[[i]] <- as.integer(col_sums)
         ## K_CC: component-component degree from the bipartite projection
-        K_CC_grid <- tpl_comp_grid
-        K_CC_grid$chain_step_id <- i
-        K_CC_grid$value <- K_CC_vec + as.integer(col_sums > 0)
-        K_CC_grid$stability <- mstep$stability
-        K_CC_li[[i]] <- K_CC_grid
-        #---
+        K_CC_vals[[i]] <- K_CC_vec + as.integer(col_sums > 0)
 
         ## --- NEW component K stats (guard against empty new_components) ---
         if (has_new) {
-          K_AA_NEW_grid <- tpl_actor_grid
-          K_AA_NEW_grid$chain_step_id <- i
-          K_AA_NEW_grid$value <- K_AA_NEW_vec + as.integer(row_sums_new > 0)
-          K_AA_NEW_grid$stability <- mstep$stability
-          K_AA_NEW_li[[i]] <- K_AA_NEW_grid
-          K_AC_NEW_grid <- tpl_actor_grid
-          K_AC_NEW_grid$chain_step_id <- i
-          K_AC_NEW_grid$value <- as.integer(row_sums_new)
-          K_AC_NEW_grid$stability <- mstep$stability
-          K_AC_NEW_li[[i]] <- K_AC_NEW_grid
-          K_CA_NEW_grid <- tpl_comp_new_grid
-          K_CA_NEW_grid$chain_step_id <- i
+          K_AA_NEW_vals[[i]] <- K_AA_NEW_vec + as.integer(row_sums_new > 0)
+          K_AC_NEW_vals[[i]] <- as.integer(row_sums_new)
           ## Original: apply(t(B_new)%*%B_new, 1, sum(x>0)) = search_new positive per row (incl diag)
-          K_CA_NEW_grid$value <- K_CC_NEW_vec + as.integer(col_sums_new > 0)
-          K_CA_NEW_grid$stability <- mstep$stability
-          K_CA_NEW_li[[i]] <- K_CA_NEW_grid
-          K_CC_NEW_grid <- tpl_comp_new_grid
-          K_CC_NEW_grid$chain_step_id <- i
+          K_CA_NEW_vals[[i]] <- K_CC_NEW_vec + as.integer(col_sums_new > 0)
           ## Original: apply(B_new, 2, sum(x>0)) = col_sums_new
-          K_CC_NEW_grid$value <- as.integer(col_sums_new)
-          K_CC_NEW_grid$stability <- mstep$stability
-          K_CC_NEW_li[[i]] <- K_CC_NEW_grid
+          K_CC_NEW_vals[[i]] <- as.integer(col_sums_new)
         }
         ## --- OLD component K stats (guard against empty old_components) ---
         if (has_old) {
-          K_AA_OLD_grid <- tpl_actor_grid
-          K_AA_OLD_grid$chain_step_id <- i
-          K_AA_OLD_grid$value <- K_AA_OLD_vec + as.integer(row_sums_old > 0)
-          K_AA_OLD_grid$stability <- mstep$stability
-          K_AA_OLD_li[[i]] <- K_AA_OLD_grid
-          K_AC_OLD_grid <- tpl_actor_grid
-          K_AC_OLD_grid$chain_step_id <- i
-          K_AC_OLD_grid$value <- as.integer(row_sums_old)
-          K_AC_OLD_grid$stability <- mstep$stability
-          K_AC_OLD_li[[i]] <- K_AC_OLD_grid
-          K_CA_OLD_grid <- tpl_comp_old_grid
-          K_CA_OLD_grid$chain_step_id <- i
+          K_AA_OLD_vals[[i]] <- K_AA_OLD_vec + as.integer(row_sums_old > 0)
+          K_AC_OLD_vals[[i]] <- as.integer(row_sums_old)
           ## Original: apply(t(B_old)%*%B_old, 1, sum(x>0)) = search_old positive per row (incl diag)
-          K_CA_OLD_grid$value <- K_CC_OLD_vec + as.integer(col_sums_old > 0)
-          K_CA_OLD_grid$stability <- mstep$stability
-          K_CA_OLD_li[[i]] <- K_CA_OLD_grid
-          K_CC_OLD_grid <- tpl_comp_old_grid
-          K_CC_OLD_grid$chain_step_id <- i
+          K_CA_OLD_vals[[i]] <- K_CC_OLD_vec + as.integer(col_sums_old > 0)
           ## Original: apply(B_old, 2, sum(x>0)) = col_sums_old
-          K_CC_OLD_grid$value <- as.integer(col_sums_old)
-          K_CC_OLD_grid$stability <- mstep$stability
-          K_CC_OLD_li[[i]] <- K_CC_OLD_grid
+          K_CC_OLD_vals[[i]] <- as.integer(col_sums_old)
         }
 
       }
-      
+
       actor_strats <- self$get_actor_strategies()
       ##-----------------
+      ## Long tables, one row per (step, node), steps in order and nodes fastest:
+      ## the same rows, columns and types the per-step frames bound into.
+      .steps <- seq_len(nchains)
+      .long <- function(vals, ids, id_name) {
+        n_per <- length(ids)
+        cols <- list(rep(.steps, each = n_per), rep(ids, nchains),
+                     unlist(vals, use.names = FALSE), rep(.stab_vec, each = n_per))
+        names(cols) <- c('chain_step_id', id_name, 'value', 'stability')
+        data.table::rbindlist(list(cols))
+      }
       ## Actor Network Statistics long dataframe
-      stats_df <- data.table::rbindlist( stats_li )
+      .stat_all <- unlist(stat_vals, use.names = FALSE)
+      stats_df <- data.table::rbindlist(list(list(
+        chain_step_id = rep(.steps, each = M * ntheta),
+        actor_id      = rep(tpl_stat_actor, nchains),
+        effect_level  = rep(tpl_stat_level, nchains),
+        effect_name   = rep(tpl_stat_name, nchains),
+        value         = .stat_all,
+        ## statmat times theta, column by column (what sweep() did per step)
+        value_contributions = .stat_all * rep(c(t(theta_mat)), each = M),
+        stability     = rep(.stab_vec, each = M * ntheta)
+      )))
       stats_df$actor_id <- as.factor(stats_df$actor_id)
       stats_df$strategy <- as.factor( actor_strats[ stats_df$actor_id ] )
       ## Actor Utility  long dataframe
-      util_df <- data.table::rbindlist( util_li ) 
+      .util_all <- unlist(util_vals, use.names = FALSE)
+      util_df <- data.table::rbindlist(list(list(
+        chain_step_id = rep(.steps, each = M),
+        actor_id      = rep(1:M, nchains),
+        utility       = .util_all,
+        stability     = rep(.stab_vec, each = M)
+      )))
       util_df$actor_id <- as.factor(util_df$actor_id)
       util_df$strategy <- as.factor( actor_strats[ util_df$actor_id ] )
-      ## Actor Utility Difference long dataframe
-      util_diff_df <- data.table::rbindlist( util_diff_li ) 
+      ## Actor Utility Difference long dataframe: NA at the first step, then
+      ## the change from the previous step. A one-step chain keeps the
+      ## logical NA column the per-step frames produced.
+      .util_diff <- if (nchains > 1L) {
+        c(rep(NA_real_, M), .util_all[-seq_len(M)] - .util_all[seq_len(M * (nchains - 1L))])
+      } else rep(NA, M)
+      util_diff_df <- data.table::rbindlist(list(list(
+        chain_step_id = rep(.steps, each = M),
+        actor_id      = rep(1:M, nchains),
+        utility       = .util_diff,
+        stability     = rep(.stab_vec, each = M)
+      )))
       util_diff_df$actor_id <- as.factor(util_diff_df$actor_id)
       util_diff_df$strategy <- as.factor( actor_strats[ util_diff_df$actor_id ] )
       ##---
       
-      K_AA_df <- data.table::rbindlist( K_AA_li ) 
+      K_AA_df <- .long(K_AA_vals, 1:M, 'actor_id')
       K_AA_df$actor_id <- as.factor(K_AA_df$actor_id)
       K_AA_df$component_id <- as.factor( NA )
       K_AA_df$strategy <- as.factor( actor_strats[ K_AA_df$actor_id ] )
-      K_AC_df <- data.table::rbindlist( K_AC_li ) 
+      K_AC_df <- .long(K_AC_vals, 1:M, 'actor_id')
       K_AC_df$actor_id <- as.factor(K_AC_df$actor_id)
       K_AC_df$component_id <- as.factor( NA )
       K_AC_df$strategy <- as.factor( actor_strats[ K_AC_df$actor_id ] )
-      K_AA_NEW_df <- if (length(K_AA_NEW_li)) data.table::rbindlist(K_AA_NEW_li) else data.frame(chain_step_id=integer(0), actor_id=integer(0), value=numeric(0), stability=logical(0))
+      K_AA_NEW_df <- if (has_new) .long(K_AA_NEW_vals, 1:M, 'actor_id') else data.frame(chain_step_id=integer(0), actor_id=integer(0), value=numeric(0), stability=logical(0))
       if (nrow(K_AA_NEW_df) > 0) { K_AA_NEW_df$actor_id <- as.factor(K_AA_NEW_df$actor_id); K_AA_NEW_df$component_id <- as.factor(NA); K_AA_NEW_df$strategy <- as.factor(actor_strats[K_AA_NEW_df$actor_id]) }
-      K_AC_NEW_df <- if (length(K_AC_NEW_li)) data.table::rbindlist(K_AC_NEW_li) else data.frame(chain_step_id=integer(0), actor_id=integer(0), value=numeric(0), stability=logical(0))
+      K_AC_NEW_df <- if (has_new) .long(K_AC_NEW_vals, 1:M, 'actor_id') else data.frame(chain_step_id=integer(0), actor_id=integer(0), value=numeric(0), stability=logical(0))
       if (nrow(K_AC_NEW_df) > 0) { K_AC_NEW_df$actor_id <- as.factor(K_AC_NEW_df$actor_id); K_AC_NEW_df$component_id <- as.factor(NA); K_AC_NEW_df$strategy <- as.factor(actor_strats[K_AC_NEW_df$actor_id]) }
-      K_AA_OLD_df <- if (length(K_AA_OLD_li)) data.table::rbindlist(K_AA_OLD_li) else data.frame(chain_step_id=integer(0), actor_id=integer(0), value=numeric(0), stability=logical(0))
+      K_AA_OLD_df <- if (has_old) .long(K_AA_OLD_vals, 1:M, 'actor_id') else data.frame(chain_step_id=integer(0), actor_id=integer(0), value=numeric(0), stability=logical(0))
       if (nrow(K_AA_OLD_df) > 0) { K_AA_OLD_df$actor_id <- as.factor(K_AA_OLD_df$actor_id); K_AA_OLD_df$component_id <- as.factor(NA); K_AA_OLD_df$strategy <- as.factor(actor_strats[K_AA_OLD_df$actor_id]) }
-      K_AC_OLD_df <- if (length(K_AC_OLD_li)) data.table::rbindlist(K_AC_OLD_li) else data.frame(chain_step_id=integer(0), actor_id=integer(0), value=numeric(0), stability=logical(0))
+      K_AC_OLD_df <- if (has_old) .long(K_AC_OLD_vals, 1:M, 'actor_id') else data.frame(chain_step_id=integer(0), actor_id=integer(0), value=numeric(0), stability=logical(0))
       if (nrow(K_AC_OLD_df) > 0) { K_AC_OLD_df$actor_id <- as.factor(K_AC_OLD_df$actor_id); K_AC_OLD_df$component_id <- as.factor(NA); K_AC_OLD_df$strategy <- as.factor(actor_strats[K_AC_OLD_df$actor_id]) }
       
       ##---
-      K_CA_df <- data.table::rbindlist( K_CA_li ) 
-      K_CA_df$strategy <- as.factor(sapply(K_CA_df$component_id, function(x) ifelse( x %in% new_components, "NEW", "OLD") ))
+      ## Component strategy: NEW or OLD by the start state (vectorized; the
+      ## component ids are still integers here, as they were in the sapply).
+      K_CA_df <- .long(K_CA_vals, 1:N, 'component_id')
+      K_CA_df$strategy <- as.factor(ifelse( K_CA_df$component_id %in% new_components, "NEW", "OLD"))
       K_CA_df$component_id <- as.factor(K_CA_df$component_id)
       K_CA_df$actor_id <- as.factor( NA )
-      K_CC_df <- data.table::rbindlist( K_CC_li ) 
-      K_CA_df$strategy <- as.factor(sapply(K_CC_df$component_id, function(x) ifelse( x %in% new_components, "NEW", "OLD") ))
+      K_CC_df <- .long(K_CC_vals, 1:N, 'component_id')
+      K_CA_df$strategy <- as.factor(ifelse( K_CC_df$component_id %in% new_components, "NEW", "OLD"))
       K_CC_df$component_id <- as.factor(K_CC_df$component_id)
       K_CC_df$actor_id <- as.factor( NA )
-      K_CA_NEW_df <- if (length(K_CA_NEW_li)) data.table::rbindlist(K_CA_NEW_li) else data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))
+      K_CA_NEW_df <- if (has_new) .long(K_CA_NEW_vals, 1:n_new, 'component_id') else data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))
       if (nrow(K_CA_NEW_df) > 0) { K_CA_NEW_df$component_id <- as.factor(K_CA_NEW_df$component_id); K_CA_NEW_df$actor_id <- as.factor(NA); K_CA_NEW_df$strategy <- as.factor("NEW") }
-      K_CC_NEW_df <- if (length(K_CC_NEW_li)) data.table::rbindlist(K_CC_NEW_li) else data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))
+      K_CC_NEW_df <- if (has_new) .long(K_CC_NEW_vals, 1:n_new, 'component_id') else data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))
       if (nrow(K_CC_NEW_df) > 0) { K_CC_NEW_df$component_id <- as.factor(K_CC_NEW_df$component_id); K_CC_NEW_df$actor_id <- as.factor(NA); K_CC_NEW_df$strategy <- as.factor("NEW") }
-      K_CA_OLD_df <- if (length(K_CA_OLD_li)) data.table::rbindlist(K_CA_OLD_li) else data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))
+      K_CA_OLD_df <- if (has_old) .long(K_CA_OLD_vals, 1:n_old, 'component_id') else data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))
       if (nrow(K_CA_OLD_df) > 0) { K_CA_OLD_df$component_id <- as.factor(K_CA_OLD_df$component_id); K_CA_OLD_df$actor_id <- as.factor(NA); K_CA_OLD_df$strategy <- as.factor("OLD") }
-      K_CC_OLD_df <- if (length(K_CC_OLD_li)) data.table::rbindlist(K_CC_OLD_li) else data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))
+      K_CC_OLD_df <- if (has_old) .long(K_CC_OLD_vals, 1:n_old, 'component_id') else data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))
       if (nrow(K_CC_OLD_df) > 0) { K_CC_OLD_df$component_id <- as.factor(K_CC_OLD_df$component_id); K_CC_OLD_df$actor_id <- as.factor(NA); K_CC_OLD_df$strategy <- as.factor("OLD") }
       
       
@@ -5342,7 +5453,7 @@ SaomNkRSienaBiEnv <- R6Class(
         K_CA_OLD_df = K_CA_OLD_df,
         K_CC_OLD_df = K_CC_OLD_df,
         bi_env_arr = bi_env_arr,
-        bi_env_arr_initial = self$bipartite_matrix_init,
+        bi_env_arr_initial = .path_start,
         bi_env_changes = bi_env_changes
       ))
     },
@@ -5375,22 +5486,39 @@ SaomNkRSienaBiEnv <- R6Class(
     # -1, 0, 1 for change in behavior level behavior 
     # Our aims don't make use of columns 7-10
     # 11 - Designates stability (TRUE = no change, FALSE = change)
-    search_rsiena_process_ministep_chain = function(verbose=TRUE) {
-      
+    ##
+    ## Since 0.11.0 `$rsiena_model$chain` holds one entry per simulated
+    ## SEGMENT (run 1 of one unconditional period each), in order, and the
+    ## concatenation IS the path: segment s + 1 started from segment s's end.
+    ## The replay starts from `start_matrix`, the state the simulation
+    ## actually started from (default: $path_start_matrix, else the initial
+    ## matrix). Under path = "legacy_replay" each entry is an independent
+    ## one-ministep draw and the result is tagged as such.
+    search_rsiena_process_ministep_chain = function(verbose=TRUE, start_matrix=NULL) {
+
       if (is.null(self$rsiena_model$chain)) {
         stop("Chain not available. Ensure returnChains=TRUE was set in the siena07 call.")
       }
       simChain <- self$rsiena_model$chain
       depvar <- 1
       period <- 1
+      if (is.null(start_matrix))
+        start_matrix <- if (!is.null(self$path_start_matrix)) self$path_start_matrix else self$bipartite_matrix_init
+      self$path_start_matrix <- start_matrix
 
       ###--------
       ## Bipatite network chain --> value Alter=m means that no change has occurred.
-      ##** "chain[[run]][[depvar]][[period]][[ministep]]"**
-      chainDatZeroIndex <- ldply(seq_along(simChain), function(iter){
-        ncolsIter <- length(simChain[[iter]][[depvar]][[period]])
-        t(matrix(unlist(simChain[[iter]][[depvar]][[period]]), nc=ncolsIter))
+      ##** "chain[[run]][[group]][[period]][[ministep]]"**
+      .frames <- lapply(seq_along(simChain), function(iter) {
+        fr <- .searchnet_chain_frame(simChain[[iter]][[depvar]][[period]])
+        if (nrow(fr)) fr$segment_id <- iter else fr$segment_id <- integer(0)
+        fr
       })
+      chainDatZeroIndex <- do.call(rbind, .frames)
+      if (is.null(chainDatZeroIndex) || !nrow(chainDatZeroIndex))
+        stop("The simulated chain contains no ministeps.")
+      .segment_id <- as.integer(chainDatZeroIndex$segment_id)
+      chainDatZeroIndex$segment_id <- NULL
       ### one-index chain as new object
       chainDat <- chainDatZeroIndex
       chainDat[,2] <- as.integer(chainDat[,2]) ## 0=Network; 1=Behavior
@@ -5430,12 +5558,31 @@ SaomNkRSienaBiEnv <- R6Class(
       names(chainDat) <- c('dv_type','dv_type_bin','dv_varname','id_from','id_to','beh_difference',
                            'reciprocal_rate','LogOptionSetProb', 'LogChoiceProb', 'diagonal','stability')
       # Set tie change by rules
-      chainDat$tie_change <- apply(chainDat, 1, function(x) .getTieChangeAfterOneindexing(x, N=self$N) )
+      ## Vectorized form of the former row-wise
+      ##   apply(chainDat, 1, function(x) .getTieChangeAfterOneindexing(x, N = self$N))
+      ## (kept above as the reference rule). It compares the same values:
+      ## as.matrix() formats each column on its own, so these three columns
+      ## become the same strings apply() compared, and the result is named by
+      ## the same row names, if any (2026-10-07).
+      .tc <- as.matrix(chainDat[, c('dv_varname', 'id_from', 'id_to')])
+      .tc_dv <- .tc[, 1]
+      .tc_bip <- .tc_dv %in% 'self$bipartite_rsienaDV'
+      .tc_one <- .tc_dv %in% c('self$social_rsienaDV', 'self$search_rsienaDV')
+      .tc_beh <- .tc_dv %in% .SEARCHNET_BEHAVIOR_DV_NAME
+      if (!all(.tc_bip | .tc_one | .tc_beh))
+        stop(sprintf('dv_name %s not implemented in .getTieChange()',
+                     .tc_dv[!(.tc_bip | .tc_one | .tc_beh)][1]))
+      .tie_change <- logical(nrow(.tc))
+      .tie_change[.tc_bip] <- ifelse(.tc[.tc_bip, 3] == (self$N + 1), FALSE, TRUE)
+      .tie_change[.tc_one] <- ifelse(.tc[.tc_one, 2] == .tc[.tc_one, 3], FALSE, TRUE)
+      names(.tie_change) <- rownames(.tc)
+      chainDat$tie_change <- .tie_change
       chainDat$chain_step_id <- 1:nrow(chainDat)
+      chainDat$segment_id <- .segment_id
       chainDat$chain_change_id <- NA
-      chainDat$chain_change_id[ !chainDat$stability ] <- 1:sum(!chainDat$stability)
+      chainDat$chain_change_id[ !chainDat$stability ] <- seq_len(sum(!chainDat$stability))
       chainDat <- chainDat %>% tidyr::fill(chain_change_id, .direction = "down") ## a no-change takes previous chain_change_id
-      
+
       ## set to simulation self
       self$chain_stats <- chainDat
 
@@ -5443,7 +5590,7 @@ SaomNkRSienaBiEnv <- R6Class(
       ## This is essential for plotting and is computed here so it's always available
       ## even if search_rsiena_process_stats() fails downstream
       nchains <- nrow(chainDat)
-      bi_env_mat <- self$bipartite_matrix_init
+      bi_env_mat <- start_matrix
       bi_env_arr <- array(NA, dim = c(self$M, self$N, nchains))
       ## Also build diff-based storage (Task 4 memory optimization):
       ## Store initial matrix + per-step (step, i, j) changes instead of full 3D array.
@@ -5455,17 +5602,27 @@ SaomNkRSienaBiEnv <- R6Class(
       ## trajectory. Skip those rows. Identical to the previous behavior for
       ## every chain that contains only bipartite ministeps.
       .is_beh_step <- chainDat$dv_varname == .SEARCHNET_BEHAVIOR_DV_NAME
+      .stab <- chainDat$stability
+      .id_from <- chainDat$id_from
+      .id_to <- chainDat$id_to
+      .nr <- dim(bi_env_mat)[1]; .nc <- dim(bi_env_mat)[2]
       for (.i in 1:nchains) {
-        if (!chainDat$stability[.i] && !.is_beh_step[.i]) {
-          bi_env_changes[.i, ] <- c(.i, chainDat$id_from[.i], chainDat$id_to[.i])
-          bi_env_mat <- self$toggleBiMat(bi_env_mat, chainDat$id_from[.i], chainDat$id_to[.i])
+        if (!.stab[.i] && !.is_beh_step[.i]) {
+          bi_env_changes[.i, ] <- c(.i, .id_from[.i], .id_to[.i])
+          ## toggleBiMat(), inlined: it returned a modified copy of the whole
+          ## matrix at every ministep.
+          .ti <- .id_from[.i]; .tj <- .id_to[.i]
+          if (.ti >= 1 && .ti <= .nr && .tj >= 1 && .tj <= .nc)
+            bi_env_mat[.ti, .tj] <- 1 - bi_env_mat[.ti, .tj]
         } else {
           bi_env_changes[.i, ] <- c(.i, NA_integer_, NA_integer_)
         }
         bi_env_arr[, , .i] <- bi_env_mat
       }
-      self$bi_env_arr <- bi_env_arr
-      self$bi_env_arr_initial <- self$bipartite_matrix_init
+      .kind <- if (identical(self$searchnet_path_kind, .SEARCHNET_PATH_LEGACY))
+        .SEARCHNET_PATH_LEGACY else .SEARCHNET_PATH_GENUINE
+      self$bi_env_arr <- .searchnet_tag_path(bi_env_arr, .kind)
+      self$bi_env_arr_initial <- start_matrix
       self$bi_env_changes <- bi_env_changes
 
       if (verbose) {
@@ -5478,8 +5635,10 @@ SaomNkRSienaBiEnv <- R6Class(
     },
     
     search_rsiena_process_stats = function(progress_callback = NULL) {
+      .searchnet_require_path(self, "search_rsiena_process_stats()")
       chain_stats_list <- self$get_chain_stats_list(progress_callback = progress_callback)
-      self$bi_env_arr <- chain_stats_list$bi_env_arr  ## chain array of bipartite matrix from chain of decision steps
+      self$bi_env_arr <- .searchnet_tag_path(chain_stats_list$bi_env_arr,  ## chain array of bipartite matrix from chain of decision steps
+                                             .SEARCHNET_PATH_GENUINE)
       self$bi_env_arr_initial <- chain_stats_list$bi_env_arr_initial
       self$bi_env_changes <- chain_stats_list$bi_env_changes
       self$actor_stats_df      <- chain_stats_list$stats_df
@@ -5511,10 +5670,20 @@ SaomNkRSienaBiEnv <- R6Class(
     
     search_rsiena_plot_stability = function(tol=1e-5, step_size=1, wave_id=1) {
       
+      .searchnet_require_path(self, "search_rsiena_plot_stability()")
       sims = self$rsiena_model$sims
-      n <- length(sims)
       bi_env_dv_id <- which( names(self$config_structure_model) == 'dv_bipartite' )
       if (!length(bi_env_dv_id)) stop('dv_bipartite is missing from self$config_structure_model.')
+      ## Since 0.11.0 the states compared are the path's own states (start, then
+      ## after every ministep), not the end states of independent RSiena runs.
+      .path_states <- NULL
+      if (identical(.searchnet_path_kind(self), .SEARCHNET_PATH_GENUINE) &&
+          length(dim(self$bi_env_arr)) == 3L) {
+        .path_states <- c(list(self$bi_env_arr_initial),
+                          lapply(seq_len(dim(self$bi_env_arr)[3]),
+                                 function(k) self$bi_env_arr[, , k]))
+      }
+      n <- if (!is.null(.path_states)) length(.path_states) else length(sims)
       outlist <- list()
       difflist <- list()
       jaccardlist <- list()
@@ -5526,10 +5695,13 @@ SaomNkRSienaBiEnv <- R6Class(
       for(i in 1:length(sim_ids_plot)) {
         sim_id <- sim_ids_plot[ i ]
         cat(sprintf(' %s ', i))
+        MplusN <- self$M + self$N
+        if (!is.null(.path_states)) {
+          bi_env_mat_new <- matrix(as.numeric(.path_states[[ sim_id ]]), self$M, self$N)
+        } else {
         el_bi_env <- sims[[ sim_id ]][[ wave_id ]][[ bi_env_dv_id ]]$`1`
         ## update numbering of second mode (the comonent integer names shift upward by the number of actors)
         el_bi_env[,2] <- el_bi_env[,2] + self$M
-        MplusN <- self$M + self$N
         #############
         ## Bipartite matrix space (N+M by N+M)
         ## Undirected --> Upper right rectangle of full bipartite matrix
@@ -5539,6 +5711,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                       x = el_bi_env[,3],
                                       dims = c(MplusN, MplusN))
         bi_env_mat_new  <- as.matrix(bi_env_mat_sp)[ 1:self$M, (self$M+1):(MplusN) ]
+        }
         ## Add ACTOR NAMES on rows
         rownames(bi_env_mat_new) <- as.character( 1:self$M )
         ## Add COMPONENT NAMES on columns (N+1 ... N+M)
@@ -5587,47 +5760,66 @@ SaomNkRSienaBiEnv <- R6Class(
            Q75_K_E = quantile(K_env_list[[iter]], 0.75)
          )
       }))
+      deg_cols <- searchnet_palette()[c("blue", "vermillion")]
       K_plt <- ggplot(degree_summary, aes(x = Iteration)) +
-         geom_line(aes(y = Mean_K_S, color = "Mean K_S")) +
-         geom_ribbon(aes(ymin = Q25_K_S, ymax = Q75_K_S, fill = "K_S"), alpha = 0.05) +
-         geom_line(aes(y = Mean_K_E, color = "Mean K_E")) +
-         geom_ribbon(aes(ymin = Q25_K_E, ymax = Q75_K_E, fill = "K_E"), alpha = 0.05) +
-         scale_color_manual(values = c("Mean K_S" = "blue", "Mean K_E" = "red")) +
-         scale_fill_manual(values = c("K_S" = "blue", "K_E" = "red")) +
+         geom_ribbon(aes(ymin = Q25_K_S, ymax = Q75_K_S, fill = "K_S"), alpha = 0.15) +
+         geom_ribbon(aes(ymin = Q25_K_E, ymax = Q75_K_E, fill = "K_E"), alpha = 0.15) +
+         geom_line(aes(y = Mean_K_S, color = "Mean K_S"), linewidth = 0.8) +
+         geom_line(aes(y = Mean_K_E, color = "Mean K_E"), linewidth = 0.8) +
+         scale_color_manual(values = c("Mean K_S" = deg_cols[[1]], "Mean K_E" = deg_cols[[2]])) +
+         scale_fill_manual(values = c("K_S" = deg_cols[[1]], "K_E" = deg_cols[[2]])) +
          labs(title = "Degree Progress Over Iterations",
                    x = "Iteration",
                    y = "Degree",
                    color = "Mean Degree",
                    fill = "IQR (Mid-50%)") +
-         theme_minimal()
+         theme_searchnet()
       
       print(K_plt)
       
       
       #-------------------------------------------
-      ## par(mfrow=) is global device state. This method set it and never
-      ## restored it, so every subsequent plot in the session stayed split 1x3.
-      op <- graphics::par(mfrow = c(1,3))
-      on.exit(graphics::par(op), add = TRUE)
+      ## The three stability traces, drawn with ggplot2 in the package style.
+      ## They were base-graphics panels under par(mfrow = c(1, 3)); the figure
+      ## is now returned as `stability_plot` as well as printed.
       ##------------------------------------------
       jaccard_vec <- plyr::ldply(jaccardlist)[sim_ids_plot[-1], 2] ## skip first period (no change yet)
       n_changes <- length(jaccard_vec)
       sim_ids_plot_steps <- sim_ids_plot[-1] 
       stability_vec <- cumsum(jaccard_vec) / (1:n_changes)
       stability_delta <- c(0, abs(diff(stability_vec))) / abs(stability_vec)
-      plot(x=sim_ids_plot_steps, y=jaccard_vec, 
-           type='l', ylab='Jaccard Index [t-1, t]', xlab='Simulation Iteration',
-           main='Inter-Sim Distance\n(Jaccard Index between same-wave sims)')
-      plot(x=sim_ids_plot_steps, y=stability_vec , 
-           type='l' , ylab='Jaccard Index [t-1, t]', xlab='Simulation Iteration',
-           ylim=c( .9, 1),
-           main='Stabiliation by Iteration\n(Inter-Sim Distance Moving Average)'
-           ); abline(h=1, col='gray', lty=2)
-      plot(x = sim_ids_plot_steps, y=stability_delta, 
-           type='l', log='y', xlab='Simulation Iteration', 
-           ylab='Ln Stability Change [t-1, t]', 
-           main='Sufficient Iterations?\n(Inter-Sim Distance Moving Average Change)' 
-           ); abline(h = tol, col='pink', lty=2)
+      stab_df <- data.frame(step = sim_ids_plot_steps, jaccard = jaccard_vec,
+                            stability = stability_vec, delta = stability_delta)
+      line_col <- searchnet_palette()[["blue"]]
+      p_jac <- ggplot(stab_df, aes(x = .data$step, y = .data$jaccard)) +
+        geom_line(color = line_col, linewidth = 0.7) +
+        labs(title = 'Inter-Sim Distance',
+             subtitle = 'Jaccard index between same-wave sims',
+             x = 'Simulation Iteration', y = 'Jaccard Index [t-1, t]') +
+        theme_searchnet()
+      p_stab <- ggplot(stab_df, aes(x = .data$step, y = .data$stability)) +
+        geom_hline(yintercept = 1, color = 'grey55', linetype = 'dashed') +
+        geom_line(color = line_col, linewidth = 0.7) +
+        coord_cartesian(ylim = c(0.9, 1)) +
+        labs(title = 'Stabilization by Iteration',
+             subtitle = 'Inter-sim distance moving average',
+             x = 'Simulation Iteration', y = 'Jaccard Index [t-1, t]') +
+        theme_searchnet()
+      ## Log scale: the first change is 0 by construction, so it is dropped
+      ## from this panel rather than plotted at -Inf.
+      p_delta <- ggplot(stab_df[stab_df$delta > 0, , drop = FALSE],
+                        aes(x = .data$step, y = .data$delta)) +
+        geom_hline(yintercept = tol, color = searchnet_palette()[["vermillion"]],
+                   linetype = 'dashed') +
+        geom_line(color = line_col, linewidth = 0.7) +
+        scale_y_log10() +
+        labs(title = 'Sufficient Iterations?',
+             subtitle = 'Moving-average change; dashed line: tol',
+             x = 'Simulation Iteration', y = 'Stability Change [t-1, t] (log scale)') +
+        theme_searchnet()
+      stab_plt <- cowplot::plot_grid(p_jac, p_stab, p_delta, nrow = 1,
+                                     align = 'h', axis = 'tb')
+      print(stab_plt)
 
       ## Return the computed series invisibly. The method drew three plots and
       ## then threw away the numbers behind them, so a caller could look at the
@@ -5636,6 +5828,7 @@ SaomNkRSienaBiEnv <- R6Class(
       ## callers that ignore the value are unaffected.
       invisible(list(
         degree_plot     = K_plt,
+        stability_plot  = stab_plt,
         sim_ids         = sim_ids_plot_steps,
         jaccard         = jaccard_vec,
         stability       = stability_vec,
@@ -5789,7 +5982,7 @@ SaomNkRSienaBiEnv <- R6Class(
         ggridges::scale_fill_cyclical(
           breaks = strat_break,
           labels = strat_labs,
-          values = scales::hue_pal()(length(levels(actor_strat))), # c("#ff0000", "#0000ff", "#ff8080", "#8080ff"),
+          values = searchnet_palette("categorical", length(levels(actor_strat))), # c("#ff0000", "#0000ff", "#ff8080", "#8080ff"),
           guide = "legend"
         ) +
         labs(
@@ -5805,7 +5998,7 @@ SaomNkRSienaBiEnv <- R6Class(
         ) +
         geom_vline(xintercept = 0, linetype=1) +
         coord_cartesian(clip = "off") +
-        ggridges::theme_ridges(grid = TRUE, center=TRUE) + 
+        theme_searchnet() + 
         theme(legend.position = 'bottom')
       if(show_strategy_means) {
         plt.dr <- plt.dr +  
@@ -5929,7 +6122,7 @@ SaomNkRSienaBiEnv <- R6Class(
         plt <- plt + geom_point(aes(color=component_id), alpha=point_alpha, shape=1, size=point_size, show.legend = FALSE)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
       if(self$exists(smooth_method))
         plt <- plt + geom_smooth(aes(color=component_id, fill=component_id), method = smooth_method, linewidth=.5, alpha=.09, show.legend = FALSE, se=FALSE)
-      plt <- plt + theme_bw() + 
+      plt <- plt + theme_searchnet() + 
         # scale_linetype_manual(values = rep(1:8, length.out = length(unique(dat$component_id)))) +
         ylim(y_lim) + 
         ylab(y_lab) +
@@ -5960,7 +6153,7 @@ SaomNkRSienaBiEnv <- R6Class(
         facet_grid(wave_id ~ .) +
         ylab('K_CC Density') +
         # labs(color='component_type', fill='component_type') +
-        theme_bw() + theme(
+        theme_searchnet() + theme(
           strip.background = element_blank(),
           strip.text = element_blank(),
           panel.grid.minor = element_blank(),
@@ -6042,7 +6235,7 @@ SaomNkRSienaBiEnv <- R6Class(
         plt <- plt + geom_point(aes(color=component_id), alpha=point_alpha, shape=1, size=point_size, show.legend = FALSE)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
       if(self$exists(smooth_method))
         plt <- plt + geom_smooth(aes(color=component_id, fill=component_id), method = smooth_method, linewidth=.5, alpha=.09, se=FALSE, show.legend = FALSE)
-      plt <- plt + theme_bw() + 
+      plt <- plt + theme_searchnet() + 
         # scale_linetype_manual(values = rep(1:8, length.out = length(unique(dat$component_id)))) +
         ylim(y_lim) + 
         ylab(y_lab) +
@@ -6076,7 +6269,7 @@ SaomNkRSienaBiEnv <- R6Class(
         coord_flip() +
         facet_grid(wave_id ~ .) +
         ylab('K_CA Density') +
-        theme_bw() + theme(
+        theme_searchnet() + theme(
           strip.background = element_blank(),
           strip.text = element_blank(),
           panel.grid.minor = element_blank(),
@@ -6156,7 +6349,7 @@ SaomNkRSienaBiEnv <- R6Class(
         plt <- plt + geom_point(aes(color=strategy), alpha=point_alpha, shape=1, size=point_size)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
       if(self$exists(smooth_method))
         plt <- plt + geom_smooth(aes(linetype=actor_id, color=strategy, fill=strategy), method = smooth_method, linewidth=1, alpha=.09)
-      plt <- plt + theme_bw() + 
+      plt <- plt + theme_searchnet() + 
         ylim(y_lim) + 
         ylab(y_lab) +
         xlab('Actor Decision Chain Ministep') +
@@ -6189,7 +6382,7 @@ SaomNkRSienaBiEnv <- R6Class(
         coord_flip() +
         facet_grid(wave_id ~ .) +
         ylab('K_AC Density') +
-        theme_bw() + theme(
+        theme_searchnet() + theme(
           strip.background = element_blank(),
           strip.text = element_blank(),
           panel.grid.minor = element_blank(),
@@ -6269,7 +6462,7 @@ SaomNkRSienaBiEnv <- R6Class(
         plt <- plt + geom_point(aes(color=strategy), alpha=point_alpha, shape=1, size=point_size)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
       if(self$exists(smooth_method))
         plt <- plt + geom_smooth(aes(linetype=actor_id, color=strategy, fill=strategy), method = smooth_method, linewidth=1, alpha=.09)
-      plt <- plt + theme_bw() + 
+      plt <- plt + theme_searchnet() + 
         ylim(y_lim) + 
         ylab(y_lab) +
         xlab('Actor Decision Chain Ministep') +
@@ -6302,7 +6495,7 @@ SaomNkRSienaBiEnv <- R6Class(
         coord_flip() +
         facet_grid(wave_id ~ .) +
         ylab('K_AA Density') +
-        theme_bw() + theme(
+        theme_searchnet() + theme(
           strip.background = element_blank(),
           strip.text = element_blank(),
           panel.grid.minor = element_blank(),
@@ -6441,7 +6634,7 @@ SaomNkRSienaBiEnv <- R6Class(
       plt <- plt + geom_smooth(aes(x=chain_step_id, y=utility_mean), method = smooth_method, span=loess_span, 
                                data=dat %>% group_by(chain_step_id)%>%dplyr::summarize(utility_mean=mean(utility)),
                                color='black', linetype=1, alpha=.1) 
-      plt <- plt + theme_bw() + 
+      plt <- plt + theme_searchnet() + 
         ylim(util_lim) + 
         ylab(util_lab) +
         xlab('Actor Decision Chain Ministep') +
@@ -6483,7 +6676,7 @@ SaomNkRSienaBiEnv <- R6Class(
         coord_flip() +
         facet_grid(wave_id ~ .) +
         ylab('Actor Utility Density') +
-        theme_bw() + theme(
+        theme_searchnet() + theme(
           strip.background = element_blank(),
           strip.text = element_blank(),
           panel.grid.minor = element_blank(),
@@ -6537,7 +6730,7 @@ SaomNkRSienaBiEnv <- R6Class(
         plt <- plt + geom_point(aes(color=strategy), alpha=.25, shape=1, size=2)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
       if(self$exists(smooth_method))
         plt <- plt + geom_smooth(aes(linetype=actor_id, color=strategy), method = smooth_method, linewidth=1, alpha=.15)
-      plt <- plt + theme_bw()
+      plt <- plt + theme_searchnet()
       # Add marginal density plots
       plt <- ggExtra::ggMarginal(plt, type = "density", margins = "y")
       
@@ -6580,7 +6773,7 @@ SaomNkRSienaBiEnv <- R6Class(
         geom_density(alpha=.1, linewidth=1)  +
         facet_grid( wave_id ~ chain_half) +
         geom_vline(data = stratmeans, aes(xintercept = mean, color=strategy), linetype=2, linewidth=.9) +
-        theme_bw() + 
+        theme_searchnet() + 
         ggtitle(sprintf('Strategy: %s\nStructure: %s', 
                         paste( paste(paste(strateffs, stratparams, sep='='), stratfixs, sep='' ), collapse = '; '),
                         paste( paste(paste(structeffs, structparams, sep='='), structfixs, sep=''), collapse = '; ')
@@ -6649,7 +6842,7 @@ SaomNkRSienaBiEnv <- R6Class(
         plt <- plt + geom_point(alpha=.25, shape=1, size=2)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
       if(self$exists(smooth_method))
         plt <- plt + geom_smooth(aes(linetype=actor_id), method = smooth_method, linewidth=1, alpha=.05)
-      plt <- plt + theme_bw()
+      plt <- plt + theme_searchnet()
       print(plt)
       if(return_plot)
         return(plt)
@@ -6676,7 +6869,7 @@ SaomNkRSienaBiEnv <- R6Class(
         plt <- plt + geom_point(aes(color=strategy), alpha=.25, shape=1, size=2)  # geom_line(alpha=.2) +#geom_smooth(method='loess', alpha=.1) + 
       if(self$exists(smooth_method))
         plt <- plt + geom_smooth(aes(linetype=actor_id, color=strategy), method = smooth_method, linewidth=1, alpha=.15)
-      plt <- plt + theme_bw()
+      plt <- plt + theme_searchnet()
       print(plt)
       if(return_plot)
         return(plt)
@@ -6689,7 +6882,7 @@ SaomNkRSienaBiEnv <- R6Class(
       plt <- ggplot(dat, aes(x=utility, color=actor_id, fill=actor_id, linetype=chain_half)) + 
          geom_density(alpha=.1, linewidth=1)  + 
          facet_wrap( ~ actor_id)+
-         theme_bw()
+         theme_searchnet()
       print(plt)
       if(return_plot)
         return(plt)
@@ -6715,7 +6908,7 @@ SaomNkRSienaBiEnv <- R6Class(
         geom_density(alpha=.1, linewidth=1)  +
         facet_grid( chain_half ~ .) +
         geom_vline(data = stratmeans, aes(xintercept = mean, color=strategy), linetype=2, linewidth=.9) +
-        theme_bw() 
+        theme_searchnet() 
       print(plt)
       if(return_plot)
         return(plt)
@@ -6742,7 +6935,7 @@ SaomNkRSienaBiEnv <- R6Class(
         geom_histogram(alpha=.1, position = histogram_position) +
         facet_grid( chain_half ~ strategy ) +
         geom_vline(data = stratmeans, aes(xintercept = mean, color=strategy), linetype=2, linewidth=.9) +
-        theme_bw()
+        theme_searchnet()
       print(plt)
       if(return_plot)
         return(plt)
@@ -6782,8 +6975,8 @@ SaomNkRSienaBiEnv <- R6Class(
       ## plot actor event sequences
       plt <- ggplot(long_data, aes(y = factor(actor), x=period, fill = count)) + 
         geom_tile() + 
-        scale_fill_gradient(low = "white", high = "blue", name = "Ministeps Count") +
-        theme_bw() + labs('y' = 'Actor')
+        scale_fill_gradient(low = "white", high = "#0072B2", name = "Ministeps Count") +
+        theme_searchnet() + labs('y' = 'Actor')
       
       print(plt)
       
@@ -6821,14 +7014,14 @@ SaomNkRSienaBiEnv <- R6Class(
           geom_ribbon(aes(ymin = Q25_K_S, ymax = Q75_K_S, fill = "K_S"), alpha = 0.1) +
           geom_line(aes(y = Mean_K_E, color = "Mean K_E")) +
           geom_ribbon(aes(ymin = Q25_K_E, ymax = Q75_K_E, fill = "K_E"), alpha = 0.1) +
-          scale_color_manual(values = c("Mean K_S" = "blue", "Mean K_E" = "red")) +
-          scale_fill_manual(values = c("K_S" = "blue", "K_E" = "red")) +
+          scale_color_manual(values = c("Mean K_S" = "#0072B2", "Mean K_E" = "#D55E00")) +
+          scale_fill_manual(values = c("K_S" = "#0072B2", "K_E" = "#D55E00")) +
           labs(title = "Degree Progress Over Iterations",
                x = "Iteration",
                y = "Degree",
                color = "Mean Degree",
                fill = "IQR (Mid-50%)") +
-          theme_minimal()
+          theme_searchnet()
       )
       
       # Calculate average degree (K) for the social space and component interaction space
@@ -6868,14 +7061,14 @@ SaomNkRSienaBiEnv <- R6Class(
         geom_ribbon(aes(ymin = Q25_K_S, ymax = Q75_K_S, fill = "K_S"), alpha = 0.1) +
         geom_line(aes(y = Mean_K_E, color = "Mean K_E")) +
         geom_ribbon(aes(ymin = Q25_K_E, ymax = Q75_K_E, fill = "K_E"), alpha = 0.1) +
-        scale_color_manual(values = c("Mean K_S" = "blue", "Mean K_E" = "red")) +
-        scale_fill_manual(values = c("K_S" = "blue", "K_E" = "red")) +
+        scale_color_manual(values = c("Mean K_S" = "#0072B2", "Mean K_E" = "#D55E00")) +
+        scale_fill_manual(values = c("K_S" = "#0072B2", "K_E" = "#D55E00")) +
         labs(title = "Degree Progress Over Iterations",
              x = "Iteration",
              y = "Degree",
              color = "Mean Degree",
              fill = "IQR (Mid-50%)") +
-        theme_minimal()
+        theme_searchnet()
       )
       
       # Calculate average degree (K) for the social space and component interaction space
@@ -6936,7 +7129,7 @@ SaomNkRSienaBiEnv <- R6Class(
 
       n_strat_levels <- length(levels(actor_strategies))
       if (n_strat_levels == 0) n_strat_levels <- 1
-      actor_colors <- scales::hue_pal()(n_strat_levels)
+      actor_colors <- searchnet_palette("categorical", n_strat_levels)
       
       # Map normalized strategies to colors
       
@@ -6957,7 +7150,7 @@ SaomNkRSienaBiEnv <- R6Class(
       vertex_colors[1:M] <- actor_colors
       
       # Assign component colors based on new/old status (next N vertices)
-      component_colors <- ifelse(component_is_new, 'darkgreen', 'tan')  # Bright green for new, sky blue for old
+      component_colors <- ifelse(component_is_new, searchnet_palette()[["green"]], searchnet_palette()[["purple"]])
       vertex_colors[(M+1):(M+N)] <- component_colors
       
       # Assign colors to vertices
@@ -6982,21 +7175,8 @@ SaomNkRSienaBiEnv <- R6Class(
         labs(title = "[DGP] Bipartite Environment",
              subtitle = sprintf("Actors (strategy: %s) and Components (%d old, %d new)", 
                                 strategy_range_text, n_old, n_new)) +
-        theme_minimal() +
-        theme(
-          legend.position = "none",
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          axis.title.x = element_blank(),
-          axis.title.y = element_blank(),
-          axis.text.x = element_blank(),
-          axis.text.y = element_blank(),
-          axis.ticks = element_blank(),
-          # Add black border around panel
-          panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
-          plot.margin = margin(5, 5, 5, 5, "pt"),
-          plot.subtitle = element_text(size = 9, color = "gray40")
-        )
+        theme_searchnet(axes = FALSE) +
+        theme(legend.position = "none", plot.margin = margin(5, 5, 5, 5, "pt"))
       node_size <- igraph::degree(ig_social)  # Degree centrality for node size
       node_color <- igraph::eigen_centrality(ig_social)$vector  # Eigenvector centrality for node color
       node_text <- 1:self$M
@@ -7005,20 +7185,11 @@ SaomNkRSienaBiEnv <- R6Class(
         geom_edge_link(color = "gray") +
         geom_node_point(aes(size = node_size, color = node_color)) +
         geom_node_text(aes(label = node_text), vjust = 0.5, hjust = 0.5, size = 3, color='white') +
-        scale_color_gradient(low = "green", high = "red") +
+        scale_color_viridis_c(option = "viridis", end = 0.9) +
         labs(title = "[Proj1] Actor Social Network\n(common components)", 
              color = "Eigenvector\nCentrality", size = "Degree\nCentrality") +
-        theme_minimal() +
-        theme(
-          legend.position = "bottom",
-          legend.box = "vertical",
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          axis.title.x = element_blank(),
-          axis.title.y = element_blank(),
-          axis.text.x = element_blank(),
-          axis.text.y = element_blank()
-        ) +
+        theme_searchnet(axes = FALSE) +
+        theme(legend.box = "vertical") +
         guides(
           color = guide_legend(order = 1, nrow = 2),
           size = guide_legend(order = 2, nrow = 2)
@@ -7037,13 +7208,13 @@ SaomNkRSienaBiEnv <- R6Class(
       heatmap_plot <- ggplot(component_df, aes(x = Component1, y = forcats::fct_rev(Component2), fill = Weight)) +
         geom_tile() +
         labs(title = "[Proj2] Component Heatmap\n(common actors)", x = "Component 1", y = "Component 2") +
-        theme_minimal() +
+        theme_searchnet() +
         theme(legend.position = "bottom")
       
       if ( sum(component_df$Weight) == 0 ) {
         heatmap_plot <- heatmap_plot + scale_fill_gradient(low = "white", high = "white")
       } else {
-        heatmap_plot <- heatmap_plot + scale_fill_gradient(low = "white", high = "red")
+        heatmap_plot <- heatmap_plot + scale_fill_gradient(low = "white", high = searchnet_palette()[["blue"]])
       }
       
       # Calculate average degree (K) for the social space and component interaction space
@@ -7113,7 +7284,7 @@ SaomNkRSienaBiEnv <- R6Class(
                     data=actthin %>% group_by(chain_step_id,actor_id) %>% dplyr::summarize(mean=mean(utility, na.rm=TRUE)),
                     method='loess', color='black', span=loess_span, alpha=.05, linewidth=1.1) +
         geom_hline(yintercept = 0, linetype=4, color='black') +
-        theme_bw()
+        theme_searchnet()
     })
     
     if (length(xints)) 
@@ -7142,7 +7313,7 @@ SaomNkRSienaBiEnv <- R6Class(
                       mutate(strategy=NA)) +
         geom_hline(yintercept = 0, linetype=4, color='black') +
         ggtitle("Average Utility by Strategy") +
-        theme_bw()
+        theme_searchnet()
     })
     
     if (!is.null(self$theta_shocks)) {
@@ -7153,7 +7324,7 @@ SaomNkRSienaBiEnv <- R6Class(
         mutate(utility=0, chain_step_id=0, effect_name=NULL, effect=NULL)
       y_maxs <- unlist(lapply(layout$panel_params, function(x) rep(  max(x$y.range),  nrow(shock_rects)) ))
       plt.act <- plt.act + 
-        geom_rect(data=shock_rects, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf), fill='darkorange', color='orange',linetype=2, alpha=.08) + 
+        geom_rect(data=shock_rects, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf), fill = 'grey55', color = 'grey40',linetype=2, alpha=.08) + 
         geom_text(data = shock_rects, aes(x = (start + end) / 2, y = y_maxs, label = label),
                   vjust = 1, size = 3) #fontface = "bold"
     }
@@ -7378,81 +7549,39 @@ SaomNkRSienaBiEnv <- R6Class(
     
     return( theta_shock_df )
   },
-  
-  
+
+
   plot_utility_contributions_basic = function(use_thetas=TRUE, loess_span=0.5,
                                               return_plot=TRUE, save_plot=FALSE,
-                                              thin_factor=1) {
-    
+                                              thin_factor=1, annotate=TRUE) {
+    ## The decomposition without actor strategies, drawn by
+    ## .sn_utility_plot() (R/plot-readable.R).
     theta_df_norates <- self$get_rsiena_effects_theta_df(no_rates=TRUE)
-    theta_levels_norate <-  theta_df_norates$effect_level
-    sim_title_str <- self$get_structure_model_param_str()
-    efflvls <- c('UTILITY', theta_levels_norate )
+    efflvls <- c('UTILITY', theta_df_norates$effect_level)
     actor_stats_df <- self$actor_stats_df
-    actor_util_df <- self$actor_util_df  %>% mutate(
-      effect_id=NA, 
-      value=utility, 
-      effect_name='UTILITY', 
-      effect_level='UTILITY', 
-      utility=NULL
-    )
-    
-    plt_title <- sprintf('Actor Utility Statistics Decomposition:\n%s', sim_title_str)
-    
-    ## use actor stats contributions to utility instead of original stats
-    if (use_thetas) {
+    if (use_thetas)
       actor_stats_df <- actor_stats_df %>% mutate(value=value_contributions)
-      plt_title <- sprintf('Actor Utility Contributions (statistic * theta):\n%s', sim_title_str)
-    } 
-    
-    ## Add utility as extra 'effect' 
-    act_effs <- actor_stats_df %>% bind_rows( actor_util_df ) 
+    actor_util_df <- self$actor_util_df %>% mutate(
+      effect_id=NA, value=utility, effect_name='UTILITY',
+      effect_level='UTILITY', utility=NULL)
+    act_effs <- actor_stats_df %>% bind_rows( actor_util_df )
     act_effs$effect_level <- factor(act_effs$effect_level, levels=efflvls)
-    
-    #plot signals
+    act_effs$strategy <- 'none'
     act_effs2 <- act_effs %>% filter(chain_step_id %% thin_factor == 0)
-    
-    npoints <- nrow(self$chain_stats) * self$M
-    point_size <- 4 / log10( npoints )
-    point_alpha <- min( 1,  15/sqrt( npoints ) )
-    
-    plt2 <- act_effs2  %>%  ggplot(aes(x=chain_step_id, y=value, linetype=actor_id)) 
-    
-    suppressMessages({
-      plt2 <- plt2 + 
-        geom_point(alpha=point_alpha, shape=1, size= point_size )  + 
-        geom_smooth(method='loess', alpha=.1, span=loess_span) +
-        geom_hline(yintercept = 0, linetype=2 ) +
-        facet_grid(effect_level ~ ., scales='free_y') +
-        theme_bw() + theme(legend.position = 'bottom') +
-        ggtitle(plt_title)
-    })
-    
-    # plt2  
-    
-    if (!is.null(self$theta_shocks)) {
-      suppressMessages({
-        layout <- ggplot_build(plt2)$layout
-      })
-      shock_rects <- self$get_theta_shock_rects_df(self$theta_shocks)%>%mutate(value=0, chain_step_id=0)
-      y_maxs <- unlist(lapply(layout$panel_params, function(x) rep(  max(x$y.range),  nrow(shock_rects)) ))
-      plt2 <- plt2 + geom_rect(data=shock_rects, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf),
-                               fill='darkorange', color='orange',linetype=2,  alpha=.05)
-      plt2 <- plt2 + geom_text(data = shock_rects, aes(x = (start + end) / 2, y = y_maxs, label = label),
-                               vjust = 1, size = 2.7) #fontface = "bold"
-    }
-    
-    plotname2 <- sprintf('plot_actor_utility_components_thin%s_%s.png',thin_factor, round(as.numeric(Sys.time())*100) )
-    
+
+    plt2 <- .sn_utility_plot(self, act_effs2, use_thetas = use_thetas,
+                             loess_span = loess_span, annotate = annotate)
+
     if (save_plot) {
+      plotname2 <- sprintf('plot_actor_utility_components_thin%s_%s.png',thin_factor, round(as.numeric(Sys.time())*100) )
       plot_dir <- getwd()
-      ggsave(filename=file.path(plot_dir, plotname2), plt2, 
+      ggsave(filename=file.path(plot_dir, plotname2), plt2,
              height = 12, width = 8, dpi = 600, units = 'in')
     }
-    
+
     if (return_plot)
       return(plt2)
-    
+
   },
   
   
@@ -7519,9 +7648,9 @@ SaomNkRSienaBiEnv <- R6Class(
   },
   
 
-  plot_utility_contributions = function(use_thetas=TRUE, 
+  plot_utility_contributions = function(use_thetas=TRUE,
                                         loess_span=0.5,
-                                        plot_return=TRUE, 
+                                        plot_return=TRUE,
                                         plot_save=FALSE,
                                         plot_file='',
                                         plot_dir=NA,
@@ -7529,73 +7658,34 @@ SaomNkRSienaBiEnv <- R6Class(
                                         thin_factor = 1,
                                         thin_pct = 1,
                                         point_alpha_dimmer=1,
-                                        experiment = '') {
-    
-    theta_df_norates <- self$get_rsiena_effects_theta_df(no_rates=TRUE)
-    theta_levels_norate <-  theta_df_norates$effect_level
-    # #
-    sim_title_str <- self$get_structure_model_param_str()
-    # #
-    efflvls <- c('UTILITY', theta_levels_norate )
-    # #
-    actor_strats <- self$get_actor_strategies()
-    
-    plt_title <- sprintf('Actor Utility Statistics Decomposition:\n%s', sim_title_str)
-    # ## use actor stats contributions to utility instead of original stats
-    if (use_thetas) {
-      plt_title <- sprintf('Actor Utility Contributions (statistic * theta):\n%s', sim_title_str)
-    }
-    
-    act_effs2 <- self$get_actor_utility_effects(use_thetas=use_thetas, 
+                                        experiment = '',
+                                        annotate = TRUE) {
+    ## Drawn by .sn_utility_plot() (R/plot-readable.R), shared with
+    ## saomnk_plot_utility_contributions() and saomnk_plot_utility().
+    act_effs2 <- self$get_actor_utility_effects(use_thetas=use_thetas,
                                                 thin_factor = thin_factor,
                                                 thin_pct = thin_pct,
                                                 experiment = experiment)
-    
+
     if (hide_zeros) {
-      act_effs2 <- act_effs2 %>% group_by(effect_level) %>% filter(any(value != 0)) %>% ungroup() 
+      act_effs2 <- act_effs2 %>% group_by(effect_level) %>% filter(any(value != 0)) %>% ungroup()
       act_effs2$effect_level <- droplevels(act_effs2$effect_level)
     }
-    
-    npoints <- nrow(act_effs2) 
-    point_size <- 4 / log10( npoints )
-    point_alpha <- min( 1,  15/sqrt( npoints ) ) * point_alpha_dimmer
-    
-    plt2 <- act_effs2  %>%  ggplot(aes(x=chain_step_id, y=value)) 
-    
-    suppressMessages({
-      plt2 <- plt2 + 
-          geom_point(aes(color=strategy,fill=strategy), alpha=point_alpha, shape=1, size= point_size )  + 
-          geom_smooth(aes(color=strategy,fill=strategy, linetype=strategy), method='loess', alpha=.1, span=loess_span) +
-          geom_hline(yintercept = 0, linetype=2, ) +
-          facet_grid(effect_level ~ ., scales='free_y') +
-          theme_bw() + theme(legend.position = 'bottom') +
-          ggtitle(plt_title)
-    })
-    
-    # plt2  
-    
-    if (!is.null(self$theta_shocks)) {
-      suppressMessages({
-        layout <- ggplot_build(plt2)$layout
-      })
-      shock_rects <- self$get_theta_shock_rects_df(self$theta_shocks)%>%mutate(value=0, chain_step_id=0)
-      y_maxs <- unlist(lapply(layout$panel_params, function(x) rep(  max(x$y.range),  nrow(shock_rects)) ))
-      plt2 <- plt2 + geom_rect(data=shock_rects, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf),
-                               fill='darkorange', color='orange',linetype=2,  alpha=.05)
-      plt2 <- plt2 + geom_text(data = shock_rects, aes(x = (start + end) / 2, y = y_maxs, label = label),
-                              vjust = 1, size = 2.7) #fontface = "bold"
-    }
-  
-    
+
+    plt2 <- .sn_utility_plot(self, act_effs2, use_thetas = use_thetas,
+                             loess_span = loess_span,
+                             point_alpha_dimmer = point_alpha_dimmer,
+                             annotate = annotate)
+
     if(plot_save) {
-      nfacets <- length(efflvls)
+      nfacets <- nlevels(droplevels(factor(act_effs2$effect_level)))
       plot_file <- paste0('util_contribs_',plot_file, round(as.numeric(Sys.time())*10))
-      ggsave(filename = file.path(ifelse(is.na(plot_dir)||plot_dir=='',getwd(),plot_dir), 
+      ggsave(filename = file.path(ifelse(is.na(plot_dir)||plot_dir=='',getwd(),plot_dir),
                               sprintf("%s_%s.jpeg", self$config_environ_params$name, plot_file)),
              plt2,
              width = 8, height = 2 + 1.2*nfacets, units = 'in', dpi = 400)
     }
-    
+
     if (plot_return)
       return(plt2)
   },
@@ -7623,193 +7713,87 @@ SaomNkRSienaBiEnv <- R6Class(
       stop('No rsiena_model to summarize')
     
     regtab <- screenreg(self$rsiena_model, digits = digits, single.row = single.row )
-    
-    return(regtab)  
+
+    ## The simulated path and the covariate centering RSiena applied (0.11.0).
+    extra <- character(0)
+    kind <- .searchnet_path_kind(self)
+    if (!is.null(kind))
+      extra <- c(extra, sprintf("Path: %s", kind))
+    seg <- self$path_segments
+    if (!is.null(seg) && nrow(seg))
+      extra <- c(extra, sprintf(
+        "Segments: %d; basic rate summed over the run: %.4g per actor; realized ministeps: %d",
+        nrow(seg), sum(seg$basic_rate), sum(seg$n_ministeps)))
+    cc <- self$covariate_centering
+    if (!is.null(cc) && nrow(cc))
+      extra <- c(extra, "Covariate centering applied by RSiena:",
+                 sprintf("  %s (%s): centered = %s%s", cc$covariate, cc$kind, cc$centered,
+                         ifelse(cc$centered & !is.na(cc$mean),
+                                sprintf(", mean = %.4g", cc$mean), "")))
+    if (length(extra)) {
+      extra <- paste(extra, collapse = "\n")
+      cat(extra, "\n", sep = "")
+      regtab <- paste(regtab, extra, sep = "\n")
+    }
+    return(regtab)
   },
   
   
-  plot_degree_4panel = function(loess_span=0.5, 
-                                plot_return=TRUE, 
+  plot_degree_4panel = function(loess_span=0.5,
+                                plot_return=TRUE,
                                 plot_save=FALSE,
                                 plot_file='',
                                 plot_dir=NA,
                                 thin_factor=1,
                                 thin_pct = 1,
                                 point_alpha_dimmer = 1,
-                                experiment='') {
-    sim_title_str <- self$get_structure_model_param_str()
-    
-    actor_strats <- self$get_actor_strategies()
-    avg_mat <- apply(self$bi_env_arr, c(1,2), mean)
-    component_actor_strats <- actor_strats[ apply(avg_mat, 2, which.max) ]
-   
+                                experiment='',
+                                annotate = TRUE) {
+    ## Drawn by .sn_degree_plot() (R/plot-readable.R), shared with
+    ## saomnk_plot_degree_4panel() and saomnk_plot_k4().
     Kdf <- if ( !is.null(self$experiments) &&  experiment %in% names(self$experiments) ) {
       self$experiments[[experiment]]$K4_df
     } else {
       self$get_K4_df()
     }
-    
     Kdf <- Kdf %>% filter(chain_step_id %% thin_factor == 0)
-
-    
-    suppressMessages({
-      Klabels_df <- Kdf %>% group_by(panel_label, panel_label_text, node_type, dyad_type) %>% dplyr::summarize(n=n())
-    })
-    Klabels_df$panel_label[which(Klabels_df$node_type == 'Actor'      & Klabels_df$dyad_type == '2-mode  (bipartite)' )]  <- 'K_AC'
-    Klabels_df$panel_label[which(Klabels_df$node_type == 'Component'  & Klabels_df$dyad_type == '2-mode  (bipartite)' )]  <- 'K_CA'
-    
     if (thin_pct < 1) {
       sample_rows <- sample(1:nrow(Kdf), size = round(nrow(Kdf)*thin_pct), replace = FALSE )
       Kdf <- Kdf %>% filter(row_number() %in% sample_rows )
     }
-    
-    npoints <- nrow(Kdf)
-    point_size <- 6 / log10( npoints )
-    point_alpha <- min( 1,  15/sqrt( npoints ) ) * point_alpha_dimmer
-    
-    suppressMessages({
-      plt <- Kdf %>% 
-        ggplot(aes(x=chain_step_id, y=value)) +
-        geom_point(aes(fill=node_group, color=node_group), 
-                   pch=1, alpha=point_alpha, size=point_size) + 
-        geom_smooth(aes(group=node_group, color=node_group, fill=node_group), ##**node_group** to color actors by strategy but components by node
-                    method='loess', alpha=.05, span=loess_span) + 
-        geom_smooth(aes(x=chain_step_id, y=mean), span=loess_span, 
-                    data=Kdf %>% group_by(chain_step_id, node_type, dyad_type) %>% dplyr::summarize(mean=mean(value)),
-                    method='loess', se=FALSE, color='black', linewidth=1) +
-        geom_text(data=Klabels_df, aes(label=panel_label, x=Inf, y=-Inf), hjust=1.15, vjust=-.5, size=7, color='black', fontface='bold') +
-        geom_hline(yintercept = 0, linetype=2) +
-        scale_y_continuous(position = 'right') +
-        facet_grid(  dyad_type ~ node_type,  switch = 'y') +
-        theme_bw() + theme(strip.placement = 'inside', legend.position = 'bottom') +
-        labs(group='Strategy', fill='Strategy',color='Strategy') +
-        ylab('Node Degree') +
-        ggtitle(sprintf('Actor and Component Degrees: K_AA, K_AC, K_CA, K_CC\n%s', sim_title_str))
-    })
-    
-    if (!is.null(self$theta_shocks)) {
-      suppressMessages({
-        layout <- ggplot_build(plt)$layout
-        shock_rects <- self$get_theta_shock_rects_df(self$theta_shocks) %>%
-          mutate(value=0, chain_step_id=0, effect_name=NULL, effect=NULL)
-        y_maxs <- unlist(lapply(layout$panel_params, function(x) rep(  max(x$y.range),  nrow(shock_rects)) ))
-        plt <- plt + 
-          geom_rect(data=shock_rects, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf), fill='darkorange', color='orange',linetype=2,  alpha=.05) + 
-          geom_text(data = shock_rects, aes(x = (start + end) / 2, y = y_maxs, label = label),
-                    vjust = 1, size = 3) #fontface = "bold"
-      })
-    }
-    
-    if (is.null(actor_strats))
-      plt <- plt + theme(legend.position = 'none') 
-    
-    
+    plt <- .sn_degree_plot(self, Kdf, loess_span = loess_span,
+                           point_alpha_dimmer = point_alpha_dimmer,
+                           annotate = annotate)
+
     if(plot_save) {
       plot_file <- paste0('K4panel_',plot_file, round(as.numeric(Sys.time())*10))
-      ggsave(filename = file.path(ifelse(is.na(plot_dir)||plot_dir=='',getwd(),plot_dir), 
+      ggsave(filename = file.path(ifelse(is.na(plot_dir)||plot_dir=='',getwd(),plot_dir),
                               sprintf("%s_%s.jpeg", self$config_environ_params$name, plot_file)),
              plt,
              width = 8, height = 8, units = 'in', dpi = 400)
     }
-    
-    
+
     if (plot_return)
       return(plt)
-    
-  }, 
-  
-  
-  plot_component_degrees = function(loess_span=0.5, return_plot=TRUE) {
-    
-    Kdf2 <- self$K_CA_df %>% mutate(effect='K_CA') %>% 
-      bind_rows(
-        self$K_CC_df %>% mutate(effect='K_CC')
-      ) 
-    
-    npoints <- nrow(self$chain_stats) * self$M
-    point_size <- 6 / log10( npoints )
-    point_alpha <- min( 1,  2.2/log( npoints ) )
-    
-    suppressMessages({
-      plt <- Kdf2 %>% 
-        ggplot(aes(x=chain_step_id, y=value)) +
-        geom_point(aes(fill=component_id, color=component_id), 
-                   pch=1, alpha=point_alpha, size=point_size) + 
-        geom_smooth(aes(fill=component_id, color=component_id, linetype=component_id), 
-                    method='loess', alpha=.1, span=loess_span) + 
-        geom_smooth(aes(x=chain_step_id, y=mean), span=loess_span, 
-                    data=Kdf2 %>% group_by(chain_step_id, effect) %>% dplyr::summarize(mean=mean(value)),
-                    method='loess', se=FALSE, color='black', linewidth=1) +
-        geom_hline(yintercept = 0, linetype=2) +
-        facet_grid( effect ~ . ) +
-        theme_bw() +
-        ggtitle('Component Degrees: K_CA, K_CC')
-    })
-    
-    if (!is.null(self$theta_shocks)) {
-      suppressMessages({
-        layout <- ggplot_build(plt)$layout
-      })
-      shock_rects <- self$get_theta_shock_rects_df(self$theta_shocks) %>%
-        mutate(value=0, chain_step_id=0, effect_name=NULL, effect=NULL)
-      y_maxs <- unlist(lapply(layout$panel_params, function(x) rep(  max(x$y.range),  nrow(shock_rects)) ))
-      plt <- plt + 
-        geom_rect(data=shock_rects, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf), fill='darkorange', color='orange',linetype=2,  alpha=.05) + 
-        geom_text(data = shock_rects, aes(x = (start + end) / 2, y = y_maxs, label = label),
-                  vjust = 1, size = 3) #fontface = "bold"
-    }
-    
-    if (return_plot)
-      return(plt)
-    
-  }, 
-  
-  plot_actor_degrees = function(loess_span=0.5, return_plot=TRUE) {
-    
-    Kdf1 <- self$K_AA_df %>% mutate(effect='K_AA', node_id=actor_id) %>% 
-      bind_rows(
-        self$K_AC_df %>% mutate(effect='K_AC', node_id=actor_id)
-      )
-    
-    npoints <- nrow(self$chain_stats) * self$M
-    point_size <- 6 / log10( npoints )
-    point_alpha <- min( 1,  2.2/log( npoints ) )
-    
-    suppressMessages({
-      plt <- Kdf1 %>% 
-        ggplot(aes(x=chain_step_id, y=value)) +
-        # stat_summary(fun = mean, geom = "line", aes(group = 1), color = "black", size = 1) +
-        geom_point(aes(color=strategy, fill=strategy), 
-                   pch=1, alpha=point_alpha, size=point_size) + 
-        geom_smooth(aes(color=strategy, fill=strategy, linetype=actor_id),
-                    method='loess', alpha=.1, span=loess_span) + 
-        geom_smooth(aes(x=chain_step_id, y=mean), span=loess_span, 
-                    data=Kdf1 %>% group_by(chain_step_id, effect) %>% dplyr::summarize(mean=mean(value)),
-                    method='loess', se=FALSE, color='black', linewidth=1) +
-        geom_hline(yintercept = 0, linetype=2) +
-        facet_grid( effect ~ . ) +
-        theme_bw() + 
-        ggtitle('Actor Degrees: K_AA, K_AC')
-    })
-    
-    if (!is.null(self$theta_shocks)) {
-      suppressMessages({
-        layout <- ggplot_build(plt)$layout
-      })
-      shock_rects <- self$get_theta_shock_rects_df(self$theta_shocks) %>%
-        mutate(value=0, chain_step_id=0, effect_name=NULL, effect=NULL)
-      y_maxs <- unlist(lapply(layout$panel_params, function(x) rep(  max(x$y.range),  nrow(shock_rects)) ))
-      plt <- plt + 
-        geom_rect(data=shock_rects, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf), fill='darkorange', color='orange',linetype=2,  alpha=.05) + 
-        geom_text(data = shock_rects, aes(x = (start + end) / 2, y = y_maxs, label = label),
-                  vjust = 1, size = 3) #fontface = "bold"
-    }
 
+  },
+
+
+  plot_component_degrees = function(loess_span=0.5, return_plot=TRUE, annotate=TRUE) {
+    plt <- .sn_degree_plot(self, self$get_K4_df(), channels = c('K_CA', 'K_CC'),
+                           ncol = 1, loess_span = loess_span, annotate = annotate)
     if (return_plot)
       return(plt)
-  }, 
-  
-  
+  },
+
+  plot_actor_degrees = function(loess_span=0.5, return_plot=TRUE, annotate=TRUE) {
+    plt <- .sn_degree_plot(self, self$get_K4_df(), channels = c('K_AC', 'K_AA'),
+                           ncol = 1, loess_span = loess_span, annotate = annotate)
+    if (return_plot)
+      return(plt)
+  },
+
+
   plot_actor_utility_strategy_summary = function(actor_ids=c(), 
                                                  thin_factor=1, 
                                                  thin_pct=1,
@@ -7936,12 +7920,12 @@ SaomNkRSienaBiEnv <- R6Class(
         mutate(utility=0, chain_step_id=0, effect_name=NULL, effect=NULL)
       y_maxs <- unlist(lapply(layout$panel_params, function(x) rep(  max(x$y.range),  nrow(shock_rects)) ))
       plt <- plt + 
-        geom_rect(data=shock_rects, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf), fill='darkorange', color='orange',linetype=2,  alpha=.05) + 
+        geom_rect(data=shock_rects, aes(xmin=start, xmax=end, ymin=-Inf, ymax=Inf), fill = 'grey55', color = 'grey40',linetype=2,  alpha=.05) + 
         geom_text(data = shock_rects, aes(x = (start + end) / 2, y = y_maxs, label = label),
                   vjust = 0, size = 3) #fontface = "bold"
     }
       
-    plt <- plt + theme_bw() + 
+    plt <- plt + theme_searchnet() + 
       ylim(ylim) + 
       ylab(util_lab) +
       xlab('Actor Decision Chain Ministep') +
@@ -7977,7 +7961,7 @@ SaomNkRSienaBiEnv <- R6Class(
       coord_flip() +
       # facet_grid(wave_id ~ .) +
       ylab('Actor Utility Density') +
-      theme_bw() + theme(
+      theme_searchnet() + theme(
         strip.background = element_blank(),
         strip.text = element_blank(),
         panel.grid.minor = element_blank(),
@@ -8164,7 +8148,7 @@ SaomNkRSienaBiEnv <- R6Class(
     groups_not_unique <- groups_all[which( ! groups_all %in% unique(component_data$primary_group))]
     
     
-    group_colors <- RColorBrewer::brewer.pal(num_groups, 'Accent')
+    group_colors <- searchnet_palette("categorical", num_groups)
     market_regions <- list()
 
     # For each group, create a convex hull around its components
@@ -8391,7 +8375,7 @@ SaomNkRSienaBiEnv <- R6Class(
     }
 
     # Generate a palette for strategies
-    strategy_colors <- scales::hue_pal()(length(unique(actor_strategies)))
+    strategy_colors <- searchnet_palette("categorical", length(unique(actor_strategies)))
     names(strategy_colors) <- rev(unique(actor_strategies))
 
     # Create multi-membership visualization for components
@@ -8474,7 +8458,7 @@ SaomNkRSienaBiEnv <- R6Class(
       ylim(-ring_radius * 1.2, ring_radius * 1.2) +
       labs(title = "Market Entry and Repositioning: Actors and Components",
            subtitle = paste0(M, " actors and ", N, " components with decision paths (", S, " steps)")) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(legend.position = "bottom",
             panel.grid.minor = element_blank(),
             axis.title = element_blank(),
@@ -8643,7 +8627,7 @@ SaomNkRSienaBiEnv <- R6Class(
     component_data$primary_group <- sapply(component_to_groups, function(x) ifelse(length(x) == 1, x[1], NA))
     
     # Generate unique colors for each group
-    group_colors <- RColorBrewer::brewer.pal(num_groups, 'Accent')
+    group_colors <- searchnet_palette("categorical", num_groups)
     
     # Create market region data (one region per group)
     market_regions <- list()
@@ -8877,7 +8861,7 @@ SaomNkRSienaBiEnv <- R6Class(
     }
     
     
-    strategy_colors <- scales::hue_pal()(length(unique(actor_strategies)))
+    strategy_colors <- searchnet_palette("categorical", length(unique(actor_strategies)))
     names(strategy_colors) <- unique(actor_strategies)
     
     
@@ -8962,7 +8946,7 @@ SaomNkRSienaBiEnv <- R6Class(
       ylim(-ring_radius * 1.2, ring_radius * 1.2) +
       labs(title = "Market Entry and Repositioning: Actors and Components",
            subtitle = "Step: {closest_state}") +
-      theme_minimal() +
+      theme_searchnet() +
       theme(legend.position = "bottom",
             panel.grid.minor = element_blank(),
             axis.title = element_blank(),
@@ -9746,9 +9730,9 @@ SaomNkRSienaBiEnv <- R6Class(
          limits = c(0, 1),
          breaks = seq(0, 1, by = 0.25)
        ) +
-       ggplot2::scale_color_brewer(palette = "Set1", name = "Actor ID") +
-       ggplot2::scale_fill_brewer(palette = "Set1", name = "Actor ID") +
-       ggplot2::theme_minimal() +
+       scale_color_searchnet(name = "Actor ID") +
+       scale_fill_searchnet(name = "Actor ID") +
+       theme_searchnet() +
        ggplot2::theme(
          legend.position = "right",
          panel.grid.minor = ggplot2::element_blank(),
@@ -9775,9 +9759,9 @@ SaomNkRSienaBiEnv <- R6Class(
          limits = c(0, 1),
          breaks = seq(0, 1, by = 0.25)
        ) +
-       ggplot2::scale_color_brewer(palette = "Set1", name = "Actor ID") +
-       ggplot2::scale_fill_brewer(palette = "Set1", name = "Actor ID") +
-       ggplot2::theme_minimal() +
+       scale_color_searchnet(name = "Actor ID") +
+       scale_fill_searchnet(name = "Actor ID") +
+       theme_searchnet() +
        ggplot2::theme(
          legend.position = "right",
          panel.grid.minor = ggplot2::element_blank(),
@@ -9863,9 +9847,9 @@ SaomNkRSienaBiEnv <- R6Class(
           limits = c(0, 1),
           breaks = seq(0, 1, by = 0.25)
         ) +
-        # ggplot2::scale_color_brewer(palette = "Set1", name = "St ID") +
-        # ggplot2::scale_fill_brewer(palette = "Set1", name = "Actor ID") +
-        ggplot2::theme_minimal() +
+        # scale_color_searchnet(name = "St ID") +
+        # scale_fill_searchnet(name = "Actor ID") +
+        theme_searchnet() +
         ggplot2::theme(
           legend.position = "right",
           panel.grid.minor = ggplot2::element_blank(),
@@ -9907,9 +9891,9 @@ SaomNkRSienaBiEnv <- R6Class(
           limits = c(0, 1),
           breaks = seq(0, 1, by = 0.25)
         ) +
-        ggplot2::scale_color_brewer(palette = "Set1", name = "Actor ID") +
-        ggplot2::scale_fill_brewer(palette = "Set1", name = "Actor ID") +
-        ggplot2::theme_minimal() +
+        scale_color_searchnet(name = "Actor ID") +
+        scale_fill_searchnet(name = "Actor ID") +
+        theme_searchnet() +
         ggplot2::theme(
           legend.position = "right",
           panel.grid.minor = ggplot2::element_blank(),
@@ -10096,9 +10080,9 @@ SaomNkRSienaBiEnv <- R6Class(
         limits = c(0, 1),
         breaks = seq(0, 1, by = 0.25)
       ) +
-      ggplot2::scale_color_brewer(palette = "Set1", name = "Actor ID") +
-      ggplot2::scale_fill_brewer(palette = "Set1", name = "Actor ID") +
-      ggplot2::theme_minimal() +
+      scale_color_searchnet(name = "Actor ID") +
+      scale_fill_searchnet(name = "Actor ID") +
+      theme_searchnet() +
       ggplot2::theme(
         legend.position = "right",
         panel.grid.minor = ggplot2::element_blank(),
@@ -10176,13 +10160,13 @@ SaomNkRSienaBiEnv <- R6Class(
     plt_fma <- udf_trim %>% 
       ggplot(aes(x=utility, fill=actor_id_label, color=actor_id_label, linetype = entry_scenario)) + 
       geom_density(alpha=.12, size=1) + 
-      facet_wrap(~entry_scenario) + theme_bw() +
+      facet_wrap(~entry_scenario) + theme_searchnet() +
       ggtitle('First Mover Advantage (FMA) by Entry Order Scenario')
     
     plt_fmb <- udf_trim %>% 
       ggplot(aes(x=utility, fill=actor_id_label, color=actor_id_label, linetype = entry_scenario)) + 
       geom_density(alpha=.12, size=1) + 
-      facet_wrap(~actor_id_label) + theme_bw() +
+      facet_wrap(~actor_id_label) + theme_searchnet() +
       ggtitle('First Mover Benefit (FMB) by Firm [Counterfactual]')
     
     
@@ -10219,10 +10203,10 @@ SaomNkRSienaBiEnv <- R6Class(
     
     plt_diff_fmb_1 <- ggplot(diffs_1, aes(x = utility_diff)) +
       geom_histogram(bins=25, fill='steelblue', color='white', alpha=0.7) +
-      geom_vline(xintercept=mean(diffs_1$utility_diff), color="red", linetype="dashed", size=1) +
-      geom_vline(xintercept=diff_test_1$conf.int, color="red", linetype=3, size=1) +
+      geom_vline(xintercept=mean(diffs_1$utility_diff), color="#D55E00", linetype="dashed", size=1) +
+      geom_vline(xintercept=diff_test_1$conf.int, color="#D55E00", linetype=3, size=1) +
       geom_vline(xintercept=0, color='black', linetype=1, size=.5) +
-      theme_minimal() +
+      theme_searchnet() +
       labs(title = sprintf("Distribution of First Mover Benefit: Actor %s \nMatched Pairs t-Test, n=%s, est=%.2f, p %s\n ", 
                            'i', length(unique(diffs_1$pair_id)), diff_test_1$estimate, diff_test_1_pval_str ),
            x = "First Mover Benefit (vs. Counterfactual)",
@@ -10243,10 +10227,10 @@ SaomNkRSienaBiEnv <- R6Class(
     
     plt_diff_fmb_2 <- ggplot(diffs_2, aes(x = utility_diff)) +
       geom_histogram(bins=25, fill='steelblue', color='white', alpha=0.7) +
-      geom_vline(xintercept=mean(diffs_2$utility_diff), color="red", linetype="dashed", size=1) +
-      geom_vline(xintercept=diff_test_2$conf.int, color="red", linetype=3, size=1) +
+      geom_vline(xintercept=mean(diffs_2$utility_diff), color="#D55E00", linetype="dashed", size=1) +
+      geom_vline(xintercept=diff_test_2$conf.int, color="#D55E00", linetype=3, size=1) +
       geom_vline(xintercept=0, color='black', linetype=1, size=.5) +
-      theme_minimal() +
+      theme_searchnet() +
       labs(title = sprintf("Distribution of First Mover Benefit: Actor %s \nMatched Pairs t-Test, n=%s, est=%.2f, p %s\n ", 
                            'j', length(unique(diffs_2$pair_id)), diff_test_2$estimate, diff_test_2_pval_str ),
            x = "First Mover Benefit (vs. Counterfactual)",
@@ -10287,10 +10271,10 @@ SaomNkRSienaBiEnv <- R6Class(
     
     plt_diff_fma_A <- ggplot(diffs_A, aes(x = utility_diff)) +
       geom_histogram(bins=25, fill='steelblue', color='white', alpha=0.7) +
-      geom_vline(xintercept=mean(diffs_A$utility_diff), color="red", linetype="dashed", size=1) +
-      geom_vline(xintercept=diff_test_A$conf.int, color="red", linetype=3, size=1) +
+      geom_vline(xintercept=mean(diffs_A$utility_diff), color="#D55E00", linetype="dashed", size=1) +
+      geom_vline(xintercept=diff_test_A$conf.int, color="#D55E00", linetype=3, size=1) +
       geom_vline(xintercept=0, color='black', linetype=1, size=.5) +
-      theme_minimal() +
+      theme_searchnet() +
       labs(title = sprintf("Distribution of First Mover Advantage: Scenario A \nMatched Pairs t-Test, n=%s, est=%.2f, p %s\n ", 
                              length(unique(diffs_A$pair_id)), diff_test_A$estimate, diff_test_A_pval_str ),
            x = "First Mover Advantage",
@@ -10310,10 +10294,10 @@ SaomNkRSienaBiEnv <- R6Class(
     
     plt_diff_fma_B <- ggplot(diffs_B, aes(x = utility_diff)) +
       geom_histogram(bins=25, fill='steelblue', color='white', alpha=0.7) +
-      geom_vline(xintercept=mean(diffs_B$utility_diff), color="red", linetype="dashed", size=1) +
-      geom_vline(xintercept=diff_test_B$conf.int, color="red", linetype=3, size=1) +
+      geom_vline(xintercept=mean(diffs_B$utility_diff), color="#D55E00", linetype="dashed", size=1) +
+      geom_vline(xintercept=diff_test_B$conf.int, color="#D55E00", linetype=3, size=1) +
       geom_vline(xintercept=0, color='black', linetype=1, size=.5) +
-      theme_minimal() +
+      theme_searchnet() +
       labs(title = sprintf("Distribution of First Mover Advantage: Scenario B \nMatched Pairs t-Test, n=%s, est=%.2f, p %s\n ", 
                            length(unique(diffs_B$pair_id)), diff_test_B$estimate, diff_test_B_pval_str ),
            x = "First Mover Advantage",
@@ -10614,8 +10598,8 @@ SaomNkRSienaBiEnv <- R6Class(
         geom_rect(
           data = shock_rects, 
           aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf), 
-          fill = 'darkorange', 
-          color = 'orange',
+          fill = 'grey55', 
+          color = 'grey40',
           linetype = 2,
           alpha = 0.05
         ) +
@@ -10647,7 +10631,7 @@ SaomNkRSienaBiEnv <- R6Class(
         x = "Simulation Step",
         y = "Proportion of Activities"
       ) +
-      theme_bw() +
+      theme_searchnet() +
       theme(
         panel.grid.minor = element_blank(),
         legend.position = "bottom",
@@ -10688,7 +10672,7 @@ SaomNkRSienaBiEnv <- R6Class(
         xlim(ylim) +
         coord_flip() +
         ylab('Proportion Density') +
-        theme_bw() + 
+        theme_searchnet() + 
         theme(
           strip.background = element_blank(),
           strip.text = element_text(face = "bold"),
@@ -10927,7 +10911,7 @@ SaomNkRSienaBiEnv <- R6Class(
           data = shock_rects, 
           aes(xmin = start, xmax = end), 
           ymin = -Inf, ymax = Inf,
-          fill = 'darkorange', 
+          fill = 'grey55', 
           alpha = 0.05
         ) +
         geom_text(
@@ -10943,13 +10927,13 @@ SaomNkRSienaBiEnv <- R6Class(
     p <- p +
       scale_color_manual(
         name = "Activity Type",
-        values = c("Exploration" = "#E74C3C", 
-                   "Exploitation" = "#3498DB")
+        values = c("Exploration" = "#D55E00", 
+                   "Exploitation" = "#56B4E9")
       ) +
       scale_fill_manual(
         name = "Activity Type",
-        values = c("Exploration" = "#E74C3C", 
-                   "Exploitation" = "#3498DB"),
+        values = c("Exploration" = "#D55E00", 
+                   "Exploitation" = "#56B4E9"),
         guide = "none"
       ) +
       scale_linetype_manual(
@@ -10964,7 +10948,7 @@ SaomNkRSienaBiEnv <- R6Class(
         x = "Simulation Step",
         y = "Proportion of Activities"
       ) +
-      theme_bw() +
+      theme_searchnet() +
       theme(
         legend.position = "bottom",
         legend.box = "horizontal",
@@ -11063,7 +11047,7 @@ SaomNkRSienaBiEnv <- R6Class(
         x = "Exploitation (proportion old activities)",
         y = "Exploration (proportion new activities)"
       ) +
-      theme_minimal()
+      theme_searchnet()
     
     # Add trajectories if requested
     if (show_trajectories) {
@@ -11218,14 +11202,14 @@ SaomNkRSienaBiEnv <- R6Class(
           data = shock_rects, 
           aes(xmin = start, xmax = end), 
           ymin = -Inf, ymax = Inf,
-          fill = '#FFA500', 
+          fill = 'grey55', 
           alpha = 0.1
         ) +
         geom_vline(
           data = shock_rects,
           aes(xintercept = start),
           linetype = "dotted",
-          color = "darkorange",
+          color = "#E69F00",
           size = 0.8
         ) +
         annotate(
@@ -11235,7 +11219,7 @@ SaomNkRSienaBiEnv <- R6Class(
           label = shock_rects$label[1],
           size = 3.5,
           fontface = "bold",
-          color = "darkorange"
+          color = "#E69F00"
         )
     }
     
@@ -11294,13 +11278,13 @@ SaomNkRSienaBiEnv <- R6Class(
     p_main <- p_main +
       scale_color_manual(
         name = "Strategy Group",
-        values = c("Control (0)" = "#2C3E50",      # Dark blue-gray
-                   "Subsidized (100)" = "#E74C3C")  # Bright red
+        values = c("Control (0)" = "#0072B2",      # Dark blue-gray
+                   "Subsidized (100)" = "#D55E00")  # Bright red
       ) +
       scale_fill_manual(
         name = "Strategy Group",
-        values = c("Control (0)" = "#2C3E50",
-                   "Subsidized (100)" = "#E74C3C"),
+        values = c("Control (0)" = "#0072B2",
+                   "Subsidized (100)" = "#D55E00"),
         guide = "none"
       ) +
       scale_linetype_manual(
@@ -11314,7 +11298,7 @@ SaomNkRSienaBiEnv <- R6Class(
         x = "Simulation Step",
         y = "Proportion of Activities"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(
         panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),
@@ -11372,7 +11356,7 @@ SaomNkRSienaBiEnv <- R6Class(
             data = shock_rects, 
             aes(xmin = start, xmax = end), 
             ymin = -Inf, ymax = Inf,
-            fill = '#FFA500', 
+            fill = 'grey55', 
             alpha = 0.1
           )
       }
@@ -11380,8 +11364,8 @@ SaomNkRSienaBiEnv <- R6Class(
       p_diff <- p_diff +
         scale_color_manual(
           name = "Activity Type",
-          values = c("Exploitation" = "#3498DB",
-                     "Exploration" = "#E74C3C")
+          values = c("Exploitation" = "#56B4E9",
+                     "Exploration" = "#D55E00")
         ) +
         labs(
           title = "Strategy Differential (Subsidized - Control)",
@@ -11389,7 +11373,7 @@ SaomNkRSienaBiEnv <- R6Class(
           x = "Simulation Step",
           y = "Difference in Proportion"
         ) +
-        theme_minimal() +
+        theme_searchnet() +
         theme(
           panel.grid.minor = element_blank(),
           panel.grid.major.x = element_blank(),
@@ -11447,12 +11431,12 @@ SaomNkRSienaBiEnv <- R6Class(
             ymax = mean_prop + se_prop),
         alpha = 0.2
       ) +
-      geom_line(size = 1.5, color = "#2C3E50") +
+      geom_line(size = 1.5, color = "#0072B2") +
       geom_smooth(
         method = "loess",
         span = loess_span,
         se = FALSE,
-        color = "#E74C3C",
+        color = "#D55E00",
         size = 1,
         linetype = "dashed"
       )
@@ -11473,7 +11457,7 @@ SaomNkRSienaBiEnv <- R6Class(
         x = "Simulation Step",
         y = "Proportion"
       ) +
-      theme_bw() +
+      theme_searchnet() +
       theme(
         strip.text = element_text(face = "bold"),
         strip.background = element_rect(fill = "gray95"),
@@ -11673,7 +11657,7 @@ SaomNkRSienaBiEnv <- R6Class(
           data = shock_rects, 
           aes(xmin = start, xmax = end), 
           ymin = -Inf, ymax = Inf,
-          fill = 'darkorange', 
+          fill = 'grey55', 
           alpha = 0.05
         ) +
         geom_text(
@@ -11690,13 +11674,13 @@ SaomNkRSienaBiEnv <- R6Class(
     p <- p +
       scale_color_manual(
         name = "Strategy Group",
-        values = c("Strategy 0" = "#3498DB",      # Blue for Strategy 0
-                   "Strategy 100" = "#E74C3C")    # Red for Strategy 100
+        values = c("Strategy 0" = "#56B4E9",      # Blue for Strategy 0
+                   "Strategy 100" = "#D55E00")    # Red for Strategy 100
       ) +
       scale_fill_manual(
         name = "Strategy Group",
-        values = c("Strategy 0" = "#3498DB",
-                   "Strategy 100" = "#E74C3C"),
+        values = c("Strategy 0" = "#56B4E9",
+                   "Strategy 100" = "#D55E00"),
         guide = "none"  # Hide fill legend as it duplicates color
       ) +
       scale_linetype_manual(
@@ -11711,7 +11695,7 @@ SaomNkRSienaBiEnv <- R6Class(
         x = "Simulation Step",
         y = "Proportion of Activities"
       ) +
-      theme_bw() +
+      theme_searchnet() +
       theme(
         legend.position = "right",
         legend.box = "vertical",
@@ -11823,13 +11807,13 @@ SaomNkRSienaBiEnv <- R6Class(
     p <- p +
       scale_color_manual(
         name = "Strategy Group",
-        values = c("Strategy 0" = "#3498DB",
-                   "Strategy 100" = "#E74C3C")
+        values = c("Strategy 0" = "#56B4E9",
+                   "Strategy 100" = "#D55E00")
       ) +
       scale_fill_manual(
         name = "Strategy Group",
-        values = c("Strategy 0" = "#3498DB",
-                   "Strategy 100" = "#E74C3C"),
+        values = c("Strategy 0" = "#56B4E9",
+                   "Strategy 100" = "#D55E00"),
         guide = "none"
       ) +
       scale_linetype_manual(
@@ -11843,7 +11827,7 @@ SaomNkRSienaBiEnv <- R6Class(
         x = "Simulation Step",
         y = "Proportion"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(
         legend.position = "right",
         legend.box = "vertical"
@@ -12077,12 +12061,12 @@ SaomNkRSienaBiEnv <- R6Class(
     
     p <- p +
       scale_color_manual(
-        values = c("Control (No Subsidy)" = "#2C3E50",
-                   "Treatment (Subsidized)" = "#E74C3C")
+        values = c("Control (No Subsidy)" = "#0072B2",
+                   "Treatment (Subsidized)" = "#D55E00")
       ) +
       scale_fill_manual(
-        values = c("Control (No Subsidy)" = "#2C3E50",
-                   "Treatment (Subsidized)" = "#E74C3C"),
+        values = c("Control (No Subsidy)" = "#0072B2",
+                   "Treatment (Subsidized)" = "#D55E00"),
         guide = "none"
       ) +
       labs(
@@ -12092,7 +12076,7 @@ SaomNkRSienaBiEnv <- R6Class(
         y = "Risk-Taking Score",
         color = "Treatment Group"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       ylim(0, 1)
     
     return(p)
@@ -12130,15 +12114,15 @@ SaomNkRSienaBiEnv <- R6Class(
       geom_errorbar(aes(ymin = mean_risk_taking - se_risk_taking,
                         ymax = mean_risk_taking + se_risk_taking),
                     width = 0.1) +
-      scale_color_manual(values = c("Control" = "#2C3E50", 
-                                    "Treated" = "#E74C3C")) +
+      scale_color_manual(values = c("Control" = "#0072B2", 
+                                    "Treated" = "#D55E00")) +
       labs(
         title = "Difference-in-Differences: Subsidy Effect on Risk-Taking",
         subtitle = "Comparing subsidized vs non-subsidized firms",
         x = "Period",
         y = "Mean Risk-Taking Score"
       ) +
-      theme_minimal()
+      theme_searchnet()
     
     return(p)
   },
@@ -12295,13 +12279,13 @@ SaomNkRSienaBiEnv <- R6Class(
     p <- p +
       scale_color_manual(
         name = "Strategy Group",
-        values = c("Control (0)" = "#2C3E50",
-                   "Subsidized (100)" = "#E74C3C")
+        values = c("Control (0)" = "#0072B2",
+                   "Subsidized (100)" = "#D55E00")
       ) +
       scale_fill_manual(
         name = "Strategy Group",
-        values = c("Control (0)" = "#2C3E50",
-                   "Subsidized (100)" = "#E74C3C"),
+        values = c("Control (0)" = "#0072B2",
+                   "Subsidized (100)" = "#D55E00"),
         guide = "none"
       ) +
       scale_linetype_manual(
@@ -12315,7 +12299,7 @@ SaomNkRSienaBiEnv <- R6Class(
         x = "Simulation Step",
         y = "Activity Intensity (Risk-Adjusted)"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(
         panel.grid.minor = element_blank(),
         legend.position = "bottom",
@@ -12360,8 +12344,9 @@ SaomNkRSienaBiEnv <- R6Class(
     # Key fix: All methods now correctly detect shock timing by finding the first
     # theta_shocks element where shock_on = 1, not just using the first element.
     
-    # Try to get metrics
-    tryCatch({
+    # Try to get metrics. A failure is the finding of this check, so it is
+    # returned (metrics_error) and raised as a warning, not only printed.
+    metrics_error <- tryCatch({
       metrics <- self$calculate_explore_exploit_risk_adjusted()
       cat("\nExploration metrics:\n")
       cat("  Total rows:", nrow(metrics), "\n")
@@ -12373,14 +12358,18 @@ SaomNkRSienaBiEnv <- R6Class(
       metric_steps <- sort(unique(metrics$chain_step_id))
       missing_steps <- setdiff(expected_steps, metric_steps)
       if (length(missing_steps) > 0) {
-        cat("  WARNING: Missing steps in metrics:", head(missing_steps, 10), 
+        cat("  WARNING: Missing steps in metrics:", head(missing_steps, 10),
             ifelse(length(missing_steps) > 10, "...", ""), "\n")
       }
-    }, error = function(e) {
-      cat("\nERROR calculating metrics:", e$message, "\n")
-    })
-    
-    invisible(list(k4_df = k4_df))
+      NULL
+    }, error = function(e) conditionMessage(e))
+    if (!is.null(metrics_error)) {
+      warning("check_exploration_data_availability(): exploration metrics could not ",
+              "be calculated: ", metrics_error, call. = FALSE)
+    }
+
+    invisible(list(k4_df = k4_df, metrics_ok = is.null(metrics_error),
+                   metrics_error = metrics_error))
   },
   
   # Method to plot exploration risk with automatic shock detection and formatting
@@ -12467,7 +12456,7 @@ SaomNkRSienaBiEnv <- R6Class(
                  xmax = shock_end,
                  ymin = -Inf, 
                  ymax = Inf,
-                 fill = "orange", 
+                 fill = "#E69F00", 
                  alpha = 0.1) +
         annotate("text", 
                  x = shock_time + (shock_end - shock_time) / 2, 
@@ -12480,12 +12469,12 @@ SaomNkRSienaBiEnv <- R6Class(
     # Format the plot
     p <- p +
       scale_color_manual(
-        values = c("Control (No Subsidy)" = "#2C3E50",
-                   "Treatment (Subsidized)" = "#E74C3C")
+        values = c("Control (No Subsidy)" = "#0072B2",
+                   "Treatment (Subsidized)" = "#D55E00")
       ) +
       scale_fill_manual(
-        values = c("Control (No Subsidy)" = "#2C3E50",
-                   "Treatment (Subsidized)" = "#E74C3C"),
+        values = c("Control (No Subsidy)" = "#0072B2",
+                   "Treatment (Subsidized)" = "#D55E00"),
         guide = "none"
       ) +
       labs(
@@ -12495,7 +12484,7 @@ SaomNkRSienaBiEnv <- R6Class(
         y = "Risk-Taking Score",
         color = "Treatment Group"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(
         legend.position = "bottom",
         plot.title = element_text(face = "bold", size = 14),
@@ -12560,15 +12549,15 @@ SaomNkRSienaBiEnv <- R6Class(
       geom_errorbar(aes(ymin = mean_risk_taking - se_risk_taking,
                         ymax = mean_risk_taking + se_risk_taking),
                     width = 0.1) +
-      scale_color_manual(values = c("Control" = "#2C3E50", 
-                                    "Treated" = "#E74C3C")) +
+      scale_color_manual(values = c("Control" = "#0072B2", 
+                                    "Treated" = "#D55E00")) +
       labs(
         title = "Difference-in-Differences: Subsidy Effect on Risk-Taking",
         subtitle = "Comparing subsidized vs non-subsidized firms",
         x = "Period",
         y = "Mean Risk-Taking Score"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(
         plot.title = element_text(face = "bold", size = 14),
         plot.subtitle = element_text(size = 11)
@@ -12726,7 +12715,7 @@ SaomNkRSienaBiEnv <- R6Class(
         x = "Periods Relative to Subsidy Shock",
         y = "Average Treatment Effect on Treated (ATT)"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(
         strip.text = element_text(face = "bold", size = 11),
         panel.grid.minor = element_blank()
@@ -12744,7 +12733,7 @@ SaomNkRSienaBiEnv <- R6Class(
     p1 <- p1 + 
       geom_rect(data = shock_rect, 
                 aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-                fill = "orange", alpha = 0.05, inherit.aes = FALSE)
+                fill = "#E69F00", alpha = 0.05, inherit.aes = FALSE)
     
     # Create summary statistics plot
     summary_stats <- analysis_data %>%
@@ -12773,14 +12762,14 @@ SaomNkRSienaBiEnv <- R6Class(
       geom_line(size = 1.5) +
       geom_point(size = 3) +
       facet_wrap(~ metric, scales = "free_y") +
-      scale_color_manual(values = c("Control" = "#2C3E50", "Subsidized" = "#E74C3C")) +
+      scale_color_manual(values = c("Control" = "#0072B2", "Subsidized" = "#D55E00")) +
       labs(
         title = "Average Outcomes by Period and Treatment",
         x = "Period",
         y = "Average Value",
         color = "Group"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(
         legend.position = "bottom",
         strip.text = element_text(face = "bold")
@@ -12895,13 +12884,10 @@ SaomNkRSienaBiEnv <- R6Class(
     # If social logic influence method exists, apply it
     if ("calculate_social_logic_influence" %in% names(self)) {
       if (debug) cat("Step 2: Applying social logic influence...\n")
-      tryCatch({
-        metrics <- self$calculate_social_logic_influence(metrics)
-        if (debug) cat("  - Social logic applied successfully\n")
-      }, error = function(e) {
-        warning("calculate_social_logic_influence failed: ", e$message, "\nContinuing without social logic adjustments.")
-        if (debug) cat("  - Social logic failed, continuing without it\n")
-      })
+      ## No longer caught: continuing without the adjustment reported an
+      ## analysis of a different specification under the same name.
+      metrics <- self$calculate_social_logic_influence(metrics)
+      if (debug) cat("  - Social logic applied successfully\n")
     }
     
     # Ensure we have the necessary columns
@@ -12964,115 +12950,100 @@ SaomNkRSienaBiEnv <- R6Class(
     }
     
     # Check if we have enough data for DiD
+    ## No pre-shock data: there is no DiD to compute. This used to print an
+    ## "ERROR" banner and return a list whose estimates were simply absent.
     if (n_pre == 0) {
-      cat("\n=== EXPLORATION RISK DIFF-IN-DIFF ANALYSIS ===\n")
-      cat("\nERROR: No pre-shock data available\n")
-      cat("Shock occurs at step", shock_time, "but metrics data starts at step", min_step, "\n")
-      cat("\nThis typically means:\n")
-      cat("1. The metrics calculation is filtering out early steps\n")
-      cat("2. Check calculate_explore_exploit_risk_adjusted() for any filtering\n")
-      cat("3. The shock timing is correct (step", shock_time, "), but pre-shock data is missing\n")
-      
-      # Still try to create a basic trajectory plot
-      p1 <- tryCatch({
-        self$plot_exploration_risk_multiperiod(metrics)
-      }, error = function(e) NULL)
-      
-      return(list(
-        error = "No pre-shock data available in metrics",
-        shock_time = shock_time,
-        data_range = c(min_step, max_step),
-        metrics = metrics,
-        plots = list(trajectories = p1, did = NULL, multiperiod = NULL),
-        message = "Check calculate_explore_exploit_risk_adjusted() for data filtering"
-      ))
+      stop(sprintf(paste0("analyze_exploration_risk_shocks(): no pre-shock data. The shock ",
+                          "is at step %s but the metrics start at step %s, so no ",
+                          "difference-in-differences can be computed. Check ",
+                          "calculate_explore_exploit_risk_adjusted() for filtering of ",
+                          "early steps."), shock_time, min_step),
+           call. = FALSE)
     }
-    
+
+    ## The plots and the multiperiod analysis are auxiliary: when one fails
+    ## the DiD estimates below are still valid, so the failure is recorded in
+    ## `failures` and reported with a count. (The plot handlers used to assign
+    ## NULL inside the handler, which left p1/p2 undefined and broke the
+    ## return value instead.)
+    failures <- data.frame(component = character(0), message = character(0),
+                           stringsAsFactors = FALSE)
+    .aux <- function(component, expr) {
+      tryCatch(expr, error = function(e) {
+        failures[nrow(failures) + 1L, ] <<- list(component, conditionMessage(e))
+        if (debug) cat("  - ", component, " failed: ", conditionMessage(e), "\n")
+        NULL
+      })
+    }
+
     # Create visualizations
     if (debug) cat("Step 4: Creating visualizations...\n")
-    
-    tryCatch({
-      p1 <- self$plot_exploration_risk_multiperiod(metrics)
-      if (debug) cat("  - Multiperiod plot created\n")
-    }, error = function(e) {
-      warning("Failed to create multiperiod plot: ", e$message)
-      p1 <- NULL
-    })
-    
-    tryCatch({
-      p2 <- self$plot_exploration_risk_did(metrics)
-      if (debug) cat("  - DiD plot created\n")
-    }, error = function(e) {
-      warning("Failed to create DiD plot: ", e$message)
-      p2 <- NULL
-    })
-    
+    p1 <- .aux("multiperiod plot", self$plot_exploration_risk_multiperiod(metrics))
+    p2 <- .aux("DiD plot", self$plot_exploration_risk_did(metrics))
+
     # Run multiperiod analysis
     if (debug) cat("Step 5: Running multiperiod analysis...\n")
-    
-    multiperiod_results <- tryCatch({
+    multiperiod_results <- .aux("multiperiod analysis",
       self$test_multiperiod_exploration_risk(
         metrics_df = metrics,
         pre_periods_analyze = pre_periods_analyze,
         post_periods_analyze = post_periods_analyze,
         verbose = verbose
-      )
-    }, error = function(e) {
-      warning("Multiperiod analysis failed: ", e$message)
-      if (debug) cat("  - Error in multiperiod analysis: ", e$message, "\n")
-      NULL
-    })
-    
-    # Calculate DiD estimates
+      ))
+
+    # Calculate DiD estimates: the core result, so a failure here stops.
     if (debug) cat("Step 6: Calculating DiD estimates...\n")
-    
-    did_stats <- tryCatch({
-      metrics %>%
-        dplyr::mutate(
-          period = factor(ifelse(chain_step_id < shock_time, "Pre", "Post"), levels = c("Pre", "Post")),
-          treatment = ifelse(strategy == "100", "Treated", "Control")
-        ) %>%
-        dplyr::group_by(period, treatment) %>%
-        dplyr::summarise(
-          mean_risk = mean(risk_taking_score, na.rm = TRUE),
-          mean_exploration = mean(exploration, na.rm = TRUE),
-          .groups = "drop"
-        ) %>%
-        tidyr::pivot_wider(
-          names_from = period,
-          values_from = c(mean_risk, mean_exploration)
-        ) %>%
-        dplyr::mutate(
-          risk_change = mean_risk_Post - mean_risk_Pre,
-          exploration_change = mean_exploration_Post - mean_exploration_Pre
-        )
-    }, error = function(e) {
-      warning("Failed to calculate DiD statistics: ", e$message)
-      if (debug) cat("  - Error in DiD calculation: ", e$message, "\n")
-      NULL
-    })
-    
-    # Calculate DiD estimates
-    did_estimate_risk <- NA
-    did_estimate_exploration <- NA
-    
-    if (!is.null(did_stats) && nrow(did_stats) > 0) {
-      # Check if we have both Pre and Post values
-      if (all(c("mean_risk_Pre", "mean_risk_Post") %in% names(did_stats))) {
-        treated_idx <- which(did_stats$treatment == "Treated")
-        control_idx <- which(did_stats$treatment == "Control")
-        
-        if (length(treated_idx) > 0 && length(control_idx) > 0) {
-          did_estimate_risk <- did_stats$risk_change[treated_idx] - 
-            did_stats$risk_change[control_idx]
-          
-          if (all(c("mean_exploration_Pre", "mean_exploration_Post") %in% names(did_stats))) {
-            did_estimate_exploration <- did_stats$exploration_change[treated_idx] - 
-              did_stats$exploration_change[control_idx]
-          }
-        }
-      }
-      if (debug) cat("  - DiD estimates calculated successfully\n")
+
+    did_stats <- metrics %>%
+      dplyr::mutate(
+        period = factor(ifelse(chain_step_id < shock_time, "Pre", "Post"), levels = c("Pre", "Post")),
+        treatment = ifelse(strategy == "100", "Treated", "Control")
+      ) %>%
+      dplyr::group_by(period, treatment) %>%
+      dplyr::summarise(
+        mean_risk = mean(risk_taking_score, na.rm = TRUE),
+        mean_exploration = mean(exploration, na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      tidyr::pivot_wider(
+        names_from = period,
+        values_from = c(mean_risk, mean_exploration)
+      ) %>%
+      dplyr::mutate(
+        risk_change = mean_risk_Post - mean_risk_Pre,
+        exploration_change = mean_exploration_Post - mean_exploration_Pre
+      )
+
+    ## Both arms are needed; a missing arm used to leave the estimates NA and
+    ## print "Unable to calculate DiD estimates".
+    treated_idx <- which(did_stats$treatment == "Treated")
+    control_idx <- which(did_stats$treatment == "Control")
+    if (length(treated_idx) != 1L || length(control_idx) != 1L) {
+      stop(sprintf(paste0("analyze_exploration_risk_shocks(): the DiD needs one treated ",
+                          "(strategy \"100\") and one control arm; found %d treated and %d ",
+                          "control. Strategies present: %s."),
+                   length(treated_idx), length(control_idx),
+                   paste(sort(unique(as.character(metrics$strategy))), collapse = ", ")),
+           call. = FALSE)
+    }
+    did_estimate_risk <- did_stats$risk_change[treated_idx] -
+      did_stats$risk_change[control_idx]
+    did_estimate_exploration <- did_stats$exploration_change[treated_idx] -
+      did_stats$exploration_change[control_idx]
+    if (!is.finite(did_estimate_risk) || !is.finite(did_estimate_exploration)) {
+      stop("analyze_exploration_risk_shocks(): the DiD estimate is not finite; an arm ",
+           "has no non-missing outcome in the pre- or post-shock period.", call. = FALSE)
+    }
+    if (debug) cat("  - DiD estimates calculated successfully\n")
+
+    if (nrow(failures) > 0) {
+      warning(sprintf(paste0("analyze_exploration_risk_shocks(): %d of 3 auxiliary ",
+                             "components failed and are NULL in the result (see ",
+                             "$failures): %s"),
+                      nrow(failures),
+                      paste(sprintf("%s: %s", failures$component, failures$message),
+                            collapse = "; ")),
+              call. = FALSE)
     }
     
     cat("\n=== EXPLORATION RISK DIFF-IN-DIFF ANALYSIS ===\n")
@@ -13138,10 +13109,11 @@ SaomNkRSienaBiEnv <- R6Class(
         exploration = did_estimate_exploration
       ),
       summary_stats = did_stats,
-      shock_time = shock_time
+      shock_time = shock_time,
+      failures = failures
     ))
-  }, 
-  
+  },
+
   # Clean implementation of simple exploration measures for SAOM analysis
   
   # Exploration analysis methods that work with bi_env_arr directly
@@ -13339,11 +13311,18 @@ SaomNkRSienaBiEnv <- R6Class(
         change = Post - Pre
       )
     
-    # Calculate DiD estimate
+    # Calculate DiD estimate. A missing arm or period used to leave it NA,
+    # which the plot subtitle printed as "DiD = 0.0000".
     did_estimate <- NA
     if (all(c("Treated", "Control") %in% did_data$treatment)) {
-      did_estimate <- did_data$change[did_data$treatment == "Treated"] - 
+      did_estimate <- did_data$change[did_data$treatment == "Treated"] -
         did_data$change[did_data$treatment == "Control"]
+    }
+    if (length(did_estimate) != 1L || !is.finite(did_estimate)) {
+      stop(sprintf(paste0("analyze_simple_exploration_shocks(): the DiD for '%s' cannot ",
+                          "be computed; it needs a treated (strategy \"100\") and a ",
+                          "control arm, each observed before and after the shock at ",
+                          "step %s."), metric, shock_time), call. = FALSE)
     }
     
     # Create plot
@@ -13352,7 +13331,7 @@ SaomNkRSienaBiEnv <- R6Class(
         aes(color = strategy),
         fun = mean,
         geom = "line",
-        size = 1.5
+        linewidth = 1.5
       ) +
       stat_summary(
         aes(fill = strategy),
@@ -13361,17 +13340,17 @@ SaomNkRSienaBiEnv <- R6Class(
         alpha = 0.2
       ) +
       geom_vline(xintercept = shock_time, linetype = "dashed", color = "gray50") +
-      scale_color_manual(values = c("0" = "#2C3E50", "100" = "#E74C3C")) +
-      scale_fill_manual(values = c("0" = "#2C3E50", "100" = "#E74C3C")) +
+      scale_color_manual(values = c("0" = "#0072B2", "100" = "#D55E00")) +
+      scale_fill_manual(values = c("0" = "#0072B2", "100" = "#D55E00")) +
       labs(
         title = paste("Simple Exploration Measure:", metric),
-        subtitle = sprintf("DiD = %.4f", ifelse(is.na(did_estimate), 0, did_estimate)),
+        subtitle = sprintf("DiD = %.4f", did_estimate),
         x = "Simulation Step",
         y = metric,
         color = "Strategy",
         fill = "Strategy"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(legend.position = "bottom")
     
     # Print results
@@ -13435,14 +13414,14 @@ SaomNkRSienaBiEnv <- R6Class(
     # Plot
     p <- ggplot(comp_time, aes(x = chain_step_id, y = n_ties, color = component_group)) +
       geom_line(size = 1.2) +
-      scale_color_manual(values = c("Old (1-8)" = "#2C3E50", "New (9-16)" = "#E74C3C")) +
+      scale_color_manual(values = c("Old (1-8)" = "#0072B2", "New (9-16)" = "#D55E00")) +
       labs(
         title = "Activity in Old vs New Components Over Time",
         x = "Simulation Step",
         y = "Number of Active Ties",
         color = "Component Type"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(legend.position = "bottom")
     
     print(p)
@@ -13567,16 +13546,31 @@ SaomNkRSienaBiEnv <- R6Class(
     treated_idx <- which(did_data$treatment == "Treated")
     control_idx <- which(did_data$treatment == "Control")
     
-    if (length(treated_idx) == 1 && length(control_idx) == 1 && 
+    ## An empty period/arm cell used to give did_estimate = NA, which the plot
+    ## subtitle then printed as "DiD = 0.0000".
+    if (length(treated_idx) == 1 && length(control_idx) == 1 &&
         !is.na(did_data$change[treated_idx]) && !is.na(did_data$change[control_idx])) {
       did_estimate <- did_data$change[treated_idx] - did_data$change[control_idx]
     } else {
-      did_estimate <- NA
+      empty <- did_summary_complete[did_summary_complete$n_obs == 0 |
+                                      is.na(did_summary_complete$mean_value), ]
+      stop(sprintf(paste0("analyze_simple_exploration_shocks_fixed(): the DiD for '%s' ",
+                          "cannot be computed; no data in %s (treated = strategy \"100\", ",
+                          "control = all others, shock at step %s)."),
+                   metric, paste(sprintf("%s/%s", empty$treatment, empty$period),
+                                 collapse = ", "), shock_time),
+           call. = FALSE)
     }
-    
+
     # Method 2: Use the did package (like K_AC analysis does)
-    # This is more robust and provides standard errors
+    # This is more robust and provides standard errors. It is a secondary
+    # estimate: if it fails the manual estimate above still stands, so the
+    # failure is returned in `did_error` and raised as a warning (it was
+    # cat() to the console, and the handler's NULL assignments were local).
+    did_overall <- NULL
+    did_error <- NULL
     if (!requireNamespace("did", quietly = TRUE)) {
+      did_error <- "package 'did' is not installed"
       cat("Note: Install the 'did' package for more robust DiD analysis\n")
     } else {
       # Prepare data for did package
@@ -13591,7 +13585,7 @@ SaomNkRSienaBiEnv <- R6Class(
         mutate(actor_id = as.numeric(as.character(actor_id)))
       
       # Run att_gt estimation
-      tryCatch({
+      did_error <- tryCatch({
         did_attgt <- did::att_gt(
           yname = 'value_mean',
           tname = 'chain_step_id',
@@ -13623,13 +13617,14 @@ SaomNkRSienaBiEnv <- R6Class(
           cat("\n=== DiD Package Results ===\n")
           print(summary(did_overall))
         }
-        
-      }, error = function(e) {
-        cat("Error using did package:", e$message, "\n")
-        did_attgt <- NULL
-        did_dyna <- NULL
+        NULL
+      }, error = function(e) conditionMessage(e))
+      if (!is.null(did_error)) {
         did_overall <- NULL
-      })
+        warning("analyze_simple_exploration_shocks_fixed(): the 'did' package estimate ",
+                "failed (did_results is NULL; the manual DiD estimate is unaffected): ",
+                did_error, call. = FALSE)
+      }
     }
     
     # Create plot
@@ -13638,7 +13633,7 @@ SaomNkRSienaBiEnv <- R6Class(
         aes(color = strategy),
         fun = mean,
         geom = "line",
-        size = 1.5
+        linewidth = 1.5
       ) +
       stat_summary(
         aes(fill = strategy),
@@ -13647,17 +13642,17 @@ SaomNkRSienaBiEnv <- R6Class(
         alpha = 0.2
       ) +
       geom_vline(xintercept = shock_time, linetype = "dashed", color = "gray50") +
-      scale_color_manual(values = c("0" = "#2C3E50", "100" = "#E74C3C")) +
-      scale_fill_manual(values = c("0" = "#2C3E50", "100" = "#E74C3C")) +
+      scale_color_manual(values = c("0" = "#0072B2", "100" = "#D55E00")) +
+      scale_fill_manual(values = c("0" = "#0072B2", "100" = "#D55E00")) +
       labs(
         title = paste("Simple Exploration Measure:", metric),
-        subtitle = sprintf("DiD = %.4f", ifelse(is.na(did_estimate), 0, did_estimate)),
+        subtitle = sprintf("DiD = %.4f", did_estimate),
         x = "Simulation Step",
         y = metric,
         color = "Strategy",
         fill = "Strategy"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(legend.position = "bottom")
     
     # Print results
@@ -13695,7 +13690,8 @@ SaomNkRSienaBiEnv <- R6Class(
       did_summary = did_summary_complete,
       did_data = did_data,
       did_estimate = did_estimate,
-      did_results = if (exists("did_overall")) did_overall else NULL
+      did_results = did_overall,
+      did_error = did_error
     ))
   },
   
@@ -13942,7 +13938,7 @@ SaomNkRSienaBiEnv <- R6Class(
       
       # Add shock region
       annotate("rect", xmin = -0.5, xmax = Inf, ymin = -Inf, ymax = Inf,
-               fill = 'darkorange', alpha = 0.05) +
+               fill = 'grey55', alpha = 0.05) +
       
       # Add confidence bands and estimates
       geom_ribbon(aes(ymin = conf.low, ymax = conf.high), 
@@ -13964,7 +13960,7 @@ SaomNkRSienaBiEnv <- R6Class(
         subtitle = sim_title_str
       ) +
       
-      theme_minimal() +
+      theme_searchnet() +
       theme(
         strip.background = element_rect(fill = "gray90", color = "gray50"),
         strip.text = element_text(size = 10, face = "bold"),
@@ -14029,7 +14025,7 @@ SaomNkRSienaBiEnv <- R6Class(
         
         # Add shock region
         annotate("rect", xmin = -0.5, xmax = Inf, ymin = -Inf, ymax = Inf,
-                 fill = 'darkorange', alpha = 0.05) +
+                 fill = 'grey55', alpha = 0.05) +
         
         # Add estimates
         geom_ribbon(aes(ymin = conf.low, ymax = conf.high), 
@@ -14047,7 +14043,7 @@ SaomNkRSienaBiEnv <- R6Class(
         labs(x = NULL, y = "Avg Treatment Effect on Treated (ATT)",
              title = metric) +
         
-        theme_minimal() +
+        theme_searchnet() +
         theme(
           strip.background = element_rect(fill = "gray90"),
           strip.text = element_text(face = "bold"),
@@ -14598,40 +14594,41 @@ SaomNkRSienaBiEnv <- R6Class(
     # Test 1: Try with sorted data
     exp_did_sorted <- exp_did %>% arrange(actor_id, chain_step_id)
     
-    cat("\nTest 1: With explicitly sorted data\n")
-    tryCatch({
-      test1 <- did::att_gt(
-        yname = 'value_mean',
-        tname = 'chain_step_id',
-        idname = 'actor_id',
-        gname = 'treatment_group',
-        data = exp_did_sorted,
-        panel = TRUE,
-        control_group = 'notyettreated',
-        est_method = "dr"
-      )
-      cat("Success!\n")
-    }, error = function(e) {
-      cat("Error:", e$message, "\n")
-    })
-    
-    # Test 2: Try with reg method instead of dr
-    cat("\nTest 2: With 'reg' estimation method\n")
-    tryCatch({
-      test2 <- did::att_gt(
-        yname = 'value_mean',
-        tname = 'chain_step_id',
-        idname = 'actor_id',
-        gname = 'treatment_group',
-        data = exp_did,
-        panel = TRUE,
-        control_group = 'notyettreated',
-        est_method = "reg"  # Changed from "dr"
-      )
-      cat("Success!\n")
-    }, error = function(e) {
-      cat("Error:", e$message, "\n")
-    })
+    ## Each test's outcome is returned in `att_gt_tests` and failures are
+    ## raised as a warning; they used to be cat() to the console only, so a
+    ## caller reading the returned list could not tell whether att_gt ran.
+    .try_att_gt <- function(label, data, est_method) {
+      cat("\n", label, "\n", sep = "")
+      err <- tryCatch({
+        did::att_gt(
+          yname = 'value_mean',
+          tname = 'chain_step_id',
+          idname = 'actor_id',
+          gname = 'treatment_group',
+          data = data,
+          panel = TRUE,
+          control_group = 'notyettreated',
+          est_method = est_method
+        )
+        cat("Success!\n")
+        NA_character_
+      }, error = function(e) {
+        cat("Error:", conditionMessage(e), "\n")
+        conditionMessage(e)
+      })
+      data.frame(test = label, ok = is.na(err), error = err,
+                 stringsAsFactors = FALSE)
+    }
+    att_gt_tests <- rbind(
+      .try_att_gt("Test 1: With explicitly sorted data", exp_did_sorted, "dr"),
+      .try_att_gt("Test 2: With 'reg' estimation method", exp_did, "reg")
+    )
+    if (!all(att_gt_tests$ok)) {
+      warning(sprintf("diagnose_did_detailed(): %d of %d att_gt() tests failed (see $att_gt_tests): %s",
+                      sum(!att_gt_tests$ok), nrow(att_gt_tests),
+                      paste(att_gt_tests$error[!att_gt_tests$ok], collapse = "; ")),
+              call. = FALSE)
+    }
     
     # Test 3: Check if it's a data type issue
     cat("\n=== DATA TYPE CHECK ===\n")
@@ -14645,7 +14642,8 @@ SaomNkRSienaBiEnv <- R6Class(
       k_ac_data = k_ac_did,
       exp_data = exp_did,
       k_ac_var = k_ac_var,
-      exp_var = exp_var
+      exp_var = exp_var,
+      att_gt_tests = att_gt_tests
     ))
   }
  
@@ -14963,25 +14961,49 @@ SaomNkRSienaBiEnv <- R6Class(
     panel <- panel[panel$actor_id %in% c(treatment_ids, control_ids), ]
 
     # Parallel trends test
+    ## When the requested test cannot be computed, parallel_trends_p stays NA
+    ## but the reason is now recorded in parallel_trends_status and raised as
+    ## a warning. It used to be NA with no reason, and the verbose line
+    ## printed it as "p-value: -1 (FAIL - trends not parallel)".
     parallel_trends_p <- NA
+    parallel_trends_status <- "not requested"
     if (parallel_trends_test) {
       pre_data <- panel[panel$post == 0, ]
-      if (nrow(pre_data) > 10) {
+      if (nrow(pre_data) <= 10) {
+        parallel_trends_status <- sprintf(
+          "not computed: %d pre-treatment observation(s); more than 10 needed",
+          nrow(pre_data))
+      } else {
         pt_model <- tryCatch(
           lm(outcome_val ~ chain_step_id * treated, data = pre_data),
-          error = function(e) NULL
+          error = function(e) e
         )
-        if (!is.null(pt_model)) {
+        if (inherits(pt_model, "error")) {
+          parallel_trends_status <- paste("not computed: the pre-period regression failed:",
+                                          conditionMessage(pt_model))
+        } else {
           coefs <- summary(pt_model)$coefficients
           interaction_name <- 'chain_step_id:treated'
           if (interaction_name %in% rownames(coefs)) {
             parallel_trends_p <- coefs[interaction_name, 'Pr(>|t|)']
+            parallel_trends_status <- "computed"
+          } else {
+            parallel_trends_status <- paste(
+              "not computed: the pre-period time x treated interaction is not",
+              "estimable (collinear, or one arm has no pre-period variation in time)")
           }
         }
-        if (verbose) {
-          cat(sprintf("Parallel trends test p-value: %.4f %s\n",
-                      ifelse(is.na(parallel_trends_p), -1, parallel_trends_p),
-                      ifelse(!is.na(parallel_trends_p) && parallel_trends_p > 0.05,
+      }
+      if (is.na(parallel_trends_p)) {
+        warning("did_shock_analysis(): parallel-trends test ", parallel_trends_status,
+                "; parallel_trends_p is NA.", call. = FALSE)
+      }
+      if (verbose) {
+        if (is.na(parallel_trends_p)) {
+          cat("Parallel trends test", parallel_trends_status, "\n")
+        } else {
+          cat(sprintf("Parallel trends test p-value: %.4f %s\n", parallel_trends_p,
+                      ifelse(parallel_trends_p > 0.05,
                              "(PASS)", "(FAIL - trends not parallel)")))
         }
       }
@@ -15018,6 +15040,7 @@ SaomNkRSienaBiEnv <- R6Class(
       ci_lower = did_ci[1],
       ci_upper = did_ci[2],
       parallel_trends_p = parallel_trends_p,
+      parallel_trends_status = parallel_trends_status,
       treatment_step = treatment_step,
       outcome_var = outcome_var,
       n_treated = length(treatment_ids),
@@ -15051,9 +15074,9 @@ SaomNkRSienaBiEnv <- R6Class(
                                          treatment_step, length(treatment_ids),
                                          length(control_ids)),
                       x = 'Chain Step', y = outcome_var, color = 'Group') +
-        ggplot2::theme_bw() +
-        ggplot2::scale_color_manual(values = c('Control' = '#4C72B0',
-                                               'Treatment' = '#DD8452'))
+        theme_searchnet() +
+        ggplot2::scale_color_manual(values = c('Control' = '#0072B2',
+                                               'Treatment' = '#E69F00'))
 
       results$plot <- p
       if (verbose) print(p)
@@ -15064,7 +15087,7 @@ SaomNkRSienaBiEnv <- R6Class(
   },
 
   # =========================================================================
-  # Mean-field equilibrium diagnostic (Theorem 4: Brock-Durlauf reduction)
+  # Mean-field equilibrium diagnostic (Property 5: Brock-Durlauf reduction)
   # =========================================================================
   #
   # Compares the analytical mean-field fixed point m* of the SaoMNK ministep
@@ -15150,12 +15173,14 @@ SaomNkRSienaBiEnv <- R6Class(
     ## and Option C. They are different objects and only one of them is the
     ## law of the simulated process:
     ##
-    ##   BINDING (Option B): the fixed point of the map the simulation
-    ##   actually obeys. RSiena's inPop evaluation delta is sqrt-form, so the
-    ##   equilibrium solves p = sigmoid(beta*(h_b + theta*sqrt(M*p + 1))).
-    ##   Identified empirically on 2026-08-14: against exact per-column Gibbs
-    ##   laws, the sqrt family matched the simulated stationary state within
-    ##   2 SD while linear and squared readings were rejected at |z| > 80.
+    ##   BINDING (Option B): the mean-field fixed point of the process the
+    ##   simulation runs. Two-mode inPop is linear (RSiena 1.5.0), so adding
+    ##   tie (i,j) changes the objective by Delta = h_b + theta*(n_{-i,j} + 1),
+    ##   and the ministep chooses among N toggles and no change, so the
+    ##   per-tie law is F_N(Delta), not sigmoid(Delta); see
+    ##   saomnk_inpop_self_consistency(). Re-derived 2026-10-07: the
+    ##   square-root map used before was identified on the replayed chain
+    ##   (audit section 7.1), whose terminal state is a draw near the start.
     ##
     ##   REFERENCE (Option C): the zero-field linear Curie-Weiss roots from
     ##   solve_mean_field(). Valid as a comparison only in L16's linearised
@@ -15169,7 +15194,8 @@ SaomNkRSienaBiEnv <- R6Class(
     p_binding <- saomnk_inpop_self_consistency(beta        = 1 / T,
                                                theta_inPop = theta_inPop,
                                                h_b         = h_b,
-                                               M           = self$M)
+                                               M           = self$M,
+                                               N           = self$N)
     m_binding_spin          <- 2 * p_binding - 1
     discrepancy_adopt       <- p_emp - p_binding
     discrepancy_spin        <- m_emp_spin - m_binding_spin
@@ -15248,8 +15274,7 @@ SaomNkRSienaBiEnv <- R6Class(
   # the regime as "reversible" (no path-dependence) or "hysteretic"
   # (strategic irreversibility).
   #
-  # Inspired by D:/industrial_policy_AMR/amr_ising_hysteresis.R; ported into
-  # the SaoMNK API so that the underlying simulator is the package's own
+  # Ported into the SaoMNK API so that the underlying simulator is the package's own
   # SAOM ministep (and thus inherits all RSiena effects, not just NK + 10
   # hand-coded social terms).
   #
@@ -15264,13 +15289,19 @@ SaomNkRSienaBiEnv <- R6Class(
   #   replicate (default 30).
   # @param hysteresis_threshold Numeric (>=0).  Loop-area threshold for the
   #   reversible/hysteretic classification (default 0.02; in spin*T units).
-  # @param run_seed Integer (or NULL).  Base seed; replicate r at temperature
-  #   step k uses run_seed + 1000*k + r.
+  # @param run_seed Integer.  Base seed; the initial-draw and run seeds of
+  #   replicate r at step k of each sweep direction are derived from it by
+  #   .searchnet_seed() with distinct purposes, so no two streams coincide.
   # @param verbose Logical.
   # @return A list with components:
-  #   forward_path, reverse_path: data.frames (T, m_adopt, m_spin, sd_m)
+  #   forward_path, reverse_path: data.frames (T, m_adopt, sd_m, m_spin,
+  #     n_ok = replicates that succeeded at that T)
   #   loop_area: trapezoidal hysteresis area in (spin * T) units
-  #   regime_classification: "reversible" or "hysteretic"
+  #   regime_classification: "reversible", "hysteretic", or NA when the
+  #     loop area is undefined
+  #   failures: data.frame (direction, step, rep, T, stage, message) of failed
+  #     replicates; excluded from the means and reported by a warning. A
+  #     step at which every replicate fails stops the sweep.
   #   T_min, T_max, n_steps, n_reps_per_step
   ising_hysteresis_sweep = function(T_min = 0.1,
                                     T_max = 2.0,
@@ -15321,44 +15352,82 @@ SaomNkRSienaBiEnv <- R6Class(
     }
 
     ## ---- Helper: run one simulation, return adoption fraction ------------
-    run_one_T <- function(T_val, init_matrix, seed) {
+    ## A failed replicate returns p = NA and bi = NULL and is recorded in
+    ## `failures`. It used to return the STARTING matrix as if it were the
+    ## result, so a failed run reported the previous state's adoption and was
+    ## carried forward as the next step's state (silent unless verbose).
+    failures <- data.frame(direction = character(0), step = integer(0),
+                           rep = integer(0), T = numeric(0),
+                           stage = character(0), message = character(0),
+                           stringsAsFactors = FALSE)
+    run_one_T <- function(T_val, init_matrix, init_seed, seed, direction, k, r) {
+      .fail <- function(stage, e) {
+        failures[nrow(failures) + 1L, ] <<- list(direction, as.integer(k),
+                                                 as.integer(r), T_val, stage,
+                                                 conditionMessage(e))
+        if (verbose) {
+          message("ising_hysteresis_sweep: replicate failed (", stage,
+                  ") at T = ", T_val, ": ", conditionMessage(e))
+        }
+        list(p = NA_real_, bi = NULL)
+      }
       sm_T <- scale_sm_by_inv_T(structure_model, T_val)
 
       params <- list(
         M         = self$M,
         N         = self$N,
         BI_PROB   = if (!is.null(self$BI_PROB)) self$BI_PROB else 0.3,
-        rand_seed = as.integer(seed),
+        rand_seed = as.integer(init_seed),
         name      = "_hysteresis_",
         dir_output = tempdir(),
         init_matrix = init_matrix
       )
 
-      env_loc <- tryCatch(
-        SaomNkRSienaBiEnv$new(params),
-        error = function(e) NULL
-      )
-      if (is.null(env_loc)) return(list(p = NA_real_, bi = init_matrix))
+      env_loc <- tryCatch(SaomNkRSienaBiEnv$new(params),
+                          error = function(e) e)
+      if (inherits(env_loc, "error")) return(.fail("initialize", env_loc))
 
-      ok <- tryCatch({
+      err <- tryCatch({
         env_loc$search_rsiena(
           structure_model      = sm_T,
           iterations_per_actor = as.integer(iterations_per_actor),
           run_seed             = as.integer(seed),
           verbose              = FALSE
         )
-        TRUE
-      }, error = function(e) {
-        if (verbose) {
-          message("ising_hysteresis_sweep: replicate failed at T = ",
-                  T_val, ": ", conditionMessage(e))
-        }
-        FALSE
-      })
+        NULL
+      }, error = function(e) e)
+      if (!is.null(err)) return(.fail("search_rsiena", err))
 
-      bi_out <- if (ok) env_loc$bipartite_matrix else init_matrix
-      if (!is.matrix(bi_out)) bi_out <- init_matrix
+      bi_out <- env_loc$bipartite_matrix
+      if (!is.matrix(bi_out))
+        return(.fail("result", simpleError("bipartite_matrix not populated after the run")))
       list(p = mean(bi_out), bi = bi_out)
+    }
+
+    ## One temperature step: n_reps_per_step replicates from `state`. The
+    ## state carried forward is the last SUCCESSFUL replicate's. A step with
+    ## no successful replicate stops the sweep: continuing would carry an
+    ## unsimulated state into every later step.
+    run_step <- function(T_val, state, direction, d, k) {
+      reps_p  <- rep(NA_real_, n_reps_per_step)
+      last_bi <- NULL
+      for (r in seq_len(n_reps_per_step)) {
+        out <- run_one_T(T_val, state,
+                         .searchnet_seed(run_seed, "hysteresis:init", d, k, r),
+                         .searchnet_seed(run_seed, "hysteresis:run", d, k, r),
+                         direction, k, r)
+        reps_p[r] <- out$p
+        if (!is.null(out$bi)) last_bi <- out$bi
+      }
+      if (is.null(last_bi)) {
+        f <- failures[nrow(failures), ]
+        stop(sprintf(paste0("ising_hysteresis_sweep: all %d replicate(s) failed at ",
+                            "T = %.4g (%s sweep, step %d); the sweep cannot continue ",
+                            "from an unsimulated state. Last failure (%s): %s"),
+                     n_reps_per_step, T_val, direction, k, f$stage, f$message),
+             call. = FALSE)
+      }
+      list(reps_p = reps_p, state = last_bi)
     }
 
     ## ---- Forward sweep:  T_min -> T_max ---------------------------------
@@ -15376,22 +15445,18 @@ SaomNkRSienaBiEnv <- R6Class(
                       sd_m    = NA_real_,
                       m_spin  = NA_real_)
 
+    fwd$n_ok <- NA_integer_
     for (k in seq_along(T_seq_fwd)) {
-      reps_p <- numeric(n_reps_per_step)
-      last_bi <- state
-      for (r in seq_len(n_reps_per_step)) {
-        seed_kr <- as.integer(run_seed + 1000L * k + r)
-        out <- run_one_T(T_seq_fwd[k], state, seed_kr)
-        reps_p[r] <- out$p
-        last_bi   <- out$bi
-      }
+      st <- run_step(T_seq_fwd[k], state, "forward", 1L, k)
+      reps_p <- st$reps_p
       fwd$m_adopt[k] <- mean(reps_p, na.rm = TRUE)
       fwd$sd_m[k]    <- if (n_reps_per_step > 1L) {
         stats::sd(reps_p, na.rm = TRUE)
       } else 0
       fwd$m_spin[k]  <- 2 * fwd$m_adopt[k] - 1
-      ## Carry the last replicate's frozen state forward.
-      state <- last_bi
+      fwd$n_ok[k]    <- sum(is.finite(reps_p))
+      ## Carry the last successful replicate's frozen state forward.
+      state <- st$state
       if (verbose) {
         cat(sprintf("[fwd %2d/%d] T=%.4f m_adopt=%.4f (+-%.4f)\n",
                     k, length(T_seq_fwd), T_seq_fwd[k],
@@ -15406,21 +15471,17 @@ SaomNkRSienaBiEnv <- R6Class(
                          sd_m    = NA_real_,
                          m_spin  = NA_real_)
 
+    rev_df$n_ok <- NA_integer_
     for (k in seq_along(T_seq_rev)) {
-      reps_p <- numeric(n_reps_per_step)
-      last_bi <- state
-      for (r in seq_len(n_reps_per_step)) {
-        seed_kr <- as.integer(run_seed + 1000L * (length(T_seq_fwd) + k) + r)
-        out <- run_one_T(T_seq_rev[k], state, seed_kr)
-        reps_p[r] <- out$p
-        last_bi   <- out$bi
-      }
+      st <- run_step(T_seq_rev[k], state, "reverse", 2L, k)
+      reps_p <- st$reps_p
       rev_df$m_adopt[k] <- mean(reps_p, na.rm = TRUE)
       rev_df$sd_m[k]    <- if (n_reps_per_step > 1L) {
         stats::sd(reps_p, na.rm = TRUE)
       } else 0
       rev_df$m_spin[k]  <- 2 * rev_df$m_adopt[k] - 1
-      state <- last_bi
+      rev_df$n_ok[k]    <- sum(is.finite(reps_p))
+      state <- st$state
       if (verbose) {
         cat(sprintf("[rev %2d/%d] T=%.4f m_adopt=%.4f (+-%.4f)\n",
                     k, length(T_seq_rev), T_seq_rev[k],
@@ -15443,11 +15504,22 @@ SaomNkRSienaBiEnv <- R6Class(
       loop_area <- NA_real_
     }
 
-    regime_classification <- if (is.finite(loop_area) &&
-                                 loop_area >= hysteresis_threshold) {
+    ## An undefined loop area is not evidence of reversibility.
+    regime_classification <- if (!is.finite(loop_area)) {
+      NA_character_
+    } else if (loop_area >= hysteresis_threshold) {
       "hysteretic"
     } else {
       "reversible"
+    }
+
+    if (nrow(failures) > 0L) {
+      warning(sprintf(paste0("ising_hysteresis_sweep: %d of %d replicates failed and ",
+                             "are excluded from the step means (see $failures and ",
+                             "the n_ok columns). First failure (%s): %s"),
+                      nrow(failures), 2L * length(T_seq_fwd) * n_reps_per_step,
+                      failures$stage[1], failures$message[1]),
+              call. = FALSE)
     }
 
     list(
@@ -15455,6 +15527,7 @@ SaomNkRSienaBiEnv <- R6Class(
       reverse_path          = rev_df,
       loop_area             = loop_area,
       regime_classification = regime_classification,
+      failures              = failures,
       T_min                 = T_min,
       T_max                 = T_max,
       n_steps               = as.integer(n_steps),

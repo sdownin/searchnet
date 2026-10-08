@@ -9,7 +9,7 @@
 #      counts, ruggedness sweeps) directly in searchnet.
 #
 #   2. Serve as an EXTERNAL reference implementation against which the
-#      SaoMNK reduction (Theorem 1) can be verified.  The environment
+#      SaoMNK reduction (Property 1) can be verified.  The environment
 #      method `verify_nk_equivalence()` checks SaoMNK's landscape array for
 #      internal consistency; `nk_verify_reduction()` here is stronger: it
 #      builds a Kauffman landscape from scratch and confirms that a
@@ -488,7 +488,7 @@ nk_sweep_K <- function(N = 12, K_values = 0:(N - 1),
 #'
 #' Emits the environment and structure-model settings that make a
 #' single-actor SaoMNK environment search the supplied NK landscape.  This is
-#' the constructive content of the Reduction theorem (Theorem 1): NK is the
+#' the constructive content of the Reduction property (Property 1): NK is the
 #' \eqn{M = 1}, \eqn{\beta \to \infty} special case of SaoMNK.
 #'
 #' @param landscape An \code{"nk_landscape"} object.

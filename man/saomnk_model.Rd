@@ -93,7 +93,8 @@ entry in \code{influence_arrays}.  Names must match.  If \code{NULL}
 
 \item{epistasis_matrix, epistasis_weight, epistasis_matrices, epistasis_weights}{\strong{Deprecated} in 0.4.0; renamed to the four \code{influence_*}
 arguments above.  The old names still work and are passed through
-unchanged, but emit a warning.  The rename corrects a semantic
+unchanged, with a deprecation warning shown once per session for each
+old name.  The rename corrects a semantic
 conflation: \eqn{W} is an influence (interaction) matrix; epistasis is
 what it produces.}
 

@@ -1,0 +1,197 @@
+---
+title: "Foundational Search Models as Restrictions of SAOM-NK"
+author: "Stephen Downing"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Foundational Search Models as Restrictions of SAOM-NK}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 11, fig.height = 9,
+                      out.width = "100%")
+library(searchnet)
+have_yaml <- requireNamespace("yaml", quietly = TRUE)
+knitr::opts_chunk$set(eval = have_yaml)
+```
+
+The SAOM-NK objective is a sum over classes of effects. Each class is one
+summand: complementarity (the fitness term under an influence matrix `W`),
+scope (actor degree), crowding (components other actors hold), contact
+(four-cycles between actor pairs), and imitation (co-holder performance
+similarity). Each class moves one channel of the \{K\} system and stands for a
+construct.
+
+Many foundational models of search are this objective with some classes
+switched off and some restrictions imposed. The translation registry records
+those statements, one entry per model, with the restriction, the term each
+class becomes, the Lean declarations behind the statement, and what the
+statement does not cover. This vignette shows how to browse the registry,
+generate a runnable special case, translate your own model, compare models,
+draw the translation, add an entry, and reach the Lean proofs.
+
+## The classes
+
+```{r classes}
+rosetta_classes()[, c("id", "effects", "k_channel", "lean_stat")]
+```
+
+## Browse the foundational models
+
+```{r entries}
+e <- rosetta_entries()
+e[, c("id", "relation", "active", "off")]
+```
+
+Relations follow a fixed vocabulary: a `special-case` is recovered exactly
+under its restrictions, a `special-case-linearized` after a stated
+approximation, an `equilibrium-characterization` is a solution concept the
+stationary law satisfies, a `comparison` is related but not nested, a
+`translation` maps a theory construct to statistics with no reduction proved,
+and `not-carried` records a construct the framework does not represent.
+
+```{r one-entry}
+rosetta_entry("nk-adaptive-walk")
+```
+
+## Generate a special case and run it
+
+`rosetta_model()` turns an entry's restriction into a specification that
+searchnet runs. The NK restriction has one actor and greedy choice; searchnet
+runs it as the classical adaptive walk on the landscape with the same `N`,
+`K` and seed.
+
+```{r nk-run}
+nk <- rosetta_model("nk-adaptive-walk", N = 6, K = 2, seed = 3)
+nk
+r <- rosetta_run(nk)
+r$engine
+r$B
+```
+
+A multi-actor restriction runs on the SAOM engine. Here, the two-mode SAOM
+with the influence matrix set to zero:
+
+```{r saom-run}
+s <- rosetta_model("plain-saom-two-mode", M = 3, N = 5)
+r2 <- rosetta_run(s, steps_per_actor = 3)
+r2$B
+```
+
+The same model in ordinary searchnet code, to use without the registry:
+
+```{r r-code}
+cat(rosetta_r_code(s))
+```
+
+## Translate your own model
+
+Write a model the usual way. `rosetta_translate()` decomposes it class by
+class and gives a nesting verdict for every registry entry. A class is
+included in your model when it has an effect of that class not held fixed at
+zero. Your model nests an entry when it includes every class the entry has
+active, linearized or fixed, and uses the entry's revision rule if the entry
+sets one. The verdict is `nests`, `nests_in_limit` (reached as M or beta
+tends to infinity), `conditional` (the classes are there but the revision
+rule differs), or `does_not_nest`.
+
+```{r translate}
+mine <- saomnk_model(density = -1, popularity = -0.2,
+                     influence_matrix = saomnk_block_diagonal(6, 2),
+                     c4 = list(effect = "cycle4", parameter = 0.1))
+tr <- rosetta_translate(mine)
+tr
+tr$nesting[, c("id", "verdict", "missing", "conditions", "limits")]
+tr$contains[, c("id", "differences")]
+```
+
+Read `differences` as the switches that take your model to the entry: the
+classes to set to zero and the restrictions to impose. A model built with
+`saomnk_model()` runs RSiena's multinomial ministep, so entries proved for
+single-flip revision come out `conditional`.
+
+## Compare models
+
+```{r compare}
+rosetta_compare(list("nk-adaptive-walk", "brock-durlauf-social-interactions",
+                     "plain-saom-two-mode", mine = mine))
+```
+
+## Draw the translation
+
+Row I writes the objective by class: one chip per class, the effects it
+contains, and its construct; classes that move the same \{K\} channel sit
+side by side under one black badge naming the channel (crowding and contact
+share "Sociality K_AA"). Row II
+rewrites a foundational model term by term in the same classes, with `+ 0`
+and an outlined chip for each class it switches off. Row III shows the
+bipartite state of a short seeded run of the restriction (circles are
+actors, squares are components), the influence matrix `W`, and its binary
+pattern `1[W != 0]` off the diagonal (the engine's XWX sums over
+`j != h`), whose row counts are the K that a binary NK influence
+pattern records.
+
+```{r plot-nk}
+rosetta_plot(NULL, compare = "nk-adaptive-walk")
+```
+
+```{r plot-mine}
+rosetta_plot(mine, compare = "brock-durlauf-social-interactions")
+```
+
+## Add your own entry
+
+`rosetta_new_entry()` writes a template from a model. Fill in the citation,
+relation, statement and what the statement does not cover, then validate.
+Validation reports errors (schema, ids, Lean names, unregistered classes,
+em-dashes, British spelling) separately from advisory measurements (for
+example, an entry drafted by a model and not yet reviewed).
+
+```{r new-entry}
+d <- file.path(tempdir(), "my_registry")
+dir.create(file.path(d, "entries"), recursive = TRUE, showWarnings = FALSE)
+file.copy(system.file("rosetta", "classes.yaml", package = "searchnet"), d)
+f <- rosetta_new_entry("my-congestion-theory", from = mine, dir = file.path(d, "entries"))
+rosetta_validate(path = d)
+```
+
+A new statistic can join as its own class for the session:
+
+```{r register}
+rosetta_register_class("prestige", effects = "altX", k_channel = "K_CA",
+                       construct = "status of components")
+rosetta_classes()$id
+rosetta_reset_classes()
+```
+
+## Link to Lean
+
+`rosetta_lean()` lists the declarations an entry names, with their statements
+from the Lean registry, and writes an instance file with
+`lean_export_model()` where the library supports the model. For the NK
+restriction the instance proves that the NK term is NK fitness and that greedy
+search is the zero-noise limit; check it with `lean_check()` when Lean is
+installed (see `vignette("saomnk-lean")`).
+
+```{r lean}
+l <- rosetta_lean("nk-adaptive-walk")
+l$declarations[, c("decl", "statement")]
+basename(l$instance)
+```
+
+## Export for other tools
+
+`rosetta_export_json()` writes the classes and entries as JSON, and
+`rosetta_model_to_json()` and `rosetta_model_from_json()` carry a model
+specification between R and a front end.
+
+```{r json}
+js <- rosetta_model_to_json(s, pretty = FALSE)
+js
+identical(rosetta_model_from_json(js)$N, s$N)
+```

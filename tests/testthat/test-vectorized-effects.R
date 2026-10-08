@@ -11,7 +11,12 @@
 
 context("Vectorized effect computations")
 
-test_that("vectorized simEgoInDist2 matches loop version", {
+## The two distance-2 tests below check matrix algebra for distance-2 reach in
+## the actor projection. Until 2026-10-04 the simEgoInDist2 column of
+## get_struct_mod_stats_mat_from_bi_mat() was built on it, and the first test
+## was named after simEgoInDist2; RSiena's simEgoInDist2 is a different
+## statistic and is now pinned in test-structural-stats-vs-rsiena.R.
+test_that("distance-2 reach in the actor projection is a binary adjacency", {
   set.seed(42)
   M <- 6; N <- 10
   B <- matrix(sample(0:1, M*N, replace=TRUE, prob=c(0.6, 0.4)), M, N)
@@ -59,35 +64,49 @@ test_that("dist2 via matrix algebra matches brute-force loop", {
   expect_equal(dist2_vec, dist2_loop)
 })
 
-test_that("cycle4 uses cached social projection", {
+## The two cycle4 tests that stood here until 2026-09-15 compared
+## rowSums((XXt %*% XXt) * XXt) with diag(XXt^3), i.e. the formula with itself,
+## and neither is RSiena's statistic. They are replaced by a brute-force count;
+## agreement with RSiena's own siena07 target is pinned in
+## test-structural-stats-vs-rsiena.R.
+
+test_that("cycle4 actor statistic equals half the four-cycles through the actor", {
   set.seed(42)
-  M <- 5; N <- 8
-  B <- matrix(sample(0:1, M*N, replace=TRUE, prob=c(0.5, 0.5)), M, N)
+  for (trial in 1:20) {
+    M <- sample(3:7, 1); N <- sample(3:8, 1)
+    B <- matrix(sample(0:1, M*N, replace=TRUE), M, N)
 
-  XXt <- B %*% t(B)
-  diag(XXt) <- 0
+    ## Implementation formula (R/saomnk-base.R)
+    ov <- B %*% t(B); diag(ov) <- 0
+    s_impl <- rowSums(choose(ov, 2)) / 2
 
-  # cycle4 = diag(XXt %*% XXt %*% XXt) / 6 per RSiena convention
-  # Or simplified: rowSums((XXt %*% XXt) * XXt)
-  c4_full <- rowSums((XXt %*% XXt) * XXt)
+    ## Brute force: a four-cycle through actor i is an unordered pair of
+    ## components {j, l} held by i and by some other actor k.
+    s_brute <- numeric(M)
+    for (i in seq_len(M)) {
+      for (k in setdiff(seq_len(M), i)) {
+        shared <- which(B[i, ] == 1 & B[k, ] == 1)
+        s_brute[i] <- s_brute[i] + choose(length(shared), 2)
+      }
+    }
+    expect_equal(s_impl, s_brute / 2)
 
-  # Verify it's a valid numeric vector
-  expect_length(c4_full, M)
-  expect_true(all(is.finite(c4_full)))
+    ## Network level: each four-cycle has two actors, so the actor statistics
+    ## sum to the number of distinct four-cycles.
+    n_cycles <- 0
+    for (a in 1:(M - 1)) for (b in (a + 1):M)
+      n_cycles <- n_cycles + choose(sum(B[a, ] * B[b, ]), 2)
+    expect_equal(sum(s_impl), n_cycles)
+  }
 })
 
-test_that("cycle4 is symmetric in its inputs", {
-  set.seed(77)
-  M <- 6; N <- 10
-  B <- matrix(sample(0:1, M*N, replace=TRUE, prob=c(0.5, 0.5)), M, N)
-
-  XXt <- B %*% t(B); diag(XXt) <- 0
-
-  # cycle4 via two equivalent computations
-  c4_a <- rowSums((XXt %*% XXt) * XXt)
-  c4_b <- diag(XXt %*% XXt %*% XXt)
-
-  expect_equal(c4_a, c4_b)
+test_that("cycle4 is zero when no two actors share two components", {
+  B <- diag(4)                       # every actor holds one distinct component
+  ov <- B %*% t(B); diag(ov) <- 0
+  expect_equal(rowSums(choose(ov, 2)) / 2, rep(0, 4))
+  ## The pre-2026-09-15 formula kept the diagonal and reported degenerate walks.
+  S <- B %*% t(B)
+  expect_true(any(rowSums((S %*% S) * S) / 2 != 0))
 })
 
 test_that("diff-based bi_env_arr reconstruction is correct", {

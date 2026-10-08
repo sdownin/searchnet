@@ -161,7 +161,11 @@
 #'   \code{theta_matrix} is supplied.
 #' @param structure_model A structure model list (as built by
 #'   \code{\link{saomnk_model}}). Ignored if \code{theta_matrix} is supplied.
-#' @param iterations Integer. Number of ministeps (rows of the theta matrix).
+#' @param iterations Integer. Rows of the theta matrix: a time grid over one
+#'   unit of model time, and \code{iterations / M} is the summed basic rate
+#'   per actor when the matrix is passed to \code{saomnk_run()}. Since 0.11.0
+#'   a row is not a ministep; each block of identical rows is one simulated
+#'   segment, at most 50 per run.
 #' @param changes A list of change specifications. Each element is a list with:
 #'   \describe{
 #'     \item{\code{effect}}{Character. Effect name (RSiena shortName, e.g.
@@ -316,7 +320,11 @@ saomnk_theta_ramp <- function(env, structure_model, iterations, changes,
 #'   \code{theta_matrix} is supplied.
 #' @param structure_model A structure model list. Ignored if
 #'   \code{theta_matrix} is supplied.
-#' @param iterations Integer. Number of ministeps (rows of the theta matrix).
+#' @param iterations Integer. Rows of the theta matrix: a time grid over one
+#'   unit of model time, and \code{iterations / M} is the summed basic rate
+#'   per actor when the matrix is passed to \code{saomnk_run()}. Since 0.11.0
+#'   a row is not a ministep; each block of identical rows is one simulated
+#'   segment, at most 50 per run.
 #' @param effect Character. Effect name (RSiena shortName) or exact
 #'   \code{effect_level} to make volatile.
 #' @param sd Numeric > 0. Standard deviation of the per-ministep increment.

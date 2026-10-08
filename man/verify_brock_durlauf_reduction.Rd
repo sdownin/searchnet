@@ -12,8 +12,9 @@ verify_brock_durlauf_reduction(
   n_components = 8,
   n_steps = 50,
   n_replicates = 5,
-  sqrt_correction = TRUE,
-  seed = 12345
+  rescale = TRUE,
+  seed = 12345,
+  sqrt_correction = NULL
 )
 }
 \arguments{
@@ -22,12 +23,12 @@ verify_brock_durlauf_reduction(
 
 \item{J_b}{Numeric B&D peer-interaction strength in adoption form.
 Used as the \code{popularity} parameter in
-\code{\link{saomnk_model}} (with the sqrt-linearisation rescaling
-described under \code{sqrt_correction}). Positive \code{J_b} =
+\code{\link{saomnk_model}} (with the rescaling described under
+\code{rescale}). Positive \code{J_b} =
 coordination (peer alignment); negative \code{J_b} =
 anti-coordination (congestion). \strong{Default \code{0.5}}: this
 is the \emph{Option C regime} that keeps \eqn{m^* \approx 0.5}
-(where the sqrt linearisation is locally accurate); large
+(where the first-order rescaling is accurate); large
 \eqn{|J_b|} pushes the equilibrium far from 0.5 where empirical
 and B&D analytical disagree (Option B regime; see L16).}
 
@@ -48,36 +49,43 @@ become independent B&D problems when \code{scope = 0} and
 \code{influence_weight = 0}, providing \eqn{N} statistical replicates
 per simulated environment for free.}
 
-\item{n_steps}{Integer ministeps \emph{per actor} per replicate
-(default \code{50}). The CTMC mixing time is approximately
+\item{n_steps}{Expected decision opportunities \emph{per actor} per
+replicate (default \code{50}); passed to \code{saomnk_run()} as
+\code{steps_per_actor}, which since 0.11.0 is a basic rate summed over
+one unit of time, not a fixed ministep count. The CTMC mixing time is approximately
 independent of \eqn{M} when measured in steps-per-actor, so this
 parameter controls convergence quality directly. Recommend
 \eqn{\ge 30} for \eqn{|\theta| \le 2}; smaller values risk
-pre-asymptotic bias unrelated to the L16 sqrt gap.}
+pre-asymptotic bias.}
 
 \item{n_replicates}{Integer number of independent simulation replicates
 per \eqn{M} (default \code{5}).}
 
-\item{sqrt_correction}{Logical. RSiena's \code{inPop} statistic
-uses a sqrt transform of column-degree (variance stabiliser), not
-the linear mean-field form B&D assumes. When \code{TRUE} (default),
-the harness applies the L16 linearisation correction by passing
-\code{popularity = J_b / sqrt(2M)} (the rescaling that matches
-the slope of \eqn{\sqrt{Mm+1}} at \eqn{m=1/2}); when \code{FALSE},
-the raw \code{J_b} is used. The corrected version is locally
-accurate near \eqn{m = 1/2} (Option C regime). See
-\code{PROOF_TABLE.md} row L16 for full derivation.}
+\item{rescale}{Logical. When \code{TRUE} (default) the simulation uses
+\code{popularity} \eqn{\theta = J_b / (\kappa_N (M-1))} and
+\code{density} \eqn{h_b/\kappa_N - \theta}, with
+\eqn{\kappa_N = 2N/(N+1)}, which matches the B&D map
+\eqn{m = \sigma(\beta(h_b + J_b m))} to first order near
+\eqn{m = 1/2}. When \code{FALSE}, \code{J_b} and \code{h_b} are
+passed unchanged.}
 
 \item{seed}{Integer random seed (default \code{12345}).}
+
+\item{sqrt_correction}{Deprecated alias of \code{rescale}. Before 0.11.0
+it applied \eqn{J_b/\sqrt{2M}}, a rescaling derived for
+\code{inPopSqrt}; supplying it now sets \code{rescale} with a
+warning.}
 }
 \value{
 A \code{data.frame} with columns (Option B = saomnk-inPop
 reference; Option C = B&D reference):
 \item{M}{Actor count.}
+\item{n_ok}{Number of replicates that ran; \code{m_b_empirical}
+averages these.}
 \item{m_b_empirical}{Mean end-state adoption fraction (in
 \eqn{[0,1]}) averaged across replicates.}
 \item{m_BD_analytical}{Analytical B&D fixed-point adoption
-fraction (Option C reference). Theorem 5 predicts the empirical
+fraction (Option C reference). Property 5 predicts the empirical
 should match this in the Option C regime.}
 \item{m_saomnk_analytical}{Analytical SAOM-inPop fixed-point
 adoption fraction (Option B reference). The empirical should
@@ -89,7 +97,7 @@ small in Option C regime, can be large outside it.}
     m_saomnk_analytical)}; small in any regime where the simulation
 converged.}
 \item{in_BD_regime}{Logical: \code{TRUE} when
-\eqn{|m_{BD} - 0.5| < 0.15} so the sqrt linearisation is locally
+\eqn{|m_{BD} - 0.5| < 0.15}, where the first-order rescaling is
 accurate and B&D theory should match empirically.}
 \item{log_M}{\code{log10(M)}.}
 \item{log_error_BD}{\code{log10(abs_error_BD)}.}
@@ -102,7 +110,7 @@ For each \eqn{M} in \code{M_seq}, instantiates a SaoMNK environment
 and runs \code{n_replicates} simulations under congestion-only,
 density-only structure models (all NK / scope / herding / synergy /
 epistasis effects zeroed).  The empirical end-state mean adoption
-is compared to the analytical B&D fixed point predicted by Theorem 5
+is compared to the analytical B&D fixed point predicted by Property 5
 (Part L of the proof table).  Convergence at rate
 \eqn{O(1 / \sqrt{M})} is the headline empirical signature of the
 mean-field reduction.
@@ -115,14 +123,15 @@ analytical references:
 \item \strong{Option C reference (B&D, primary):} the canonical
 Brock and Durlauf (2001) fixed point
 \eqn{m = \sigma(\beta(h + J m))} computed via
-\code{\link{bd_self_consistency}}.  This is what Theorem 5 predicts
-in the regime where the sqrt linearisation of inPop is locally
-accurate (\eqn{m^* \approx 0.5}, achieved by setting
+\code{\link{bd_self_consistency}}.  This is what Property 5 predicts
+in the regime where the first-order rescaling (see
+\code{rescale}) is accurate (\eqn{m^* \approx 0.5}, achieved by setting
 \code{h_b = -J_b / 2} with modest \code{J_b}).
 \item \strong{Option B reference (saomnk-inPop, secondary):} the
-actual fixed point of the live RSiena pipeline,
-\eqn{m = \sigma(\beta(h + \theta\sqrt{Mm + 1}))} computed via
-\code{\link{saomnk_inpop_self_consistency}}.  This is what the
+mean-field fixed point of the live RSiena pipeline, computed via
+\code{\link{saomnk_inpop_self_consistency}} with the linear
+two-mode \code{inPop} statistic and the ministep choice law over
+\eqn{N} toggles.  This is what the
 simulation should match in \emph{any} regime (regardless of where
 \eqn{m^*} sits), and is the correct comparison target outside the
 Option C regime.
@@ -132,30 +141,33 @@ Convergence of \code{m_b_empirical} to \code{m_BD_analytical} (when
 \code{in_BD_regime = TRUE}) and to \code{m_saomnk_analytical} (always)
 is what the harness reports.
 
-The function is robust to absent or failing simulation back-ends:
-if \code{\link{saomnk_env}}, \code{\link{saomnk_model}}, or
-\code{\link{saomnk_run}} throw, the offending row's
-\code{m_b_empirical} (and derived columns) are returned as
-\code{NA} with a warning identifying the failure.
+Failed simulation replicates (an error in \code{\link{saomnk_env}},
+\code{\link{saomnk_model}}, or \code{\link{saomnk_run}}) are excluded
+from \code{m_b_empirical}, counted in \code{n_ok}, listed in
+\code{attr(result, "failures")}, and reported by one warning stating
+how many of the replicates failed. If every replicate fails the
+function stops. A row is \code{NA} only when all of its replicates
+failed.
 
-\strong{Important caveat (L16 honesty gap).} Exact \emph{numerical}
-agreement between the live RSiena simulation and the analytical B&D
-fixed point is \emph{not} expected and is not what this harness
-verifies. RSiena's bipartite \code{inPop} statistic is
-sqrt-transformed (\eqn{s = \sum_j b_{ij} \sqrt{n_j + 1}}) for
-variance stabilisation, whereas B&D's mean-field uses the linear
-coupling \eqn{J \cdot m}. The harness applies a one-step sqrt
-linearisation (\code{sqrt_correction = TRUE}) to bring the two
-closer, but the residual nonlinearity persists. What the harness
+\strong{Important caveat (L16).} RSiena 1.5.0's two-mode \code{inPop}
+statistic is linear (\eqn{s = \sum_j b_{ij} x_{+j}}), so the marginal
+utility matches B&D's linear coupling with
+\eqn{\theta_{\mathrm{inPop}} = J_b/(M-1)}. The choice rule does not:
+a SAOM ministep chooses among \eqn{N} toggles and no change, and the
+per-tie adoption law is the binary logit only for \eqn{N = 1}. Near
+\eqn{m = 1/2} it is \eqn{\sigma(\kappa_N \Delta)} with
+\eqn{\kappa_N = 2N/(N+1)}. With \code{rescale = TRUE} (default) the
+harness divides both coefficients by \eqn{\kappa_N} and removes the
+own-tie constant from the field, so the two agree to first order near
+\eqn{m = 1/2}; away from it they differ. What the harness
 \emph{does} verify is: (i) the simulation pipeline runs end-to-end
 under the Rb1-Rb5 restrictions; (ii) the empirical equilibrium
 direction matches B&D theory (\eqn{J_b > 0} drives \eqn{m > 0.5},
 \eqn{J_b < 0} drives \eqn{m < 0.5}); (iii) the empirical
 equilibrium is stable across simulation seeds. Exact numerical
-verification of Theorem 5 requires a native \code{congestion}
-RSiena effect (\eqn{s = \sum_j b_{ij} (n_j / M)} without the sqrt
-transform); this is on the package roadmap and is documented in
-\code{inst/proofs/PROOF_TABLE.md} row L16.
+verification of Property 5 would need a single binary choice per
+actor (\eqn{N = 1}), which RSiena's bipartite dependent variable
+does not admit; see \code{inst/proofs/PROOF_TABLE.md} row L16.
 }
 \examples{
 \dontrun{
@@ -185,7 +197,7 @@ Mechanics}. Springer.
 \code{\link{bd_equilibrium_count}},
 \code{\link{saomnk_social_multiplier}},
 \code{\link{bd_landau_steepness}};
-\code{vignette("saomnk-brock-durlauf")} for the full Theorem 5
+\code{vignette("saomnk-brock-durlauf")} for the full Property 5
 walkthrough including the Option B / Option C tradeoff.
 }
 \keyword{utilities}

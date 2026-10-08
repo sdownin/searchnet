@@ -14,25 +14,37 @@
 
 
 # -----------------------------------------------------------------------------
-# SearchNet palette (consistent with manim / brand)
+# Phase-space colors, in the package palette (see R/plot-theme.R)
 # -----------------------------------------------------------------------------
+## These were a separate navy / teal / amber / coral brand palette. The names
+## are kept so every call site below still reads the same, but the values are
+## now the Okabe-Ito colors of searchnet_palette(), so the phase-space plots
+## match every other searchnet plot. Literal values rather than references:
+## this file is collated before R/plot-theme.R.
 .searchnet_palette <- c(
-  navy  = "#1b3a5c",
-  teal  = "#2a9d8f",
-  amber = "#e9c46a",
-  coral = "#e76f51",
-  slate = "#415a77",
-  sage  = "#6b9080",
-  plum  = "#7b2d8e",
-  steel = "#778da9"
+  navy  = "#023858",   # sequential top (dark blue)
+  teal  = "#009E73",   # Okabe-Ito bluish green
+  amber = "#E69F00",   # Okabe-Ito orange
+  coral = "#D55E00",   # Okabe-Ito vermillion
+  slate = "#4D4D4D",   # grey30, the theme's subtitle grey
+  sage  = "#56B4E9",   # Okabe-Ito sky blue
+  plum  = "#CC79A7",   # Okabe-Ito reddish purple
+  steel = "#7F7F7F"    # grey50
 )
 
+## Okabe-Ito, in searchnet_palette("categorical") order.
 .searchnet_strategy_colors <- c(
-  "#1b3a5c", "#2a9d8f", "#e76f51", "#e9c46a",
-  "#415a77", "#6b9080", "#7b2d8e", "#778da9"
+  "#E69F00", "#56B4E9", "#009E73", "#D55E00",
+  "#0072B2", "#CC79A7", "#F0E442", "#000000"
 )
 
-.searchnet_time_gradient <- c("#1b3a5c", "#2a9d8f", "#e9c46a", "#e76f51")
+## Time runs cool to warm, as documented: Okabe-Ito blue, sky blue, orange,
+## vermillion.
+.searchnet_time_gradient <- c("#0072B2", "#56B4E9", "#E69F00", "#D55E00")
+
+## Sequential fill for the hex heatmaps: searchnet_palette("sequential")
+## without its white end, so a sparse hex still shows against the white panel.
+.phase_seq_fill <- c("#9ED3F0", "#56B4E9", "#0072B2", "#023858")
 
 
 # -----------------------------------------------------------------------------
@@ -76,6 +88,7 @@
 # Internal: Extract a unified phase-space dataframe from env
 # -----------------------------------------------------------------------------
 .extract_phase_data <- function(env, vars, thin_factor = 1) {
+  .searchnet_require_path(env, ".extract_phase_data()")
 
   actor_strats <- tryCatch(env$get_actor_strategies(), error = function(e) NULL)
   n_actors     <- env$M
@@ -302,6 +315,14 @@
 #' Color encodes time (early = cool, late = warm), strategy type, actor identity,
 #' or exploration/exploitation phase.
 #'
+#' The interactive 3D view stays a \pkg{plotly} figure: ggplot2 has no 3D
+#' coordinate system, and a static projection would lose the rotation the
+#' figure exists for. Its colors, grid and fonts follow the package style
+#' (\code{\link{theme_searchnet}}, \code{\link{searchnet_palette}}): time runs
+#' from Okabe-Ito blue to vermillion, groups take the Okabe-Ito categorical
+#' colors. Without \pkg{plotly} the fallback is a ggplot2 figure of the three
+#' 2D projections in the package theme.
+#'
 #' @param env SaomNkRSienaBiEnv object after simulation
 #' @param x_var Network dimension variable (default \code{"K_AC"}).
 #'   Supported: \code{"K_AC"}, \code{"K_CA"}, \code{"K_AA"}, \code{"K_CC"},
@@ -415,12 +436,12 @@ saomnk_plot_phase_space_3d <- function(env,
 
   # Determine colorscale
   if (color_by == "time") {
-    # Custom navy -> teal -> amber -> coral gradient
+    # Cool-to-warm time gradient, as in the ggplot projections
     colorscale <- list(
-      list(0,    .searchnet_palette[["navy"]]),
-      list(0.33, .searchnet_palette[["teal"]]),
-      list(0.66, .searchnet_palette[["amber"]]),
-      list(1,    .searchnet_palette[["coral"]])
+      list(0,    .searchnet_time_gradient[1]),
+      list(0.33, .searchnet_time_gradient[2]),
+      list(0.66, .searchnet_time_gradient[3]),
+      list(1,    .searchnet_time_gradient[4])
     )
     fig <- plotly::plot_ly(
       data = df,
@@ -545,21 +566,21 @@ saomnk_plot_phase_space_3d <- function(env,
   fig <- fig %>% plotly::layout(
     title = list(
       text = title,
-      font = list(family = "Times New Roman", size = 18, color = "#1b3a5c")
+      font = list(size = 16, color = "#000000")
     ),
     scene = list(
-      xaxis = list(title = x_label, gridcolor = "#dde3ea", zerolinecolor = "#bbb"),
-      yaxis = list(title = y_label, gridcolor = "#dde3ea", zerolinecolor = "#bbb"),
-      zaxis = list(title = z_label, gridcolor = "#dde3ea", zerolinecolor = "#bbb"),
+      xaxis = list(title = x_label, gridcolor = "#EBEBEB", zerolinecolor = "#B3B3B3"),
+      yaxis = list(title = y_label, gridcolor = "#EBEBEB", zerolinecolor = "#B3B3B3"),
+      zaxis = list(title = z_label, gridcolor = "#EBEBEB", zerolinecolor = "#B3B3B3"),
       camera = list(
         eye = list(x = 1.6, y = 1.6, z = 1.0)
       ),
-      bgcolor = "#fafbfc"
+      bgcolor = "#FFFFFF"
     ),
     paper_bgcolor = "#ffffff",
     legend = list(
       title = list(text = ifelse(color_by == "time", "Time", "Group")),
-      font  = list(family = "Times New Roman")
+      font  = list(size = 12)
     )
   )
 
@@ -595,19 +616,19 @@ saomnk_plot_phase_space_3d <- function(env,
   p1 <- ggplot(df, aes(x = .data[[x_var]], y = .data[[z_var]])) +
     geom_point(color_aes, alpha = alpha, size = point_size, shape = 16) +
     labs(x = x_label, y = z_label) +
-    theme_bw() +
+    theme_searchnet() +
     theme(legend.position = "none")
 
   p2 <- ggplot(df, aes(x = .data[[y_var]], y = .data[[z_var]])) +
     geom_point(color_aes, alpha = alpha, size = point_size, shape = 16) +
     labs(x = y_label, y = z_label) +
-    theme_bw() +
+    theme_searchnet() +
     theme(legend.position = "none")
 
   p3 <- ggplot(df, aes(x = .data[[x_var]], y = .data[[y_var]])) +
     geom_point(color_aes, alpha = alpha, size = point_size, shape = 16) +
     labs(x = x_label, y = y_label) +
-    theme_bw()
+    theme_searchnet(legend_position = "right")
 
   # Add trajectories
   if (trajectories) {
@@ -645,13 +666,11 @@ saomnk_plot_phase_space_3d <- function(env,
     labels = c("Network x Fitness", "Behavior x Fitness", "Network x Behavior"),
     label_size = 10,
     label_fontface = "italic",
-    label_colour = .searchnet_palette[["navy"]]
+    label_colour = "grey20"
   )
 
   title_grob <- cowplot::ggdraw() +
-    cowplot::draw_label(title, fontface = "bold", size = 14,
-                        colour = .searchnet_palette[["navy"]],
-                        fontfamily = "serif")
+    cowplot::draw_label(title, fontface = "bold", size = 12, x = 0.01, hjust = 0)
 
   cowplot::plot_grid(title_grob, combined, ncol = 1, rel_heights = c(0.08, 1))
 }
@@ -724,28 +743,21 @@ saomnk_plot_phase_heatmap <- function(env,
     plt <- plt +
       geom_hex(bins = bins) +
       scale_fill_gradientn(
-        colours = c(.searchnet_palette[["navy"]],
-                    .searchnet_palette[["teal"]],
-                    .searchnet_palette[["amber"]],
-                    .searchnet_palette[["coral"]]),
+        colours = .phase_seq_fill,
         name = "Density\n(time spent)"
       )
   } else if (fill_var == "count") {
     plt <- plt +
       geom_hex(bins = bins) +
       scale_fill_gradientn(
-        colours = c(.searchnet_palette[["navy"]],
-                    .searchnet_palette[["teal"]],
-                    .searchnet_palette[["amber"]]),
+        colours = .phase_seq_fill,
         name = "Count"
       )
   } else if (fill_var == "fitness") {
     plt <- plt +
       stat_summary_hex(aes(z = utility), fun = mean, bins = bins) +
       scale_fill_gradientn(
-        colours = c(.searchnet_palette[["coral"]],
-                    .searchnet_palette[["amber"]],
-                    .searchnet_palette[["teal"]]),
+        colours = .phase_seq_fill,
         name = "Mean\nUtility"
       )
   }
@@ -770,14 +782,7 @@ saomnk_plot_phase_heatmap <- function(env,
       title = sprintf("Phase Space Heatmap: %s vs %s", x_label, y_label),
       subtitle = sprintf("Fill = %s | Bins = %d", fill_var, bins)
     ) +
-    theme_bw() +
-    theme(
-      plot.title    = element_text(face = "bold", colour = .searchnet_palette[["navy"]],
-                                   family = "serif", size = 14),
-      plot.subtitle = element_text(colour = .searchnet_palette[["slate"]],
-                                   family = "serif", size = 10, face = "italic"),
-      legend.position = "right"
-    )
+    theme_searchnet(legend_position = "right")
 
   plt
 }
@@ -878,11 +883,7 @@ saomnk_plot_phase_evolution <- function(env,
       scale_alpha_continuous(range = c(0.05, 0.8), guide = "none") +
       labs(x = x_label, y = y_label,
            title = "Phase Space Evolution -- Step {closest_state}") +
-      theme_bw() +
-      theme(
-        plot.title = element_text(face = "bold", colour = .searchnet_palette[["navy"]],
-                                  family = "serif", size = 14)
-      ) +
+      theme_searchnet() +
       gganimate::transition_states(frame_step, transition_length = 1, state_length = 0) +
       gganimate::ease_aes("linear")
 
@@ -913,11 +914,7 @@ saomnk_plot_phase_evolution <- function(env,
       scale_color_manual(values = .searchnet_strategy_colors, name = "Strategy") +
       labs(x = x_label, y = y_label,
            title = sprintf("Phase Space Evolution -- Step %d", current_step)) +
-      theme_bw() +
-      theme(
-        plot.title = element_text(face = "bold", colour = .searchnet_palette[["navy"]],
-                                  family = "serif", size = 14)
-      )
+      theme_searchnet()
   })
 
   message(sprintf("Generated %d animation frames. Use lapply(frames, print) to view.", length(frames)))
@@ -1022,14 +1019,7 @@ saomnk_plot_phase_comparison <- function(envs,
       title = sprintf("Phase Space Comparison: %s vs %s", x_label, y_label),
       subtitle = paste(cond_names, collapse = " | ")
     ) +
-    theme_bw() +
-    theme(
-      plot.title    = element_text(face = "bold", colour = .searchnet_palette[["navy"]],
-                                   family = "serif", size = 14),
-      plot.subtitle = element_text(colour = .searchnet_palette[["slate"]],
-                                   family = "serif", size = 10, face = "italic"),
-      legend.position = "bottom"
-    )
+    theme_searchnet()
 
   if (!overlay) {
     plt <- plt + facet_wrap(~ condition, scales = "free")
@@ -1063,13 +1053,13 @@ saomnk_plot_phase_comparison <- function(envs,
                          .phase_dimension_class(x_var),
                          .phase_dimension_class(y_var),
                          .phase_dimension_class(z_var)),
-          font = list(family = "Times New Roman", size = 18, color = "#1b3a5c")
+          font = list(size = 16, color = "#000000")
         ),
         scene = list(
           xaxis = list(title = x_label),
           yaxis = list(title = y_label),
           zaxis = list(title = z_label),
-          bgcolor = "#fafbfc"
+          bgcolor = "#FFFFFF"
         )
       )
       return(fig)

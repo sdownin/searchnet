@@ -1,0 +1,61 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: standard-search-with-competition
+title: Standard search with competition
+model: Lenox, Rockart and Lewin interdependency and competition
+citations:
+  - key: lenox_rockart_lewin_2006
+    text: "Lenox, M. J., Rockart, S. F., and Lewin, A. Y. (2006). Interdependency, competition, and the distribution of firm and industry profits. Management Science, 52(5), 757-772."
+    doi: "10.1287/mnsc.1050.0495"
+relation: special-case
+statement: >-
+  With many firms on a shared landscape, every network coefficient at zero and
+  beta -> infinity, each firm's utility is its own NK term and each firm runs
+  Property 1's adaptive walk; rivals enter profits after search, not the search
+  payoff.
+restrictions:
+  M: null
+  "N": null
+  W: any
+  beta: Inf
+  revision_rule: single_flip
+  rates: constant
+  notes:
+    - "theta = 0 for every statistic that couples two actors"
+    - "beta -> infinity"
+terms:
+  - class: complementarity
+    status: active
+    effect: XWX
+    value: 1
+    expression: "NK term, weight 1, for each firm"
+    construct: fitness under W
+  - class: scope
+    status: zero
+    expression: "+0"
+    construct: none
+  - class: crowding
+    status: zero
+    expression: "+0 (competition enters profits, not the search payoff)"
+    construct: none
+  - class: contact
+    status: zero
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: zero
+    expression: "+0"
+    construct: none
+constructs:
+  fitness under W: [complementarity]
+lean:
+  - SaomNK.improvementStep_is_saom_limit
+checks: []
+does_not_cover:
+  - "Their profit stage, in which rivals compete after search, lies outside the SAOM-NK objective"
+  - "Their published results are not reproduced by the package"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

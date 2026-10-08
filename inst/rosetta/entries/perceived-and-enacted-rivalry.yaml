@@ -1,0 +1,52 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: perceived-and-enacted-rivalry
+title: Perceived and enacted rivalry
+model: Perceived and enacted rivalry
+citations:
+  - key: porac_thomas_badenfuller_1989
+    text: "Porac, J. F., Thomas, H., and Baden-Fuller, C. (1989). Competitive groups as cognitive communities: The case of Scottish knitwear manufacturers. Journal of Management Studies, 26(4), 397-416."
+    doi: "10.1111/j.1467-6486.1989.tb00736.x"
+  - key: kilduff_elfenbein_staw_2010
+    text: "Kilduff, G. J., Elfenbein, H. A., and Staw, B. M. (2010). The psychology of rivalry: A relationally dependent analysis of competition. Academy of Management Journal, 53(5), 943-969."
+    doi: "10.5465/amj.2010.54533171"
+relation: not-carried
+statement: >-
+  Not carried. The framework identifies objective overlap (Sociality) and
+  component occupancy (Popularity), both anonymous and undirected; rivalry in
+  this tradition is subjective and directed, and structural overlap is a
+  condition for it rather than a measure of it.
+restrictions:
+  W: any
+  notes: []
+terms:
+  - class: complementarity
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: scope
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: crowding
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: contact
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs: {}
+lean: []
+checks: []
+does_not_cover:
+  - "Subjective, directed rivalry has no statistic in the framework"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

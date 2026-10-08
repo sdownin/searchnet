@@ -36,6 +36,8 @@ ruggedness, and the exploration--exploitation tradeoff---while also
 showing how SaoMNK's endogenous network structure yields richer dynamics
 unavailable in the standard NK model.
 
+> **Rerun 2026-10-07:** single-agent runs stop at 8/16 ties -> both reach 16/16 ties, no trapping at either density; claim no longer supported as stated.
+
 The validation proceeds in three parts:
 
 1.  **Single-agent rugged landscape**: An $M=2$ analogue of Levinthal
@@ -140,7 +142,7 @@ they form complementary bundles.
 env_rugged$search_rsiena_model_summary()
 ```
 
-Snapshotting every ministep would put `r 2 * steps_per_actor` panels into one
+Snapshotting every ministep would put `r env_rugged$get_step()` panels into one
 figure, which costs a great deal of plotting time and is illegible at this
 size. We sample the trajectory evenly instead; `n_frames` is the only knob.
 
@@ -216,6 +218,8 @@ Levinthal (1997) finding: more rugged landscapes (stronger negative
 density) constrain search and increase the likelihood of premature
 convergence to local optima, while smoother landscapes (weaker negative
 density) permit broader exploration and higher attained fitness.
+
+> **Rerun 2026-10-07:** rugged vs smooth mean K_AC 2.81 vs 4.45 (both end 8/16 ties) -> 6.59 vs 6.85 (both end 16/16 ties, no trapping); claim no longer supported as stated.
 
 # 2. Multi-Agent Search: Endogenous Sociality and Epistasis
 
@@ -400,6 +404,8 @@ Under these restrictions, SaoMNK reproduces the canonical NK dynamics:
     configuration where no single-component change improves utility.
 -   **Ruggedness scales with density**: more negative density creates
     more local optima, consistent with Levinthal (1997).
+
+> **Rerun 2026-10-07:** single-agent runs stop at 8/16 ties -> both reach 16/16 ties, no trapping at either density; claim no longer supported as stated.
 
 When the restrictions are relaxed ($M > 1$, endogenous effects
 $\neq 0$), SaoMNK produces dynamics that go beyond the NK framework:

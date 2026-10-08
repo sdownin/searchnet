@@ -1,3 +1,530 @@
+# searchnet 0.12.0
+
+Released 2026-10-08. No change to simulated results. The translation registry
+(Rosetta) is published: published NK-family models and theory constructs
+stated in SAOM-NK terms, with functions to generate, translate, compare, plot
+and export them. Formal results are labeled Properties 1-7 (two-layer
+integrability is Property 6, the creation/endowment boundary Property 7).
+Plots share one ggplot2 theme and palette (`theme_searchnet()`), with
+reader-friendly titles and an optional `annotate` argument. Suite: 64 files,
+902 tests, 5482 expectations, 0 failures, 0 errors, 5 skips.
+
+## Plots that say what to look at (2026-10-08)
+
+The main plots follow the design of the JSS paper's Figure 1: a title that states what the run shows (computed from the run), a plain-language subtitle saying how to read the figure, at most one or two notes with arrows on the data, the model weights in a one-line caption instead of a multi-line title, and one visual grammar (actors orange, components blue, a shock vermillion, context grey; the four channels labeled `K_AC` scope, `K_CA` popularity, `K_AA` sociality, `K_CC` coupling). No simulated result changes.
+
+* `saomnk_plot_k4()`, `saomnk_plot_degree_4panel()`, `saomnk_plot_actor_degrees()`, `saomnk_plot_component_degrees()` and the R6 methods behind them share one builder: one strip per channel with its plain name, no legend when actors or components form a single group, a dashed vermillion line and light wash at a shock (replacing the grey rectangles and per-panel segment labels), x axis "Ministep (one decision opportunity)". The title is computed: "All four {K} degrees rise, then level off", "The shock at ministep t lowers all four {K} degrees", and so on. The actor and component versions use free y scales.
+* `saomnk_plot_utility()`, `saomnk_plot_utility_contributions()`, `saomnk_plot_utility_contributions_basic()` and the R6 methods: strips with plain effect names (for example "popularity (inPop): ties to popular components"), one color per effect when there are no strategies, and a title naming the largest term at the end of the run.
+* `searchnet_causal_plot()`: the DID plot is drawn by searchnet instead of `did::ggdid()` (whose axis labels overprinted at more than a few dozen event times); the title reports the simple ATT and SE, a band shows the simultaneous confidence interval. Synthetic control lines are labeled at their ends; the RD estimate moves from the plot body to the title.
+* `plot.searchnet_ergodicity()`: arms labeled on their starting densities instead of a legend; titles state the computed verdict; overprinted labels moved.
+* `saomnk_plot_snapshots()` and the R6 `plot_snapshots()` (which now draws the same panels): plain panel titles ("Who holds what", "Actors linked by a shared component", "Components sharing actors"), components blue rather than bluish green, projection actors in their strategy color sized by partners (the viridis eigenvector-centrality legend is gone), a note in an empty heatmap. `palette = "legacy"` is unchanged.
+* New optional argument `annotate = TRUE` on all of the above: reading guides on the data (the "mean" line label, the level a series settles at, the shock and how far the first series moves, the pre-trend check and average effect in the DID plot, the run length at which the ergodicity arms meet). `annotate = FALSE` draws the same figure without them. Every other argument and return value is unchanged.
+* `theme_searchnet(grid = FALSE)` and `axes = FALSE` now remove the major grid too (an explicit `panel.grid.major` had overridden the blank parent).
+* The basin plots' subtitles say how to read them instead of asserting a result whatever the data.
+* Paper and README: `paper/replication/make_k_system_figures.R` redrawn in the same grammar (direct labels, computed titles) and now loads the source tree when run from it; README hero, shock and DID figures regenerated.
+
+## One plot style (2026-10-08)
+
+* New `theme_searchnet()`, `searchnet_palette()` and `scale_color_searchnet()` / `scale_fill_searchnet()`: the ggplot2 theme and Okabe-Ito categorical, white-to-blue sequential and blue-white-vermillion diverging (white at zero) scales behind the README and JSS figures. Every package plot now uses them in place of `theme_bw()` / `theme_minimal()`, RColorBrewer, default hues and ad hoc red/blue; legends sit at the bottom unless a function sets its own position.
+* Converted from base graphics to ggplot2: `plot.searchnet_ergodicity()` (still returns `x` invisibly; the figure is `attr(x, "plot")`, and `draw = FALSE` skips printing), the stability traces of `search_rsiena_plot_stability()` (returned as `stability_plot`) and the sienaGOF figures of `add_gof_to_rsiena_shocks()`. The base-graphics figures in the basins, Blume and Brock-Durlauf vignettes are ggplot2 too.
+* Kept: `saomnk_plot_phase_space_3d()` stays a plotly 3D figure (ggplot2 has no 3D coordinates), restyled to the palette; `saomnk_plot_geo_network()` keeps its dark map, whose colors are arguments; `saomnk_plot_snapshots(palette = "legacy")` still restores the old colors.
+* Shock and period windows are shaded neutral grey, not orange, so they never read as a category. README hero, shock and DID figures regenerated.
+
+## Results relabeled as Properties 1-7 (2026-10-08)
+
+* The package's formal results are now numbered as Properties, matching the JSS paper: former Theorems 1-6 are Properties 1-6 (Property 6 is two-layer integrability, `PROOF_TABLE.md` Part M) and the creation/endowment boundary (formerly Proposition 4, Part N) is Property 7. Lemmas, Definitions, Corollaries and Propositions 1-3 keep their numbers. Updated: `inst/proofs/` (proof table, tutorial, equivalence proof, online appendix master), vignettes, help pages, README and Rosetta entries. Lean declaration names are unchanged. Release notes below keep the numbering of their time.
+
+## Translation registry published (2026-10-08)
+
+* The translation registry ("Rosetta") now ships: published models of search and theory constructs stated in SAOM-NK terms, one YAML entry per model in `inst/rosetta/entries/`, with an effect-class registry (`classes.yaml`; complementarity, scope, crowding, contact, imitation, covariates; each with its {K} channel, color token and Lean statistic) and an entry schema (`schema.yaml`).
+* Functions: `rosetta_classes()`, `rosetta_register_class()`, `rosetta_reset_classes()`, `rosetta_entries()`, `rosetta_entry()`, `rosetta_validate()` (errors and advisory measurements kept apart), `rosetta_model()` and `rosetta_run()` (an entry's restriction as a runnable specification; one-actor restrictions run as `nk_walk()`), `rosetta_saomnk_model()`, `rosetta_r_code()`, `rosetta_translate()`, `rosetta_compare()`, `rosetta_plot()`, `rosetta_new_entry()`, `rosetta_lean()`, `rosetta_export_json()`, `rosetta_model_to_json()`, `rosetta_model_from_json()`. New vignette `saomnk-rosetta`.
+* 23 entries: NK adaptive walk, NK population search, Rivkin imitation, standard search with competition (Lenox, Rockart and Lewin 2006), strategic search (Giustiziero, Kaul and Martignoni 2026, Strategic Management Journal: the zero-noise single-flip limit with linearized competition, theta_density = c(M + 1)/N and theta_inPop = -2c/N per holder), logit QRE, Blume logit dynamics, Brock-Durlauf, plain two-mode SAOM, and construct translations (density dependence, exploration and local search, imitation and design under complexity, {K} epistasis, scope and sociality, market entry, mimetic isomorphism, modes and time horizons of competition, multimarket contact, perceived rivalry (not carried), search depth and breadth, momentum, structural inertia). Every entry is AI-drafted and marked unreviewed; citations were checked against Crossref.
+* NAMESPACE exports the functions by name (`export()`) and registers the print methods with `S3method()`; the `exportPattern()` line and the `.onLoad()` late-registration hook that existed only to let builds omit the registry are gone.
+* Fixes carried over from the registry's own notes (0.11.1): YAML 1.1 boolean keys (`N:`) are kept as text and reported by `rosetta_validate()` as E8; `rosetta_model()` returns a binary W with a zero diagonal; `rosetta_plot()` "K per row" bars carry their counts; the Brock-Durlauf entry states the kappa_N ministep linearization near m = 1/2.
+
+# searchnet 0.11.2
+
+Released 2026-10-08. No change to simulated results. `saomnk_plot_snapshots()`
+gains a colorblind-safe default palette (`palette = "legacy"` keeps the old
+colors), returns its panels for restyling, and now colors each actor by its own
+strategy. README figures generated by the package (`tools/make_readme_figures.R`).
+JSS submission build produces `code.R` / `code.html`. Suite: 62 files, 881 tests,
+5291 expectations, 0 failures, 0 errors, 4 skips.
+
+* `saomnk_plot_snapshots()` gains `palette` (default `"okabe-ito"`, colorblind safe: Okabe-Ito node colors, viridis centrality, white-to-blue heatmap; `"legacy"` keeps the old red-green colors), `node_colors` (named overrides by strategy level or `"new"`/`"old"`) and `draw`, and now returns the panels invisibly as ggplot objects plus the arranged grob, so they can be restyled. Existing calls are unchanged apart from the colors; each actor now takes its own strategy's color (the old code recycled the strategy colors over actor index). README figures: the W heatmaps in `readme-hero.png` and `readme-architectures.png` blank the diagonal, which XWX never uses (it sums over j != h).
+
+# searchnet 0.11.1
+
+Released 2026-10-08. No change to simulated results: every chain output is
+identical to 0.11.0 (golden test). Chain processing is 3.3x faster (overhead
+over raw RSiena 794% to 130%). Failure paths that were silently turned into
+NA, a warning or a fallback now stop with an informative message or report
+counted failures; the classroom interaction bonus is fixed. Documentation:
+Properties 2 and 3 corrected where new tests showed the statements false, the
+Brock-Durlauf correspondence stated for the RSiena ministep (kappa_N), and the
+theory vignette's statistics table corrected. Suite: 61 files, 878 tests, 5271
+expectations, 0 failures, 0 errors, 4 skips.
+
+## Faster ministep-chain processing, identical results (2026-10-07)
+
+* `search_rsiena()` / `saomnk_run()` chain processing no longer rebuilds the effects
+  table and one data.frame per table at every ministep. `saomnk_run()` at M 4, N 6,
+  30 per actor: median 0.915 s to 0.275 s (overhead over raw RSiena 794% to 130%);
+  6x to 10x faster at M 6 to 30, N 8 to 50. Every output is unchanged, checked with
+  `identical()` by the new `tests/testthat/test-chain-golden.R`.
+## Silent failures: the remaining paths (2026-10-07)
+
+Each now stops with an informative message, or returns partial results with
+an explicit failures record and a warning that states counts.
+
+* **Effects are never dropped.** A declared effect that cannot be included
+  (a covariate effect with no covariate, a failed `RateX`/`outRate*`,
+  covariate, `XWX` or `X` effect) now stops. These branches warned and ran
+  the model without the effect. `options(saomnk.skip_missing_effects = TRUE)`
+  restores skipping, as it already did for the generic fallback.
+* **Experiments runner.** Failed runs are recorded in `$failures`
+  (run, seed, stage, message) with one warning giving the count; if every run
+  fails it stops. They were warned about one by one and dropped.
+* **`ising_hysteresis_sweep()`.** A failed replicate returned the *starting*
+  matrix as its result. Failures are now excluded and listed in `$failures`,
+  `n_ok` gives the replicates behind each step, a step with no successful
+  replicate stops the sweep, and an undefined loop area is classified `NA`
+  rather than `"reversible"`.
+* **`verify_brock_durlauf_reduction()`.** New `n_ok` column and
+  `attr(, "failures")`; one warning with counts replaces per-replicate
+  warnings; stops if every replicate fails. A failed saomnk-inPop analytical
+  reference is warned about instead of becoming `NA` silently.
+* **DiD helpers.** `test_shocks_new_components()` records skipped and failed
+  pairs (`attr(, "failures")`) and warns; the quiet before/after fallback is
+  gone, and it stops if no pair is estimated. `analyze_exploration_risk_shocks()`
+  stops on missing pre-shock data, a missing arm, or a failed social-logic
+  step, and records failed plots or multiperiod analysis in `$failures`.
+  `analyze_simple_exploration_shocks()` and `_fixed()` stop instead of
+  plotting an `NA` estimate as "DiD = 0.0000"; a failed `did`-package estimate
+  is returned in `did_error` and warned. `diagnose_did_detailed()` returns
+  `att_gt_tests`. `check_exploration_data_availability()` returns
+  `metrics_error`. `did_shock_analysis()` adds `parallel_trends_status` and
+  warns when the requested test cannot be computed.
+* **Standard errors and summaries.** `saom_to_saomnk()` and
+  `saomnk_extract_estimates_tergm()` warn when standard errors cannot be read
+  (they became `NA` silently). The counterfactual bridge's paired summary
+  stops on a missing replication. `solve_mean_field()` no longer drops a
+  failed bracket or falls back to `m* = 0`.
+* **Classroom leaderboard.** The epistasis bonus read `model$influence_matrix`
+  and `model$effects`, which a `saomnk_model` does not have, so it was always
+  0. It now reads W and its weight from the model's `XWX` entry. Classroom
+  scores change.
+* **Tests and vignettes.** `run_tiny_sim()` lets errors fail the test instead
+  of converting them to skips. The causal-inference vignette's synthetic
+  control and RD chunks no longer turn errors into hidden messages.
+
+# searchnet 0.11.0
+
+Released 2026-10-07. **Breaking: every simulated number changes.**
+`search_rsiena()` now simulates genuine state-carrying paths; v0.10.0 and
+earlier replayed independent one-ministep draws as if they were a path, so
+simulated trajectories and end states from those versions must be re-run.
+Monadic covariates now default to `centered = FALSE`. Also in this release:
+optional formal verification with Lean 4 (`inst/lean`, `lean_*()`),
+covariate and structural statistics pinned to RSiena's targets, hashed seed
+streams, run provenance, readback and opportunity diagnostics, and fixes for
+shocks that were silently ignored, multiwave arguments, the DID design, and a
+classroom game that reset every round. Suite: 56 files, 833 tests, 4810
+expectations, 0 failures, 0 errors, 3 skips.
+
+## Silent failures on four paths (2026-10-07)
+
+* `theta_shocks`: a shock whose `effect_level` matches no theta column, or that lacks a
+  numeric `parameter` (e.g. `new_parameter`), now stops with the available columns. Both
+  were skipped, so the run was unshocked. A single-entry schedule warns that it covers the
+  whole run. The simulation vignette's shock is now applied.
+* `search_rsiena_multiwave_run()` and `_extend()` also accept `iterations_per_actor` and
+  `run_seed`, the `search_rsiena()` names (the vignette's call failed with "unused
+  arguments").
+* `saomnk_run()` gains `restart` (default `TRUE`). `searchnet_classroom_advance()` passes
+  `FALSE`, so rounds continue from the current board instead of the initial matrix, and
+  student moves are no longer erased. Its scheduled shocks now change the density (they
+  wrote to a nonexistent field), and an AI-step error stops the round.
+* The causal-inference vignette's DID chunks hid an error (3 never-treated actors; `did`
+  needs 5). They now compare the shocked run with an unshocked comparison run and let
+  errors through. `search_rsiena()` warns when chain statistics fail (was verbose-only).
+
+## `search_rsiena()` simulates genuine paths; time replaces the ministep count (2026-10-07)
+
+The fix pre-registered in `docs/PREREG_2026-10-06_state_carrying_simulation.md`, route (a).
+**Breaking:** every simulated number changes. Intended to ship as 0.11.0 (the code and
+documentation say "0.11.0"; DESCRIPTION is not yet bumped).
+
+* **Time semantics.** A call simulates one unit of model time. `iterations_per_actor`
+  (`steps_per_actor` in `saomnk_run()`, `iterations / M`, or `nrow(theta_matrix) / M`) is
+  the basic rate summed over the run: the expected number of opportunities per actor at zero
+  rate effects. The realized number of ministeps is random, and rate effects change it.
+* **State is carried.** Each block of identical theta rows (a segment) is one
+  unconditional RSiena period (`cond = FALSE`, `nsub = 0`, `n3 = 2`, run 1 kept), started
+  from the previous segment's end network.
+  * The engine stops if the replay of a segment's chain does not end at RSiena's own end
+    network.
+  * Ramps with more than `max_segments = 50` distinct rows are coarsened, with a message.
+  * Segment seeds are drawn from `run_seed`, with no seed arithmetic.
+* **What the environment now carries.**
+  * `$chain_stats` gains `segment_id`.
+  * `$bi_env_arr` is tagged `searchnet_path = "genuine"`.
+  * `$path_segments` records each segment's rows, rate, seed and ministep count.
+  * `$rsiena_model$chain`, `$sims` and `$thetaUsed` have one entry per segment.
+  * The environment is left at RSiena's end state even with `process_chain = FALSE`.
+  * The replay starts from the state the run actually started from, which fixes
+    `restart = FALSE`.
+  * `search_rsiena()` records `env$provenance`, including the segment seeds and the
+    realized ministep count.
+* **Shocks divide time.** `theta_shocks[[i]]$chain_step_ids` now index the path's
+  ministeps, and the time-grid rows are kept as `theta_row_ids`.
+* **Multiwave.** Each wave of `search_rsiena_multiwave_run()` (and `saomnk_monte_carlo()`)
+  is one unconditional period from the previous wave's end, with basic rate
+  `iterations / M`. `search_rsiena_multiwave_process_results()` replays each wave from its
+  own start; before, it replayed the last wave's chain for every wave.
+  `search_rsiena_multiwave_extend()` continues from the current state. The ignored
+  arguments `returnDeps`, `returnChains`, `rsiena_phase2_nsub`, `rsiena_n2start_scale`,
+  `dir_output` and `file_output` warn once per session.
+* **Two dependent variables.** The behavior vector is carried across segments as well. The
+  behavior basic rate keeps the ratio to the bipartite rate that the theta row declares.
+* **Covariates are uncentered by default** (breaking). Monadic covariates (`coCovar`,
+  `varCovar`) are created with `centered = FALSE` unless the declaration says
+  `centered = TRUE`, and a message says so once per session. Dyadic covariates keep
+  RSiena's default unless declared. The centering RSiena applied is recorded in
+  `env$covariate_centering` and printed by `saomnk_summary()`.
+* **Legacy route.** `search_rsiena(path = "legacy_replay")` reproduces the old behavior,
+  centering included, for archived numbers only.
+  * It warns on every call (class `searchnet_not_a_path`) and tags its array
+    `"independent_draws"`.
+  * Every path consumer refuses it with class `searchnet_not_a_path_error`:
+    `search_rsiena_process_stats()`, `get_K4_df()`, `searchnet_chain_stats()`, the export
+    functions, the K-4, snapshot, utility, degree, market, phase-space, shock and
+    exploration plots, `saomnk_get_degrees()`, `saomnk_get_bipartite(step =)`,
+    `searchnet_causal_panel()`, `searchnet_ergodicity_sweep()`,
+    `searchnet_classroom_advance()` and the bridge's arm runner.
+* **`searchnet_chain_stats()` accepts a multi-segment path.** It still refuses an untagged
+  multi-run chain.
+* **Degree-dependent rate effects are refused.** RSiena 1.5.0 corrupts the heap when it
+  simulates a bipartite network unconditionally with `outRate`, `outRateInv` or
+  `outRateLog` together with `inPop` or `XWX`; R then crashes. This was reproduced in plain
+  RSiena. `search_rsiena()` stops with class `searchnet_unsupported_effect` instead.
+* **Gates.**
+  * `tests/testthat/test-path-not-replay.R` (G1-G4) now passes.
+  * New `tests/testthat/test-path-gates.R` adds:
+    * G1b, choice probabilities for density, inPop, XWX and egoX across two segments;
+    * G5, an independent continuous-time oracle in `helper-saom-oracle.R`, 200
+      replicates per arm;
+    * G6, determinism and disjoint seeds;
+    * G7, legacy refusal.
+* **What must be regenerated.** Every vignette chunk, paper result, replication script and
+  figure built on `search_rsiena()` trajectories. They are listed in an internal re-run
+  list and have not been regenerated in this change.
+
+## Known defect: `search_rsiena()` trajectories are not SAOM paths (2026-10-06)
+
+**Status:** fixed 2026-10-07 (entry above). Found in a review of a downstream study and
+re-verified on this version.
+
+### How the replay works
+
+* **The setup.** `search_rsiena()` runs `siena07(simOnly = TRUE)` with `cond` at its
+  default (TRUE for one dependent variable), two identical waves, and `n3` equal to the step
+  count.
+* **What RSiena does with it.** With a conditional target distance of 0, every phase-3 run
+  stops after one ministep, and RSiena starts every run from wave 1.
+* **What searchnet then does.** `search_rsiena_process_ministep_chain()` replays those
+  independent draws cumulatively from the initial matrix into `$bi_env_arr`, and leaves the
+  environment in the replayed final state.
+
+No simulated decision ever responds to the current state. On this version:
+
+* Every RSiena end-of-run network lies within one toggle of the initial matrix (mean 0.97
+  over 60 runs). The replayed state at the same points is 0 to 17 toggles away.
+* Logged choice probabilities are reproduced from the initial matrix to 4.4e-16, and miss
+  the replayed preceding state by up to 3.9 log-points.
+
+### Why it went unnoticed
+
+* **The replayed terminal state forgets theta.** Each cell ends at its initial value flipped
+  by the parity of independent draws, so terminal density drifts toward 0.5 whatever the
+  model is. At density -2, 0 and +2 the replay ends at 0.44, 0.49 and 0.57. Genuine
+  unconditional periods end at 0.06, 0.51 and 0.94.
+* **So "convergence" checks pass by construction.** Two arms from different starts
+  "converge", and a target of 0.5 is "matched".
+* **From an empty start, the influence matrix has no effect.** The `XWX` change statistic is
+  zero for every candidate in an empty row, so W cannot affect any draw. Chains at `XWX` 0
+  and 1.5 are identical under the same seed.
+
+### Two related defects
+
+* **Rate effects are zero-sum.** The total number of ministeps is fixed and the mover is
+  drawn in proportion to rate, so a rate effect for one group takes opportunities from the
+  other. At `RateX = 2` the total stayed at exactly 1000, as at `RateX = 0`, and the reference group fell to
+  0.23 of its `RateX = 0` count.
+* **Covariates are centered silently.** `coCovar()` is created without `centered`, so RSiena
+  stores a 0/1 covariate as -0.5/+0.5. Under the fixed budget this cancels out of a rate
+  effect. In continuous time it does not.
+
+### The same design in other routes
+
+* `search_rsiena_multiwave_run()`, and through it `saomnk_monte_carlo()`, moved at most two
+  ties over three waves of 200 iterations.
+* The two-DV route uses `cond = FALSE`, but still concatenates `n3` full periods, each
+  started from wave 1.
+* With `restart = FALSE`, the replay starts from `bipartite_matrix_init` rather than from the
+  state the simulation actually started at.
+
+### Affected and unaffected outputs
+
+**Affected:** every output read from a run.
+* `$bi_env_arr`, `$bi_env_changes` and the post-run `$bipartite_matrix`.
+* `get_K4_df()` and the K-4 frames, `$actor_util_df` and `$actor_stats_df`.
+* The snapshot, phase-space and utility plots, and the exports.
+* Every wrapper: `saomnk_run()`, `saomnk_run_two_sided()`, `saomnk_monte_carlo()`,
+  `verify_brock_durlauf_reduction()`, `searchnet_ergodicity_sweep()`,
+  `run_calibrated_counterfactual()`, `run_counterfactual_with_uncertainty()`,
+  `searchnet_classroom_advance()`, `SaoMNKexperiments$run_simulations()`, and the market
+  entry/exit and Ising-hysteresis methods.
+
+**Not affected:**
+* Landscape enumeration and `nk_verify_reduction()`.
+* Per-ministep choice probabilities from a given state: `compute_choice_probabilities()` and
+  the game mode.
+* Estimation with `siena07()`, and `searchnet_chain_from_fit()`.
+* The analytic results.
+
+### What this withdraws in the package's own documents
+
+Every simulated trajectory, terminal state, convergence statement, counterfactual delta and
+benchmark in the following documents is withdrawn. Nothing has been edited yet; a
+claim-by-claim audit exists.
+
+* **The JSS paper and online appendix.** This includes:
+  * the architectural-shocks application: its rate separation, post-shock valleys and
+    selection wedge;
+  * the Levinthal illustration;
+  * the ergodicity sweep ("within 0.01 by 240 iterations");
+  * the shock K-4 break and the DID panel.
+* **Proof-registry checks** F5, F7, I3, J1-J3, K1 and K2: their passes and their failures
+  alike.
+* **`PROOF_TABLE.md`:**
+  * rows F3, F7, I1 and L8, as computational verifications;
+  * row L15 outright.
+* **The simulated illustrations in these vignettes:** Blume, Brock-Durlauf, theory,
+  nk-validation, policy basins, calibration, causal-inference, experiments, introduction,
+  PDW-workshop and simulation.
+
+### Earlier entries this supersedes
+
+* **0.9.2:** the ergodicity sweep's "measurement" of independence from initial conditions
+  measured the replay's parity limit.
+* **2026-09-15:** the I3 note that the simulated chain sits "farther still" from the exact
+  law, cause undiagnosed. This defect is the cause.
+* **0.9.0:** the refusal in `searchnet_chain_stats()` was right. It is now the model for
+  every other consumer.
+
+### Regression tests
+
+`tests/testthat/test-path-not-replay.R` has four tests (gates G1-G4) that fail on this
+version by design:
+* the path ends at a network RSiena never simulated;
+* one tie at `density = -8` is toggled 9 times, where a genuine path deletes it once;
+* logged choice probabilities miss the path's own preceding states by 4.32 log-points;
+* a rate effect leaves the total number of opportunities unchanged.
+
+The suite reports these failures until the fix lands.
+
+### The planned fix
+
+The fix was pre-registered before any engine change.
+* **One period per segment.** Each theta segment becomes one unconditional RSiena period
+  (`cond = FALSE`), started from the previous segment's end state, with its chain replayed
+  only within that period.
+* **Steps become rates.** `iterations_per_actor` becomes the basic rate summed over the run,
+  so rate effects change how many opportunities occur.
+* **Centering is explicit.** Covariate centering is declared and recorded.
+* **The old route is opt-in.** It survives only as an explicit legacy option, which warns,
+  and every path consumer refuses its output.
+
+Checked on RSiena 1.5.0: within one unconditional period, the replay reproduces RSiena's own
+end network exactly, and reproduces every logged choice probability to 4.4e-16.
+
+This is a semantic break, proposed as 0.11.0. Step arguments will mean expected
+opportunities per actor, and the number of ministeps will be random.
+## Formal verification with Lean 4 (2026-10-07)
+
+* **New Lean library `SaomNK` in `inst/lean`** (Lean 4 + Mathlib, toolchain
+  pinned): 273 machine-checked theorems and lemmas in 30 modules, with no
+  `sorry`, no axiom and no `native_decide`. General building blocks for
+  SAOM-NK models: configurations and flips; NK influence patterns
+  (`IsKRegular`, decidable), NK fitness, the LSB/MSB power-key conventions and
+  landscape tables; statistics (density, outAct, inPop, cycle4, XWX, ego and
+  activity covariates, row-pair kernels) each with its exact potential; the
+  algebra of exact potentials; Nash existence and flip stability as local
+  maxima of the potential; Glauber, Metropolis and multinomial-logit choice
+  with their zero-noise limits; Gibbs detailed and global balance for any
+  reversible acceptance rule, with structural zeros (restricted chain) as the
+  primary case; two-layer integrability; creation versus endowment; two-bloc
+  mean-field equilibria and the Landau quartic; and a computable rational
+  layer whose numbers are proved to be casts of the real-valued theory.
+* **New R functions.** `lean_spec()` maps a model definition (a
+  `SaomNkRSienaBiEnv`, an `nk_landscape`, or a list) to the library's
+  statistics and lists unmapped effects (`lean_effect_map()`).
+  `lean_export_model()` writes `Instance_<hash>.lean`, which instantiates the
+  general theorems for the model and proves its numeric facts (K-regularity,
+  landscape consistency, the index convention shared with R, utilities and
+  potential at the current configuration, the number of single-flip-stable
+  configurations) by kernel evaluation. `lean_check()` builds and audits
+  axioms; `lean_setup()`, `lean_available()`, `lean_home()`,
+  `lean_registry()`, `lean_declarations()` and the testthat expectation
+  `expect_lean_theorem()` complete the set. `inst/lean/registry.yml` links
+  declarations to proof-table steps, tests and R functions.
+* Lean is optional: every `lean_*()` function skips with a message when no
+  toolchain is found. New Suggests: gmp (exact numeric facts), processx,
+  withr, yaml. New vignette `saomnk-lean`; new CI workflow
+  `.github/workflows/lean.yml`.
+
+## Engine hygiene: seed streams, provenance, readback and opportunity diagnostics (2026-10-07)
+
+* **Seed streams that collided.** `searchnet_ergodicity_sweep()` derived each
+  run's initial-draw seed as `seed + arm*10000 + rep*100 + iters` and its
+  dynamics seed as `seed + arm*20000 + rep*100 + iters`, so arm 2's initial
+  draw used exactly arm 1's dynamics seed. `verify_brock_durlauf_reduction()`
+  and the hysteresis sweep fed one seed to both the initial draw and the run;
+  `saomnk_run_two_sided()` used `seed + w` and `seed + 1000*w`, which meet at
+  wave 1000; `saomnk_monte_carlo()` used `seed + r`, so base seeds 1 and 2
+  shared all but one replication. All of these now derive their seeds from a
+  new internal `.searchnet_seed(base, purpose, ...)`, a purpose-namespaced
+  32-bit hash in base R. `tests/testthat/test-engine-hygiene.R` checks a grid
+  of purposes x arms x replicates x run lengths for collisions and checks that
+  a seeded run still reproduces. **Numeric outputs of these five functions
+  change for a given seed**; results remain reproducible for a fixed seed.
+  `run_calibrated_counterfactual()` gives both arms one seed by design
+  (matched initialization) and is not changed here, although it also uses
+  that seed for both the environment and the run.
+* **Run provenance.** `saomnk_run()` and `saomnk_monte_carlo()` now store the
+  searchnet, RSiena and R versions, the RNG kind, the seed actually used and
+  the call in `env$provenance`; the sweep functions above attach the same
+  record as a `"provenance"` attribute. New exported accessor
+  `searchnet_provenance()`. Non-breaking: a new field and an attribute. Calls
+  to the `search_rsiena()` method directly do not record provenance.
+* **`fit_rsiena_shocks()` had no test, and its GOF step failed.**
+  `add_gof_to_rsiena_shocks()` combined the per-effect `tconv` vector with
+  `&&`, an error in R >= 4.3, so every `fit_rsiena_shocks(add_gof = TRUE)` on
+  a model with more than one effect stopped. The convergence check is now
+  `check_all` (the mangled key `checK_AAll` is kept as an alias), and the
+  function restores the graphics `par()` it changes. `fit_rsiena_shocks()` also
+  drops duplicate observation steps in short segments and stops with a clear
+  message when a segment has fewer than two. Tested end to end.
+* **`saomnk_run()` kept the `saomnk_shock` class** on the engine's shock
+  entries (`as.list()` does not strip a class), so after a run or
+  `fit_rsiena_shocks()` they printed through `print.saomnk_shock()`, which
+  hides `chain_step_ids` and the fitted model. They are now plain lists.
+* **New `searchnet_readback_check()`.** Detects an "outcome" that is the
+  evaluation function read back: it regresses the outcome on the model's own
+  statistics, reports R^2 and the recovered coefficients against the declared
+  theta, and compares the outcome's K gradient with a random-portfolio null
+  (portfolios drawn with no search, scored by the declared objective). The
+  print method says plainly when the outcome is the objective. On a simulated
+  environment the default outcome is the package's reported utility
+  (`env$actor_util_df`), which it flags.
+* **New `searchnet_opportunity_table()`.** Tabulates realized ministep
+  opportunities and tie changes per group per arm from a run's chain, with
+  each group's share of the arm's fixed ministep budget next to its equal-rate
+  share, so rate-effect studies can see that the budget is zero-sum.
+* **API compatibility.** `saomnk_shock(new_value = )`, a form an early README
+  showed, is accepted as `parameter` with a once-per-session deprecation
+  warning. `saomnk_shock(step = )` stops with a message naming `portion` and
+  the two-shock construction, because an absolute step cannot be converted
+  without the run length. The deprecated `epistasis_*` arguments of
+  `saomnk_model()` now warn once per session per argument instead of on every
+  call, and an error message that still pointed to `epistasis_matrices` now
+  names `influence_matrices`.
+* **K4 plotting helpers and `parm`: checked, no defect.** The K4 and multiwave
+  plot titles read coefficients from the structure model's `parameter` key,
+  never from the effects table's `parm` column. A test pins that the
+  `saomnk_plot_k4()` title reports a declared `XWX` weight of 0.37 while
+  RSiena's `parm` for that effect is 0.
+
+## Covariate statistics pinned to RSiena, and the imitation statistic renamed (2026-10-04)
+
+* **Six more actor statistics in `get_struct_mod_stats_mat_from_bi_mat()`
+  disagreed with RSiena 1.5.0's `siena07()` targets, and `saom_to_saomnk()`
+  marked five of their effects "exact".** `egoX`, `altX`, `outActX` and `X`
+  read the raw covariate where RSiena reads it centered on its mean, which adds
+  the mean times a degree term; `totInDist2` also counted ego among a
+  component's holders; `simEgoInDist2` computed similarity to the mean of
+  distance-2 alters in the actor projection, a different statistic. They now
+  compute RSiena's definitions, listed at the top of
+  `tests/testthat/test-structural-stats-vs-rsiena.R`. As on 2026-09-15, the
+  matrix feeds the utility and K decompositions, not the simulation, which
+  already handed these effects to RSiena; decompositions that included them
+  were misreported.
+* That test file now also pins `density`, `outAct` and `outActSqrt` (already
+  correct) and the six above, registered through searchnet's own covariate
+  slots, with negative controls for the old formulas. A further test fails if
+  any "exact" crosswalk entry names a statistic the file does not pin; the
+  crosswalk moved into the internal `.bridge_crosswalk()` so the test can read
+  it. The bridge's descriptions of `totInDist2` and `simEgoInDist2` are
+  corrected.
+* **`saomnk_sim_ego_indist2()` is renamed `saomnk_coholder_similarity()`**, and
+  the old name stays as a deprecated alias that warns once per session. The
+  statistic is unchanged and is not RSiena's `simEgoInDist2`: it subtracts each
+  actor's own mean over co-held components where RSiena subtracts one
+  data-level constant, and a component with no co-holder contributes nothing
+  where RSiena compares ego with the covariate mean. On 200 random states the
+  two agreed in none (largest difference 8.09). Its documentation no longer
+  says the centering follows RSiena, or that `simEgoInDist2` is one-mode only.
+  `saomnk_env_imitation()` calls the new name.
+* Not pinned: `inPopX`. RSiena 1.5.0 offers it for a bipartite dependent
+  variable with an actor covariate only, and its target matched neither
+  searchnet's statistic nor centered or ego-excluded variants of it. The code
+  now says the column is not RSiena's effect.
+* Known, not changed: the JSS paper still says `simEgoInDist2` is defined for
+  one-mode networks only. A model that includes `simEgoInDist2` without a
+  covariate stops in `saomnk_run()` with "Effect not found", because RSiena
+  requires one.
+
+## Structural statistics pinned to RSiena, and equilibrium claims restricted (2026-09-15)
+
+* **Four hand-computed actor statistics in
+  `get_struct_mod_stats_mat_from_bi_mat()` disagreed with RSiena 1.5.0's own
+  `siena07()` targets.** `inPop` counted ego twice (`B %*% (colSums(B) + 1)`);
+  `inPopSqrt` had no branch, printed "Effect not yet implemented" and left its
+  column at 0; `cycle4` kept the diagonal of `BB'` and counted degenerate closed
+  walks; `XWX` summed `B W B'` over every actor instead of within ego. They are
+  now `sum_j x_ij x_+j`, `sum_j x_ij sqrt(x_+j)`,
+  `(1/2) sum_{k != i} choose(ov_ik, 2)` and `sum_{j != h} x_ij x_ih w_hj`. The
+  matrix feeds the post-hoc statistic and utility decompositions, not RSiena's
+  simulation, so simulated chains are unchanged but decompositions that
+  included these effects were misreported.
+* New `tests/testthat/test-structural-stats-vs-rsiena.R` compares the actor sums
+  with `siena07(simOnly = TRUE)` targets on random states (asymmetric `W` with a
+  nonzero diagonal), with negative controls for the old formulas. The two
+  `cycle4` tests in `test-vectorized-effects.R` compared the formula with itself
+  and are replaced by a brute-force count.
+* **Gibbs stationary law, detailed balance, dynamic QRE and zero-noise selection
+  of potential maximizers are now claimed for single-flip logit revision only.**
+  The multinomial ministep RSiena and searchnet use (conditional logit over all
+  toggles plus pass) keeps irreducibility, aperiodicity and a unique stationary
+  law, but for `M > 1` has no general Gibbs form and no zero-noise selection
+  guarantee; a counterexample exists at `M = 2`, `N = 3`. Changed in the Blume,
+  theory, Brock-Durlauf and proof-registry vignettes, `PROOF_TABLE.md`, the
+  README, the JSS paper and online appendix, roxygen, and two manim captions.
+* `cycle4` has an exact potential (the number of four-cycles, scaled); the Blume
+  tutorial had listed it among effects that may violate the potential condition.
+  `PROOF_TABLE.md` row B4 now states the verified `inPop`, `cycle4` and `XWX`
+  definitions.
+* Proof-registry check I3 still fails and is not tuned. The failure is not
+  explained by the non-Gibbs law alone: in I3's setting the exact stationary law
+  of the multinomial ministep differs from the Gibbs reference by total
+  variation 0.15 on tie counts, but the simulated chain is farther still from
+  that exact law (0.35 to 0.56 over three seeds). The cause is undiagnosed.
+* Known, not changed: RSiena 1.5.0 offers `simEgoInDist2` for a bipartite
+  dependent variable when an actor covariate is declared, contrary to the note
+  in `R/searchnet-imitation.R` and the JSS paper; neither searchnet statistic of
+  that name equals its target.
+
 # searchnet 0.10.0
 
 JSS submission preparation. Five parallel workstreams against
@@ -81,10 +608,10 @@ are fixed here.
 
 * The check-time cost is now finite. `R CMD check` tangles and sources every
   chunk, including `eval=FALSE` ones, so code that never ran during a build ran
-  for real during a check: `saomnk-amr-basins` was killed at a 3000-second
+  for real during a check: one basin vignette was killed at a 3000-second
   timeout. Tangled execution across all vignettes is now **367 s**; render is
   **557 s**, from a 26.4-minute baseline that included two failures.
-* `saomnk-amr-basins`: the hang was an O(4^N) basin assignment that located each
+* Basin vignette: the hang was an O(4^N) basin assignment that located each
   Hamming-1 neighbor by scanning all 2^N rows, five times over. Configurations
   are now indexed by bit string.
 * `saomnk-proof-registry` had been failing outright ("subscript out of bounds",
@@ -98,22 +625,20 @@ are fixed here.
 
 ## The JSS manuscript
 
-* The paper no longer depends on an unpublished companion manuscript. Both
-  airline figures are replaced by seeded simulations generated by a new
+* Every figure in the paper is now generated by the replication bundle. Two
+  figures are replaced by seeded simulations from a new
   `paper/replication/make_k_system_figures.R`, captioned explicitly as simulated
-  output; every companion citation and the corresponding `.bib` entry are gone.
-  A software paper cannot carry a result its replication script cannot
+  output, and citations to unpublished work are removed. A software paper cannot carry a result its replication script cannot
   reproduce, which is the JSS requirement the old figures failed.
 * **`paper/replication/reproduce_all.R` did not run at all as committed.** It
   aborted at startup under `Rscript` (`sys.frame(1)$ofile` is defined only under
   `source()`), and two of five blocks had drifted from the manuscript, using
   `M = 1`, which the engine now rejects. It runs end to end in 45 s.
 * `paper/jss_submission/` regenerated from the swept sources; it had been
-  carrying 7 companion citations and 3 airline figure references. Nothing in the
+  carrying stale citations and figure references. Nothing in the
   repository regenerates that bundle, so it re-rots after every paper change.
-* Five figures belonging to other unpublished papers (`cd2026_*`, `me2_*`) are
-  unreferenced by the manuscript but were tracked and would have shipped in the
-  next public snapshot. They are listed in `.public-exclude`.
+* Five unreferenced figures that belong to other projects are excluded from the
+  public snapshot.
 * A forward outline of the sections the paper still lacks -- time-varying
   couplings, network-behavior coevolution, two-sided ties, pre-estimation
   diagnostics -- is in `paper/_drafts/`, in outline form rather than prose.
@@ -123,7 +648,7 @@ are fixed here.
 * `fit_rsiena_static()` passes a bare `structure_model` that is neither a formal
   nor a field (the field is `config_structure_model`). Its only caller is
   `fit_rsiena_shocks()`, and no test names either. Not fixed here.
-* The AMR basins vignette's four policy arms produce an identical landscape,
+* A basin vignette's four policy arms produce an identical landscape,
   because `compute_fitness_landscape()` takes no theta: a shock moves where
   firms sit, not the shape of the basins. The computed output now reports
   geometry and occupancy separately; the vignette's propositions are unchanged
@@ -523,7 +1048,7 @@ merged onto the 0.8.2 terminology sweep.
   appendix, the notation concordance and the submission bundle now all say
   "influence matrix" for the N x N object a user passes in, and reserve
   "epistasis" for what those influences produce through the utility. This is
-  the standard the companion paper carries (CD2026, Paper T): W is the
+  the standard: W is the
   influence matrix, the NK interaction matrix with real-valued entries giving
   the magnitude and sign of one activity's influence on another's fitness
   contribution; its binary support E is the influence pattern; epistasis

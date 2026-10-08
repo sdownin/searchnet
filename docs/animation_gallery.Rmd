@@ -79,7 +79,7 @@ h3 { color: #1b3a5c; }
 ## Brock-Durlauf Mean-Field Reduction
 **Scene:** `scene_brock_durlauf.py → BrockDurlaufScene` (~80s, 5 phases)
 
-The visual companion to **Theorem 5** (Brock--Durlauf Recovery). A 5-phase narrative walks the viewer from the SaoMNK ministep all the way to the Curie--Weiss tanh fixed point: **Phase 1** introduces the Brock & Durlauf (2001) binary-choice utility u_i = h sigma_i + J sigma_i m_{-i} + epsilon_i; **Phase 2** applies the five mean-field restrictions Rb1--Rb5 (M -> infinity, congestion-only, finite beta, spin-recoding); **Phase 3** derives the self-consistency equation m\* = tanh(beta h + beta J m\*) via the law-of-large-numbers collapse of the empirical adoption rate; **Phase 4** sweeps beta\*J across the multiplicity threshold beta\*J = 1, animating the pitchfork bifurcation between unique and multiple equilibria; **Phase 5** closes with the "Theorem 5" framing card --- "Same potential, two views" --- that visualises the SaoMNK ministep (Glauber dynamics) and the B&D equilibrium (thermodynamic free energy) as dual readings of one Hamiltonian.
+The visual companion to **Property 5** (Brock--Durlauf Recovery). A 5-phase narrative walks the viewer from the SaoMNK ministep all the way to the Curie--Weiss tanh fixed point: **Phase 1** introduces the Brock & Durlauf (2001) binary-choice utility u_i = h sigma_i + J sigma_i m_{-i} + epsilon_i; **Phase 2** applies the five mean-field restrictions Rb1--Rb5 (M -> infinity, congestion-only, finite beta, spin-recoding); **Phase 3** derives the self-consistency equation m\* = tanh(beta h + beta J m\*) via the law-of-large-numbers collapse of the empirical adoption rate; **Phase 4** sweeps beta\*J across the multiplicity threshold beta\*J = 1, animating the pitchfork bifurcation between unique and multiple equilibria; **Phase 5** closes with the "Property 5" framing card --- "Same potential, two views" --- that visualises the SaoMNK ministep (Glauber dynamics) and the B&D equilibrium (thermodynamic free energy) as dual readings of one Hamiltonian.
 
 Render with: `manim -qm scene_brock_durlauf.py BrockDurlaufScene`
 
@@ -87,56 +87,6 @@ Render with: `manim -qm scene_brock_durlauf.py BrockDurlaufScene`
 
 <video controls>
 <source src="media/videos/scene_brock_durlauf/720p30/BrockDurlaufScene.mp4" type="video/mp4">
-</video>
-
----
-
-# CD2026 Scenes (MgmtSci Airline Paper) {.tabset}
-
-## Convergence Climb (Enhanced V2)
-**Scene:** `scene_01_convergence_climb_v2.py → ConvergenceClimbV2Scene` (86 animations, ~45s)
-
-4-phase narrative: **Independent Search** → **Competition Activates** (flash + K_AA counter) → **Convergence Trap** (cluster at local peak, star marks missed global optimum) → **Imitation Mirage** (K_AA up but fitness gap grows).
-
-<video controls>
-<source src="media/ConvergenceClimbV2Scene.mp4" type="video/mp4">
-</video>
-
-*Original version (shorter, 20 steps):*
-<video controls width="400">
-<source src="media/ConvergenceClimbScene.mp4" type="video/mp4">
-</video>
-
-## Rivalry vs Imitation
-**Scene:** `scene_02_rivalry_imitation.py → RivalryImitationScene`
-**Shows:** Side-by-side rivalry vs imitation mechanism decomposition trajectories.
-
-<video controls>
-<source src="media/RivalryImitationScene.mp4" type="video/mp4">
-</video>
-
-## Architecture Morphing
-**Scene:** `scene_03_architecture.py → ArchitectureScene`
-**Shows:** W-matrix heatmap morphing between modular, hierarchical, and random architectures.
-
-<video controls>
-<source src="media/ArchitectureScene.mp4" type="video/mp4">
-</video>
-
-## COVID Shock
-**Scene:** `scene_04_covid_shock.py → CovidShockScene`
-**Shows:** COVID shock analysis — pre/post competitive overlap comparison.
-
-<video controls>
-<source src="media/CovidShockScene.mp4" type="video/mp4">
-</video>
-
-## Imitation Paradox
-**Scene:** `scene_05_imitation_paradox.py → ImitationParadoxScene`
-**Shows:** Non-monotonic relationship between imitation intensity and K_AA overlap.
-
-<video controls>
-<source src="media/ImitationParadoxScene.mp4" type="video/mp4">
 </video>
 
 ---
@@ -217,7 +167,7 @@ Render with: `manim -qm scene_brock_durlauf.py BrockDurlaufScene`
 
 ## Chain of Reasoning (Part 2: Intermediate)
 **Scene:** `scene_blume_part2.py → ChainOfReasoningScene`
-**Shows:** The logical chain: Logit BR + Potential game → Gibbs measure → SAOM = Potential game → searchnet converges to QRE. Each step appears with connecting arrows.
+**Shows:** The logical chain: Logit BR + Potential game → Gibbs measure → SAOM = Potential game → searchnet converges (to a QRE only under single-flip revision). Each step appears with connecting arrows.
 
 <video controls>
 <source src="media/ChainOfReasoningScene.mp4" type="video/mp4">
@@ -257,172 +207,11 @@ Render with: `manim -qm scene_brock_durlauf.py BrockDurlaufScene`
 
 ---
 
-# AMR Industrial Policy Scenes {.tabset}
-
-## Basin Narrative (Full Story — 87 animations)
-**Scene:** `scene_amr_narrative.py → BasinNarrativeScene` (~90s, 6 phases)
-
-The flagship AMR animation: one firm on a 3D NK landscape under 4 policy regimes and 3 erosion levels. **Phase 1:** Title + landscape. **Phase 2:** Baseline search (no policy). **Phase 3:** Four policies diverge from same start to different basins. **Phase 4:** Erosion morphs the landscape (Low→Medium→High). **Phase 5:** Policy × Erosion fitness matrix — winner shifts with erosion. **Phase 6:** "No universal best. Architecture determines basin."
-
-<video controls>
-<source src="media/BasinNarrativeScene.mp4" type="video/mp4">
-</video>
-
-## Basin Geometry
-**Scene:** `scene_amr_basin.py → BasinGeometryScene`
-**Shows:** 2D contour landscape with 3 basins. Four policy types (P1-P4) follow different trajectories to different basins. "Same landscape, different basins."
-
-<video controls>
-<source src="media/BasinGeometryScene.mp4" type="video/mp4">
-</video>
-
-## Policy Comparison
-**Scene:** `scene_amr_basin.py → PolicyComparisonScene`
-**Shows:** 4 side-by-side panels showing each policy's effect on scope/synergy/herding with mechanism arrows.
-
-<video controls>
-<source src="media/PolicyComparisonScene.mp4" type="video/mp4">
-</video>
-
-## Complementarity Trap
-**Scene:** `scene_amr_basin.py → ComplementarityTrapScene`
-**Shows:** Fitness basin deepens as synergy increases — but strategic flexibility bars shrink. More synergy = less flexibility.
-
-<video controls>
-<source src="media/ComplementarityTrapScene.mp4" type="video/mp4">
-</video>
-
-## K-Crossover
-**Scene:** `scene_amr_basin.py → KCrossoverScene`
-**Shows:** P4 (Guarantee) dominates at low K, P3 (Tax Concession) dominates at high K. The crossover at K* means no universal best policy.
-
-<video controls>
-<source src="media/KCrossoverScene.mp4" type="video/mp4">
-</video>
-
-## Ising Correspondence
-**Scene:** `scene_amr_dynamics.py → IsingCorrespondenceScene`
-**Shows:** Mapping between Ising spin grid and bipartite activity matrix. Correspondence table builds row by row.
-
-<video controls>
-<source src="media/IsingCorrespondenceScene.mp4" type="video/mp4">
-</video>
-
-## Hysteresis (Path Dependence)
-**Scene:** `scene_amr_dynamics.py → HysteresisScene`
-**Shows:** Forward/backward temperature sweeps follow different paths — the shaded area between curves is path dependence. "The history of policy matters."
-
-<video controls>
-<source src="media/HysteresisScene.mp4" type="video/mp4">
-</video>
-
-## ELO Tournament
-**Scene:** `scene_amr_dynamics.py → EloTournamentScene`
-**Shows:** 4 policy types compete in round-robin matches. ELO ratings evolve over 10 rounds. Winner gets a star.
-
-<video controls>
-<source src="media/EloTournamentScene.mp4" type="video/mp4">
-</video>
-
-## Replicator Dynamics
-**Scene:** `scene_amr_dynamics.py → ReplicatorDynamicsScene`
-**Shows:** Population shares on a simplex. Low erosion → P3 dominates. High erosion → P1 dominates. "Erosion shifts the ESS."
-
-<video controls>
-<source src="media/ReplicatorDynamicsScene.mp4" type="video/mp4">
-</video>
-
-## Fitness Parity Paradox
-**Scene:** `scene_amr_dynamics.py → FitnessParityParadoxScene`
-**Shows:** Head-to-head: all policies nearly equal. But a diversified portfolio beats any single policy. "No single best, but diversification wins."
-
-<video controls>
-<source src="media/FitnessParityParadoxScene.mp4" type="video/mp4">
-</video>
-
-## 10-Component Utility
-**Scene:** `scene_amr_utility.py → TenComponentUtilityScene`
-**Shows:** Utility bar decomposed into 10 color-coded components (NK fitness, scope cost, synergy, herding, congestion, displacement, complementarity, closure, rivalry, legitimacy).
-
-<video controls>
-<source src="media/TenComponentUtilityScene.mp4" type="video/mp4">
-</video>
-
-## SCP Coupling (3-Body Problem)
-**Scene:** `scene_amr_utility.py → SCPCouplingScene`
-**Shows:** S→C→P linear chain transforms into bidirectional coupling, then 3 orbiting bodies. "Structure, Conduct, Performance co-evolve."
-
-<video controls>
-<source src="media/SCPCouplingScene.mp4" type="video/mp4">
-</video>
-
-## Policy Shock Timeline
-**Scene:** `scene_amr_utility.py → PolicyShockTimelineScene`
-**Shows:** K-4 trajectories across Normal → Policy Active → Post-Policy phases with flash at shock points. "theta_shocks create natural experiments."
-
-<video controls>
-<source src="media/PolicyShockTimelineScene.mp4" type="video/mp4">
-</video>
-
-## Institutional Erosion
-**Scene:** `scene_amr_utility.py → InstitutionalErosionScene`
-**Shows:** W-matrix heatmap morphs from clean modular → fuzzy → random. Landscape ruggedness meter rises. "Institutional erosion increases complexity."
-
-<video controls>
-<source src="media/InstitutionalErosionScene.mp4" type="video/mp4">
-</video>
-
----
-
-# Bort Startup Workforce Scenes {.tabset}
-
-## K-4 Dashboard
-**Scene:** `K4DashboardScene`
-**Shows:** K-4 coupled degree evolution for startup workforce simulation.
-
-<video controls>
-<source src="media/Bort_K4DashboardScene.mp4" type="video/mp4">
-</video>
-
-## Bipartite Evolution
-**Scene:** `BipartiteEvolutionScene`
-**Shows:** Startup × skill bipartite network evolution over hiring rounds.
-
-<video controls>
-<source src="media/Bort_BipartiteEvolutionScene.mp4" type="video/mp4">
-</video>
-
-## Projection Morphing
-**Scene:** `ProjectionMorphScene`
-**Shows:** One-mode projections (startup-startup overlap, skill-skill co-occurrence) morphing over time.
-
-<video controls>
-<source src="media/Bort_ProjectionMorphScene.mp4" type="video/mp4">
-</video>
-
-## Gameplay Mockup
-**Scene:** `GameplayMockupScene`
-**Shows:** Strategy game interface mockup — player controls one startup against AI.
-
-<video controls>
-<source src="media/Bort_GameplayMockupScene.mp4" type="video/mp4">
-</video>
-
-## Penrose Dashboard
-**Scene:** `PenroseDashboardScene`
-**Shows:** Multi-panel dashboard illustrating the Penrose Effect — how workforce growth creates bottlenecks that reshape the startup's search landscape. Connects to Bort's co-construction theory.
-
-<video controls>
-<source src="media/Bort_PenroseDashboardScene.mp4" type="video/mp4">
-</video>
-
----
-
 # Rendering New Scenes
 
 To render any scene:
 ```bash
-cd D:/Search_networks/SaoMNK/inst/manim
+cd inst/manim    # from the package source root
 python -m manim -ql scene_name.py SceneClassName    # low quality (fast)
 python -m manim -qm scene_name.py SceneClassName    # medium quality
 python -m manim -qh scene_name.py SceneClassName    # high quality (slow)

@@ -9,22 +9,26 @@ saomnk_inpop_self_consistency(
   theta_inPop,
   h_b,
   M,
+  N = NULL,
   x0 = 0.5,
   tol = 1e-10,
   max_iter = 1000L
 )
 }
 \arguments{
-\item{beta}{Numeric inverse-temperature.}
+\item{beta}{Numeric inverse-temperature (scales the objective).}
 
 \item{theta_inPop}{Numeric SAOM \code{inPop} coefficient (the
 coefficient passed as \code{popularity} in
 \code{\link{saomnk_model}}).}
 
-\item{h_b}{Numeric SAOM \code{density} coefficient (private-utility
-bias in adoption form).}
+\item{h_b}{Numeric SAOM \code{density} coefficient.}
 
 \item{M}{Integer actor count.}
+
+\item{N}{Integer component count (the size of each actor's choice set).
+\code{NULL} uses the large-\eqn{N} limit \eqn{\sigma(2\Delta)}; pass the
+environment's \eqn{N} for the finite-choice-set law.}
 
 \item{x0}{Numeric initial guess in \eqn{[0, 1]}; default 0.5.}
 
@@ -33,56 +37,65 @@ bias in adoption form).}
 \item{max_iter}{Integer maximum iterations; default \code{1000}.}
 }
 \value{
-Adoption-form fixed point \eqn{m^* \in [0, 1]}.  When the
-equation has multiple solutions (rare for inPop given the sqrt
-non-linearity damps positive feedback), the iteration starting
-from \code{x0} converges to one of them; future versions may
-add an \code{all_roots} argument analogous to
-\code{\link{bd_self_consistency}}.
+Adoption-form fixed point \eqn{m^* \in [0, 1]}. With positive
+\code{theta_inPop} the map is increasing and may have several fixed
+points; iteration from \code{x0} returns the one it reaches. With
+negative \code{theta_inPop} the map is decreasing, the fixed point is
+unique, and it is found by root bracketing if iteration oscillates.
 }
 \description{
-Solves the adoption-form fixed-point equation that the live RSiena
-bipartite SAOM with only \code{density} and \code{inPop} effects
-active actually obeys at stationarity. This is \emph{not} the canonical
-Brock & Durlauf (2001) fixed point: B&D assumes a linear peer-mean
-coupling \eqn{J m}, while RSiena's \code{inPop} statistic uses the
-sqrt-transformed column-degree \eqn{\sqrt{n_j + 1}} as a variance
-stabiliser. The two coincide only in the local linearisation around
-\eqn{m = 1/2} (\code{PROOF_TABLE.md} row L16); elsewhere the saomnk-inPop
-fixed point differs from B&D's, and this function gives the former.
+Solves the mean-field fixed point of the live RSiena bipartite SAOM with
+only the \code{density} and \code{inPop} effects active. Two facts fix
+its form (re-derived 2026-10-07 for searchnet 0.11.0, which simulates
+genuine state-carrying paths):
 }
 \details{
-The fixed-point equation is:
-\deqn{m = \sigma\bigl(\beta(h_b + \theta_{\mathrm{inPop}} \sqrt{M m + 1})\bigr)}
-where \eqn{\sigma(x) = 1/(1 + e^{-x})} is the logistic function, and
-the social-interaction coefficient appears non-linearly through the
-sqrt term.
+\enumerate{
+\item On a two-mode dependent variable RSiena 1.5.0's \code{inPop} is
+linear, \eqn{s_i = \sum_j x_{ij} x_{+j}} (the square-root form is the
+separate effect \code{inPopSqrt}). Adding tie \eqn{(i,j)} changes the
+objective by \eqn{\Delta = h_b + \theta(n_{-i,j} + 1)}, where
+\eqn{n_{-i,j}} counts the other holders of component \eqn{j}; in mean
+field \eqn{n_{-i,j} = (M-1)m}.
+\item In a SAOM ministep the actor chooses among \eqn{N} toggles and no
+change. For one actor with a common \eqn{\Delta}, the number of held
+ties \eqn{k} is a birth-death chain whose stationary law is
+\deqn{\pi_k \propto \binom{N}{k} e^{2\Delta k}
+      \bigl(1 + (N-k)e^{\Delta} + k e^{-\Delta}\bigr),}
+so the per-tie adoption probability is \eqn{F_N(\Delta) = E[k]/N}.
+For \eqn{N = 1} this is exactly the binary logit \eqn{\sigma(\Delta)};
+as \eqn{N \to \infty} it tends to \eqn{\sigma(2\Delta)}; near
+\eqn{m = 1/2} it is \eqn{\sigma(\kappa_N \Delta)} to first order with
+\eqn{\kappa_N = 2N/(N+1)}.
+}
 
-This function is the \strong{Option B} reference for
-\code{\link{verify_brock_durlauf_reduction}}: it gives the
-theoretical equilibrium that the \emph{live RSiena simulation}
-should converge to (matching the simulation's own functional form),
-as opposed to \code{\link{bd_self_consistency}} which gives the
-B&D limit that holds only in the local-linearisation regime.
+The fixed point solved is therefore
+\deqn{m = F_N\bigl(\beta(h_b + \theta_{\mathrm{inPop}}(1 + (M-1)m))\bigr).}
+Checked against direct simulation of the ministep chain and against
+\code{saomnk_run()} at \eqn{M = 12}, \eqn{N = 6}: the map gives 0.998 and
+0.859 where the simulations give 0.99 to 1.00 and 0.84 to 0.86.
+
+Before 0.11.0 this function solved
+\eqn{m = \sigma(\beta(h_b + \theta\sqrt{Mm + 1}))}. That form was
+identified on the replayed chain, whose terminal state was a draw near
+the initial density, and it reads \code{inPop} as \code{inPopSqrt}.
 }
 \examples{
-## Sub-critical regime around m = 0.5 (Option C regime where B&D
-## linearisation is locally accurate)
-theta <- 0.5 / sqrt(2 * 100)        # B&D-rescaled inPop coef
+## Field placing the fixed point at 1/2: Delta(1/2) = 0
+M <- 12; theta <- 0.15
 saomnk_inpop_self_consistency(beta = 1, theta_inPop = theta,
-                               h_b = -0.25, M = 100)
-## Compare to B&D linear form
-bd_self_consistency(beta = 1, J = 0.5, h = -0.25, all_roots = FALSE)
+                              h_b = -theta * (1 + (M - 1) / 2),
+                              M = M, N = 6)
+## Coordination regime: the fixed point is near full adoption
+saomnk_inpop_self_consistency(beta = 1, theta_inPop = 0.6, h_b = -1,
+                              M = 12, N = 6)
 }
 \references{
-See \code{PROOF_TABLE.md} row L16 for the linearisation that connects
-this fixed-point equation to the canonical
-Brock & Durlauf (2001) form.
+See \code{PROOF_TABLE.md} row L16 for the change statistic of the
+two-mode \code{inPop} effect.
 }
 \seealso{
-\code{\link{bd_self_consistency}} for the B&D linear-
-coupling fixed point; \code{\link{verify_brock_durlauf_reduction}}
-for the harness that uses both as comparison targets;
-\code{vignette("saomnk-brock-durlauf")} for the full discussion of
-the B/C tradeoff.
+\code{\link{bd_self_consistency}} for the B&D binary-logit
+fixed point; \code{\link{verify_brock_durlauf_reduction}}
+for the harness that uses both as comparison targets.
 }

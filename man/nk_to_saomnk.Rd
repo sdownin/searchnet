@@ -22,7 +22,7 @@ A list with components \code{env_params} (arguments for
 \description{
 Emits the environment and structure-model settings that make a
 single-actor SaoMNK environment search the supplied NK landscape.  This is
-the constructive content of the Reduction theorem (Theorem 1): NK is the
+the constructive content of the Reduction property (Property 1): NK is the
 \eqn{M = 1}, \eqn{\beta \to \infty} special case of SaoMNK.
 }
 \examples{

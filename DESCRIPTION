@@ -1,6 +1,6 @@
 Package: searchnet
 Title: Network-Embedded Search Simulation Engine
-Version: 0.10.0
+Version: 0.12.0
 Authors@R: person("Stephen", "Downing", email = "sdowning@missouri.edu",
                   role = c("aut", "cre"))
 Description: R6-based simulation engine for strategic search and adaptation
@@ -8,10 +8,10 @@ Description: R6-based simulation engine for strategic search and adaptation
     Stochastic Actor-Oriented Model methodology to represent firm activity
     systems as bipartite actor-component networks with endogenous feedback
     loops, coupled degree distributions (K4), and shock/intervention analysis
-    via difference-in-differences. Theorem 5 (Brock & Durlauf 2001 recovery)
+    via difference-in-differences. Property 5 (Brock & Durlauf 2001 recovery)
     establishes that the canonical economic discrete-choice-with-social-
     interactions model is contained as a degenerate special case in the
-    many-actor mean-field limit, complementing Theorem 1 (NK reduction in the
+    many-actor mean-field limit, complementing Property 1 (NK reduction in the
     single-actor greedy limit). Formerly known as SaoMNK.
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -23,6 +23,7 @@ Depends:
 Imports:
     R6,
     stats,
+    tools,
     utils,
     grDevices,
     graphics,
@@ -76,6 +77,12 @@ Suggests:
     forcats,
     broom,
     future,
-    future.apply
+    future.apply,
+    gmp,
+    processx,
+    withr,
+    yaml
+SystemRequirements: Lean 4 via elan (optional; used only by the lean_*()
+    formal-verification functions; toolchain pinned in inst/lean/lean-toolchain)
 VignetteBuilder: knitr
 Config/testthat/edition: 3

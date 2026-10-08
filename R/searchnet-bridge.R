@@ -211,93 +211,10 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
   rate_params <- .rate_param_table(thetas, theta_point, se, eff_meta, is_rate)
 
   ## -- SAOM -> SaoMNK mapping table ----------------------------------------- ##
-  ## Each entry: saom name, saomnk shortName, status, transform, description.
-  ## Sign conventions: RSiena density is negative (costly); SaoMNK density
-  ## likewise.  The transform is the identity (* scale_factor) unless a
-  ## rescaling is needed for the bipartite representation.
-  ##
-  ## `status` is the load-bearing field, and it has three values:
-  ##
-  ##   "exact"        the SaoMNK effect IS the estimated effect, up to
-  ##                  scale_factor.  Converting it changes nothing about what
-  ##                  the model says.
-  ##   "approximate"  the SaoMNK effect is a DIFFERENT statistic standing in for
-  ##                  the estimated one.  A counterfactual run through it is
-  ##                  calibrated to a different model than the one estimated, so
-  ##                  `strict = TRUE` refuses it and `strict = FALSE` warns.
-  ##   "unavailable"  the SaoMNK effect does not exist for a bipartite dependent
-  ##                  variable in RSiena 1.5.0, so the mapping can never be
-  ##                  simulated.  Refused regardless of `strict`, and reported
-  ##                  as a NON-IMPLEMENTATION rather than as a null.
+  ## The crosswalk and the meaning of each entry's `status` are in
+  ## .bridge_crosswalk(), below.
 
-  mapping <- list(
-    # Structural effects
-    list(saom = "density",      saomnk = "density",      status = "exact",
-         transform = function(x) x * scale_factor,
-         desc = "Scope cost (negative = costly to add ties)"),
-    list(saom = "outdegree",    saomnk = "density",      status = "exact",
-         transform = function(x) x * scale_factor,
-         desc = "Alternative RSiena label for the same outdegree/density term"),
-    list(saom = "recip",        saomnk = "cycle4",       status = "approximate",
-         transform = function(x) x * 0.5 * scale_factor,
-         desc = "Reciprocity -> HALF a 4-cycle parameter; a different statistic"),
-    list(saom = "transTrip",    saomnk = "transTriads",  status = "unavailable",
-         transform = function(x) x * scale_factor,
-         desc = "Transitive triplets -> transitive triads (one-mode only)"),
-    list(saom = "cycle3",       saomnk = "cycle4",       status = "approximate",
-         transform = function(x) x * scale_factor,
-         desc = "3-cycles -> 4-cycles; the bipartite cycle, not the same statistic"),
-    list(saom = "gwespFF",      saomnk = "transTriads",  status = "unavailable",
-         transform = function(x) x * scale_factor,
-         desc = "GWESP (geometrically weighted) -> unweighted transitive triads"),
-
-    # Popularity / activity effects
-    list(saom = "inPop",        saomnk = "inPop",        status = "exact",
-         transform = function(x) x * scale_factor,
-         desc = "In-degree popularity (preferential attachment)"),
-    list(saom = "inPopSqrt",    saomnk = "inPopSqrt",    status = "exact",
-         transform = function(x) x * scale_factor,
-         desc = "Sqrt in-popularity; RSiena implements inPopSqrt for bipartite DVs"),
-    list(saom = "outAct",       saomnk = "outAct",       status = "exact",
-         transform = function(x) x * scale_factor,
-         desc = "Out-degree activity (scope expansion)"),
-    list(saom = "outActSqrt",   saomnk = "outActSqrt",   status = "exact",
-         transform = function(x) x * scale_factor,
-         desc = "Sqrt out-activity"),
-
-    # Covariate effects
-    list(saom = "egoX",         saomnk = "egoX",         status = "exact",
-         transform = function(x) x * scale_factor,
-         desc = "Ego covariate effect"),
-    list(saom = "altX",         saomnk = "altX",         status = "exact",
-         transform = function(x) x * scale_factor,
-         desc = "Alter covariate effect"),
-    list(saom = "simX",         saomnk = "egoX",         status = "approximate",
-         transform = function(x) x * scale_factor,
-         desc = "Covariate SIMILARITY re-read as an ego main effect"),
-    list(saom = "sameX",        saomnk = "egoX",         status = "approximate",
-         transform = function(x) x * scale_factor,
-         desc = "Same-category homophily re-read as an ego main effect"),
-
-    # Dyadic covariate effects
-    list(saom = "X",            saomnk = "X",            status = "exact",
-         transform = function(x) x * scale_factor,
-         desc = "Dyadic covariate effect"),
-    list(saom = "XWX",          saomnk = "XWX",          status = "exact",
-         transform = function(x) x * scale_factor,
-         desc = "Epistasis: XW=>X closure on the influence matrix W"),
-    list(saom = "higher",       saomnk = "altX",         status = "approximate",
-         transform = function(x) x * scale_factor,
-         desc = "Higher-covariate ordering re-read as an alter main effect"),
-
-    # Distance effects
-    list(saom = "totInDist2",   saomnk = "totInDist2",   status = "exact",
-         transform = function(x) x * scale_factor,
-         desc = "Total in-degree distance-2"),
-    list(saom = "simEgoInDist2", saomnk = "simEgoInDist2", status = "exact",
-         transform = function(x) x * scale_factor,
-         desc = "Similar ego in-degree distance-2")
-  )
+  mapping <- .bridge_crosswalk(scale_factor)
 
   ## -- Apply mapping -------------------------------------------------------- ##
 
@@ -518,6 +435,124 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
 #  saom_to_saomnk internal helpers
 # ---------------------------------------------------------------------------- #
 
+#' The SAOM -> SaoMNK crosswalk
+#'
+#' One entry per RSiena short name \code{saom_to_saomnk()} recognizes. Kept
+#' outside that function so tests can read it: an \code{"exact"} status is a
+#' claim about searchnet's statistic, and
+#' \code{tests/testthat/test-structural-stats-vs-rsiena.R} fails on an exact
+#' entry whose SaoMNK effect it does not pin to RSiena's \code{siena07()}
+#' target.
+#'
+#' @param scale_factor Multiplier applied by every \code{transform}.
+#' @return A list of entries, each with \code{saom}, \code{saomnk},
+#'   \code{status}, \code{transform} and \code{desc}.
+#' @keywords internal
+.bridge_crosswalk <- function(scale_factor = 1.0) {
+
+  ## Each entry: saom name, saomnk shortName, status, transform, description.
+  ## Sign conventions: RSiena density is negative (costly); SaoMNK density
+  ## likewise.  The transform is the identity (* scale_factor) unless a
+  ## rescaling is needed for the bipartite representation.
+  ##
+  ## `status` is the load-bearing field, and it has three values:
+  ##
+  ##   "exact"        the SaoMNK effect IS the estimated effect, up to
+  ##                  scale_factor.  Converting it changes nothing about what
+  ##                  the model says.  It rests on two things: searchnet
+  ##                  registers RSiena's own effect of that name, and the
+  ##                  statistic searchnet computes for it
+  ##                  (get_struct_mod_stats_mat_from_bi_mat(), which feeds the
+  ##                  utility and K decompositions) is pinned to RSiena 1.5.0's
+  ##                  siena07() target in
+  ##                  tests/testthat/test-structural-stats-vs-rsiena.R.  That
+  ##                  test reads this list and fails on an "exact" entry whose
+  ##                  saomnk effect it does not pin, so mark an entry exact
+  ##                  only after adding the pin.  Until 2026-10-04 egoX, altX,
+  ##                  X, totInDist2 and simEgoInDist2 were marked exact with no
+  ##                  pin, and none of the five statistics matched RSiena.
+  ##                  A covariate-dependent effect still needs the covariate it
+  ##                  was estimated on (see .BRIDGE_COVARIATE_DEPENDENT).
+  ##   "approximate"  the SaoMNK effect is a DIFFERENT statistic standing in for
+  ##                  the estimated one.  A counterfactual run through it is
+  ##                  calibrated to a different model than the one estimated, so
+  ##                  `strict = TRUE` refuses it and `strict = FALSE` warns.
+  ##   "unavailable"  the SaoMNK effect does not exist for a bipartite dependent
+  ##                  variable in RSiena 1.5.0, so the mapping can never be
+  ##                  simulated.  Refused regardless of `strict`, and reported
+  ##                  as a NON-IMPLEMENTATION rather than as a null.
+
+  list(
+    # Structural effects
+    list(saom = "density",      saomnk = "density",      status = "exact",
+         transform = function(x) x * scale_factor,
+         desc = "Scope cost (negative = costly to add ties)"),
+    list(saom = "outdegree",    saomnk = "density",      status = "exact",
+         transform = function(x) x * scale_factor,
+         desc = "Alternative RSiena label for the same outdegree/density term"),
+    list(saom = "recip",        saomnk = "cycle4",       status = "approximate",
+         transform = function(x) x * 0.5 * scale_factor,
+         desc = "Reciprocity -> HALF a 4-cycle parameter; a different statistic"),
+    list(saom = "transTrip",    saomnk = "transTriads",  status = "unavailable",
+         transform = function(x) x * scale_factor,
+         desc = "Transitive triplets -> transitive triads (one-mode only)"),
+    list(saom = "cycle3",       saomnk = "cycle4",       status = "approximate",
+         transform = function(x) x * scale_factor,
+         desc = "3-cycles -> 4-cycles; the bipartite cycle, not the same statistic"),
+    list(saom = "gwespFF",      saomnk = "transTriads",  status = "unavailable",
+         transform = function(x) x * scale_factor,
+         desc = "GWESP (geometrically weighted) -> unweighted transitive triads"),
+
+    # Popularity / activity effects
+    list(saom = "inPop",        saomnk = "inPop",        status = "exact",
+         transform = function(x) x * scale_factor,
+         desc = "In-degree popularity (preferential attachment)"),
+    list(saom = "inPopSqrt",    saomnk = "inPopSqrt",    status = "exact",
+         transform = function(x) x * scale_factor,
+         desc = "Sqrt in-popularity; RSiena implements inPopSqrt for bipartite DVs"),
+    list(saom = "outAct",       saomnk = "outAct",       status = "exact",
+         transform = function(x) x * scale_factor,
+         desc = "Out-degree activity (scope expansion)"),
+    list(saom = "outActSqrt",   saomnk = "outActSqrt",   status = "exact",
+         transform = function(x) x * scale_factor,
+         desc = "Sqrt out-activity"),
+
+    # Covariate effects
+    list(saom = "egoX",         saomnk = "egoX",         status = "exact",
+         transform = function(x) x * scale_factor,
+         desc = "Ego covariate effect"),
+    list(saom = "altX",         saomnk = "altX",         status = "exact",
+         transform = function(x) x * scale_factor,
+         desc = "Alter covariate effect"),
+    list(saom = "simX",         saomnk = "egoX",         status = "approximate",
+         transform = function(x) x * scale_factor,
+         desc = "Covariate SIMILARITY re-read as an ego main effect"),
+    list(saom = "sameX",        saomnk = "egoX",         status = "approximate",
+         transform = function(x) x * scale_factor,
+         desc = "Same-category homophily re-read as an ego main effect"),
+
+    # Dyadic covariate effects
+    list(saom = "X",            saomnk = "X",            status = "exact",
+         transform = function(x) x * scale_factor,
+         desc = "Dyadic covariate effect"),
+    list(saom = "XWX",          saomnk = "XWX",          status = "exact",
+         transform = function(x) x * scale_factor,
+         desc = "Epistasis: XW=>X closure on the influence matrix W"),
+    list(saom = "higher",       saomnk = "altX",         status = "approximate",
+         transform = function(x) x * scale_factor,
+         desc = "Higher-covariate ordering re-read as an alter main effect"),
+
+    # Distance effects
+    list(saom = "totInDist2",   saomnk = "totInDist2",   status = "exact",
+         transform = function(x) x * scale_factor,
+         desc = "Covariate total over the other holders of ego's components"),
+    list(saom = "simEgoInDist2", saomnk = "simEgoInDist2", status = "exact",
+         transform = function(x) x * scale_factor,
+         desc = "Ego's covariate similarity to the other holders of its components")
+  )
+}
+
+
 #' Extract theta, standard errors and effect metadata from a SAOM result
 #'
 #' @param saom_result A \code{sienaFit} object or a named numeric vector.
@@ -600,11 +635,32 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
     covtheta <- saom_result$covtheta
     ## suppressWarnings(): a non-PD covtheta yields NaN SEs, which is reported
     ## by .draw_saom_theta() rather than as a bare "NaNs produced" warning here.
-    se <- tryCatch(
-      suppressWarnings(sqrt(diag(as.matrix(covtheta)))),
-      error = function(e) rep(NA_real_, length(thetas))
-    )
-    if (length(se) != length(thetas)) se <- rep(NA_real_, length(thetas))
+    ## When SEs cannot be read they are NA, but with a warning saying why:
+    ## the error handler and the length check used to set them NA silently,
+    ## so the mapping table's saom_se column looked like unidentified
+    ## parameters rather than a read failure.
+    se_problem <- NULL
+    se <- if (is.null(covtheta)) {
+      se_problem <- "the sienaFit carries no covtheta"
+      rep(NA_real_, length(thetas))
+    } else {
+      tryCatch(
+        suppressWarnings(sqrt(diag(as.matrix(covtheta)))),
+        error = function(e) {
+          se_problem <<- paste("covtheta could not be read:", conditionMessage(e))
+          rep(NA_real_, length(thetas))
+        }
+      )
+    }
+    if (is.null(se_problem) && length(se) != length(thetas)) {
+      se_problem <- sprintf("covtheta has %d diagonal entries but there are %d estimates",
+                            length(se), length(thetas))
+      se <- rep(NA_real_, length(thetas))
+    }
+    if (!is.null(se_problem)) {
+      warning(sprintf("saom_to_saomnk(): standard errors are NA for all %d parameters: %s.",
+                      length(thetas), se_problem), call. = FALSE)
+    }
 
     meta <- if (is.null(eff_df)) NULL else data.frame(
       effect_name  = as.character(eff_df$effectName),
@@ -1605,6 +1661,7 @@ run_calibrated_counterfactual <- function(bridge_env, bridge_params,
     process_chain   = TRUE,
     verbose         = FALSE
   )
+  .searchnet_require_path(env, ".bridge_run_arm()")
   invisible(env)
 }
 
@@ -1701,17 +1758,25 @@ run_calibrated_counterfactual <- function(bridge_env, bridge_params,
 #' @keywords internal
 .bridge_delta_summary <- function(measure, base_vals, cf_vals, conf_level) {
 
+  ## A missing value means a replication's measure was not computed. It used
+  ## to make sd() NA, which skipped the t-test and left every inferential
+  ## column NA with no message; the t-test's own errors were also swallowed.
+  ## Inference is still NA when it is undefined (one replication, or a
+  ## constant delta: sd_delta and n_reps show which), but nothing is dropped.
+  n_na <- sum(is.na(base_vals) | is.na(cf_vals))
+  if (n_na > 0L)
+    stop(sprintf(paste0(".bridge_delta_summary(): measure '%s' is missing in %d of %d ",
+                        "replications; the paired summary would silently drop them."),
+                 measure, n_na, length(base_vals)), call. = FALSE)
+
   d <- cf_vals - base_vals
   n <- length(d)
 
   sd_d  <- if (n > 1L) sd(d) else NA_real_
   mc_se <- if (n > 1L) sd_d / sqrt(n) else NA_real_
 
-  tt <- if (n > 1L && !is.na(sd_d) && sd_d > 0) {
-    tryCatch(
-      stats::t.test(cf_vals, base_vals, paired = TRUE, conf.level = conf_level),
-      error = function(e) NULL
-    )
+  tt <- if (n > 1L && sd_d > 0) {
+    stats::t.test(cf_vals, base_vals, paired = TRUE, conf.level = conf_level)
   } else NULL
 
   alpha <- 1 - conf_level

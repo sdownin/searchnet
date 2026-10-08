@@ -8,6 +8,7 @@
 
 #' @export
 saomnk_plot_shocks <- function(env, verbose = FALSE) {
+  .searchnet_require_path(env, "saomnk_plot_shocks()")
   if(is.null(env$theta_shocks))
     stop('env$theta_shocks is missing.')
   sim_title_str <- env$get_structure_model_param_str()
@@ -84,21 +85,21 @@ saomnk_plot_shocks <- function(env, verbose = FALSE) {
     ggplot(aes(x=shock_id, y=value, color=strategy,fill=strategy)) +
     geom_point(position='jitter', alpha=.1) + geom_boxplot(aes(shape=shock_label), alpha=.2) +
     ggtitle(sprintf('Utility by Exogenous Shock\n%s', sim_title_str)) +
-    theme_bw()
+    theme_searchnet()
 
   pk <- Kdf %>% filter(effect %in% c('K_AC','K_AA')) %>%
     ggplot(aes(x=shock_id, y=value, color=node_group,fill=node_group)) +
     geom_point(position='jitter', alpha=.1) + geom_boxplot(aes(shape=shock_label), alpha=.2) +
     facet_grid(effect ~ ., scales='free_y') +
     ggtitle(sprintf('Actor and Component Degrees by Exogenous Shock\n%s', sim_title_str)) +
-    theme_bw()
+    theme_searchnet()
 
   ps <- statdf %>%
     ggplot(aes(x=shock_id, y=value, color=strategy,fill=strategy)) +
     geom_point(position='jitter', alpha=.1) + geom_boxplot(aes(shape=shock_label), alpha=.2) +
     facet_grid(effect_level ~ ., scales='free_y') +
     ggtitle(sprintf('Actor Utility Contribution (statistic * theta) by Exogenous Shock\n%s', sim_title_str)) +
-    theme_bw()
+    theme_searchnet()
 
 
   return(list(pu=pu, pk=pk, ps=ps))
@@ -111,6 +112,7 @@ saomnk_plot_K_attribute_shocks <- function(env,
                                             K_type = 'K_AC',
                                             new_components = NULL,
                                             plot_type = c("raw", "did", "both")) {
+  .searchnet_require_path(env, "saomnk_plot_K_attribute_shocks()")
 
   plot_type <- match.arg(plot_type)
 
@@ -181,7 +183,7 @@ saomnk_plot_K_attribute_shocks <- function(env,
       geom_line(size = 1.2) +
       geom_ribbon(aes(ymin = mean_degree - se, ymax = mean_degree + se, fill = treatment),
                   alpha = 0.2, color = NA) +
-      geom_vline(xintercept = shock_times, linetype = "dashed", color = "red", size = 1) +
+      geom_vline(xintercept = shock_times, linetype = "dashed", color = "#D55E00", size = 1) +
       labs(
         title = sprintf("%s for New Components Only (C%d-C%d)",
                         K_type,
@@ -192,7 +194,7 @@ saomnk_plot_K_attribute_shocks <- function(env,
         color = "Group",
         fill = "Group"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(
         plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
         legend.position = "bottom"
@@ -208,7 +210,7 @@ saomnk_plot_K_attribute_shocks <- function(env,
       ggplot(aes(x = chain_step_id, y = value, color = group)) +
       geom_line(size = 1.2) +
       geom_hline(yintercept = 0, linetype = "solid", color = "gray50") +
-      geom_vline(xintercept = shock_times, linetype = "dashed", color = "red", size = 1) +
+      geom_vline(xintercept = shock_times, linetype = "dashed", color = "#D55E00", size = 1) +
       annotate("text", x = shock_times + 10, y = min(did_data$treated_normalized, na.rm = TRUE) * 0.5,
                label = "Treatment effect\n(negative = less exploration)",
                hjust = 0, vjust = 0.5, size = 3) +
@@ -222,7 +224,7 @@ saomnk_plot_K_attribute_shocks <- function(env,
         y = "Degree Difference from Control Baseline",
         color = "Group"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       theme(
         plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
         plot.subtitle = element_text(hjust = 0.5, size = 11, face = "italic"),
@@ -241,27 +243,27 @@ saomnk_plot_K_attribute_shocks <- function(env,
     p1 <- plot_data %>%
       ggplot(aes(x = chain_step_id, y = mean_degree, color = treatment)) +
       geom_line(size = 1) +
-      geom_vline(xintercept = shock_times, linetype = "dashed", color = "red", size = 0.8) +
+      geom_vline(xintercept = shock_times, linetype = "dashed", color = "#D55E00", size = 0.8) +
       labs(
         title = "Raw Values",
         x = "Chain Step",
         y = "Average Degree",
         color = "Group"
       ) +
-      theme_minimal() +
+      theme_searchnet() +
       scale_y_continuous(limits = c(0, NA))
 
     p2 <- did_data %>%
       ggplot(aes(x = chain_step_id)) +
-      geom_line(aes(y = diff_adjusted), size = 1.2, color = "darkblue") +
+      geom_line(aes(y = diff_adjusted), size = 1.2, color = "#0072B2") +
       geom_hline(yintercept = 0, linetype = "solid", color = "gray50") +
-      geom_vline(xintercept = shock_times, linetype = "dashed", color = "red", size = 0.8) +
+      geom_vline(xintercept = shock_times, linetype = "dashed", color = "#D55E00", size = 0.8) +
       labs(
         title = "Treatment Effect (Treated - Control)",
         x = "Chain Step",
         y = "Difference in Degrees"
       ) +
-      theme_minimal()
+      theme_searchnet()
 
     p <- p1 / p2 +
       patchwork::plot_annotation(
@@ -282,6 +284,7 @@ saomnk_plot_K_attribute_shocks <- function(env,
 
 #' @export
 saomnk_plot_K_AC_NEW_shocks <- function(env, verbose = FALSE) {
+  .searchnet_require_path(env, "saomnk_plot_K_AC_NEW_shocks()")
 
   # Get K data for new components
   Kdf_new <- env$compute_K_attribute_shocks(K_type = 'K_AC', verbose = verbose)
@@ -335,7 +338,7 @@ saomnk_plot_K_AC_NEW_shocks <- function(env, verbose = FALSE) {
     annotate("text", x = 5, y = max(c(top_data$value, 0.1)) * 0.8,
              label = "subsidy", hjust = 0, vjust = 1, size = 3) +
     labs(title = "K_AC_NEW", x = "", y = "") +
-    theme_minimal() +
+    theme_searchnet() +
     theme(
       panel.background = element_rect(fill = "white", color = "black", size = 0.5),
       panel.grid.major = element_line(color = "gray90", size = 0.3),
@@ -358,7 +361,7 @@ saomnk_plot_K_AC_NEW_shocks <- function(env, verbose = FALSE) {
     annotate("text", x = 5, y = min(y_range) * 0.8,
              label = "treatment_100__control_0", hjust = 0, vjust = 1, size = 3) +
     labs(title = "K_AC_NEW", x = "", y = "") +
-    theme_minimal() +
+    theme_searchnet() +
     theme(
       panel.background = element_rect(fill = "white", color = "black", size = 0.5),
       panel.grid.major = element_line(color = "gray90", size = 0.3),
@@ -374,7 +377,7 @@ saomnk_plot_K_AC_NEW_shocks <- function(env, verbose = FALSE) {
     p_bottom <- p_bottom +
       annotate("text", x = mean(range(bottom_data$chain_step_id)), y = 0,
                label = "No variation: Treatment and control have identical outcomes",
-               hjust = 0.5, vjust = 0.5, size = 3, color = "red", fontface = "italic")
+               hjust = 0.5, vjust = 0.5, size = 3, color = "#D55E00", fontface = "italic")
   }
 
   # Y-axis labels

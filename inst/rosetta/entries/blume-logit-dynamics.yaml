@@ -1,0 +1,70 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: blume-logit-dynamics
+title: Logit revision dynamics and the Gibbs measure
+model: Blume logit dynamics
+citations:
+  - key: blume_1993
+    text: "Blume, L. E. (1993). The statistical mechanics of strategic interaction. Games and Economic Behavior, 5(3), 387-424."
+    doi: 10.1006/game.1993.1023
+relation: equilibrium-characterization
+statement: >-
+  Under single-flip logit revision of a potential game the search is a reversible
+  Markov chain whose stationary distribution is the Gibbs measure
+  exp(beta Phi) / Z, reached from every starting configuration because every
+  configuration is reachable by single flips.
+restrictions:
+  M: null
+  "N": null
+  W: any
+  beta: null
+  revision_rule: single_flip
+  rates: constant
+  notes:
+    - "single-flip revision only; the multinomial ministep is not covered"
+terms:
+  - class: complementarity
+    status: active
+    effect: XWX
+    value: 0.5
+    expression: "part of the potential Phi"
+    construct: interdependence among components
+  - class: scope
+    status: active
+    effect: outAct
+    value: -0.5
+    expression: "part of the potential Phi"
+    construct: breadth of the actor's portfolio
+  - class: crowding
+    status: active
+    effect: inPop
+    value: -0.2
+    expression: "part of the potential Phi"
+    construct: congestion on shared components
+  - class: contact
+    status: active
+    effect: cycle4
+    value: 0.1
+    expression: "part of the potential Phi"
+    construct: repeated overlap between pairs of actors
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs:
+  stochastic stability: [complementarity, scope, crowding, contact]
+lean:
+  - SaomNK.glauber_reversible
+  - SaomNK.metropolis_reversible
+  - SaomNK.global_balance_of_potential
+  - SaomNK.reachable
+  - SaomNK.flipStable_iff_localMax
+checks:
+  - tests/testthat/test-potential-cycles.R
+does_not_cover:
+  - "Blume's stochastic stability results on selection among equilibria are not formalized here"
+  - "RSiena's multinomial ministep differs from single-flip revision; Gibbs stationarity is proved for the latter"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-07, from vignettes/saomnk-blume-tutorial.Rmd and the Lean registry"
+  ai_drafted: true
+  reviewed: false

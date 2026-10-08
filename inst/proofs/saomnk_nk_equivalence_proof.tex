@@ -1,12 +1,12 @@
 % ---------------------------------------------------------------------------
-% NUMBERING AND STATUS NOTE (2026-09-09). This file's Theorems 1-3 are Paper T's
-% Theorems 1-3 (CD2026_PaperT_v4, Management Science). Its "Proposition 1/2/3"
-% under Theorem 3 are Paper T's Theorems 3a/3b/3c. Lemma 1 (Payoff Equivalence)
-% was FALSE as written until 2026-09-09: the utility carried a factor b_{id} in
-% front of f_d that NK fitness does not have, and the proof verified the
-% identity only at x = 1. Repaired here and in Paper T (stage 127) by dropping
-% the factor; the counterexample and the repaired proof are machine-checked in
-% Lean 4 (D:\CD2026\formal\saomnk, Saomnk/Reduction.lean).
+% NUMBERING AND STATUS NOTE (2026-10-07). Result numbers follow
+% inst/proofs/PROOF_TABLE.md, which is the package's single numbering table;
+% each environment has its own counter so that Properties 1-3, Lemmas 1-4,
+% Propositions 1-3, Corollary 1 and Definitions 1-5 print with those numbers.
+% Lemma 1 (Payoff Equivalence) was false as written until 2026-09-09: the
+% utility carried a factor b_{id} in front of f_d that NK fitness does not
+% have, and the proof verified the identity only at x = 1. Repaired here by
+% dropping the factor.
 % ---------------------------------------------------------------------------
 \documentclass[12pt]{article}
 
@@ -20,17 +20,19 @@
 \usepackage{hyperref}
 \usepackage{setspace}
 \usepackage{cleveref}
+\crefname{property}{Property}{Properties}
 
 \onehalfspacing
 
 % ---------- theorem environments ----------
 \newtheorem{theorem}{Theorem}
-\newtheorem{proposition}[theorem]{Proposition}
-\newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{corollary}[theorem]{Corollary}
-\newtheorem{definition}[theorem]{Definition}
-\newtheorem{remark}[theorem]{Remark}
-\newtheorem{example}[theorem]{Example}
+\newtheorem{property}{Property}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
 
 % ---------- operators and shortcuts ----------
 \DeclareMathOperator*{\argmax}{arg\,max}
@@ -48,7 +50,7 @@
 
 % ---------- title ----------
 \title{%
-  \textbf{Online Appendix: Formal Proofs of the Relationship\\
+  \textbf{Formal Proofs of the Relationship\\
   Between the SaoMNK Model and the NK Landscape}\\[6pt]
   \large Reduction, Generalization, and Approximation Results}
 
@@ -61,17 +63,17 @@
 
 \begin{abstract}
 \noindent
-This online appendix provides formal mathematical proofs establishing the
+This document provides formal mathematical proofs establishing the
 relationship between the Stochastic Actor-Oriented Model on NK Landscapes
 (SaoMNK) and the standard NK model from complexity theory
 \citep{kauffman1993origins, levinthal1997adaptation}. We prove three main
-results. First, the \emph{Reduction Theorem} shows that the standard NK model is
+results. First, the \emph{Reduction Property} shows that the standard NK model is
 a degenerate special case of SaoMNK, recoverable by restricting the model to a
 single actor with deterministic greedy search. Second, the
-\emph{Generalization Theorem} demonstrates that SaoMNK strictly extends NK along
+\emph{Generalization Property} demonstrates that SaoMNK strictly extends NK along
 three independent dimensions: multi-actor endogenous interaction, endogenous
 landscape co-evolution, and bounded rationality with tunable search precision.
-Third, the \emph{Approximation Theorem} establishes, via three distinct proof
+Third, the \emph{Approximation Property} establishes, via three distinct proof
 strategies, that any NK payoff structure can be reproduced to arbitrary precision
 within the SaoMNK framework. Together, these results position SaoMNK as a
 micro-founded, empirically estimable generalization of the NK model for
@@ -251,12 +253,12 @@ At each ministep:
 \end{definition}
 
 % ============================================================
-\section{Theorem 1: Reduction}
+\section{Property 1: Reduction}
 \label{sec:reduction}
 % ============================================================
 
-\begin{theorem}[Reduction Theorem]
-\label{thm:reduction}
+\begin{property}[Reduction Property]
+\label{property:reduction}
 The standard NK model \emph{(}\Cref{def:nk,def:nk_walk}\emph{)} is a degenerate
 special case of the SaoMNK model \emph{(}\Cref{def:saomnk,def:saomnk_utility,%
 def:saomnk_dynamics}\emph{)}. Specifically, the NK landscape and its adaptive
@@ -272,7 +274,7 @@ walk are recovered exactly from SaoMNK under the following restriction:
   \item\label{R5} $\lambda_i$ constant across components (uniform selection
         probability).
 \end{enumerate}
-\end{theorem}
+\end{property}
 
 \begin{proof}
 We establish the result in two parts: payoff equivalence
@@ -401,12 +403,12 @@ $f_d(\bx_{\mathcal{N}(d)})$.
 \end{remark}
 
 % ============================================================
-\section{Theorem 2: Strict Generalization}
+\section{Property 2: Strict Generalization}
 \label{sec:generalization}
 % ============================================================
 
-\begin{theorem}[Generalization Theorem]
-\label{thm:generalization}
+\begin{property}[Generalization Property]
+\label{property:generalization}
 SaoMNK strictly generalizes the NK model along three independent dimensions:
 \begin{enumerate}[label=(\alph*)]
   \item \emph{Multi-actor endogenous interaction}: $M > 1$ actors jointly
@@ -420,7 +422,7 @@ SaoMNK strictly generalizes the NK model along three independent dimensions:
 \end{enumerate}
 Each dimension independently produces behavior that cannot be represented in
 any standard NK model, regardless of the choice of $N$ or $K$.
-\end{theorem}
+\end{property}
 
 \begin{proof}
 We establish each dimension in turn.
@@ -584,21 +586,21 @@ can reproduce this: NK search is deterministic.
 \end{example}
 
 Since each dimension independently generates behavior impossible in any NK
-model, and \Cref{thm:reduction} shows that NK is a special case of SaoMNK,
+model, and \Cref{property:reduction} shows that NK is a special case of SaoMNK,
 the generalization is strict: $\mathrm{NK} \subsetneq \mathrm{SaoMNK}$.
 \end{proof}
 
 % ============================================================
-\section{Theorem 3: Approximation}
+\section{Property 3: Approximation}
 \label{sec:approximation}
 % ============================================================
 
-\begin{theorem}[Approximation Theorem]
-\label{thm:approximation}
+\begin{property}[Approximation Property]
+\label{property:approximation}
 For any NK landscape $(N, K, \bA, \{f_d\}_{d=1}^N)$, there exists a
 parameterization of the SaoMNK model that reproduces the NK payoff structure to
 arbitrary precision.
-\end{theorem}
+\end{property}
 
 We establish this result via three independent proof strategies, each
 illuminating a different aspect of the approximation.
@@ -837,7 +839,7 @@ generality:
 \label{sec:discussion}
 % ============================================================
 
-The three theorems established above---Reduction, Generalization, and
+The three properties established above---Reduction, Generalization, and
 Approximation---collectively position the SaoMNK model as a principled
 generalization of the NK landscape framework that has shaped complexity-theoretic
 research in strategic management for three decades
@@ -848,14 +850,14 @@ and future research.
 \subsection{Theoretical Implications}
 
 \paragraph{From landscapes to games.}
-The Reduction Theorem (\Cref{thm:reduction}) shows that the NK model is a
+The Reduction Property (\Cref{property:reduction}) shows that the NK model is a
 single-actor, deterministic-search, fixed-landscape special case of SaoMNK.
 This reframing is consequential: it reveals that the NK model implicitly
 assumes away three features---multi-actor interaction, landscape endogeneity,
 and bounded rationality---that are central to organizational and strategic
 phenomena.
 
-The Generalization Theorem (\Cref{thm:generalization}) demonstrates that
+The Generalization Property (\Cref{property:generalization}) demonstrates that
 relaxing any one of these assumptions produces behavior outside the NK family.
 Dimension (b)---endogenous landscape co-evolution---is particularly important.
 Prior multi-agent extensions of NK \citep{siggelkow2005speed, rivkin2007balancing}
@@ -904,7 +906,7 @@ implemented in the RSiena package. This opens the door to
 parameters governing search, interaction, and landscape structure from
 real organizational data, rather than assuming them.
 
-The Approximation Theorem (\Cref{thm:approximation}) provides the
+The Approximation Property (\Cref{property:approximation}) provides the
 theoretical foundation for this program. \Cref{prop:heterogeneity} shows
 that actor heterogeneity---a feature naturally present in empirical
 settings---substitutes for the arbitrary randomness of NK payoffs.
@@ -953,14 +955,14 @@ disparate literatures:
 
 \subsection{Limitations and Boundary Conditions}
 
-Three limitations merit discussion. First, the Approximation Theorem
-(\Cref{thm:approximation}) is an existence result: it guarantees that a
+Three limitations merit discussion. First, the Approximation Property
+(\Cref{property:approximation}) is an existence result: it guarantees that a
 parameterization exists but does not provide an efficient algorithm for
 finding it. In practice, estimation via RSiena's method of moments is
 computationally feasible for moderate $M$ and $N$ but may become
 challenging for very large systems.
 
-Second, the Generalization Theorem (\Cref{thm:generalization}) shows that
+Second, the Generalization Property (\Cref{property:generalization}) shows that
 SaoMNK is \emph{strictly} more expressive than NK, but greater
 expressiveness carries the risk of overfitting. Empirical applications
 should employ standard model selection techniques (BIC, cross-validation)
@@ -980,8 +982,8 @@ theoretical insights about the structure of complex adaptive systems. By
 proving that it is a degenerate special case of SaoMNK---recoverable by
 setting $M = 1$, $\btheta = \mathbf{0}$, and $\beta \to \infty$---we
 provide a precise characterization of the assumptions implicit in NK-based
-research. The Generalization Theorem identifies exactly how SaoMNK extends
-beyond NK, and the Approximation Theorem establishes that this extension
+research. The Generalization Property identifies exactly how SaoMNK extends
+beyond NK, and the Approximation Property establishes that this extension
 does not sacrifice any of NK's representational power. Together, these
 results provide a formal foundation for moving from simulation-only
 complexity models to empirically estimable models of organizational search

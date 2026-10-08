@@ -1,0 +1,250 @@
+---
+title: "Formal Verification of SAOM-NK Models with Lean 4"
+author: "Stephen Downing"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Formal Verification of SAOM-NK Models with Lean 4}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(searchnet)
+## Chunks that call Lean run only when a toolchain and a built library are
+## present AND the builder opts in; otherwise the output recorded below, from a
+## real run, is shown instead.
+lean_ok <- isTRUE(lean_available(check_build = TRUE)) &&
+  identical(Sys.getenv("SEARCHNET_LEAN_VIGNETTE"), "true")
+```
+
+searchnet ships a Lean 4 library, `SaomNK`, of machine-checked results about
+stochastic actor-oriented models on NK landscapes, and R functions that turn a
+concrete model into a Lean file that the library then checks. This vignette
+says what is proved, how to export and check a model, and how to prove the next
+result yourself. Lean is optional: nothing else in the package needs it.
+
+# What is proved
+
+The library proves general statements once, for every model of a class:
+
+* **Potentials.** A unilateral deviation changes the deviator's utility by
+  exactly the change in a potential (Monderer and Shapley 1996), for every
+  own-row term (NK fitness, density, outAct, XWX, ego and activity
+  covariates, actor-specific landscapes), for activity-weighted crowding
+  (`inPop`, with the Rosenthal 1973 potential), and for every symmetric
+  pairwise statistic (overlap kernels, four-cycles). Exact potentials add,
+  which is what makes the library extensible.
+* **Equilibria.** Every such model has a pure-strategy Nash equilibrium, and
+  its single-flip-stable configurations are exactly the local maxima of the
+  potential.
+* **Dynamics.** With binary-logit (Glauber) or Metropolis ministeps and any
+  state-independent proposal rates, the Gibbs weight `exp(β Φ)` satisfies
+  detailed balance and is stationary (Blume 1993), also under structural zeros
+  and ones; every configuration is reachable. As `β → ∞` the SAOM ministep
+  becomes adaptive search on an NK landscape (Kauffman 1993; Levinthal 1997).
+* **Where potentials fail.** Asymmetric coupling between two layers, an ego
+  covariate on a one-mode relational degree, heterogeneous weights on a shared
+  pairwise term, and a creation/endowment split whose change statistics
+  differ: each provably admits no exact potential.
+* **Mean field.** For the two-population logit mean field (Brock and Durlauf
+  2001), aligned and polarized equilibria exist iff the relevant coupling
+  exceeds one, with their linear stability conditions.
+
+`lean_registry()` lists the headline results with the proof-table steps,
+tests and R functions each one underwrites:
+
+```{r registry, eval = requireNamespace("yaml", quietly = TRUE)}
+reg <- lean_registry()
+nrow(reg)
+head(reg[, c("decl", "kind", "proof_table")], 8)
+```
+
+# From a model to Lean
+
+`lean_spec()` reads a model definition and maps its RSiena effects onto the
+library's statistics. Effects with no Lean counterpart are listed and left out,
+so a theorem about the export is never silently a theorem about a different
+model.
+
+```{r effect-map}
+lean_effect_map()[, c("effect", "slot", "potential")]
+```
+
+A two-actor model on a small NK landscape, with crowding, four-cycles, an XWX
+synergy term and an ego covariate:
+
+```{r spec}
+nk <- nk_landscape(N = 3, K = 1, seed = 11)
+model <- list(
+  M = 2, N = 3, landscape = nk,
+  theta = c(nk = 1, density = -0.25, outAct = 0.05, inPop = -0.2,
+            cycle4 = 0.1, XWX = 0.3, egoX = 0.5),
+  W = matrix(c(0, 1, 0, 1, 0, 1, 0, 1, 0), 3), ego = c(1, 2),
+  config = matrix(c(1, 0, 1, 0, 1, 1), 2, byrow = TRUE))
+spec <- lean_spec(model)
+spec
+```
+
+`lean_export_model()` writes the Lean file. Every double is written as the
+exact binary fraction it is, so nothing is rounded between R and Lean. The file
+name is a hash of the content: the same model always exports to the same file.
+
+```{r export}
+out <- file.path(tempdir(), "lean_vignette")
+f <- lean_export_model(spec, dir = out)
+basename(f)
+attr(f, "facts")
+```
+
+The file defines the model as a `RatSpec` and states, among others:
+
+```{r show-file}
+txt <- readLines(f, encoding = "UTF-8")
+cat(grep("^theorem ", txt, value = TRUE), sep = "\n")
+```
+
+The general theorems are instantiated, not re-proved: for example
+`exact_potential` is `S.exact_potentialQ h`. The numeric facts (the
+utilities at the current configuration, the number of local optima) are proved
+by kernel evaluation, `decide +kernel`, and a library theorem
+(`RatSpec.countLocalOpt_eq_card`) says what the counted number means: the
+number of configurations at which no actor gains from a single flip. When the
+'gmp' package is installed the utilities are stated exactly; otherwise they are
+bracketed to `1e-9`.
+
+The index convention is checked, not assumed: `index_convention` proves that
+the binary code of each actor's portfolio, least significant bit first, is the
+row of the landscape table R uses (`1 + sum(b * 2^(0:(N-1)))`).
+
+# Checking
+
+```{r check, eval = lean_ok}
+res <- lean_check(out)
+res[, c("decl", "status", "axioms")]
+```
+
+Output of that chunk in a run with Lean 4 (`v4.34.0-rc2`) and Mathlib
+(`v4.34.0-rc2`):
+
+```
+#>                                    decl status                                axioms
+#> 1          SaomNKInstance.h…E_regular     ok propext, Classical.choice, Quot.sound
+#> 2       SaomNKInstance.h…C_consistent     ok propext, Classical.choice, Quot.sound
+#> 3      SaomNKInstance.h…nk_is_fitness     ok propext, Classical.choice, Quot.sound
+#> 4    SaomNKInstance.h…exact_potential     ok propext, Classical.choice, Quot.sound
+#> 5        SaomNKInstance.h…exists_nash     ok propext, Classical.choice, Quot.sound
+#> 6   SaomNKInstance.h…gibbs_stationary     ok propext, Classical.choice, Quot.sound
+#> 7       SaomNKInstance.h…greedy_limit     ok propext, Classical.choice, Quot.sound
+#> 8   SaomNKInstance.h…index_convention     ok                               propext
+#> 9       SaomNKInstance.h…utility_B0_0     ok propext, Classical.choice, Quot.sound
+#> 10      SaomNKInstance.h…utility_B0_1     ok propext, Classical.choice, Quot.sound
+#> 11      SaomNKInstance.h…potential_B0     ok propext, Classical.choice, Quot.sound
+#> 12   SaomNKInstance.h…count_local_opt     ok propext, Classical.choice, Quot.sound
+#> 13 SaomNKInstance.h…count_local_opt_card  ok propext, Classical.choice, Quot.sound
+```
+
+`status == "ok"` means the declaration depends on no axiom beyond the three
+standard ones. A `sorry` would show as `"sorry"`; a fact proved with
+`native_decide`, which trusts the compiler, as `"native"`. In a test suite,
+`expect_lean_theorem(res, "exact_potential")` turns this into an expectation.
+
+Size limits: the landscape table has `2^N` rows and the count enumerates
+`2^(MN)` configurations, so the export stops above `max_N = 6` and skips the
+count above `max_cells = 8` unless `native = TRUE`, which is flagged in the file
+and in `lean_check()`.
+
+## Setting up Lean
+
+```{r setup-lean, eval = FALSE}
+lean_setup()   # prints the commands; runs them only after you confirm
+## reuse a Mathlib already built on this machine instead of downloading one:
+lean_setup(packages_dir = "/path/to/project/.lake/packages")
+```
+
+# Proving the next result
+
+Every statistic in the library follows one pattern, and a new one is added the
+same way. The file `inst/lean/SaomNK/Examples/WeightedOverlap.lean` does it for
+a statistic the library did not have, activity-weighted overlap
+`Σ_k Σ_j v_j b_ij b_kj`:
+
+```lean
+/-- Step 1: the kernel on two rows. -/
+def wOverlap (v : Fin N → ℝ) (b b' : Fin N → Bool) : ℝ :=
+  ∑ j, v j * (ind (b j) * ind (b' j))
+
+/-- Step 2: it is symmetric. -/
+lemma wOverlap_symm (v : Fin N → ℝ) (b b' : Fin N → Bool) :
+    wOverlap v b b' = wOverlap v b' b := by
+  unfold wOverlap
+  exact Finset.sum_congr rfl fun j _ => by ring
+
+/-- Step 3: its exact potential, from the row-pair building block. -/
+theorem isExactPotential_wOverlap (v : Fin N → ℝ) :
+    IsExactPotential (fun i (B : Config M N) => rowPairStat (wOverlap v) B i)
+      (rowPairPotential (wOverlap v)) :=
+  isExactPotential_rowPair _ (wOverlap_symm v)
+
+/-- Step 4: add it to the core specification. -/
+theorem core_plus_wOverlap (S : CoreSpec M N) (θ : ℝ) (v : Fin N → ℝ) :
+    IsExactPotential (fun i B => S.utility i B + θ * rowPairStat (wOverlap v) B i)
+      (fun B => S.potential B + θ * rowPairPotential (wOverlap v) B) :=
+  (show IsExactPotential S.utility S.potential from
+      fun _ _ _ h => S.exact_potential h).add
+    ((isExactPotential_wOverlap v).smul θ)
+```
+
+Nash existence and Gibbs stationarity of the extended model then follow from
+the general theorems with one line each (`exists_nash_of_exactPotential`,
+`global_balance_of_potential`); the example file states both. Two steps of
+real work, symmetry and the choice of building block, and the rest is
+bookkeeping the library already did.
+
+When a statistic has no potential, the same structure gives the negative
+result: compute the change statistics around a four-move cycle and show their
+sum is nonzero (`mixed_cycle_sum`, `TwoLayer.cycle_affinity`,
+`dir_two_cycle`); an exact potential would force it to zero.
+
+To make a new statistic exportable from R, add a computable `ℚ` version in
+`SaomNK/Compute/RatSpec.lean`, extend `RatSpec.cast_utility` (the proof that
+the computable value is the cast of the real one), map the RSiena effect in
+`lean_spec()`, and record the result in `inst/lean/registry.yml`.
+
+# What is not proved
+
+* That a finite irreducible chain has a unique stationary law to which it
+  converges. With global balance and reachability, which are proved, this is
+  the textbook fact that completes the argument.
+* Gibbs stationarity under RSiena's default multinomial ministep (choice among
+  all flips and no change). The exporter does not claim it for
+  `revision = "multinomial"`.
+* State-dependent rate functions, root (`#`-parameter) forms of statistics,
+  and statistics such as `outActSqrt` whose values are irrational (own-row, so
+  the potential claim holds, but they are not exported numerically).
+
+# References
+
+Blume, L. E. (1993). The statistical mechanics of strategic interaction.
+*Games and Economic Behavior*, 5, 387-424.
+
+Brock, W. A., & Durlauf, S. N. (2001). Discrete choice with social
+interactions. *Review of Economic Studies*, 68, 235-260.
+
+Kauffman, S. A. (1993). *The Origins of Order*. Oxford University Press.
+
+Levinthal, D. A. (1997). Adaptation on rugged landscapes. *Management Science*,
+43, 934-950.
+
+Monderer, D., & Shapley, L. S. (1996). Potential games. *Games and Economic
+Behavior*, 14, 124-143.
+
+Rosenthal, R. W. (1973). A class of games possessing pure-strategy Nash
+equilibria. *International Journal of Game Theory*, 2, 65-67.
+
+Snijders, T. A. B. (2001). The statistical evaluation of social network
+dynamics. *Sociological Methodology*, 31, 361-395.

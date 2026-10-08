@@ -57,7 +57,7 @@ reflection problem. \emph{Review of Economic Studies}, 60(3), 531--542.
 \code{\link{bd_equilibrium_count}},
 \code{\link{bd_landau_steepness}},
 \code{\link{verify_brock_durlauf_reduction}};
-\code{vignette("saomnk-brock-durlauf")} for the full Theorem 5
+\code{vignette("saomnk-brock-durlauf")} for the full Property 5
 walkthrough.
 }
 \examples{

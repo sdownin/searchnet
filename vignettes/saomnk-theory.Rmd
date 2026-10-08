@@ -157,9 +157,11 @@ where the landscape co-evolves with the searcher's network position.
 
 ## Formal Framework
 
-The following definitions and theorems establish SaoMNK as a strict
+The following definitions and properties establish SaoMNK as a strict
 generalization of the NK model within a stochastic actor-oriented
-architecture.
+architecture. Result numbers follow the numbering table at the top of
+`inst/proofs/PROOF_TABLE.md`, which is the package's single numbering
+scheme.
 
 ### Definition 1: NK Landscape
 
@@ -181,10 +183,17 @@ in the context of all other actors' affiliations $\mathbf{B}_{-i}$ and
 influence matrix $E \in \{0,1\}^{N \times N}$, the SaoMNK utility function
 is:
 
-$$u_i(\mathbf{b}_i; \mathbf{B}_{-i}, E) = \underbrace{\sum_{d=1}^{N} b_{id} \cdot f_d(\mathbf{b}_i \odot E_{d\cdot})}_{\text{NK component}} + \underbrace{\sum_{k=1}^{p} \theta_k \cdot s_k(\mathbf{b}_i, \mathbf{B})}_{\text{SAOM statistics}}$$
+$$u_i(\mathbf{b}_i; \mathbf{B}_{-i}, E) = \underbrace{\sum_{d=1}^{N} f_d(\mathbf{b}_i \odot E_{d\cdot})}_{\text{NK component}} + \underbrace{\sum_{k=1}^{p} \theta_k \cdot s_k(\mathbf{b}_i, \mathbf{B})}_{\text{SAOM statistics}}$$
 
 The first term is the epistatic fitness contribution, where $\odot$
 denotes element-wise masking by the $d$-th row of the influence matrix.
+Every component contributes its payoff whether or not actor $i$ holds
+it, as every bit does in NK fitness, which is what makes Property 1's
+payoff equivalence hold at every configuration. The held-only reading,
+$\sum_d b_{id} \cdot f_d(\mathbf{b}_i \odot E_{d\cdot})$, is the special
+case in which $f_d$ vanishes whenever component $d$ is off; within that
+class the two forms agree, and the simulation engine's utility, which
+sums over held components only, belongs to it.
 The second term captures endogenous network effects (density, popularity,
 scope, etc.) weighted by structural parameters $\theta_k$.
 
@@ -199,7 +208,7 @@ $$P(\text{flip } j \mid i) = \frac{\exp(\beta \cdot \Delta u_{ij})}{1 + \sum_{k=
 where $\beta > 0$ is the rationality parameter governing the precision of
 choice. The $1$ in the denominator represents the option of making no change.
 
-### Theorem 1: Reduction (NK as Special Case)
+### Property 1: Reduction (NK as Special Case)
 
 *Under restrictions R1--R5, SaoMNK reduces exactly to the NK adaptive walk.*
 
@@ -210,13 +219,14 @@ $E = A$ fixed exogenously, (R3) all structural parameters $\theta_k = 0$,
 selects the fitness-maximizing single-bit flip at each step, which is
 precisely the NK adaptive walk (Kauffman, 1993).
 
-### Theorem 2: Generalization
+### Property 2: Generalization
 
-*SaoMNK strictly extends NK along three independent dimensions:*
+*SaoMNK strictly extends NK along three dimensions:*
 
 (a) **Multi-actor interaction** ($M > 1$): Multiple actors search
-simultaneously on overlapping landscapes, introducing competitive and
-cooperative externalities absent from single-agent NK.
+simultaneously on the same landscape. With no cross-actor effect
+($\theta_{inPop} = 0$) they do not affect one another; externalities enter
+through (b).
 
 (b) **Endogenous landscape co-evolution** ($\theta \neq \mathbf{0}$):
 Structural parameters allow the landscape topology to change as actors
@@ -226,7 +236,7 @@ modify their affiliations, coupling search dynamics to network evolution.
 stochastic choice, spanning the continuum from random search ($\beta = 0$)
 to deterministic greedy search ($\beta \to \infty$).
 
-### Theorem 3: Approximation (Mixed Logit Universality)
+### Property 3: Approximation (Mixed Logit Universality)
 
 *For any NK landscape, there exists a SaoMNK parameterization that
 reproduces its fitness function to arbitrary precision.*
@@ -238,28 +248,39 @@ extension of Brock and Durlauf, 2001) can be approximated arbitrarily well
 by a mixed logit specification. Since the SaoMNK objective function admits
 mixed logit form, it inherits this approximation guarantee.
 
-### Theorem 4: SAOM--QRE Equivalence
+### Property 4: SAOM--QRE Equivalence
 
-*The stationary distribution of the SaoMNK ministep process is a
-Quantal Response Equilibrium (QRE).*
+*The stationary distribution of the SaoMNK ministep process is unique; under
+single-flip logit revision it is a Quantal Response Equilibrium (QRE).*
 
 The logit choice rule (Definition 3) applied to a finite strategic game
 defines a logit QRE (McKelvey & Palfrey, 1995). Under standard regularity
 conditions (finite action space, continuous payoffs, positive ministep
-rates), the SaoMNK Markov chain is ergodic and its stationary distribution
-corresponds to a logit QRE of the underlying network game (Blume, 1993).
+rates), the SaoMNK Markov chain is ergodic with a unique stationary
+distribution. For a potential game under single-flip logit revision, that
+distribution is the Gibbs measure, a logit QRE of the underlying network
+game (Blume, 1993). The multinomial ministep used by RSiena and searchnet
+(Definition 3) shares the potential but not the Gibbs form: at $M = 1$ it
+is reversible with stationary law proportional to
+$\exp(2\beta\Phi)\,Z$, where $Z$ is the denominator of Definition 3, and
+for $M > 1$ reversibility is not guaranteed; nor does it carry the
+zero-noise selection guarantee. `tests/testthat/test-potential-cycles.R`
+computes an $M = 2$, $N = 3$ example exactly: as $\beta$ grows, the
+stationary mass on the potential maximizer rises toward 1 under single-flip
+revision and falls toward 0 under the multinomial ministep.
 This connects the stochastic dynamics to a well-characterized equilibrium
 concept.
 
-### Theorem 5: Brock--Durlauf Recovery (Economic Foundation)
+
+### Property 5: Brock--Durlauf Recovery (Economic Foundation)
 
 *The Brock and Durlauf (2001) binary discrete-choice-with-social-interactions
 model is recovered as a degenerate special case of SaoMNK in the
 $M \to \infty$, congestion-only, mean-field limit.*
 
-Theorem 5 is the *complementary* reduction to Theorem 1 (NK Reduction),
+Property 5 is the *complementary* reduction to Property 1 (NK Reduction),
 which takes the single-actor / greedy / no-network limit. Together,
-Theorems 1 and 5 establish that SaoMNK contains both Kauffman (1993)
+Properties 1 and 5 establish that SaoMNK contains both Kauffman (1993)
 NK landscape search and Brock & Durlauf (2001) discrete choice with
 social interactions as special cases of a single CTMC. The five
 restrictions Rb1--Rb5 (many-actor mean-field; component independence;
@@ -275,9 +296,52 @@ threshold (Corollary 2, L11) and the social-multiplier formula
 Manski (1993) is resolved in SaoMNK via the logit nonlinearity (Remark
 L13).
 
+*[Revised 2026-10-07: which process the property describes.]* Like
+Property 4, Property 5 is stated for single-flip logit revision. The RSiena
+ministep that searchnet simulates chooses among the $N$ toggles of a row
+and no change, so its per-tie adoption law in mean field is not the logit
+but
+$$
+F_N(\Delta) = \frac{\mathrm{E}[k]}{N}, \qquad
+\pi_k \propto \binom{N}{k} e^{2\Delta k}
+  \bigl(1 + (N-k)e^{\Delta} + k e^{-\Delta}\bigr),
+$$
+with $\Delta = h + \theta_{\mathrm{inPop}}\bigl(1 + (M-1)m\bigr)$
+(PROOF_TABLE.md L4, L16). $F_N = \sigma$ exactly at $N = 1$, so there the
+simulated process recovers the Brock & Durlauf map with
+$\theta_{\mathrm{inPop}} = J_b/(M-1)$. At $N > 1$,
+$F_N(\Delta) = \sigma(\kappa_N \Delta) + \mathcal{O}(\Delta^3)$ with
+$\kappa_N = 2N/(N+1)$; dividing both coefficients by $\kappa_N$ (as
+`verify_brock_durlauf_reduction()` does by default) matches the Brock &
+Durlauf map to first order near $m = 1/2$, and only approximately away
+from it.
+
+### Property 6: Two-Layer Integrability
+
+*When an actor-actor relation $A$ co-evolves with $\mathbf{B}$ and the
+coupling statistic $c_i = \sum_{k \ne i} A_{ik} (\mathbf{B}\mathbf{B}^\top)_{ik}$
+enters the $\mathbf{B}$-evaluation with coefficient $\theta_{AB}$ and the
+$A$-evaluation with coefficient $\theta_{BA}$, the two-layer process has an
+exact potential if and only if $\theta_{AB} = \theta_{BA}$, given that the
+relational-layer own terms satisfy the own-term hypothesis.*
+
+Around the elementary cycle (add $b_{ij}$, add $A_{ik}$, drop $b_{ij}$,
+drop $A_{ik}$) the acting actor's change statistics sum to
+$(\theta_{BA} - \theta_{AB}) B_{kj}$, and the log ratio of forward to
+reverse rates is $\beta$ times that. A density own term satisfies the
+own-term hypothesis; an ego-covariate own term does not. Statements,
+hypotheses and machine-checked declarations are in `PROOF_TABLE.md` Part M.
+
+### Property 7: Creation/Endowment Boundary
+
+*With separate creation and endowment functions, an exact potential exists
+if and only if the two have equal change statistics on every move.* With
+endowment equal to creation minus $w$ times density, the four-step cycle sum
+is exactly $2w$. See `PROOF_TABLE.md` Part N.
+
 ### Equilibrium-Concept Typology
 
-Theorem 4 places SaoMNK within a broader landscape of equilibrium
+Property 4 places SaoMNK within a broader landscape of equilibrium
 concepts. Equilibrium solutions to strategic games can be organized along
 two dimensions: the rationality assumption (full vs. bounded) and the
 temporal structure (static vs. dynamic). The following typology clarifies
@@ -286,7 +350,7 @@ where the SAOM--QRE connection sits relative to classical alternatives:
 |                        | **Static**                        | **Dynamic**                             |
 |:-----------------------|:----------------------------------|:----------------------------------------|
 | **Full rationality**   | Nash equilibrium                  | MPE (Ericson & Pakes, 1995; Wibbens et al., 2025) |
-| **Bounded rationality**| Static QRE (McKelvey & Palfrey, 1995) | Dynamic QRE / Logit MPE (SaoMNK)   |
+| **Bounded rationality**| Static QRE (McKelvey & Palfrey, 1995) | Dynamic QRE / Logit MPE (SaoMNK, single-flip revision) |
 
 In the top-left cell, Nash equilibrium assumes perfectly rational
 players in a one-shot or stage game. The top-right cell houses the
@@ -350,7 +414,7 @@ if (requireNamespace("searchnet", quietly = TRUE)) {
 } else {
   dir_r <- file.path(getwd(), "R")
   if (!file.exists(file.path(dir_r, "utils.R")))
-    dir_r <- "D:/Search_networks/SaoMNK/R"
+    dir_r <- file.path(dirname(getwd()), "R")  # rendering from vignettes/
   .saomnk_dir <- dir_r
   .saomnk_dir <- dir_r; source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
 }
@@ -458,6 +522,8 @@ heterogeneous component popularity ($K_{CA}$). The resulting $K_{CC}$
 (traditional epistasis) emerges endogenously from the combination of these
 forces rather than being set by the modeler.
 
+> **Rerun 2026-10-07:** endogenous case constrained scope and heterogeneous component popularity -> saturated network (final density 0.99, mean actor degree 11.8 of 12, component degree SD 0.39 vs 1.62 exogenous); claim no longer supported as stated.
+
 # The SAOM Objective Function
 
 The SAOM objective function in `searchnet` takes the general form:
@@ -473,9 +539,14 @@ key statistics include:
 | Statistic | RSiena Name | Formula | Interpretation |
 |-----------|-------------|---------|----------------|
 | Density | `density` | $\sum_j x_{ij}$ | Baseline affiliation rate |
-| Component popularity | `inPop` | $\sum_j x_{ij} \sqrt{\sum_{h \neq i} x_{hj}}$ | Preference for popular components |
-| Actor scope | `outAct` | $\sum_j x_{ij} \sqrt{\sum_{k \neq j} x_{ik}}$ | Scope expansion tendency |
-| Epistasis (XWX) | `XWX` | $\sum_j x_{ij} \sum_{k} w_{jk} x_{ik}$ | Exogenous component interdependence |
+| Component popularity | `inPop` | $\sum_j x_{ij} x_{+j}$ (two-mode, linear; $x_{+j}$ includes $i$'s own tie; the square-root form is `inPopSqrt`) [revised 2026-10-07] | Preference for popular components |
+| Actor scope | `outAct` | $\sum_j x_{ij} x_{i+} = x_{i+}^2$ (two-mode, linear; the square-root form $x_{i+}^{1.5}$ is `outActSqrt`) [revised 2026-10-07] | Scope expansion tendency |
+| Epistasis (XWX) | `XWX` | $\sum_j x_{ij} \sum_{h \neq j} x_{ih} w_{hj}$ (within ego; the diagonal $w_{jj}$ never enters) [revised 2026-10-07] | Exogenous component interdependence |
+
+Each formula is actor $i$'s statistic in RSiena 1.5.0's two-mode
+definitions; summed over actors it equals the target statistic that
+`siena07()` reports, which `tests/testthat/test-structural-stats-vs-rsiena.R`
+checks against the engine's own computation.
 
 # References
 

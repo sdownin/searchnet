@@ -1,0 +1,54 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: multimarket-contact
+title: Multimarket contact
+model: Multimarket contact
+citations:
+  - key: baum_korn_1996
+    text: "Baum, J. A. C., and Korn, H. J. (1996). Competitive dynamics of interfirm rivalry. Academy of Management Journal, 39(2), 255-291."
+    doi: "10.2307/256781"
+  - key: baum_korn_1999
+    text: "Baum, J. A. C., and Korn, H. J. (1999). Dynamics of dyadic competitive interaction. Strategic Management Journal, 20(3), 251-278."
+    doi: "10.1002/(SICI)1097-0266(199903)20:3<251::AID-SMJ23>3.0.CO;2-H"
+relation: translation
+statement: >-
+  Multimarket contact maps to four-cycles (cycle4) of the bipartite network, the
+  tendency of two actors to meet on two or more components; the one-mode
+  projections of B count the contacts.
+restrictions:
+  W: any
+  notes: []
+terms:
+  - class: complementarity
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: scope
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: crowding
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: contact
+    status: active
+    effect: cycle4
+    expression: cycle4
+    construct: dyadic contact tendency
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs:
+  dyadic contact tendency: [contact]
+lean:
+  - SaomNK.isExactPotential_cycle4
+checks: []
+does_not_cover:
+  - "Interpretive mapping; no reduction is proved"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

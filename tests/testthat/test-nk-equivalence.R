@@ -1,6 +1,6 @@
 ###############################################################################
 ## test-nk-equivalence.R
-## Tests for verify_nk_equivalence method (Theorem 1 reduction)
+## Tests for verify_nk_equivalence method (Property 1 reduction)
 ###############################################################################
 
 test_that("verify_nk_equivalence with N=4 identity E: max difference < 1e-10", {
@@ -13,7 +13,7 @@ test_that("verify_nk_equivalence with N=4 identity E: max difference < 1e-10", {
   ## verify_nk_equivalence() read only the constructed environment, and the
   ## simulation path is exactly what cannot exist at M = 1 (RSiena refuses
   ## single-actor bipartite data). Constructing directly is what lets the
-  ## Theorem 1 reduction actually be tested at M = 1 instead of skipped.
+  ## Property 1 reduction actually be tested at M = 1 instead of skipped.
   env <- SaomNkRSienaBiEnv$new(make_small_environ_params(M = M, N = N,
                                                          rand_seed = 600))
 
@@ -56,7 +56,7 @@ test_that("verify_nk_equivalence with N=4 block-diagonal E: max difference < 1e-
   ## verify_nk_equivalence() read only the constructed environment, and the
   ## simulation path is exactly what cannot exist at M = 1 (RSiena refuses
   ## single-actor bipartite data). Constructing directly is what lets the
-  ## Theorem 1 reduction actually be tested at M = 1 instead of skipped.
+  ## Property 1 reduction actually be tested at M = 1 instead of skipped.
   env <- SaomNkRSienaBiEnv$new(make_small_environ_params(M = M, N = N,
                                                          rand_seed = 601))
 
@@ -100,7 +100,7 @@ test_that("verify_nk_equivalence errors when N > max_N", {
   ## verify_nk_equivalence() read only the constructed environment, and the
   ## simulation path is exactly what cannot exist at M = 1 (RSiena refuses
   ## single-actor bipartite data). Constructing directly is what lets the
-  ## Theorem 1 reduction actually be tested at M = 1 instead of skipped.
+  ## Property 1 reduction actually be tested at M = 1 instead of skipped.
   env <- SaomNkRSienaBiEnv$new(make_small_environ_params(M = M, N = N,
                                                          rand_seed = 602))
 
@@ -135,7 +135,7 @@ test_that("verify_nk_equivalence returns data frame with correct columns", {
   ## verify_nk_equivalence() read only the constructed environment, and the
   ## simulation path is exactly what cannot exist at M = 1 (RSiena refuses
   ## single-actor bipartite data). Constructing directly is what lets the
-  ## Theorem 1 reduction actually be tested at M = 1 instead of skipped.
+  ## Property 1 reduction actually be tested at M = 1 instead of skipped.
   env <- SaomNkRSienaBiEnv$new(make_small_environ_params(M = M, N = N,
                                                          rand_seed = 603))
 

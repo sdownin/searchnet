@@ -1,0 +1,51 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: modes-and-time-horizons
+title: Modes and time horizons of competition
+model: Chen and Miller multidimensional framework of competitive dynamics
+citations:
+  - key: chen_miller_2015
+    text: "Chen, M.-J., and Miller, D. (2015). Reconceptualizing competitive dynamics: A multidimensional framework. Strategic Management Journal, 36(5), 758-775."
+    doi: "10.1002/smj.2245"
+relation: translation
+statement: >-
+  Two of the framework's five dimensions become estimable parameters: the mode
+  of competing is the sign and size of theta_inPop, and the time horizon of
+  interaction is the split between the creation and endowment functions.
+restrictions:
+  W: any
+  notes:
+    - "statistics without a registered class: creation function; endowment function"
+terms:
+  - class: complementarity
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: scope
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: crowding
+    status: active
+    effect: inPop
+    expression: inPop
+    construct: mode of competing
+  - class: contact
+    status: absent
+    expression: "+0"
+    construct: none
+  - class: imitation
+    status: absent
+    expression: "+0"
+    construct: none
+constructs:
+  mode of competing: [crowding]
+lean: []
+checks: []
+does_not_cover:
+  - "Three of the five dimensions are not carried; the actors remain firms and the components activities"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-04; ported to the searchnet schema 2026-10-07"
+  revised: "Claude Opus 5.5 (AI), 2026-10-08: prepared for publication; citations completed from Crossref"
+  ai_drafted: true
+  reviewed: false

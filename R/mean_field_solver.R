@@ -1,6 +1,7 @@
 #' @title Mean-Field Equilibrium Solver for the SaoMNK Brock-Durlauf Reduction
-#' @description Standalone helper operationalizing Theorem~4 of the SaoMNK
-#'   proof set (the Gibbs/Brock-Durlauf equivalence): the mean-field
+#' @description Standalone helper operationalizing Property~4 of the SaoMNK
+#'   proof set (the Gibbs/Brock-Durlauf equivalence, under single-flip logit
+#'   revision): the mean-field
 #'   self-consistency equation
 #'   \deqn{m^{*} = \tanh\!\left(\frac{\beta_{\mathrm{eff}}\, m^{*}}{2T}\right)}{
 #'         m* = tanh( beta_eff * m* / (2 * T) )}
@@ -26,13 +27,18 @@
 #'   PROOF_TABLE.md L16's Option C, valid as a description of the live
 #'   simulation only in the linearised regime near \eqn{p = 1/2} and below
 #'   threshold. It is \emph{not} the stationary law of a simulation run with
-#'   RSiena's \code{inPop}, whose evaluation delta is sqrt-form; that law is
-#'   the Option B fixed point, \code{\link{saomnk_inpop_self_consistency}}.
+#'   RSiena's \code{inPop}; that law is the Option B fixed point,
+#'   \code{\link{saomnk_inpop_self_consistency}} (linear two-mode
+#'   \code{inPop}, ministep choice among \eqn{N} toggles; re-derived
+#'   2026-10-07). These roots also omit the ministep's choice-set factor:
+#'   near \eqn{p = 1/2} the simulated coupling is \eqn{\kappa_N = 2N/(N+1)}
+#'   times the one assumed here, so the threshold is reached at a smaller
+#'   \code{theta_inPop} than \code{above_critical} reports.
 #'   Treating these roots as the prediction for a supercritical \code{inPop}
 #'   run overstates the coupling (the linearised slope at the realized
 #'   equilibrium is the correct local coupling, not
 #'   \eqn{0.5 (M-1) \theta}) and was the source of a persistent spurious
-#'   discrepancy of \eqn{\approx 0.38} in the Theorem 4 empirical check,
+#'   discrepancy of \eqn{\approx 0.38} in the Property 5 (Brock--Durlauf; numbered Theorem 4 at the time) empirical check,
 #'   diagnosed 2026-08-14. \code{diagnose_mean_field_fit()} reports both
 #'   objects and an \code{in_BD_regime} flag.
 #' @name mean-field-solver
@@ -47,7 +53,7 @@ NULL
 #'
 #' Solves the Curie--Weiss / Brock--Durlauf self-consistency equation for the
 #' equilibrium population mean \eqn{m^{*}} of the SaoMNK logit ministep
-#' under the symmetric, mean-field specialisation of Theorem~4.  Specifically,
+#' under the symmetric, mean-field specialisation of Property~4.  Specifically,
 #' for an inPop-only structure model with \eqn{M} symmetric actors and Gibbs
 #' temperature \eqn{T}, the population magnetisation satisfies
 #' \deqn{m^{*} = \tanh\!\left(\frac{\beta_{\mathrm{eff}}\, m^{*}}{2T}\right),
@@ -100,7 +106,8 @@ NULL
 #'   Brock, W. A. & Durlauf, S. N. (2001). Discrete choice with social
 #'   interactions. *Review of Economic Studies* 68(2), 235--260.
 #'
-#'   Downing, S. (2026). Theorem 4: Gibbs stationary distribution and the
+#'   Downing, S. (2026). Properties 4 and 5: stationary distribution (Gibbs under
+#'   single-flip revision) and the
 #'   Brock--Durlauf reduction of the SaoMNK ministep.
 #'   \code{inst/proofs/PROOF_TABLE.md}, rows L8, L10, L16--L18.
 #' @examples
@@ -181,22 +188,24 @@ solve_mean_field <- function(theta_inPop, M, T = 1,
   if (length(exact_zeros) > 0L) {
     bracket_roots <- c(bracket_roots, grid[exact_zeros])
   }
+  ## A bracket with a sign change contains a root of a continuous residual,
+  ## so a uniroot() error here would mean an equilibrium is being lost. It
+  ## used to become NA and be dropped silently; it now propagates.
   sign_changes <- which(fvals[-grid_n] * fvals[-1L] < 0)
   for (idx in sign_changes) {
-    r <- tryCatch(
-      stats::uniroot(residual, lower = grid[idx], upper = grid[idx + 1L],
-                     tol = tol)$root,
-      error = function(e) NA_real_
-    )
-    if (is.finite(r)) bracket_roots <- c(bracket_roots, r)
+    r <- stats::uniroot(residual, lower = grid[idx], upper = grid[idx + 1L],
+                        tol = tol)$root
+    bracket_roots <- c(bracket_roots, r)
   }
 
   ## ---- Combine, de-duplicate, sort ----------------------------------------
   all_roots <- c(fp_roots, bracket_roots)
   if (length(all_roots) == 0L) {
-    ## Fall back to m = 0 (the trivial root must always solve the equation
-    ## under the symmetric specialisation -- tanh(0) = 0).
-    all_roots <- 0
+    ## m = 0 solves m = tanh(c m) for every c and lies on the grid, so finding
+    ## no root at all is a solver failure. It used to fall back to m* = 0.
+    stop("solve_mean_field(): no fixed point found, although m = 0 always ",
+         "solves the self-consistency equation; this is a solver failure.",
+         call. = FALSE)
   }
   all_roots <- sort(unique(round(all_roots, digits = dedup_digits)))
 

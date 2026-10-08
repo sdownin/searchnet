@@ -1,0 +1,80 @@
+# Registry entry. Validate with searchnet::rosetta_validate().
+schema_version: "1"
+id: nk-adaptive-walk
+title: NK landscape and the adaptive walk
+model: NK adaptive walk
+citations:
+  - key: kauffman_levin_1987
+    text: "Kauffman, S. A., and Levin, S. (1987). Towards a general theory of adaptive walks on rugged landscapes. Journal of Theoretical Biology, 128(1), 11-45."
+    doi: 10.1016/S0022-5193(87)80029-2
+  - key: kauffman_1993
+    text: "Kauffman, S. A. (1993). The Origins of Order: Self-Organization and Selection in Evolution. Oxford University Press."
+    doi: 10.1093/oso/9780195079517.001.0001
+  - key: levinthal_1997
+    text: "Levinthal, D. A. (1997). Adaptation on rugged landscapes. Management Science, 43(7), 934-950."
+    doi: 10.1287/mnsc.43.7.934
+relation: special-case
+statement: >-
+  With one actor, a binary K-regular influence matrix, every network coefficient
+  at zero and deterministic best-flip choice, the SAOM-NK ministep is the NK
+  adaptive walk and the utility is N times NK fitness (Property 1, restrictions
+  R1 to R5 of the proof table).
+restrictions:
+  M: 1
+  "N": null
+  K: null
+  W: binary-k-regular
+  beta: Inf
+  revision_rule: single_flip
+  rates: constant
+  notes:
+    - "R1: M = 1, a single actor"
+    - "R2: the influence matrix equals the NK interaction pattern"
+    - "R3: theta = 0 for every network statistic"
+    - "R4: beta -> infinity, deterministic best-flip choice"
+    - "R5: constant rate"
+terms:
+  - class: complementarity
+    status: active
+    effect: XWX
+    value: 1
+    expression: "sum_d f_d(b masked by row d of W) = N F(b)"
+    construct: fitness on a rugged landscape
+  - class: scope
+    status: zero
+    expression: "0"
+    construct: none (no cost of breadth)
+  - class: crowding
+    status: absent
+    expression: "+0 (one actor: nobody else holds a component)"
+    construct: none
+  - class: contact
+    status: absent
+    expression: "+0 (one actor: no pairs)"
+    construct: none
+  - class: imitation
+    status: absent
+    expression: "+0 (no one to imitate)"
+    construct: none
+constructs:
+  fitness on a rugged landscape: [complementarity]
+lean:
+  - SaomNK.utility_eq_nkFitness
+  - SaomNK.nkTermFull_eq_mul_nkFitness
+  - SaomNK.logitProb_tendsto_one
+  - SaomNK.stayProb_tendsto_one
+  - SaomNK.improvementStep_is_saom_limit
+  - SaomNK.isKRegular_zero_iff
+checks:
+  - nk_verify_reduction
+  - nk_to_saomnk
+  - tests/testthat/test-nk-equivalence.R
+does_not_cover:
+  - "The engine's RSiena path needs two actors; at M = 1 rosetta_run() runs nk_walk() on nk_landscape(), the classical implementation"
+  - "With M >= 2 the engine carries complementarity as the quadratic XWX statistic, not the full NK contribution table"
+  - "The improving-flip limit assumes a unique best flip; ties are outside Lemma 2"
+  - "Population selection and long jumps lie outside the restriction"
+provenance:
+  drafted: "Claude Opus 5.5 (AI), 2026-10-07, from inst/proofs/PROOF_TABLE.md Part C and the Lean registry"
+  ai_drafted: true
+  reviewed: false

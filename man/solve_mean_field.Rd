@@ -58,7 +58,7 @@ element of each vector is the converged value.}
 \description{
 Solves the Curie--Weiss / Brock--Durlauf self-consistency equation for the
 equilibrium population mean \eqn{m^{*}} of the SaoMNK logit ministep
-under the symmetric, mean-field specialisation of Theorem~4.  Specifically,
+under the symmetric, mean-field specialisation of Property~4.  Specifically,
 for an inPop-only structure model with \eqn{M} symmetric actors and Gibbs
 temperature \eqn{T}, the population magnetisation satisfies
 \deqn{m^{*} = \tanh\!\left(\frac{\beta_{\mathrm{eff}}\, m^{*}}{2T}\right),
@@ -93,7 +93,8 @@ fp2$above_critical  # TRUE
 Brock, W. A. & Durlauf, S. N. (2001). Discrete choice with social
 interactions. \emph{Review of Economic Studies} 68(2), 235--260.
 
-Downing, S. (2026). Theorem 4: Gibbs stationary distribution and the
+Downing, S. (2026). Properties 4 and 5: stationary distribution (Gibbs under
+single-flip revision) and the
 Brock--Durlauf reduction of the SaoMNK ministep.
 \code{inst/proofs/PROOF_TABLE.md}, rows L8, L10, L16--L18.
 }
