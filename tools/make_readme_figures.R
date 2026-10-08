@@ -144,7 +144,10 @@ p_net <- ggraph(g, layout = "fr") +
   theme_readme +
   theme(panel.grid = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank()) +
-  guides(color = guide_legend(nrow = 2, override.aes = list(size = 4)))
+  ## Legend keys take the node shapes: circles for the two actor groups,
+  ## squares for the three component modules (levels order of `group`).
+  guides(color = guide_legend(nrow = 2,
+                              override.aes = list(size = 4, shape = c(16, 16, 15, 15, 15))))
 
 p_w <- w_heatmap(W_hero, "Influence matrix W (input)",
                  paste0("saomnk_block_diagonal(12, 3); components A-L\n", diag_note),

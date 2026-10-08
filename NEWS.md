@@ -1,3 +1,9 @@
+# searchnet 0.12.1
+
+Released 2026-10-08. Documentation only; no code change. The README hero
+figure's legend now uses the node shapes (actors circles, components squares).
+The JSS submission bundle and web paper are rebuilt on 0.12.0's code.
+
 # searchnet 0.12.0
 
 Released 2026-10-08. No change to simulated results. The translation registry

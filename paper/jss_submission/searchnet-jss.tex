@@ -488,7 +488,7 @@ Supporting modules provide separation of concerns:
 
 The package follows standard \proglang{R} packaging conventions with
 \code{DESCRIPTION}, \code{NAMESPACE}, a \pkg{testthat} test suite (820
-tests across 63 files), and 13 vignettes. All exported functions are
+tests across 64 files), and 14 vignettes. All exported functions are
 prefixed with \code{saomnk\_} or \code{searchnet\_} to avoid namespace
 collisions.
 
@@ -1745,7 +1745,7 @@ R> cat(sprintf(
 + ))
 \end{CodeInput}
 \begin{CodeOutput}
-searchnet: 0.11s | raw RSiena: 0.05s | overhead: 120.0%
+searchnet: 0.09s | raw RSiena: 0.06s | overhead: 50.0%
 \end{CodeOutput}
 \end{CodeChunk}
 
@@ -1862,7 +1862,7 @@ The skewness of the number of peaks per landscape is: 2.094
 
 The kurtosis of the number of peaks per landscape is: 5.358 
 
-Elapsed time: 0.92 sec
+Elapsed time: 0.88 sec
 
 The mean number of peaks per landscape is: 10.5 
 
@@ -1884,7 +1884,7 @@ The skewness of the number of peaks per landscape is: 1.403
 
 The kurtosis of the number of peaks per landscape is: 2.651 
 
-Elapsed time: 1.05 sec
+Elapsed time: 1.01 sec
 
 The mean number of peaks per landscape is: 11.93 
 
@@ -1906,7 +1906,7 @@ The skewness of the number of peaks per landscape is: 1.483
 
 The kurtosis of the number of peaks per landscape is: 2.346 
 
-Elapsed time: 1.21 sec
+Elapsed time: 1.22 sec
 
 The mean number of peaks per landscape is: 17.33 
 
@@ -1916,7 +1916,7 @@ The skewness of the number of peaks per landscape is: 1.162
 
 The kurtosis of the number of peaks per landscape is: 1.043 
 
-Elapsed time: 8.88 sec
+Elapsed time: 8.91 sec
 
 [Sampled mode] 1,000 of 2^12 = 4,096 configurations sampled per landscape.
 
@@ -1928,7 +1928,7 @@ The skewness of the number of peaks per landscape is: 1.298
 
 The kurtosis of the number of peaks per landscape is: 0.5899 
 
-Elapsed time: 1.2 sec
+Elapsed time: 1.24 sec
 \end{CodeOutput}
 \begin{CodeInput}
 R> ## Display results
@@ -1950,10 +1950,10 @@ Table: Fitness landscape computation time: full enumeration vs.\ sampled approxi
 
 | $N$| Configurations| Full (s)| Sample (s)|
 |---:|--------------:|--------:|----------:|
-|   6|             64|     0.11|       0.97|
-|   8|            256|     0.40|       1.07|
-|  10|           1024|     1.89|       1.22|
-|  12|           4096|     8.89|       1.20|
+|   6|             64|     0.11|       0.94|
+|   8|            256|     0.41|       1.00|
+|  10|           1024|     1.87|       1.22|
+|  12|           4096|     8.90|       1.25|
 
 \end{CodeChunk}
 
@@ -2047,7 +2047,7 @@ unfamiliar with \pkg{RSiena} syntax. The \(\{K\}\)-4 panel, 3D phase
 space visualization, utility decomposition, network snapshots, and
 specification robustness diagnostics equip researchers with the tools
 needed to design, execute, and validate computational experiments. The
-package ships with 13 vignettes, 31 Manim animation scenes, a 104-step
+package ships with 14 vignettes, 31 Manim animation scenes, a 104-step
 formal proof chain (Parts A--N, including Property 5's Brock--Durlauf
 recovery), 820 unit tests, and interactive game and classroom modules
 that make the framework accessible to students and practitioners.
@@ -2084,7 +2084,7 @@ depends on \pkg{R6}, \pkg{RSiena}, \pkg{igraph}, \pkg{ggplot2},
 
 The results in this paper were obtained using
 \proglang{R}\textasciitilde4.5.3 with the packages
-\pkg{searchnet}\textasciitilde0.11.2 and
+\pkg{searchnet}\textasciitilde0.12.0 and
 \pkg{RSiena}\textasciitilde1.5.0 (\pkg{searchnet} requires
 \pkg{RSiena}\textsubscript{\(\geq\)}1.5.0). \proglang{R} itself and all
 packages used other than \pkg{searchnet} are available from the
