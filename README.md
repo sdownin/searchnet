@@ -26,7 +26,7 @@ the four coupled degree series `saomnk_plot_k4()` draws over the run. Generated 
 > to be expected. The companion methods paper has not yet been
 > peer-reviewed; results should be treated accordingly.
 > For reproducibility, install a pinned tag rather than the moving branch:
-> `devtools::install_github("sdownin/searchnet@v0.12.6")`.
+> `devtools::install_github("sdownin/searchnet@v0.12.7")`.
 > **v0.8.3 and earlier:** `saomnk_model()` simulations that declared
 > `influence_weight`, `cycle4`, `XWX`, `X`, `inPopX`, `outActX` or
 > `homXOutAct` did not simulate the declared coefficient (estimation via
@@ -541,6 +541,7 @@ history jumps from v0.4.1 to v0.7.0 — NEWS.md records why.
 
 | Version | Highlights |
 |---|---|
+| **v0.12.7** | Documentation only: in the README architectures figure, each signed matrix keeps the exact nonzero cells of the conventional pattern above it. No change to simulated results since v0.12.2. |
 | **v0.12.6** | The two {K} dimensions of each effect are displayed as **decision** (what the utility of a move depends on) and **outcome** (the network structure it shifts); one construct label per effect class across README, paper and figure; README hero spacing and status warning. No change to simulated results since v0.12.2. Suite: 65 files, 924 tests, 0 failures, 0 errors. |
 | **v0.12.5** | Documentation only: README hero figure re-laid out (inputs and start/end networks on the left, {K}-4 panel at full height on the right). No code change since v0.12.2. |
 | **v0.12.4** | Documentation only: withdrawn K_CC figures removed from the README. Public release of 0.12.2 (the {K} dimensions each effect reads and moves; K_AA and K_CC exclude the node) and 0.12.3 (README figures). No code change since v0.12.2. |
@@ -577,7 +578,7 @@ line and are exercised by the v0.12.2 test suite.
   title  = {searchnet: Network-Embedded Search Simulation Engine},
   author = {Stephen Downing},
   year   = {2026},
-  note   = {R package version 0.12.6},
+  note   = {R package version 0.12.7},
   url    = {https://github.com/sdownin/searchnet}
 }
 ```

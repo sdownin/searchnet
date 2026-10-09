@@ -239,12 +239,17 @@ end_kcc <- function(W) {
 signed_version <- function(W, nm, seed = 2026) {
   W <- unname(as.matrix(W)); n <- nrow(W)
   set.seed(seed)
+  ## Same nonzero cells as W. A symmetric W gets a symmetric draw (one weight
+  ## per pair); an asymmetric one, such as nk_landscape()'s random pattern
+  ## (row j lists the components that affect j), gets one weight per cell.
+  sym <- isSymmetric(W)
   S <- matrix(0, n, n)
-  up <- which(upper.tri(W) & W != 0)
-  S[up] <- if (nm == "Nested modules") W[up] * sample(c(-1, 1), length(up), replace = TRUE)
-           else stats::runif(length(up), -1, 1)
-  S <- S + t(S)
+  nz <- which((if (sym) upper.tri(W) else row(W) != col(W)) & W != 0)
+  S[nz] <- if (nm == "Nested modules") W[nz] * sample(c(-1, 1), length(nz), replace = TRUE)
+           else stats::runif(length(nz), -1, 1)
+  if (sym) S <- S + t(S)
   diag(S) <- diag(W)
+  stopifnot(identical(S != 0, W != 0 | (row(W) == col(W) & diag(W)[row(W)] != 0)))
   S
 }
 w_heatmap_signed <- function(W, title, subtitle, legend = FALSE) {

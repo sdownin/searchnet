@@ -1,3 +1,7 @@
+# searchnet 0.12.7
+
+Released 2026-10-08. Documentation only; no change to simulated results since 0.12.2. README architectures figure: each signed matrix keeps exactly the nonzero cells of the conventional pattern above it (the asymmetric random pattern was being symmetrized); `tools/make_readme_figures.R` now asserts it.
+
 # searchnet 0.12.6
 
 Released 2026-10-08. Documentation and display labels; no change to simulated results since 0.12.2. Suite: 65 files, 924 tests, 6895 expectations, 0 failures, 0 errors, 9 skips.
