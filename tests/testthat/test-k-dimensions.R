@@ -276,8 +276,14 @@ test_that("a user's own statistic classifies itself", {
     sim <- sim - rowMeans(sim)
     rowSums(B * sim)
   }
+  ## its core (similarity to the mean of j's other holders) ranks the
+  ## candidates; the centering is one constant per decision
   expect_equal(searchnet_classify_effect(cc, candidate_centered = TRUE)$moves,
-               "none (candidate-centered)")
+               "Sociality strength, similarity-weighted (candidate-centered, approximate)")
+  ## a centered statistic whose core has no outcome stays "none"
+  cnone <- function(B, cov) { s <- matrix(stats::runif(length(B)), nrow(B)); rowSums(B * (s - rowMeans(s))) }
+  expect_match(searchnet_classify_effect(cnone, candidate_centered = TRUE)$moves,
+               "candidate-centered")
   ## change/target given directly, and through searchnet_effect_dimensions(custom = )
   d2 <- searchnet_classify_effect(change = function(B, i, j, cov) sum(B[-i, j]) + 1,
                                   target = function(B, cov) sum(colSums(B)^2))

@@ -1,3 +1,9 @@
+# searchnet 0.12.8
+
+Released 2026-10-08. No change to simulated results or to `inst/rosetta/effect_dimensions.csv`. Suite: 65 files, 924 tests, 6896 expectations, 0 failures, 0 errors, 9 skips.
+
+* `searchnet_classify_effect(candidate_centered = TRUE)`: a statistic centered on the decision's candidates has no target of its own, but the centering is one constant per decision, so its core statistic still ranks the candidates. Its outcome is now the core's, marked " (candidate-centered, approximate)": for similarity to a component's other holders, "Sociality strength, similarity-weighted (candidate-centered, approximate)". It was "none (candidate-centered)", which read as if such a statistic shifted no network structure. A core with no outcome still gives "none (candidate-centered)".
+
 # searchnet 0.12.7
 
 Released 2026-10-08. Documentation only; no change to simulated results since 0.12.2. README architectures figure: each signed matrix keeps exactly the nonzero cells of the conventional pattern above it (the asymmetric random pattern was being symmetrized); `tools/make_readme_figures.R` now asserts it.

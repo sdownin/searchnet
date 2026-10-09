@@ -181,8 +181,13 @@
 ## 2. Otherwise, invariance: to resampling every row's ties within the row
 ##    (a moment of Expansiveness), or every column's (of Popularity).
 ## 3. Otherwise, dependence on actor attributes reads as similarity-weighted
-##    Sociality; anything else is "none (candidate-centered)" when the caller says
-##    the statistic is centered on the decision's candidates, else "none".
+##    Sociality; anything else is "none".
+## A statistic centered on the decision's candidates has no target of its own:
+## the centering subtracts one constant per decision, the same for every
+## candidate, so the core statistic still ranks the candidates and its outcome
+## is reported with " (candidate-centered, approximate)" (the constant moves
+## only the margin against staying put). With no outcome for the core, it is
+## "none (candidate-centered)".
 .k_outcome <- function(target, n_states = 40L, M = 6L, N = 7L, candidate_centered = FALSE,
                        tol = 1e-8) {
   cov <- .k_probe_cov(M, N)
@@ -226,7 +231,7 @@
   if (inv("col")) return(list(moves = "Popularity, nonlinear moment", identity = "column-resampling invariant"))
   B <- matrix(stats::rbinom(M * N, 1, 0.5), M, N); storage.mode(B) <- "double"
   c2 <- cov; c2$v <- stats::rnorm(M)
-  if (!candidate_centered && abs(target(B, cov) - target(B, c2)) > tol)
+  if (abs(target(B, cov) - target(B, c2)) > tol)
     return(list(moves = "Sociality strength, similarity-weighted", identity = "depends on holders' attributes"))
   list(moves = if (candidate_centered) "none (candidate-centered)" else "none", identity = "")
 }
@@ -272,8 +277,11 @@
 #'   package rule) or `"degree"` (documented alternative), or a function mapping a named
 #'   logical dependency profile to a dimension symbol (`"K_AC"`, ...).
 #' @param candidate_centered Logical; the statistic is centered on the mean
-#'   over the decision's candidates, so a target with no identity has the
-#'   outcome `"none (candidate-centered)"`.
+#'   over the decision's candidates. Such a statistic has no target of its own;
+#'   its outcome is that of the core statistic, marked
+#'   `" (candidate-centered, approximate)"` (for a similarity-to-holders
+#'   statistic, `"Sociality strength, similarity-weighted (candidate-centered,
+#'   approximate)"`), or `"none (candidate-centered)"` when the core has none.
 #' @param seed Seed for the random networks (the caller's random stream is
 #'   restored afterwards).
 #' @return A list: `reads` (the decision dimension, by name), `moves` (the
@@ -306,6 +314,8 @@ searchnet_classify_effect <- function(stat = NULL, change = NULL, target = NULL,
   .k_with_seed(seed, function() {
     dep <- .k_dependency(change)
     out <- .k_outcome(target, candidate_centered = candidate_centered)
+    if (candidate_centered && !startsWith(out$moves, "none"))
+      out$moves <- paste0(out$moves, " (candidate-centered, approximate)")
     sym <- rf(dep)
     list(reads = if (sym %in% names(.K_DIM_NAME)) unname(.K_DIM_NAME[sym]) else sym,
          moves = out$moves,

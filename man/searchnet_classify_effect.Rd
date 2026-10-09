@@ -26,8 +26,10 @@ package rule) or \code{"degree"} (documented alternative), or a function mapping
 logical dependency profile to a dimension symbol (\code{"K_AC"}, ...).}
 
 \item{candidate_centered}{Logical; the statistic is centered on the mean
-over the decision's candidates, so a target with no identity has the
-outcome \code{"none (candidate-centered)"}.}
+over the decision's candidates. Such a statistic has no target of its own;
+its outcome is that of the core statistic, marked
+\code{" (candidate-centered, approximate)"} (for a similarity-to-holders
+statistic, \code{"Sociality strength, similarity-weighted (candidate-centered, approximate)"}), or \code{"none (candidate-centered)"} when the core has none.}
 
 \item{seed}{Seed for the random networks (the caller's random stream is
 restored afterwards).}

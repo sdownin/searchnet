@@ -114,8 +114,12 @@ structure. The field names in code are `reads` and `moves`.
   moment of Expansiveness, one invariant to reshuffling each component's holders
   a nonlinear moment of Popularity, and one that depends on the holders'
   attributes is similarity-weighted Sociality strength. A statistic centered on
-  the mean over the decision's candidates, whose target lies in neither
-  projection, has the outcome "none (candidate-centered)".
+  the mean over the decision's candidates has no target of its own; the
+  centering is one constant per decision, so its core statistic still ranks the
+  candidates, and its outcome is the core's, marked "(candidate-centered,
+  approximate)": for similarity to a component's other holders, "Sociality
+  strength, similarity-weighted (candidate-centered, approximate)". A core with
+  no outcome gives "none (candidate-centered)".
 - An alternative decision rule, "degree" (the degree in the change statistic, a
   count of other holders read as Popularity), is available as `rule = "degree"`
   for comparison; it is not the package rule.
