@@ -512,31 +512,28 @@ searchnet_export_all <- function(env, dir = "searchnet_export", prefix = "",
 
 #' Export simulation results in dashboard-scene CSV formats
 #'
-#' Produces the five CSV files consumed by the manim dashboard panel scenes
-#' (\code{KDegreeEvolutionScene}, \code{BipartiteNetworkScene},
-#' \code{FitnessLandscapeScene}, \code{ShockResponseScene}, and
-#' \code{GameTheoreticScene}).  The output schemas match those expected by
-#' \code{inst/manim/dashboard_panels.py} so the files can be dropped
-#' directly into \code{inst/manim/data/} and rendered.
+#' Produces five CSV files describing a run (degree trajectories, tie
+#' snapshots, utility decomposition, shocks and a phase-space projection)
+#' in long format for animation tools such as Manim.  The schemas are
+#' documented in \code{inst/manim/data/README.md}.
 #'
 #' Five files are written:
 #'
 #' \describe{
 #'   \item{\code{k4_trajectories.csv}}{
-#'     Columns: \code{round}, \code{carrier}, \code{K_AC}, \code{K_CC},
+#'     Columns: \code{round}, \code{actor}, \code{K_AC}, \code{K_CC},
 #'     \code{K_CA}, \code{K_AA}.
-#'     One row per carrier per round (mean across actors/components within
-#'     each round).
+#'     One row per actor per round (mean over the round's ministeps).
 #'   }
 #'   \item{\code{bipartite_snapshots.csv}}{
-#'     Columns: \code{round}, \code{carrier}, \code{route}, \code{active}.
+#'     Columns: \code{round}, \code{actor}, \code{component}, \code{active}.
 #'     Long-form active ties at selected snapshot steps.
 #'   }
 #'   \item{\code{utility_trajectories.csv}}{
-#'     Columns: \code{round}, \code{carrier}, \code{total_utility},
+#'     Columns: \code{round}, \code{actor}, \code{total_utility},
 #'     \code{nk_component}, \code{scope_cost}, \code{popularity},
 #'     \code{rivalry}.
-#'     One row per carrier per round.
+#'     One row per actor per round.
 #'   }
 #'   \item{\code{shock_events.csv}}{
 #'     Columns: \code{round}, \code{shock_type}, \code{magnitude},
@@ -545,9 +542,9 @@ searchnet_export_all <- function(env, dir = "searchnet_export", prefix = "",
 #'     \code{shock_df} argument.
 #'   }
 #'   \item{\code{phase_space.csv}}{
-#'     Columns: \code{round}, \code{carrier}, \code{PC1}, \code{PC2},
+#'     Columns: \code{round}, \code{actor}, \code{PC1}, \code{PC2},
 #'     \code{PC3}.
-#'     PCA reduction of carrier state vectors sampled at up to 50
+#'     PCA reduction of actor state vectors (rows of B) sampled at up to 50
 #'     evenly spaced steps.
 #'   }
 #' }
@@ -558,7 +555,7 @@ searchnet_export_all <- function(env, dir = "searchnet_export", prefix = "",
 #' @param dir Output directory.  Created recursively if it does not exist.
 #'   Defaults to the package's \code{inst/manim/data} directory when
 #'   \code{NULL}.
-#' @param carrier_labels Character vector of carrier labels. Must have
+#' @param actor_labels Character vector of actor labels. Must have
 #'   length equal to the number of actors (\code{M}).  If \code{NULL}
 #'   (default), generates labels \code{A1, A2, ...}.
 #' @param n_snapshots Integer; number of evenly-spaced bipartite snapshots
@@ -579,7 +576,7 @@ searchnet_export_all <- function(env, dir = "searchnet_export", prefix = "",
 #' @export
 searchnet_export_for_manim <- function(env,
                                        dir = NULL,
-                                       carrier_labels = NULL,
+                                       actor_labels = NULL,
                                        n_snapshots = 20L,
                                        n_phase_samples = 50L,
                                        shock_df = NULL,
@@ -605,11 +602,11 @@ searchnet_export_for_manim <- function(env,
   }
   if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
 
-  # Carrier labels
-  if (is.null(carrier_labels)) {
-    carrier_labels <- paste0("A", seq_len(M))
+  # Actor labels
+  if (is.null(actor_labels)) {
+    actor_labels <- paste0("A", seq_len(M))
   }
-  stopifnot(length(carrier_labels) == M)
+  stopifnot(length(actor_labels) == M)
 
   # Map chain steps to rounds (each round = M ministeps)
   step_to_round <- function(s) ceiling(s / M)
@@ -631,7 +628,7 @@ searchnet_export_for_manim <- function(env,
       K_AC <- sum(row_vec)
       K_AA <- sum(soc[c_i, ] > 0)
       K_CA <- sum(mat[, row_vec > 0] > 0) - K_AC
-      K_CC_routes <- if (K_AC > 0) {
+      K_CC_comp <- if (K_AC > 0) {
         mean(colSums(epi[row_vec > 0, , drop = FALSE] > 0))
       } else {
         0
@@ -640,9 +637,9 @@ searchnet_export_for_manim <- function(env,
       idx <- idx + 1L
       k4_rows[[idx]] <- data.frame(
         round   = round_num,
-        carrier = carrier_labels[c_i],
+        actor   = actor_labels[c_i],
         K_AC    = K_AC,
-        K_CC    = K_CC_routes,
+        K_CC    = K_CC_comp,
         K_CA    = K_CA,
         K_AA    = K_AA,
         stringsAsFactors = FALSE
@@ -653,10 +650,10 @@ searchnet_export_for_manim <- function(env,
 
   # Average across steps within each round
   k4_avg <- stats::aggregate(
-    cbind(K_AC, K_CC, K_CA, K_AA) ~ round + carrier,
+    cbind(K_AC, K_CC, K_CA, K_AA) ~ round + actor,
     data = k4_all, FUN = mean
   )
-  k4_avg <- k4_avg[order(k4_avg$round, k4_avg$carrier), ]
+  k4_avg <- k4_avg[order(k4_avg$round, k4_avg$actor), ]
 
   k4_file <- file.path(dir, "k4_trajectories.csv")
   utils::write.csv(k4_avg, k4_file, row.names = FALSE)
@@ -676,16 +673,16 @@ searchnet_export_for_manim <- function(env,
     if (nrow(idx_active) > 0) {
       snap_rows[[length(snap_rows) + 1L]] <- data.frame(
         round   = rep(round_num, nrow(idx_active)),
-        carrier = carrier_labels[idx_active[, 1]],
-        route   = as.integer(idx_active[, 2]),
+        actor   = actor_labels[idx_active[, 1]],
+        component = as.integer(idx_active[, 2]),
         active  = 1L,
         stringsAsFactors = FALSE
       )
     }
   }
   snap_df <- if (length(snap_rows) > 0) do.call(rbind, snap_rows) else {
-    data.frame(round = integer(0), carrier = character(0),
-               route = integer(0), active = integer(0),
+    data.frame(round = integer(0), actor = character(0),
+               component = integer(0), active = integer(0),
                stringsAsFactors = FALSE)
   }
   snap_file <- file.path(dir, "bipartite_snapshots.csv")
@@ -705,7 +702,7 @@ searchnet_export_for_manim <- function(env,
     if (!all(is.na(step_ids)) && !all(is.na(actor_ids))) {
       util_out <- data.frame(
         round          = step_to_round(step_ids),
-        carrier        = carrier_labels[pmin(actor_ids, M)],
+        actor          = actor_labels[pmin(actor_ids, M)],
         total_utility  = as.numeric(util$utility),
         nk_component   = NA_real_,
         scope_cost     = NA_real_,
@@ -713,7 +710,7 @@ searchnet_export_for_manim <- function(env,
         rivalry        = NA_real_,
         stringsAsFactors = FALSE
       )
-      util_out <- util_out[stats::complete.cases(util_out[, c("round", "carrier")]), ]
+      util_out <- util_out[stats::complete.cases(util_out[, c("round", "actor")]), ]
       use_actual_util <- nrow(util_out) > 0
     }
   }
@@ -736,7 +733,7 @@ searchnet_export_for_manim <- function(env,
         uidx <- uidx + 1L
         util_rows[[uidx]] <- data.frame(
           round          = round_num,
-          carrier        = carrier_labels[c_i],
+          actor          = actor_labels[c_i],
           total_utility  = total_u,
           nk_component   = outact_u,
           scope_cost     = density_u,
@@ -749,17 +746,17 @@ searchnet_export_for_manim <- function(env,
     util_out <- do.call(rbind, util_rows[seq_len(uidx)])
   }
 
-  # Average within round x carrier
+  # Average within round x actor
   # Replace NA columns with 0 for aggregation
   for (.col in c("nk_component", "scope_cost", "popularity", "rivalry")) {
     if (.col %in% names(util_out)) util_out[[.col]][is.na(util_out[[.col]])] <- 0
   }
   util_avg <- stats::aggregate(
     cbind(total_utility, nk_component, scope_cost,
-          popularity, rivalry) ~ round + carrier,
+          popularity, rivalry) ~ round + actor,
     data = util_out, FUN = mean
   )
-  util_avg <- util_avg[order(util_avg$round, util_avg$carrier), ]
+  util_avg <- util_avg[order(util_avg$round, util_avg$actor), ]
 
   util_file <- file.path(dir, "utility_trajectories.csv")
   utils::write.csv(util_avg, util_file, row.names = FALSE)
@@ -783,7 +780,7 @@ searchnet_export_for_manim <- function(env,
   message(sprintf("    shock_events.csv: %d rows", nrow(shock_df)))
 
   # -------------------------------------------------------------------
-  # 5. phase_space.csv  (PCA of carrier state vectors)
+  # 5. phase_space.csv  (PCA of actor state vectors)
   # -------------------------------------------------------------------
   message("  Exporting phase_space.csv ...")
   phase_steps <- unique(round(seq(1, n_steps,
@@ -791,7 +788,7 @@ searchnet_export_for_manim <- function(env,
 
   state_matrix <- matrix(0, nrow = length(phase_steps) * M, ncol = N)
   meta_round   <- integer(length(phase_steps) * M)
-  meta_carrier <- character(length(phase_steps) * M)
+  meta_actor <- character(length(phase_steps) * M)
   pidx <- 0L
   for (s in phase_steps) {
     mat <- arr[, , s]
@@ -800,14 +797,14 @@ searchnet_export_for_manim <- function(env,
       pidx <- pidx + 1L
       state_matrix[pidx, ] <- mat[c_i, ]
       meta_round[pidx]   <- round_num
-      meta_carrier[pidx] <- carrier_labels[c_i]
+      meta_actor[pidx] <- actor_labels[c_i]
     }
   }
 
   if (pidx > 3 && N > 3) {
     state_matrix <- state_matrix[seq_len(pidx), , drop = FALSE]
     meta_round   <- meta_round[seq_len(pidx)]
-    meta_carrier <- meta_carrier[seq_len(pidx)]
+    meta_actor <- meta_actor[seq_len(pidx)]
 
     col_var <- apply(state_matrix, 2, stats::var)
     state_filtered <- state_matrix[, col_var > 0, drop = FALSE]
@@ -817,7 +814,7 @@ searchnet_export_for_manim <- function(env,
       pc_scores  <- pca_result$x[, 1:3, drop = FALSE]
       phase_out <- data.frame(
         round   = meta_round,
-        carrier = meta_carrier,
+        actor   = meta_actor,
         PC1     = pc_scores[, 1],
         PC2     = pc_scores[, 2],
         PC3     = pc_scores[, 3],
@@ -826,7 +823,7 @@ searchnet_export_for_manim <- function(env,
     } else {
       phase_out <- data.frame(
         round   = meta_round,
-        carrier = meta_carrier,
+        actor   = meta_actor,
         PC1     = state_filtered[, 1],
         PC2     = if (ncol(state_filtered) >= 2) state_filtered[, 2] else 0,
         PC3     = 0,
@@ -835,7 +832,7 @@ searchnet_export_for_manim <- function(env,
     }
   } else {
     phase_out <- data.frame(
-      round = integer(0), carrier = character(0),
+      round = integer(0), actor = character(0),
       PC1 = numeric(0), PC2 = numeric(0), PC3 = numeric(0),
       stringsAsFactors = FALSE
     )

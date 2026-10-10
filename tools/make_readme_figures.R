@@ -14,6 +14,11 @@
 ## deterministic for a given searchnet, RSiena and R version. Total runtime is
 ## well under two minutes on a laptop.
 ##
+## The architectures, NK validation and shock figures are shared with the JSS
+## paper: their builders live in tools/figures_shared.R, sourced
+## below, and this script only sizes and saves them. The hero, DID and
+## objective figures are README-only and are built here.
+##
 ## Styling: light background, Okabe-Ito colors (the colorblind-safe palette
 ## the package's own policy and synthetic-control plots use), PNGs at 2x
 ## (200 dpi) so they stay sharp on high-density displays.
@@ -44,61 +49,22 @@ suppressMessages({
 out_dir <- file.path("man", "figures")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
-## Okabe-Ito
-oi <- c(orange = "#E69F00", sky = "#56B4E9", green = "#009E73",
-        yellow = "#F0E442", blue = "#0072B2", vermillion = "#D55E00",
-        purple = "#CC79A7", black = "#000000")
-
-theme_readme <- theme_bw(base_size = 11) +
-  theme(plot.background  = element_rect(fill = "white", color = NA),
-        panel.background = element_rect(fill = "white", color = NA),
-        plot.title       = element_text(face = "bold", size = 12),
-        plot.subtitle    = element_text(color = "grey30", size = 9.5),
-        legend.position  = "bottom")
+## Shared builders and helpers (Okabe-Ito palette, theme, W heatmap, {K}-4
+## restyle), also used by the JSS paper.
+source(file.path("tools", "figures_shared.R"))
+oi           <- fs_oi
+theme_readme <- fs_theme(11)
+quiet        <- fs_quiet
+restyle_k4   <- fs_restyle_k4
+w_heatmap    <- fs_w_heatmap
 
 save_png <- function(plot, file, width, height, dpi = 200) {
   path <- file.path(out_dir, file)
   ggsave(path, plot, width = width, height = height, dpi = dpi,
          bg = "white", device = ragg::agg_png)
-  cat(sprintf("  wrote %-28s %6.0f KB\n", path, file.size(path) / 1024))
+  cat(sprintf("  wrote %-28s %6.0f KB
+", path, file.size(path) / 1024))
   invisible(path)
-}
-
-quiet <- function(expr) invisible(capture.output(suppressMessages(expr)))
-
-## A {K}-4 panel from saomnk_plot_k4(). Since searchnet 0.11.2.9000 the
-## function draws the package grammar itself ({K}-dimension strips with display
-## names, actors orange, components blue, computed title, reading guides);
-## the README keeps its computed title and only sets a subtitle where the
-## figure needs one.
-restyle_k4 <- function(p, title = NULL, subtitle = NULL) {
-  if (!is.null(title)) p <- p + labs(title = title)
-  if (!is.null(subtitle)) p <- p + labs(subtitle = subtitle)
-  p + theme(plot.background = element_rect(fill = "white", color = NA))
-}
-
-## Heatmap of an influence matrix W. The diagonal is drawn light gray, not
-## shaded by value: the engine's XWX statistic sums over j != h
-## (R/saomnk-base.R), so W's diagonal never enters the objective.
-diag_note <- "diagonal unused (XWX sums over j != h)"
-w_heatmap <- function(W, title, subtitle = NULL, labels = seq_len(nrow(W))) {
-  N  <- nrow(W)
-  diag(W) <- NA
-  df <- data.frame(row = rep(seq_len(N), times = N),
-                   col = rep(seq_len(N), each = N),
-                   w   = as.vector(W))
-  ggplot(df, aes(col, row, fill = w)) +
-    geom_tile(color = "grey85", linewidth = 0.3) +
-    scale_y_reverse(breaks = seq_len(N), labels = labels, expand = c(0, 0)) +
-    scale_x_continuous(breaks = seq_len(N), labels = labels, position = "top",
-                       expand = c(0, 0)) +
-    scale_fill_gradient(low = "white", high = oi[["blue"]], limits = c(0, 1),
-                        na.value = "grey90", guide = "none") +
-    coord_equal() +
-    labs(title = title, subtitle = subtitle, x = "component j", y = "component i") +
-    theme_readme +
-    theme(panel.grid = element_blank(), axis.ticks = element_blank(),
-          axis.text = element_text(size = 7))
 }
 
 
@@ -204,176 +170,21 @@ save_png(hero, "readme-hero.png", width = 12, height = 11, dpi = 150)
 
 
 ###############################################################################
-## 2. Influence-matrix architectures under one model
+## 2-4. Figures shared with the JSS paper (tools/figures_shared.R)
 ###############################################################################
-cat("[2/6] architectures\n")
-N2 <- 12
-W_arch <- list(
-  "Modular"      = saomnk_block_diagonal(N2, 3),
-  "Nested modules" = (saomnk_block_diagonal(N2, 2) + saomnk_block_diagonal(N2, 4) +
-                        diag(N2)) / 3,
-  "Local (ring)" = nk_to_saomnk(nk_landscape(N2, 2, model = "adjacent", seed = 1))$influence_matrix,
-  "Random"       = nk_to_saomnk(nk_landscape(N2, 2, model = "random",   seed = 1))$influence_matrix
-)
-W_code <- c("Modular"        = "saomnk_block_diagonal(12, 3)",
-            "Nested modules" = "mean of block_diagonal at 2, 4, 12 blocks",
-            "Local (ring)"   = "nk_to_saomnk(nk_landscape(12, 2, \"adjacent\"))",
-            "Random"         = "nk_to_saomnk(nk_landscape(12, 2, \"random\"))")
-## Ties and mean K_CC (components co-held with each component, excluding
-## itself) at the end of one run of the same model on W.
-end_kcc <- function(W) {
-  e <- saomnk_env(M = 8, N = N2, density = 0.15, seed = 42)
-  m <- saomnk_model(density = -1.5, influence_matrix = W, influence_weight = 0.5)
-  quiet(saomnk_run(e, m, steps_per_actor = 30, seed = 12345))
-  Bf <- saomnk_get_bipartite(e)
-  sprintf("end of run: %d ties, mean K_CC %.1f", sum(Bf),
-          mean(colSums((crossprod(Bf)) > 0) - (colSums(Bf) > 0)))
-}
+cat("[2/6] architectures
+")
+save_png(fs_fig_architectures(), "readme-architectures.png",
+         width = 13, height = 7.6, dpi = 170)
 
-## Row 2: the same support as row 1, with signed real weights. Off-diagonal
-## nonzero entries get a symmetric draw from Uniform(-1, 1); nested modules
-## keep their magnitudes (module depth) and get a random sign. Positive =
-## complements (holding both pays), negative = substitutes (holding both
-## costs). Conventional NK cannot express the negative case: its matrix only
-## says WHO interacts, and the payoffs are drawn separately, i.i.d. U(0, 1).
-signed_version <- function(W, nm, seed = 2026) {
-  W <- unname(as.matrix(W)); n <- nrow(W)
-  set.seed(seed)
-  ## Same nonzero cells as W. A symmetric W gets a symmetric draw (one weight
-  ## per pair); an asymmetric one, such as nk_landscape()'s random pattern
-  ## (row j lists the components that affect j), gets one weight per cell.
-  sym <- isSymmetric(W)
-  S <- matrix(0, n, n)
-  nz <- which((if (sym) upper.tri(W) else row(W) != col(W)) & W != 0)
-  S[nz] <- if (nm == "Nested modules") W[nz] * sample(c(-1, 1), length(nz), replace = TRUE)
-           else stats::runif(length(nz), -1, 1)
-  if (sym) S <- S + t(S)
-  diag(S) <- diag(W)
-  stopifnot(identical(S != 0, W != 0 | (row(W) == col(W) & diag(W)[row(W)] != 0)))
-  S
-}
-w_heatmap_signed <- function(W, title, subtitle, legend = FALSE) {
-  N  <- nrow(W)
-  diag(W) <- NA
-  df <- data.frame(row = rep(seq_len(N), times = N), col = rep(seq_len(N), each = N),
-                   w = as.vector(W))
-  ggplot(df, aes(col, row, fill = w)) +
-    geom_tile(color = "grey85", linewidth = 0.3) +
-    scale_y_reverse(breaks = seq_len(N), expand = c(0, 0)) +
-    scale_x_continuous(breaks = seq_len(N), position = "top", expand = c(0, 0)) +
-    scale_fill_gradient2(low = "#018571", mid = "white", high = "#A6611A", midpoint = 0,
-                         limits = c(-1, 1), na.value = "grey90",
-                         name = "weight w_hj\n(+ complements,\n- substitutes)",
-                         guide = if (legend) "colourbar" else "none") +
-    coord_equal() +
-    labs(title = title, subtitle = subtitle, x = NULL, y = NULL) +
-    theme_readme +
-    theme(panel.grid = element_blank(), axis.ticks = element_blank(),
-          axis.text = element_text(size = 7), plot.subtitle = element_text(size = 8),
-          legend.position = "right", legend.title = element_text(size = 8),
-          legend.text = element_text(size = 7), legend.key.height = grid::unit(0.5, "cm"))
-}
+cat("[3/6] NK validation
+")
+save_png(fs_fig_nk_validation(), "readme-nk-validation.png", width = 12, height = 4.2)
 
-row_label <- function(head, body) {
-  ggplot() +
-    annotate("text", x = 0, y = 1, label = head, hjust = 0, vjust = 1, fontface = "bold", size = 3.6) +
-    annotate("text", x = 0, y = 0.80, label = body, hjust = 0, vjust = 1, size = 2.9,
-             color = "grey30", lineheight = 1) +
-    coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), clip = "off") +
-    theme_void()
-}
-
-arch_plots <- lapply(names(W_arch), function(nm) {
-  W <- unname(as.matrix(W_arch[[nm]]))
-  w_heatmap(W, nm, sprintf("%s\n%s\n%s",
-                           W_code[[nm]], end_kcc(W), diag_note)) +
-    labs(x = NULL, y = NULL) +
-    theme(plot.subtitle = element_text(size = 8))
-})
-signed_plots <- lapply(seq_along(W_arch), function(k) {
-  nm <- names(W_arch)[k]
-  S  <- signed_version(W_arch[[nm]], nm)
-  w_heatmap_signed(S, paste(nm, "(signed)"),
-                   sprintf("%s\n%s",
-                           if (nm == "Nested modules") "same magnitudes, random signs"
-                           else "same pattern, weights U(-1, 1)", end_kcc(S)),
-                   legend = k == length(W_arch))
-})
-lab1 <- row_label("Conventional NK",
-                  "binary pattern: who\ninteracts (nested:\nmodule depth)\n\npayoffs drawn apart,\ni.i.d. Uniform(0, 1)")
-lab2 <- row_label("SAOM-NK",
-                  "signed real weights\non the same pattern\n\nbrown: complements\nteal: substitutes")
-arch <- wrap_plots(c(list(lab1), arch_plots, list(lab2), signed_plots), nrow = 2,
-                   widths = c(0.55, 1, 1, 1, 1))
-save_png(arch, "readme-architectures.png", width = 13, height = 7.6, dpi = 170)
-
-
-###############################################################################
-## 3. Classical NK reproduction (validation)
-###############################################################################
-cat("[3/6] NK validation\n")
-N3 <- 12
-walk_df <- do.call(rbind, lapply(c(0, 3, 8), function(k) {
-  nk <- nk_landscape(N3, k, model = "random", seed = 2026 + k)
-  set.seed(11)
-  starts <- sample.int(2^N3, 30) - 1L
-  do.call(rbind, lapply(seq_along(starts), function(i) {
-    w <- nk_walk(nk, start = starts[i], type = "steepest")
-    data.frame(K = sprintf("K = %d", k), walk = i,
-               step = seq_along(w$fitness) - 1L, fitness = w$fitness)
-  }))
-}))
-walk_df$K <- factor(walk_df$K, levels = c("K = 0", "K = 3", "K = 8"))
-k_cols <- c("K = 0" = oi[["blue"]], "K = 3" = oi[["orange"]], "K = 8" = oi[["vermillion"]])
-p_walk <- ggplot(walk_df, aes(step, fitness, group = interaction(K, walk), color = K)) +
-  geom_line(alpha = 0.55, linewidth = 0.5) +
-  geom_point(data = function(d) d[ave(d$step, d$K, d$walk, FUN = max) == d$step, ],
-             size = 1.4) +
-  facet_wrap(~ K, nrow = 1) +
-  scale_color_manual(values = k_cols, guide = "none") +
-  labs(title = "Adaptive walks stop at local peaks",
-       subtitle = "nk_walk(type = \"steepest\") from 30 random starts, N = 12; dots mark the peak reached",
-       x = "Step", y = "Fitness") +
-  theme_readme
-
-sweep <- nk_sweep_K(N = N3, K_values = c(0, 1, 2, 3, 4, 6, 8, 11),
-                    n_landscapes = 4, n_walks = 5, model = "random", seed = 2026)
-opt_col <- grep("optima", names(sweep), value = TRUE)[1]
-sweep$n_opt <- sweep[[opt_col]]
-sweep$ref   <- 2^N3 / (sweep$K + 1)
-red <- NULL
-quiet(red <- nk_verify_reduction(N = 10, K = 3, seed = 42))
-p_sweep <- ggplot(sweep, aes(K, n_opt)) +
-  geom_line(aes(y = ref, linetype = "2^N / (K + 1), fully random limit"), color = "grey40") +
-  geom_line(color = oi[["vermillion"]], linewidth = 0.8) +
-  geom_point(color = oi[["vermillion"]], size = 2.2) +
-  scale_y_log10() +
-  scale_linetype_manual(values = "dashed", name = NULL) +
-  labs(title = "Ruggedness rises with K",
-       subtitle = sprintf("nk_sweep_K(): mean local optima, 4 landscapes per K\nnk_verify_reduction(N = 10, K = 3): max |NK - SaoMNK|\n= %s over %d configurations",
-                          format(signif(red$max_difference, 2)), red$n_configs),
-       x = "K (epistatic partners per component)", y = "Local optima (log scale)") +
-  theme_readme + theme(legend.position = c(0.68, 0.88),
-                       legend.background = element_blank())
-nkfig <- p_walk + p_sweep + plot_layout(widths = c(1.9, 1))
-save_png(nkfig, "readme-nk-validation.png", width = 12, height = 4.2)
-
-
-###############################################################################
-## 4. Shock response: two-segment density schedule
-###############################################################################
-cat("[4/6] shock\n")
-## Same design as vignettes/saomnk-simulation.Rmd, section 3.2: density -0.5
-## in the first half of model time, -2.0 in the second.
-env_s <- saomnk_env(M = 6, N = 8, density = 0, seed = 42)
-mod_s <- saomnk_model(density = -0.5, influence_matrix = saomnk_block_diagonal(8, 2),
-                      influence_weight = 0.5)
-quiet(saomnk_run(env_s, mod_s, steps_per_actor = 100, seed = 12345,
-                 shocks = list(saomnk_shock("density", parameter = -0.5, portion = 1),
-                               saomnk_shock("density", parameter = -2.0, portion = 1))))
-shock_step <- min(env_s$theta_shocks[[2]]$chain_step_ids)
-p_shock <- restyle_k4(saomnk_plot_k4(env_s))
-save_png(p_shock, "readme-shock.png", width = 8.5, height = 6)
+cat("[4/6] shock
+")
+save_png(fs_fig_shock(fs_shock_run(steps_per_actor = 100)), "readme-shock.png",
+         width = 8.5, height = 6)
 
 
 ###############################################################################

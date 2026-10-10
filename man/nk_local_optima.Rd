@@ -19,8 +19,9 @@ A \code{data.frame} with columns \code{code}, \code{fitness}, and
 }
 \description{
 A configuration is a local optimum if its fitness is greater than or equal
-to that of all \eqn{N} single-bit-flip (Hamming-1) neighbours.  The expected
-count scales approximately as \eqn{2^N / (K + 1)}.
+to that of all \eqn{N} single-bit-flip (Hamming-1) neighbors.  The count
+grows with \eqn{K}; in the fully random case \eqn{K = N - 1} its
+expectation is \eqn{2^N / (N + 1)}.
 }
 \examples{
 nk0 <- nk_landscape(N = 10, K = 0, seed = 1)

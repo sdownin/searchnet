@@ -9,10 +9,8 @@ papers. Cite it; change it here and nowhere else. Installed copy:
 `system.file("rosetta", "K_DIMENSIONS.md", package = "searchnet")`. The derived
 table is shipped beside it as `effect_dimensions.csv`.
 
-*Provenance: AI-drafted (2026-10-08) from a specification the author approved;
-the summary paragraph is the wording agreed for the papers, to be re-voiced by
-the author before it is quoted. Vocabulary: "{K} dimension" names the four
-degree types; "channel" is reserved for mechanisms.*
+*Vocabulary: "{K} dimension" names the four degree types; "channel" is
+reserved for mechanisms.*
 
 ## Summary
 

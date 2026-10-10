@@ -1,3 +1,12 @@
+# searchnet 0.12.9
+
+Released 2026-10-10. No change to simulated results or to `inst/rosetta/effect_dimensions.csv`. Suite: 65 files, 924 tests, 6911 expectations, 0 failures, 0 errors, 5 skips.
+
+* The public repository now carries the package only: the software paper's sources, build scripts and web edition, and internal development notes, are no longer part of the public snapshot. The figure builders the README shares with the paper move to `tools/figures_shared.R`, so `tools/make_readme_figures.R` still reproduces every README figure. The project site's root now redirects to the repository.
+* `searchnet_export_for_manim()`: the CSV columns and the labels argument now use the package's generic names (columns `actor` and `component`, argument `actor_labels`); code passing the old argument name must switch. The schemas are documented in `inst/manim/data/README.md`.
+* NK validation: the reference for the local-optimum count is $2^N/(N+1)$, the expectation in the fully random case $K = N - 1$; the earlier $2^N/(K+1)$ curve is not a scaling law. Corrected in the shared README/JSS figure, the `nk_local_optima()` and `nk_sweep_K()` documentation, and the `print()` method for NK landscapes, which now states the reference only when $K = N - 1$.
+* README: an animation of one run, showing an actor's fitness landscape over all 256 portfolios as the other actors move (`tools/make_readme_gif.R`, `inst/manim/scene_readme_landscape.py`).
+
 # searchnet 0.12.8
 
 Released 2026-10-08. No change to simulated results or to `inst/rosetta/effect_dimensions.csv`. Suite: 65 files, 924 tests, 6896 expectations, 0 failures, 0 errors, 9 skips.
@@ -750,9 +759,6 @@ are fixed here.
   repository regenerates that bundle, so it re-rots after every paper change.
 * Five unreferenced figures that belong to other projects are excluded from the
   public snapshot.
-* A forward outline of the sections the paper still lacks -- time-varying
-  couplings, network-behavior coevolution, two-sided ties, pre-estimation
-  diagnostics -- is in `paper/_drafts/`, in outline form rather than prose.
 
 ## Known and deliberately open
 

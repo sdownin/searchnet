@@ -33,8 +33,8 @@ optimum fitness.
 }
 \description{
 Replicates the canonical NK ruggedness experiment: as \eqn{K} rises, the
-number of local optima grows (roughly \eqn{2^N / (K+1)}) and adaptive walks
-terminate sooner at lower-fitness peaks.
+number of local optima grows (to about \eqn{2^N / (N + 1)} at \eqn{K = N - 1})
+and adaptive walks terminate sooner.
 }
 \examples{
 \donttest{

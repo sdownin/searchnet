@@ -106,7 +106,7 @@
 # Dev tooling and internal notes are not package content (2026-10-07):
 # tools/ holds the private embargo pattern list, which must not ship in a tarball.
 ^tools$
-^AI_DRAFTED_EDITS_.*\.md$
+^AI_[A-Z_]+_[0-9-]+\.md$
 # Lean build trees and machine-specific package overrides (inst/lean ships its sources only)
 ^inst/lean/\.lake$
 ^inst/lean/\.lake/

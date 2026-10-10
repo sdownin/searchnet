@@ -205,8 +205,12 @@ print.nk_landscape <- function(x, ...) {
               min(x$fitness), max(x$fitness), mean(x$fitness)))
   if (x$N <= 16) {
     n_opt <- nrow(nk_local_optima(x))
-    cat(sprintf("  local optima   : %d  (expected ~ 2^N/(K+1) = %.1f)\n",
-                n_opt, 2^x$N / (x$K + 1)))
+    if (x$K == x$N - 1L) {
+      cat(sprintf("  local optima   : %d  (fully random limit 2^N/(N+1) = %.1f)\n",
+                  n_opt, 2^x$N / (x$N + 1)))
+    } else {
+      cat(sprintf("  local optima   : %d\n", n_opt))
+    }
   }
   invisible(x)
 }
@@ -290,8 +294,9 @@ nk_fitness <- function(landscape, config = NULL) {
 #' Enumerate local optima of an NK landscape
 #'
 #' A configuration is a local optimum if its fitness is greater than or equal
-#' to that of all \eqn{N} single-bit-flip (Hamming-1) neighbours.  The expected
-#' count scales approximately as \eqn{2^N / (K + 1)}.
+#' to that of all \eqn{N} single-bit-flip (Hamming-1) neighbors.  The count
+#' grows with \eqn{K}; in the fully random case \eqn{K = N - 1} its
+#' expectation is \eqn{2^N / (N + 1)}.
 #'
 #' @param landscape An \code{"nk_landscape"} object.
 #' @param strict Logical. If \code{TRUE}, require strictly greater fitness than
@@ -426,8 +431,8 @@ print.nk_walk <- function(x, ...) {
 #' Sweep landscape statistics across K
 #'
 #' Replicates the canonical NK ruggedness experiment: as \eqn{K} rises, the
-#' number of local optima grows (roughly \eqn{2^N / (K+1)}) and adaptive walks
-#' terminate sooner at lower-fitness peaks.
+#' number of local optima grows (to about \eqn{2^N / (N + 1)} at \eqn{K = N - 1})
+#' and adaptive walks terminate sooner.
 #'
 #' @param N Integer. Number of loci.
 #' @param K_values Integer vector of \eqn{K} levels to sweep.

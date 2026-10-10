@@ -112,6 +112,20 @@ if (is.null(EMBARGO) || !length(EMBARGO))
   fail("cannot read embargo-content-patterns.txt; refusing to certify a ",
        "snapshot without the content scan. Run this script from the dev ",
        "checkout (Rscript tools/check_public_snapshot.R <worktree>).")
+## Public-only patterns: material that may live in the private manuscript and
+## dev tree (and so must not be in the list the paper build also scans) but
+## never in a public snapshot, such as AI-drafting notes and revision checklists
+## (author rule, 2026-10-10). Same lookup and the same refusal when missing.
+PUBLIC_ONLY_FILE <- NULL
+for (cand in c(if (!is.na(.self_dir)) file.path(.self_dir, "public-only-content-patterns.txt"),
+               "tools/public-only-content-patterns.txt")) {
+  if (!is.null(cand) && file.exists(cand)) { PUBLIC_ONLY_FILE <- cand; break }
+}
+PUBLIC_ONLY <- .read_patterns(PUBLIC_ONLY_FILE)
+if (is.null(PUBLIC_ONLY) || !length(PUBLIC_ONLY))
+  fail("cannot read public-only-content-patterns.txt; refusing to certify a ",
+       "snapshot without it. Run this script from the dev checkout.")
+EMBARGO <- c(EMBARGO, PUBLIC_ONLY)
 
 .binary_ext <- "[.](png|jpe?g|gif|pdf|mp4|webm|rds|rda|RData|pptx|docx|xlsx|zip|gz|ico|woff2?|ttf|otf)$"
 shipped <- if (file.exists(exclude)) {
