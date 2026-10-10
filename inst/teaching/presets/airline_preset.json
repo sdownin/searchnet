@@ -1,0 +1,39 @@
+{
+  "industry": "airline",
+  "N": 12,
+  "activity_names": [
+    "ATL-hub", "ORD-hub", "DFW-hub", "LAX-nonstop", "SFO-nonstop",
+    "JFK-intl", "MIA-intl", "SEA-tech", "DEN-mountain", "BOS-northeast",
+    "PHX-sunbelt", "MSP-midwest"
+  ],
+  "epistasis": "modular",
+  "blocks": 3,
+  "density": 0.3,
+  "density_param": -0.5,
+  "popularity": 0.3,
+  "epistasis_weight": 0.4,
+  "difficulty_settings": {
+    "intro": {
+      "steps_per_round": 5,
+      "n_AI": 2,
+      "shock_probability": 0
+    },
+    "intermediate": {
+      "steps_per_round": 10,
+      "n_AI": 4,
+      "shock_probability": 0.1
+    },
+    "advanced": {
+      "steps_per_round": 20,
+      "n_AI": 8,
+      "shock_probability": 0.3
+    }
+  },
+  "description": "U.S. domestic airline route network. Activities represent hub-and-spoke or point-to-point route markets. Epistasis blocks: {ATL,ORD,DFW,LAX} hub cluster, {SFO,JFK,MIA,SEA} coastal/international cluster, {DEN,BOS,PHX,MSP} regional cluster.",
+  "learning_objectives": [
+    "Understand hub-and-spoke vs. point-to-point strategy trade-offs",
+    "Observe how competitive overlap (K_AA) emerges from route similarity",
+    "Experience the cost of over-diversification (scope costs)",
+    "See how epistasis (route complementarities) creates natural strategic groups"
+  ]
+}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/saomnk-api.R
 \name{saomnk_model}
 \alias{saomnk_model}
-\title{Define a SaoMNK Structure Model}
+\title{Define a SAOM-NK Structure Model}
 \usage{
 saomnk_model(
   density = -0.5,

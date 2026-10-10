@@ -2,11 +2,30 @@
 
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![R-CMD-check](https://img.shields.io/badge/R--CMD--check-passing-brightgreen.svg)](https://github.com/sdownin/searchnet)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![R-CMD-check](https://github.com/sdownin/searchnet/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sdownin/searchnet/actions/workflows/R-CMD-check.yaml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://choosealicense.com/licenses/mit/)
 <!-- badges: end -->
 
 **Network-Embedded Search Simulation Engine**
+
+One simulated SAOM-NK run, animated: actor 4's fitness landscape recolors as the other actors move.
+
+![Animation of one simulated run. Left: six actors (circles) adding and dropping ties to eight components (squares) in two modules, the influence matrix W, and actor 4's objective over the run. Right: actor 4's fitness landscape, a 16 by 16 grid of its objective for all 256 portfolios given the other actors' ties, with its current portfolio marked and local peaks circled; the grid recolors as the other actors move and the marker moves when actor 4 adds or drops a component](man/figures/readme-landscape.gif)
+
+*A simulated run: 6 actors, 8 components, `W = saomnk_block_diagonal(8, 2)`;
+density −2.5, popularity 0.2, influence weight 0.8; environment seed 42, run
+seed 12345. Left: the bipartite network, one ministep at a time. Right: actor
+4's landscape, its objective for each of the 256 portfolios it could hold given
+the other actors' current ties (rows: which of components A–D it holds;
+columns: which of E–H; each ordered by how many). Under this W the local peaks
+sit at the corners (no components, one full module, or both), and their heights
+change as the other actors move. Regenerate with
+[`tools/make_readme_gif.R`](tools/make_readme_gif.R), which runs the
+simulation, renders
+[`inst/manim/scene_readme_landscape.py`](inst/manim/scene_readme_landscape.py)
+with manim, and converts the video to a GIF with ffmpeg.*
+
+The static figure below adds what the animation leaves implicit, for a larger run: the input W, the network at the start and at the end, and the {K}-4 degree series that connect them.
 
 ![One seeded run: the input influence matrix W, the actor-component network at the start and at the end of the run (same node positions; ties formed, kept and dropped marked), and the four coupled degree series of the {K} framework that connect them](man/figures/readme-hero.png)
 
@@ -26,7 +45,7 @@ the four coupled degree series `saomnk_plot_k4()` draws over the run. Generated 
 > to be expected. The companion methods paper has not yet been
 > peer-reviewed; results should be treated accordingly.
 > For reproducibility, install a pinned tag rather than the moving branch:
-> `devtools::install_github("sdownin/searchnet@v0.12.9")`.
+> `devtools::install_github("sdownin/searchnet@v0.13.0")`.
 > **v0.8.3 and earlier:** `saomnk_model()` simulations that declared
 > `influence_weight`, `cycle4`, `XWX`, `X`, `inPopX`, `outActX` or
 > `homXOutAct` did not simulate the declared coefficient (estimation via
@@ -49,28 +68,17 @@ the four coupled degree series `saomnk_plot_k4()` draws over the run. Generated 
 
 The package represents a search environment as a bipartite network of *M* actors affiliating with *N* components, where the fitness landscape topology is determined by the network structure and evolves endogenously through actors' search decisions. Because the model is formalized as a SAOM, it inherits the statistical infrastructure of RSiena, including maximum likelihood estimation, goodness-of-fit testing, and the capacity for empirical estimation on network panel data.
 
-![Animation of one simulated run. Left: six actors (circles) adding and dropping ties to eight components (squares) in two modules, the influence matrix W, and actor 4's objective over the run. Right: actor 4's fitness landscape, a 16 by 16 grid of its objective for all 256 portfolios given the other actors' ties, with its current portfolio marked and local peaks circled; the grid recolors as the other actors move and the marker moves when actor 4 adds or drops a component](man/figures/readme-landscape.gif)
-
-*A simulated run: 6 actors, 8 components, `W = saomnk_block_diagonal(8, 2)`;
-density −2.5, popularity 0.2, influence weight 0.8; environment seed 42, run
-seed 12345. Left: the bipartite network, one ministep at a time. Right: actor
-4's landscape, its objective for each of the 256 portfolios it could hold given
-the other actors' current ties (rows: which of components A–D it holds;
-columns: which of E–H; each ordered by how many). Under this W the local peaks
-sit at the corners (no components, one full module, or both), and their heights
-change as the other actors move. Regenerate with
-[`tools/make_readme_gif.R`](tools/make_readme_gif.R), which runs the
-simulation, renders
-[`inst/manim/scene_readme_landscape.py`](inst/manim/scene_readme_landscape.py)
-with manim, and converts the video to a GIF with ffmpeg.*
-
 The central theoretical contribution is the **{K} framework**: the classical scalar complexity parameter *K* counts how many components affect each component (the degree of W); in the bipartite representation interdependence appears in four coupled degree dimensions, each carrying distinct strategic implications for search, adaptation, and competitive dynamics.
 
 ## Installation
 
 ```r
 # Install from GitHub
-devtools::install_github("sdownin/searchnet")
+install.packages("remotes")
+remotes::install_github("sdownin/searchnet")
+
+# Check the installation (versions, dependencies, a seeded smoke run)
+searchnet::searchnet_check_setup()
 
 # Or source directly for development
 .saomnk_dir <- "path/to/searchnet/R"
@@ -110,7 +118,7 @@ saomnk_plot_k4(env)
 saomnk_summary(env)
 ```
 
-Step 4 draws the {K}-4 panel shown on the right of the figure at the top.
+Step 4 draws the {K}-4 panel shown on the right of the static figure at the top.
 
 ### Adding Actor Strategies
 
@@ -322,12 +330,12 @@ Generated by `tools/make_readme_figures.R` (environment seed 42, run seed
 - **Multi-wave summaries**: Ridge density plots, strategy-level K summaries
 
 ### Classic NK Landscapes
-Conventional Kauffman NK models, self-contained and independent of RSiena — usable on their own, and as an external reference for the SaoMNK reduction:
+Conventional Kauffman NK models, self-contained and independent of RSiena — usable on their own, and as an external reference for the SAOM-NK reduction:
 - `nk_landscape(N, K, model)` — exhaustive landscape over all 2^N configurations; `"adjacent"` (ring), `"random"`, or `"block"` (near-decomposable) epistasis
 - `nk_walk()` — adaptive walks: `"steepest"`, `"greedy"`, `"random"`
 - `nk_local_optima()` — exhaustive peak enumeration (about 2^N/(N+1) peaks in the fully random case K = N − 1)
 - `nk_sweep_K()` — canonical ruggedness sweep across K
-- `nk_to_saomnk()` / `nk_verify_reduction()` — bridge to the SAOM engine; the constructive form of Property 1 (NK is the M = 1, beta -> infinity case of SaoMNK)
+- `nk_to_saomnk()` / `nk_verify_reduction()` — bridge to the SAOM engine; the constructive form of Property 1 (NK is the M = 1, beta -> infinity case of SAOM-NK)
 
 ```r
 nk <- nk_landscape(N = 10, K = 3, seed = 42)
@@ -393,8 +401,8 @@ searchnet/
 │   ├── scene_bipartite_evolution.py  # Bipartite network evolution
 │   ├── scene_landscape_3d.py   # 3D fitness landscape rendering
 │   └── scene_shock.py          # Parametric shock animation
-├── inst/proofs/                # Formal proofs (NK⊂SaoMNK equivalence, online appendix)
-├── tests/testthat/             # 878 tests (61 test files)
+├── inst/proofs/                # Formal proofs (NK⊂SAOM-NK equivalence, online appendix)
+├── tests/testthat/             # 957 tests (68 test files)
 ├── man/                        # Generated documentation
 └── docs/                       # Strategy documents
 ```
@@ -404,7 +412,7 @@ searchnet/
 ```r
 # Run the full test suite
 testthat::test_dir("tests/testthat")
-# v0.12.0: 64 files, 902 tests, 5482 expectations, 0 failures, 0 errors, 5 skips
+# v0.13.0: 68 files, 957 tests, 7218 expectations, 0 failures, 0 errors, 5 skips
 ```
 
 Tests cover initialization, simulation execution, chain statistics, K-4 degree computation (with canonical network validation), shock processing, export pipeline, formal utility decomposition, McFadden choice probabilities, NK equivalence verification (Property 1), DGP validation, reproducibility, and edge cases.
@@ -499,7 +507,7 @@ Generated by `tools/make_readme_figures.R`; the full design is in
 
 The package ships with formal proofs establishing the canonical relationship:
 
-**NK &sub; SaoMNK &equiv; Conditional Logit on Bipartite DGP &rarr; Unique Stationary Law (QRE under Single-Flip Revision)**
+**NK &sub; SAOM-NK &equiv; Conditional Logit on Bipartite DGP &rarr; Unique Stationary Law (QRE under Single-Flip Revision)**
 
 Access the proofs via:
 
@@ -509,11 +517,11 @@ searchnet_proof("saomnk_nk_equivalence_proof.tex")  # Properties 1-3
 ```
 
 Key results, numbered as Properties 1-7 in `inst/proofs/PROOF_TABLE.md` (proofs in `inst/proofs/`):
-- **Property 1 (Reduction)**: NK is a special case of SaoMNK under 5 restrictions (one actor, E = A, theta = 0, beta -> infinity, constant rate)
-- **Property 2 (Generalization)**: SaoMNK extends NK along three dimensions: multiple actors, endogenous landscape co-evolution through SAOM statistics, and finite search precision; actors interact only through a cross-actor effect such as `inPop`
+- **Property 1 (Reduction)**: NK is a special case of SAOM-NK under 5 restrictions (one actor, E = A, theta = 0, beta -> infinity, constant rate)
+- **Property 2 (Generalization)**: SAOM-NK extends NK along three dimensions: multiple actors, endogenous landscape co-evolution through SAOM statistics, and finite search precision; actors interact only through a cross-actor effect such as `inPop`
 - **Property 3 (Approximation)**: any NK payoff structure is reproduced exactly via dummy covariates and the engine's NK term; actor-heterogeneity substitution reproduces only K = 0 landscapes; the mixed-logit route (McFadden & Train 2000) is not checked numerically
 - **Property 4 (SAOM-QRE)**: the chain has a unique stationary distribution; its Gibbs/QRE form holds for single-flip logit revision, not in general for the multinomial ministep with M > 1
-- **Property 5 (Brock-Durlauf Recovery)**: in the M -> infinity, congestion-only, mean-field limit, SaoMNK recovers the Brock & Durlauf (2001) discrete-choice-with-social-interactions equilibrium under single-flip logit revision; for the RSiena ministep the coefficients are rescaled by kappa_N = 2N / (N + 1) (exact at N = 1, first order near m = 1/2 for N > 1). See `vignette('saomnk-brock-durlauf')`.
+- **Property 5 (Brock-Durlauf Recovery)**: in the M -> infinity, congestion-only, mean-field limit, SAOM-NK recovers the Brock & Durlauf (2001) discrete-choice-with-social-interactions equilibrium under single-flip logit revision; for the RSiena ministep the coefficients are rescaled by kappa_N = 2N / (N + 1) (exact at N = 1, first order near m = 1/2 for N > 1). See `vignette('saomnk-brock-durlauf')`.
 - **Property 6 (Two-layer integrability)**: when an actor-actor relation co-evolves with the actor-component matrix, the two-layer process has an exact potential if and only if the two cross-layer coupling coefficients are equal (theta_AB = theta_BA; sufficiency needs the own-term hypothesis M2); machine-checked in the Lean library (`PROOF_TABLE.md` Part M)
 - **Property 7 (Creation/endowment boundary)**: with separate creation and endowment functions an exact potential exists if and only if they have equal change statistics on every move; a constant wedge w gives a four-step cycle sum of exactly 2w (`PROOF_TABLE.md` Part N)
 
@@ -537,7 +545,7 @@ seeds 2026 + K, sweep seed 2026).*
 | `saomnk-theory` | Formal framework: Definitions 1-3, Properties 1-7, {K} projections, SAOM vs ERGM |
 | `saomnk-simulation` | Full workflow: strategies, fitness landscapes, shocks, multi-wave |
 | `saomnk-experiments` | Batch experiment design, parameter sweeps, comparative analysis |
-| `saomnk-nk-validation` | Levinthal (1997) reproduction, NK &sub; SaoMNK verification |
+| `saomnk-nk-validation` | Levinthal (1997) reproduction, NK &sub; SAOM-NK verification |
 | `saomnk-brock-durlauf` | Property 5: Brock & Durlauf (2001) recovery, mean-field self-consistency, social multiplier, bifurcation diagram |
 | `saomnk-rosetta` | Translation registry: published search models and theory constructs as restrictions of SAOM-NK |
 | `saomnk-causal-inference` | DID, Synthetic Control, and RD via theta_shocks |
@@ -556,6 +564,7 @@ history jumps from v0.4.1 to v0.7.0 — NEWS.md records why.
 
 | Version | Highlights |
 |---|---|
+| **v0.13.0** | Your own data in: `searchnet_bipartite_from_long()` and `searchnet_k_readings()` ({K} readings computed exactly as the engine does). `searchnet_recovery()`: planted-truth recovery and power (bias, coverage, size, MDE). Workshop onboarding: `searchnet_check_setup()`, batch classroom submission from a CSV, preset validation; the presets now ship. One name, SAOM-NK, throughout. R CMD check clean (0 errors, 0 warnings) with CI. No change to simulated results. Suite: 68 files, 957 tests, 0 failures, 0 errors. |
 | **v0.12.9** | NK validation reference corrected to the 2^N/(N+1) local-optimum count of the fully random case K = N − 1; animated fitness landscape in the README overview; `searchnet_export_for_manim()` writes generic `actor`/`component` columns (argument `actor_labels`); the public repository carries the package only (no paper sources or internal development notes). No change to simulated results. Suite: 65 files, 924 tests, 0 failures, 0 errors. |
 | **v0.12.8** | `searchnet_classify_effect()` gives a candidate-centered statistic the outcome of its core, marked approximate (similarity to holders: Sociality strength, similarity-weighted), instead of "none". No change to simulated results or the shipped effect table. Suite: 65 files, 924 tests, 0 failures, 0 errors. |
 | **v0.12.7** | Documentation only: in the README architectures figure, each signed matrix keeps the exact nonzero cells of the conventional pattern above it. No change to simulated results since v0.12.2. |
@@ -579,7 +588,7 @@ history jumps from v0.4.1 to v0.7.0 — NEWS.md records why.
 | **v0.8.0** | Diagnostics release: `boundary_screen()`, `scope_confound_screen()`, `gof_battery()`, `rate_ladder()`; time-varying couplings via `influence_arrays` (a coupling can now change between periods). |
 | **v0.7.x** | Test-suite hardening: guards that reported failures as skips repaired; test harness loads all of `R/`; `clone(deep = TRUE)` made actually deep for `data.table` fields; export fixes. |
 | **v0.4.x** | `epistasis_matrix` → `influence_matrix` rename with deprecation shim (the matrix you pass in is an input, not an observed outcome); netcheck dependency removed from the paper. |
-| **v0.3.x** | Classic NK module: `nk_landscape()`, `nk_walk()`, `nk_local_optima()`, and `nk_verify_reduction()` bridging conventional NK to SaoMNK; loader and endianness fixes. |
+| **v0.3.x** | Classic NK module: `nk_landscape()`, `nk_walk()`, `nk_local_optima()`, and `nk_verify_reduction()` bridging conventional NK to SAOM-NK; loader and endianness fixes. |
 | **v0.2.0** | Initial public release. |
 
 Development happens on `dev`; this branch (`public-release`) carries squashed
@@ -595,7 +604,7 @@ line and are exercised by the v0.12.2 test suite.
   title  = {searchnet: Network-Embedded Search Simulation Engine},
   author = {Stephen Downing},
   year   = {2026},
-  note   = {R package version 0.12.9},
+  note   = {R package version 0.13.0},
   url    = {https://github.com/sdownin/searchnet}
 }
 ```

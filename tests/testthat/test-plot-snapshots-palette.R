@@ -4,6 +4,8 @@
 ## palette, node color overrides, and the returned (restylable) objects.
 ###############################################################################
 
+local_close_new_devices()
+
 okabe_ito <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442",
                "#0072B2", "#D55E00", "#CC79A7", "#000000")
 

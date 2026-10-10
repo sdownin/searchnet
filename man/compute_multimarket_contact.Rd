@@ -20,8 +20,8 @@ An \eqn{M \times M}{M x M} integer matrix with a zero diagonal.
 }
 \description{
 Contact between firms \eqn{i} and \eqn{j} is the number of activities both
-hold. This is the conditioning variable the multimarket forbearance
-construct is defined on, and it is what distinguishes forbearance from
+hold. This is the conditioning variable the multimarket mutual-restraint
+construct is defined on, and it is what distinguishes mutual restraint from
 ordinary crowding avoidance.
 }
 \examples{

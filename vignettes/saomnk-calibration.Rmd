@@ -1,5 +1,5 @@
 ---
-title: "Empirical Calibration: SAOM Parameters to SaoMNK Simulations"
+title: "Empirical Calibration: SAOM Parameters to SAOM-NK Simulations"
 author: "Stephen Downing"
 date: "`r Sys.Date()`"
 output:
@@ -46,7 +46,7 @@ knitr::opts_chunk$set(
 # 1. Introduction
 
 Simulation models are most useful when they are grounded in empirical
-reality.  The SaoMNK framework bridges two traditions---empirical network
+reality.  The SAOM-NK framework bridges two traditions---empirical network
 estimation via Stochastic Actor-Oriented Models (SAOMs) and computational
 fitness landscape simulation via NK models---and the `searchnet` package
 provides a calibration pipeline that connects them.
@@ -56,7 +56,7 @@ The workflow proceeds in three stages:
 1. **Empirical estimation**: Fit a SAOM to observed network panel data
    using `RSiena` (Snijders, 2001; Ripley et al., 2023).
 2. **Parameter bridge**: Convert the fitted $\hat{\theta}$ vector to
-   calibrated SaoMNK model effects via `saom_to_saomnk()`.
+   calibrated SAOM-NK model effects via `saom_to_saomnk()`.
 3. **Counterfactual simulation**: Run calibrated simulations to explore
    "what if" scenarios grounded in the estimated parameters.
 
@@ -78,15 +78,15 @@ $$U_i(x) = \sum_k \theta_k \, s_{ik}(x)$$
 
 where $s_{ik}(x)$ is the network statistic for effect $k$ evaluated at
 the current network state $x$.  The shared functional form means that
-parameter estimates from RSiena can be mapped directly to SaoMNK's
+parameter estimates from RSiena can be mapped directly to SAOM-NK's
 structure model specification.
 
 ## 2.2 Mapping table
 
 The `saom_to_saomnk()` function maps RSiena effect names to their
-SaoMNK equivalents and applies an optional scale factor $\alpha$:
+SAOM-NK equivalents and applies an optional scale factor $\alpha$:
 
-| SAOM Effect   | SaoMNK Effect   | Transformation               | Strategic Interpretation       |
+| SAOM Effect   | SAOM-NK Effect   | Transformation               | Strategic Interpretation       |
 |---------------|-----------------|------------------------------|-------------------------------|
 | `density`     | `density`       | $\beta = \theta \cdot \alpha$ | Cost of scope expansion        |
 | `inPopSqrt`   | `inPop`         | $\beta = \theta \cdot \alpha$ | Preferential attachment        |
@@ -118,7 +118,7 @@ print(bridge$mapping_table)
 bridge$saomnk_params
 ```
 
-The function validates that all RSiena effects have known SaoMNK
+The function validates that all RSiena effects have known SAOM-NK
 counterparts and issues warnings for effects that are dropped during
 conversion.
 
@@ -130,7 +130,7 @@ The scale factor serves two purposes:
   actors and the simulation uses $M = 10$, effect magnitudes may need
   rescaling to preserve comparable dynamics.
 - **Temporal granularity**: RSiena estimates parameters over observation
-  waves that may span years; SaoMNK steps represent finer-grained
+  waves that may span years; SAOM-NK steps represent finer-grained
   micro-steps.
 
 A reasonable starting point is $\alpha = 1.0$ (no rescaling), followed
@@ -266,7 +266,7 @@ baseline <- saomnk_run(model)
 
 ## Inspect the coupled degree trajectory
 summary(baseline)
-#> SaoMNK simulation: 8 actors, 12 components, 100 steps
+#> SAOM-NK simulation: 8 actors, 12 components, 100 steps
 #> Final K_AC: 3.75  K_CA: 2.67  K_AA: 1.50  K_CC: 3.00
 #> Mean fitness: 0.623 (sd = 0.082)
 
@@ -420,7 +420,7 @@ The calibration interface provides:
 
 - **Parameter upload**: Import fitted RSiena objects (`.RData` or `.rds`
   files) or enter parameter estimates manually.
-- **Interactive mapping table**: Review and adjust the SAOM-to-SaoMNK
+- **Interactive mapping table**: Review and adjust the SAOM-to-SAOM-NK
   effect mapping with real-time preview.
 - **Scale factor slider**: Adjust $\alpha$ and immediately see its effect
   on the simulated $\{K\}$-4 trajectory.

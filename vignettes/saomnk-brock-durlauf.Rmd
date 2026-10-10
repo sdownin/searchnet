@@ -1,5 +1,5 @@
 ---
-title: "Brock & Durlauf (2001): Economic Foundation for SaoMNK"
+title: "Brock & Durlauf (2001): Economic Foundation for SAOM-NK"
 author: "Stephen Downing"
 date: "`r Sys.Date()`"
 output:
@@ -7,7 +7,7 @@ output:
     toc: true
     number_sections: true
 vignette: >
-  %\VignetteIndexEntry{Brock & Durlauf (2001): Economic Foundation for SaoMNK}
+  %\VignetteIndexEntry{Brock & Durlauf (2001): Economic Foundation for SAOM-NK}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -31,7 +31,7 @@ if (requireNamespace("searchnet", quietly = TRUE)) {
 
 # Introduction: Three Foundations, One Engine, One Ancestor
 
-Searchnet is anchored by three properties, each connecting the SaoMNK
+Searchnet is anchored by three properties, each connecting the SAOM-NK
 stochastic actor-oriented bipartite engine to a separate intellectual
 tradition. Together they triangulate the framework's epistemic position:
 
@@ -41,12 +41,12 @@ tradition. Together they triangulate the framework's epistemic position:
 | Property 4 (SAOM--QRE Equivalence) | Statistical mechanics / sociology (Blume, 1993; Snijders, 1996, 2001) | Gibbs stationary distribution under single-flip logit choice | `vignette("saomnk-blume-tutorial")` |
 | **Property 5 (B&D Recovery)** | **Discrete-choice econometrics (Brock & Durlauf, 2001)** | **Many actors, mean-field, congestion only** | **This vignette** |
 
-The Kauffman pillar establishes that SaoMNK *contains* the rugged
-landscape model. The Blume pillar establishes that SaoMNK *converges*
+The Kauffman pillar establishes that SAOM-NK *contains* the rugged
+landscape model. The Blume pillar establishes that SAOM-NK *converges*
 to a well-defined equilibrium distribution. The third pillar ---
 Brock & Durlauf (2001) --- establishes that the canonical economic
 model of binary discrete choice with social interactions is also
-*contained* in SaoMNK as a degenerate special case. The economic pillar
+*contained* in SAOM-NK as a degenerate special case. The economic pillar
 matters because it grounds the framework in the rational-expectations
 equilibrium concept that organizes most of empirical industrial
 organization, urban economics, and the econometrics of peer effects
@@ -77,7 +77,7 @@ Pink, Kretschmer, and Leszczensky (2020) noted the absence of cross-citation
 and bridged SAOM to baseline RUM, but did not connect SAOM to the
 social-interactions equilibrium branch.
 
-**SaoMNK completes the bridge.** The duality is statistical-mechanical: the
+**SAOM-NK completes the bridge.** The duality is statistical-mechanical: the
 single-flip SAOM ministep is *Glauber dynamics* on the underlying potential
 game's Ising-like Hamiltonian (the multinomial ministep RSiena uses is not,
 and has no general Gibbs form for $M > 1$), and the Brock-Durlauf rational-expectations
@@ -97,7 +97,7 @@ them in the form (L*k*) as a row reference. This vignette is the user-facing
 companion to those rows: it states the result in plain English, walks
 through the self-consistency equation in live R code, draws the
 classical bifurcation diagram, computes the social multiplier, and
-verifies numerically that finite-$M$ SaoMNK simulations approach the
+verifies numerically that finite-$M$ SAOM-NK simulations approach the
 Brock & Durlauf (2001) fixed point at the standard rate
 $\mathcal{O}(M^{-1/2})$.
 
@@ -155,7 +155,7 @@ $\beta J$ is the only quantity that matters for multiplicity.
 # Property 5: Recovery via the Congestion Limit
 
 Property 5 establishes that the model just stated is a special case of
-SaoMNK. The reduction uses five restrictions, labeled Rb1--Rb5 in
+SAOM-NK. The reduction uses five restrictions, labeled Rb1--Rb5 in
 the proof table (L3--L7).
 
 ## The five restrictions
@@ -174,7 +174,7 @@ the proof table (L3--L7).
   rescaled as $\beta_{\mathrm{cong}} = J_b\,M/(M-1)$. This is the
   standard Curie-Weiss convention; without it, the social-interaction
   term grows linearly in $M$ and the limit is degenerate.
-- **Rb4 (Spin-recoding tracking, L6).** The SaoMNK adoption variable
+- **Rb4 (Spin-recoding tracking, L6).** The SAOM-NK adoption variable
   $b \in \{0,1\}$ is recoded to the Brock & Durlauf spin variable
   $\sigma = 2b - 1 \in \{-1, +1\}$. Coefficients transform as
   $J_\sigma = J_b/4$ and $h_\sigma = h_b/2 + J_b/4$.
@@ -200,7 +200,7 @@ Brock & Durlauf utility exactly.
 
 ## Lemma 6: Mean-field self-consistency (L9)
 
-Under Rb1--Rb5 and single-flip logit revision, the SaoMNK Gibbs stationary distribution
+Under Rb1--Rb5 and single-flip logit revision, the SAOM-NK Gibbs stationary distribution
 (Property 4, F7) factorizes componentwise, and within each component
 the stationary mean adoption $m_j^*$ satisfies
 
@@ -285,9 +285,9 @@ adoption by about 0.03 for $N \ge 2$. At $N = 1$ the two agree exactly.
 ## Property 5 in plain English
 
 > The Brock & Durlauf (2001) binary discrete-choice-with-social-
-> interactions model is a degenerate special case of SaoMNK. Setting
+> interactions model is a degenerate special case of SAOM-NK. Setting
 > the population large, the components independent, the social channel
-> to congestion only, and keeping logit noise interior, the SaoMNK
+> to congestion only, and keeping logit noise interior, the SAOM-NK
 > stationary distribution reduces componentwise to the Brock & Durlauf
 > rational-expectations self-consistent equilibrium.
 >
@@ -296,8 +296,8 @@ adoption by about 0.03 for $N \ge 2$. At $N = 1$ the two agree exactly.
 > ministep reproduces it only after the $\kappa_N$ rescaling and only to
 > first order near $m = 1/2$ (previous subsection).
 
-Combined with Property 1 (NK $\subset$ SaoMNK in the $M=1$ greedy
-limit), SaoMNK is the unique known framework that contains both
+Combined with Property 1 (NK $\subset$ SAOM-NK in the $M=1$ greedy
+limit), SAOM-NK is the unique known framework that contains both
 NK landscape search and Brock-Durlauf social-interaction choice as
 special cases of a single continuous-time Markov chain. The two
 reductions are *complementary*: Property 1 takes the single-actor
@@ -326,7 +326,7 @@ consequences are:
 - The field shifts: $h_\sigma = h_b/2 + J_b/4$, so a "zero field"
   in $\{0,1\}$-form is *not* a zero field in spin form unless
   $J_b = 0$ as well.
-- All numerical comparisons between SaoMNK simulations (which run in
+- All numerical comparisons between SAOM-NK simulations (which run in
   $\{0,1\}$-form) and analytical Brock-Durlauf solutions (typically
   stated in spin form) must apply this transformation explicitly.
 
@@ -544,7 +544,7 @@ Brock-Durlauf model (Glaeser & Scheinkman, 2003; Durlauf, 1999).
 
 Property 5 is a Tier 1 analytical claim *in the limit* $M \to \infty$.
 The package function `verify_brock_durlauf_reduction()` performs the
-verification by sweeping $M$, simulating the SaoMNK CTMC under
+verification by sweeping $M$, simulating the SAOM-NK CTMC under
 restrictions Rb1--Rb5, and comparing the empirical mean to **two**
 analytical references:
 
@@ -669,7 +669,7 @@ ggplot(ver$summary, aes(M, abs_error)) +
   scale_x_log10() + scale_y_log10() +
   scale_linetype_manual(values = "dashed", name = NULL) +
   scale_shape_manual(values = 16, name = NULL) +
-  labs(title = "Convergence of SaoMNK to the B&D fixed point",
+  labs(title = "Convergence of SAOM-NK to the B&D fixed point",
        x = "Population size M",
        y = expression("|" * hat(m) - m * "*|")) +
   theme_searchnet()
@@ -715,7 +715,7 @@ traces out this curvature, and the curvature breaks the
 collinearity that produced the reflection problem in the linear
 case.
 
-SaoMNK inherits this identification result through Property 5 (L13).
+SAOM-NK inherits this identification result through Property 5 (L13).
 Three additional sources of identifying variation become available
 in the bipartite extension:
 
@@ -724,7 +724,7 @@ in the bipartite extension:
    estimation across components increases the support of the
    nonlinearity.
 2. **Cross-population variation in $M$.** Brock & Durlauf (2001)
-   note that $M$-dependence of $m^*$ is informative; SaoMNK
+   note that $M$-dependence of $m^*$ is informative; SAOM-NK
    simulations let researchers exploit this directly via
    Monte-Carlo benchmarking.
 3. **The $\{K\}$ framework.** The four bipartite degree statistics
@@ -733,10 +733,10 @@ in the bipartite extension:
    conditions beyond the population mean, identifying parameters
    beyond $(h, J, \beta)$.
 
-The practical upshot: the SaoMNK reduction inherits Brock & Durlauf's
+The practical upshot: the SAOM-NK reduction inherits Brock & Durlauf's
 identification result *for free*, and extends it. Any peer-effects
 estimator built on the Brock-Durlauf framework can be ported to a
-bipartite SaoMNK setting without losing identification, while gaining
+bipartite SAOM-NK setting without losing identification, while gaining
 access to network-structure variation that the canonical model does
 not exploit.
 
@@ -845,7 +845,7 @@ Property 5 sits at one corner of a duality diagram with the other
 foundational properties:
 
 ```
-                    SaoMNK CTMC
+                    SAOM-NK CTMC
                   (B, theta, beta)
                  /        |        \
                 /         |         \
@@ -868,7 +868,7 @@ shrinks the population to a *single greedy* actor and recovers
 NK; Property 5 grows the population to *infinitely many noisy*
 actors and recovers Brock-Durlauf. Both are exact reductions to
 canonical models from neighbouring fields, and both are special
-cases of the same SaoMNK CTMC. The duality justifies two distinct
+cases of the same SAOM-NK CTMC. The duality justifies two distinct
 empirical strategies in the same framework:
 
 - *Within-actor / single-firm* studies (Property 1 limit): NK-style
@@ -880,19 +880,19 @@ empirical strategies in the same framework:
   `saomnk_social_multiplier()`.
 
 The intermediate case ($M$ finite, $\beta$ finite, $K$ non-zero) is
-the genuinely new SaoMNK regime: neither Kauffman nor Brock-Durlauf
+the genuinely new SAOM-NK regime: neither Kauffman nor Brock-Durlauf
 covers it. Property 4 (QRE equivalence) guarantees that this
 intermediate regime is well-posed (stationary distribution exists
 and is unique; it is Gibbs under single-flip revision); the $\{K\}$ framework names the four coupled
 degree statistics that organize its dynamics.
 
 The Brock-Durlauf reduction also sets up a bridge to congestion
-games (Rosenthal, 1973). The H6 congestion term in the SaoMNK
+games (Rosenthal, 1973). The H6 congestion term in the SAOM-NK
 10-component utility *is* the mean-field social-interaction
 channel of Property 5; it is also the canonical congestion-game
 primitive of Rosenthal's theorem (cited as K1 in Part K of the
 proof table). Existence of pure-strategy Nash equilibria in the
-SaoMNK game thus follows from K1, while the Gibbs/QRE structure
+SAOM-NK game thus follows from K1, while the Gibbs/QRE structure
 under noisy single-flip logit choice follows from F7 (Property 4), and the
 mean-field rational-expectations limit follows from L10 (Property 5).
 The three results are mutually consistent and mutually reinforcing.
@@ -921,7 +921,7 @@ The three results are mutually consistent and mutually reinforcing.
 - Pink, S., Kretschmer, D., & Leszczensky, L. (2020). Choice modelling
   in social networks using stochastic actor-oriented models. *Journal
   of Choice Modelling*, 34, 100202. *(The prior one-directional bridge
-  from SAOM to RUM; SaoMNK Properties 4 and 5 extend it to bidirectional
+  from SAOM to RUM; SAOM-NK Properties 4 and 5 extend it to bidirectional
   SAOM $\leftrightarrow$ RUM-with-social-interactions.)*
 - Blume, L. E., & Durlauf, S. N. (2003). Equilibrium concepts for
   social interaction models. *International Game Theory Review*,
@@ -939,7 +939,7 @@ The three results are mutually consistent and mutually reinforcing.
   Montfort, J. Oud, & A. Satorra (Eds.), *Longitudinal Models in the
   Behavioral and Related Sciences*, pp. 41--71. Lawrence Erlbaum.
   *(Most relevant SAOM variant: joint network-and-behavior
-  evolution, which is exactly the SaoMNK setup.)*
+  evolution, which is exactly the SAOM-NK setup.)*
 
 **The reflection problem and identification.**
 

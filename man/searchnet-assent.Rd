@@ -4,7 +4,7 @@
 \alias{searchnet-assent}
 \title{Two-Sided Tie Formation: Initiative and Confirmation}
 \description{
-SaoMNK's bipartite dependent variable is formed by unilateral ministeps: an
+SAOM-NK's bipartite dependent variable is formed by unilateral ministeps: an
 actor decides to add or drop a component tie and the tie exists. Many
 substantive settings are two-sided. The actor may only \emph{propose}, and the
 tie exists only if the component side confirms:

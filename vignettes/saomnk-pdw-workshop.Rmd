@@ -37,13 +37,47 @@ if (requireNamespace("searchnet", quietly = TRUE)) {
 } else {
   dir_r <- file.path(getwd(), "R")
   if (!file.exists(file.path(dir_r, "utils.R")))
-    dir_r <- "D:/Search_networks/SaoMNK/R"
+    dir_r <- file.path(dirname(getwd()), "R")  # knitting from vignettes/
   .saomnk_dir <- dir_r
   source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
 }
 
 library(Matrix)
 ```
+
+# Before the Workshop: Install and Check
+
+You need R 4.1.0 or later (https://CRAN.R-project.org). On a fresh machine
+the two steps below take about ten minutes, most of it package downloads.
+
+```{r install-steps, eval=FALSE}
+# Step 1: install searchnet from GitHub
+install.packages("remotes")
+remotes::install_github("sdownin/searchnet")
+
+# Step 2: check the installation and run a seeded test simulation
+searchnet::searchnet_check_setup()
+```
+
+The check reports R, searchnet, RSiena and the other required packages, a
+writable temporary folder, and the classroom presets, then runs a tiny
+simulation and draws its plot. It ends with "All checks passed" or with the
+command that fixes each problem. Your first plot is then three lines away:
+
+```{r first-plot, eval=FALSE}
+library(searchnet)
+env <- saomnk_env(M = 6, N = 8, density = 0.3, seed = 42)
+saomnk_run(env, saomnk_model(influence_matrix = saomnk_block_diagonal(8, 2),
+                             influence_weight = 0.3),
+           steps_per_actor = 30, seed = 12345)
+saomnk_plot_k4(env)
+```
+
+If you are running the classroom game, decisions can be collected with a form
+and submitted a round at a time with
+`searchnet_classroom_submit_batch(session, "responses.csv")`; the Instructor
+Guide (`system.file("teaching", "INSTRUCTOR_GUIDE.md", package =
+"searchnet")`) gives the CSV columns.
 
 # PART 1: THE SIMULATION WORLD --- What Are We Building? {.tabset}
 

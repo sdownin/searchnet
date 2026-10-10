@@ -106,7 +106,7 @@ accurate and B&D theory should match empirically.}
 are on the same side of 0.5.}
 }
 \description{
-For each \eqn{M} in \code{M_seq}, instantiates a SaoMNK environment
+For each \eqn{M} in \code{M_seq}, instantiates a SAOM-NK environment
 and runs \code{n_replicates} simulations under congestion-only,
 density-only structure models (all NK / scope / herding / synergy /
 epistasis effects zeroed).  The empirical end-state mean adoption

@@ -1,4 +1,4 @@
-#' @title Strategy Game Mode for SaoMNK
+#' @title Strategy Game Mode for SAOM-NK
 #' @description
 #' Interactive game loop where a human player controls one firm and competes
 #' against AI opponents that follow SAOM-NK logit choice rules.  Provides
@@ -26,7 +26,7 @@ NULL
 
 #' Initialize a Strategy Game Session
 #'
-#' Creates a new game state object containing a SaoMNK environment, model,
+#' Creates a new game state object containing a SAOM-NK environment, model,
 #' and bookkeeping structures.  The player controls one firm; AI opponents
 #' follow the SAOM conditional-logit rule at the chosen difficulty level.
 #'
@@ -68,7 +68,7 @@ searchnet_game_init <- function(M = 6, N = 8, player_id = 1,
 
   if (!is.null(seed)) set.seed(seed)
 
-  ## --- Create SaoMNK environment --------------------------------------- ##
+  ## --- Create SAOM-NK environment --------------------------------------- ##
   env <- saomnk_env(M = M, N = N, density = 0.3, seed = seed,
                     name = paste0("game_", format(Sys.time(), "%H%M%S")))
 

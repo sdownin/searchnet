@@ -1,6 +1,6 @@
 #' @title Brock--Durlauf Mean-Field Reduction Utilities
-#' @description Functions operationalizing Property 5 of the SaoMNK proof
-#'   table (Part L), which establishes that SaoMNK reduces to the
+#' @description Functions operationalizing Property 5 of the SAOM-NK proof
+#'   table (Part L), which establishes that SAOM-NK reduces to the
 #'   Brock & Durlauf (2001, RES) binary discrete-choice-with-social-
 #'   interactions model in the M -> infinity, congestion-only, mean-field
 #'   limit.
@@ -9,7 +9,7 @@
 #'   self-consistency equation for the equilibrium magnetization,
 #'   (ii) count equilibria (regime classification), (iii) compute the
 #'   B&D social multiplier from either explicit parameters or a fitted
-#'   SaoMNK environment, (iv) report the Landau-Ginzburg quartic
+#'   SAOM-NK environment, (iv) report the Landau-Ginzburg quartic
 #'   coefficient and basin steepness from the herding-steepness
 #'   derivation, and (v) verify the M -> infinity reduction empirically
 #'   by comparing simulated mean adoption to the analytical fixed point.
@@ -154,7 +154,7 @@ bd_self_consistency <- function(beta, J, h,
 #  1b. saomnk_inpop_self_consistency
 # ---------------------------------------------------------------------------- #
 
-#' Solve the SaoMNK-inPop Self-Consistency Equation (Operational Fixed Point)
+#' Solve the SAOM-NK inPop Self-Consistency Equation (Operational Fixed Point)
 #'
 #' Solves the mean-field fixed point of the live RSiena bipartite SAOM with
 #' only the \code{density} and \code{inPop} effects active. Two facts fix
@@ -345,7 +345,7 @@ bd_equilibrium_count <- function(beta, J, h = 0) {
 #'   \item Pass \code{beta}, \code{J}, \code{h} explicitly.  The
 #'         equilibrium \eqn{m^*} is computed internally via
 #'         \code{\link{bd_self_consistency}}.
-#'   \item Pass a fitted SaoMNK environment via \code{env}.  The
+#'   \item Pass a fitted SAOM-NK environment via \code{env}.  The
 #'         B&D-equivalent \eqn{J} and \eqn{h} are extracted from the
 #'         environment's structure-model effects table; the
 #'         empirical \eqn{m^*} is read off from the bipartite matrix
@@ -355,7 +355,7 @@ bd_equilibrium_count <- function(beta, J, h = 0) {
 #' (Rb4 of the proof table) which is applied automatically in the
 #' env-based path.
 #'
-#' @param env Optional SaoMNK environment (\code{SaomNkRSienaBiEnv}) from
+#' @param env Optional SAOM-NK environment (\code{SaomNkRSienaBiEnv}) from
 #'   which to extract parameters.  If \code{NULL} (default), explicit
 #'   \code{beta}, \code{J}, \code{h} must be supplied.
 #' @param beta Numeric inverse-temperature.  Required when \code{env} is
@@ -562,7 +562,7 @@ bd_landau_steepness <- function(beta, J, m_star, tau = 1, delta_m = 0.05) {
 
 #' Empirically Verify the Brock & Durlauf Mean-Field Reduction
 #'
-#' For each \eqn{M} in \code{M_seq}, instantiates a SaoMNK environment
+#' For each \eqn{M} in \code{M_seq}, instantiates a SAOM-NK environment
 #' and runs \code{n_replicates} simulations under congestion-only,
 #' density-only structure models (all NK / scope / herding / synergy /
 #' epistasis effects zeroed).  The empirical end-state mean adoption
@@ -758,7 +758,7 @@ verify_brock_durlauf_reduction <- function(M_seq        = c(50, 100, 200, 500),
   kappa_N <- 2 * n_components / (n_components + 1)
 
   ## ---- Analytical B&D fixed point (spin -> adoption) -------------------- ##
-  ## Sign convention: in the SaoMNK API, "density" multiplies the
+  ## Sign convention: in the SAOM-NK API, "density" multiplies the
   ## adoption-form network density (positive = encourage adoption).  In
   ## B&D spin form, h is the bias toward spin +1.  Recoding
   ##   p = (m + 1) / 2  =>  density (adoption form) = h_b
@@ -820,7 +820,7 @@ verify_brock_durlauf_reduction <- function(M_seq        = c(50, 100, 200, 500),
         env_obj <- saomnk_env(M = M_k, N = as.integer(n_components),
                               density = 0.5, seed = init_seed)
         ## All NK / scope / herding / synergy effects zeroed; only
-        ## density and inPop remain. The SaoMNK API exposes no top-level
+        ## density and inPop remain. The SAOM-NK API exposes no top-level
         ## "congestion" RSiena effect, so inPop is the coordination channel
         ## (L16). `influence_matrix = NULL` makes RSiena drop the density
         ## effect ("Effect not found"), so a minimal real matrix is passed

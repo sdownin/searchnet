@@ -2,7 +2,7 @@
 % Please edit documentation in R/searchnet-bridge.R
 \name{empirical_to_saomnk_env}
 \alias{empirical_to_saomnk_env}
-\title{Create SaoMNK environment from empirical MI data}
+\title{Create SAOM-NK environment from empirical MI data}
 \usage{
 empirical_to_saomnk_env(
   mi_data,
@@ -41,7 +41,7 @@ column indices.}
 }
 \description{
 Converts a one-mode firm-firm supply chain network into a bipartite
-firm x SIC-category representation suitable for SaoMNK simulation.
+firm x SIC-category representation suitable for SAOM-NK simulation.
 The bipartite matrix encodes which SIC categories each firm participates
 in, both directly and through supply-chain partnerships.
 }

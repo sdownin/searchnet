@@ -4,7 +4,7 @@
 
 ## What this adds
 
-SaoMNK's bipartite dependent variable is formed by unilateral ministeps: an
+SAOM-NK's bipartite dependent variable is formed by unilateral ministeps: an
 actor decides to add a component tie, and the tie exists. Many settings are
 two-sided — the actor may only *propose*, and the tie exists only if the
 component side confirms.

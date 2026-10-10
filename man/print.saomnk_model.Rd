@@ -2,7 +2,7 @@
 % Please edit documentation in R/saomnk-methods.R
 \name{print.saomnk_model}
 \alias{print.saomnk_model}
-\title{Print a SaoMNK Structure Model}
+\title{Print a SAOM-NK Structure Model}
 \usage{
 \method{print}{saomnk_model}(x, ...)
 }

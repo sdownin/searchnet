@@ -1,7 +1,7 @@
 ## Rival identity in the entry log.
 ##
 ## The defect these tests exist for: rival COUNT was recorded and rival
-## IDENTITY was not, while the docs claimed the multimarket forbearance
+## IDENTITY was not, while the docs claimed the multimarket mutual-restraint
 ## construct of Baum and Korn, which is defined on the firm pair. A count
 ## cannot distinguish restraint toward a specific rival from a general
 ## preference for empty space.
@@ -114,7 +114,7 @@ test_that("multimarket contact counts shared activities with a zero diagonal", {
   expect_true(isSymmetric(C))
 })
 
-test_that("dyadic forbearance is signed so that positive means restraint", {
+test_that("dyadic entry restraint is signed so that positive means restraint", {
   ## Firm 1 has four empty activities available and one rival, firm 2, which
   ## holds two of them. Random choice would hit firm 2's space half the time.
   ## Firm 1 enters the two activities firm 2 does NOT hold: full restraint.
@@ -125,7 +125,7 @@ test_that("dyadic forbearance is signed so that positive means restraint", {
   s3 <- s2; s3[1, 4] <- 1L
 
   log <- track_entry_decisions(holdings_history = list(s1, s2, s3))
-  fb  <- compute_dyadic_forbearance(log, holdings = list(s1, s2, s3))
+  fb  <- dyadic_entry_restraint(log, holdings = list(s1, s2, s3))
 
   ## No contested entries at all, so no dyad is observed.
   expect_equal(nrow(fb), 0)
@@ -134,7 +134,7 @@ test_that("dyadic forbearance is signed so that positive means restraint", {
   a2 <- s1; a2[1, 1] <- 1L
   a3 <- a2; a3[1, 2] <- 1L
   alog <- track_entry_decisions(holdings_history = list(s1, a2, a3))
-  afb  <- compute_dyadic_forbearance(alog, holdings = list(s1, a2, a3))
+  afb  <- dyadic_entry_restraint(alog, holdings = list(s1, a2, a3))
 
   expect_equal(nrow(afb), 1)
   expect_equal(afb$firm, 1)
@@ -142,17 +142,17 @@ test_that("dyadic forbearance is signed so that positive means restraint", {
   expect_equal(afb$observed_rate, 1)
   expect_true(afb$exposure_corrected)
   ## Entered the rival's space more than chance, so the index is negative.
-  expect_lt(afb$forbearance_index, 0)
+  expect_lt(afb$restraint_index, 0)
 })
 
-test_that("dyadic forbearance without holdings returns NA index, not a number", {
+test_that("dyadic entry restraint without holdings returns NA index, not a number", {
   h1 <- matrix(0L, 3, 2)
   h1[2, 1] <- 1L
   h2 <- h1; h2[1, 1] <- 1L
   log <- track_entry_decisions(holdings_history = list(h1, h2))
 
-  fb <- suppressMessages(compute_dyadic_forbearance(log))
-  expect_true(all(is.na(fb$forbearance_index)))
+  fb <- suppressMessages(dyadic_entry_restraint(log))
+  expect_true(all(is.na(fb$restraint_index)))
   expect_false(any(fb$exposure_corrected))
 })
 
@@ -163,7 +163,7 @@ test_that("holdings that are too short are rejected", {
   h3 <- h2; h3[3, 2] <- 1L
   log <- track_entry_decisions(holdings_history = list(h1, h2, h3))
 
-  expect_error(compute_dyadic_forbearance(log, holdings = list(h1)),
+  expect_error(dyadic_entry_restraint(log, holdings = list(h1)),
                "outside the range")
 })
 
@@ -175,7 +175,7 @@ test_that("holdings of the right length from a different run are rejected", {
   log <- track_entry_decisions(holdings_history = list(h1, h2))
 
   other <- matrix(0L, 3, 2); other[3, 1] <- 1L   # rival 3, not rival 2
-  expect_error(compute_dyadic_forbearance(log, holdings = list(other, h2)),
+  expect_error(dyadic_entry_restraint(log, holdings = list(other, h2)),
                "not from the same run")
 })
 
@@ -189,7 +189,7 @@ test_that("existing columns and metrics are unchanged by the addition", {
                     "n_rivals_present", "is_competitive_entry",
                     "is_competitive_exit") %in% names(log)))
 
-  m <- compute_forbearance_metrics(log)
+  m <- entry_restraint_metrics(log)
   expect_equal(m$entry_count, 2)
   expect_equal(m$competitive_entry_rate, 0.5)   # firm 3 contested, firm 4 not
   expect_equal(m$avoidance_rate, 0.5)

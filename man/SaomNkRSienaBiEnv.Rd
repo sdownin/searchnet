@@ -1,7 +1,7 @@
 % Generated manually for R CMD check compliance
 \name{SaomNkRSienaBiEnv}
 \alias{SaomNkRSienaBiEnv}
-\title{Extended R6 Class for SaoMNK Simulations}
+\title{Extended R6 Class for SAOM-NK Simulations}
 \description{
 R6 class extending \code{\link{SaomNkRSienaBiEnv_base}} with simulation
 execution, plotting, experiments, multi-wave support, shock analysis, and

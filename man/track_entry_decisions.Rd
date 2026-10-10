@@ -18,7 +18,7 @@ binary matrix. Used when \code{env} is \code{NULL}.}
 
 \item{entry_log}{Optional data.frame with columns \code{firm},
 \code{activity}, \code{n_rivals_present}, \code{was_competitive} (as
-produced by the CD4 forbearance experiment). Passed through with
+produced by the CD4 entry experiment). Passed through with
 standardized column names.}
 }
 \value{
@@ -75,5 +75,5 @@ entry_log
 }
 \seealso{
 \code{\link{expand_entry_rivals}} for the one-row-per-dyad form,
-\code{\link{compute_dyadic_forbearance}} for the pair-level measure.
+\code{\link{compute_multimarket_contact}} for pair-level contact.
 }

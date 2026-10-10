@@ -2,18 +2,18 @@
 # CLASSIC NK LANDSCAPES  (Kauffman & Levin 1987; Kauffman 1993; Levinthal 1997)
 #
 # A self-contained implementation of the standard NK model, independent of
-# RSiena and of the SaoMNK engine.  Its purpose is twofold:
+# RSiena and of the SAOM-NK engine.  Its purpose is twofold:
 #
 #   1. Provide the conventional NK model as first-class functionality, so
 #      users can run classical experiments (adaptive walks, local-optima
 #      counts, ruggedness sweeps) directly in searchnet.
 #
 #   2. Serve as an EXTERNAL reference implementation against which the
-#      SaoMNK reduction (Property 1) can be verified.  The environment
-#      method `verify_nk_equivalence()` checks SaoMNK's landscape array for
+#      SAOM-NK reduction (Property 1) can be verified.  The environment
+#      method `verify_nk_equivalence()` checks SAOM-NK's landscape array for
 #      internal consistency; `nk_verify_reduction()` here is stronger: it
 #      builds a Kauffman landscape from scratch and confirms that a
-#      single-actor, greedy SaoMNK environment reproduces it exactly.
+#      single-actor, greedy SAOM-NK environment reproduces it exactly.
 #
 # Encoding convention (consistent throughout, and with the engine):
 #   A configuration is a binary vector b = (b_1, ..., b_N).
@@ -486,20 +486,20 @@ nk_sweep_K <- function(N = 12, K_values = 0:(N - 1),
 
 
 # ==============================================================================
-# Bridge to SaoMNK
+# Bridge to SAOM-NK
 # ==============================================================================
 
-#' Convert a classic NK landscape to a SaoMNK configuration
+#' Convert a classic NK landscape to a SAOM-NK configuration
 #'
 #' Emits the environment and structure-model settings that make a
-#' single-actor SaoMNK environment search the supplied NK landscape.  This is
+#' single-actor SAOM-NK environment search the supplied NK landscape.  This is
 #' the constructive content of the Reduction property (Property 1): NK is the
-#' \eqn{M = 1}, \eqn{\beta \to \infty} special case of SaoMNK.
+#' \eqn{M = 1}, \eqn{\beta \to \infty} special case of SAOM-NK.
 #'
 #' @param landscape An \code{"nk_landscape"} object.
 #' @param M Integer. Number of actors to place on the landscape. \code{M = 1}
 #'   gives the exact NK reduction; \code{M > 1} embeds the same landscape in a
-#'   multi-actor SaoMNK search (the generalization direction).
+#'   multi-actor SAOM-NK search (the generalization direction).
 #'
 #' @return A list with components \code{env_params} (arguments for
 #'   \code{\link{saomnk_env}}), \code{model_params} (arguments for

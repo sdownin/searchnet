@@ -1,4 +1,4 @@
-#' Competitive Entry/Exit Tracking for SaoMNK Simulations
+#' Competitive Entry/Exit Tracking for SAOM-NK Simulations
 #'
 #' Records metadata about each ADD and DROP action in the SAOM ministep
 #' chain: was the activity occupied by rivals, how many were present, and
@@ -10,17 +10,18 @@
 #'
 #' @section Which statistics are dyadic, and which are not:
 #'
-#' Mutual forbearance in the sense of Edwards (1955), Bernheim and Whinston
+#' Multimarket mutual restraint in the sense of Edwards (1955), Bernheim and Whinston
 #' (1990), Baum and Korn (1996, 1999) and Gimeno (1999) is a property of a
 #' FIRM PAIR, conditional on how many markets that pair meets in. It is not a
 #' property of a firm, and it is not the same thing as avoiding occupied cells.
 #'
-#' The population-level statistics in \code{compute_forbearance_metrics()}
-#' (\code{competitive_entry_rate}, \code{avoidance_rate} and the rest) are
+#' The population-level entry statistics (\code{competitive_entry_rate},
+#' \code{avoidance_rate} and the rest, computed by the internal
+#' \code{entry_restraint_metrics()}) are
 #' counts over rivals with no rival identity in them. Entering a cell held by a
 #' rival met nowhere else and entering a cell held by a rival met in twenty
 #' markets are the same event to those statistics, and only the second is what
-#' mutual forbearance is about. Cell avoidance is also just as consistent with
+#' mutual restraint is about. Cell avoidance is also just as consistent with
 #' differentiation or crowding avoidance, which is the alternative the
 #' multimarket literature spends its effort ruling out. Those statistics are
 #' therefore descriptive measures of entry into contested space. They are
@@ -28,8 +29,8 @@
 #' documented here without a citation that would imply otherwise.
 #'
 #' The dyadic construct is served by \code{expand_entry_rivals()},
-#' \code{compute_multimarket_contact()} and \code{compute_dyadic_forbearance()},
-#' which are conditional on the pair and, when holdings are supplied, corrected
+#' \code{compute_multimarket_contact()} and the internal
+#' \code{dyadic_entry_restraint()}, which are conditional on the pair and, when holdings are supplied, corrected
 #' for exposure.
 #'
 #' @section Rival identity and the row-drop indexing trap:
@@ -95,7 +96,7 @@ NULL
 #'   binary matrix. Used when \code{env} is \code{NULL}.
 #' @param entry_log Optional data.frame with columns \code{firm},
 #'   \code{activity}, \code{n_rivals_present}, \code{was_competitive} (as
-#'   produced by the CD4 forbearance experiment). Passed through with
+#'   produced by the CD4 entry experiment). Passed through with
 #'   standardized column names.
 #' @return A \code{data.frame} with columns:
 #'   \describe{
@@ -130,7 +131,7 @@ NULL
 #'   \code{state_idx} are additions, so callers that select columns by name are
 #'   unaffected.
 #' @seealso \code{\link{expand_entry_rivals}} for the one-row-per-dyad form,
-#'   \code{\link{compute_dyadic_forbearance}} for the pair-level measure.
+#'   \code{\link{compute_multimarket_contact}} for pair-level contact.
 #' @examples
 #' ## From a holdings history: 3 firms, 4 activities, 5 rounds
 #' set.seed(7)
@@ -159,7 +160,7 @@ track_entry_decisions <- function(env = NULL,
       activity          = entry_log$activity,
       action_type       = rep("add", nrow(entry_log)),
       n_rivals_present  = entry_log$n_rivals_present,
-      # Identity is genuinely unavailable on this path: the CD4 forbearance
+      # Identity is genuinely unavailable on this path: the CD4 entry
       # experiment emits a count, and there is no matrix here to recover WHICH
       # firms it counted. NA rather than "" so that a downstream dyadic
       # computation fails loudly instead of treating these as uncontested.
@@ -226,9 +227,9 @@ track_entry_decisions <- function(env = NULL,
     return(bind_rows(records))
   }
 
-  # ---- Path 3: SaoMNK env object ----
+  # ---- Path 3: SAOM-NK env object ----
   if (is.null(env))
-    stop("Provide one of: env (SaoMNK object), holdings_history, or entry_log.")
+    stop("Provide one of: env (SAOM-NK object), holdings_history, or entry_log.")
   if (is.null(env$bi_env_arr))
     stop("env$bi_env_arr is NULL. Run the simulation with process_chain = TRUE first.")
   if (is.null(env$chain_stats))
@@ -286,7 +287,7 @@ track_entry_decisions <- function(env = NULL,
 
 
 # ---------------------------------------------------------------------------- #
-#  compute_forbearance_metrics
+#  entry_restraint_metrics
 # ---------------------------------------------------------------------------- #
 
 #' Compute population-level entry-into-contested-space metrics
@@ -299,15 +300,13 @@ track_entry_decisions <- function(env = NULL,
 #' These are UNCONDITIONAL, NON-DYADIC statistics. They count rivals without
 #' identifying them, so they cannot distinguish restraint toward a specific
 #' rival from a general preference for empty space, and they are not the
-#' multimarket forbearance construct of Edwards (1955), Bernheim and Whinston
+#' multimarket mutual-restraint construct of Edwards (1955), Bernheim and Whinston
 #' (1990), Baum and Korn (1996, 1999) or Gimeno (1999), all of which are defined
 #' on the firm pair and conditional on contact. Nor are they corrected for
 #' exposure: a firm whose rivals hold most of the space will show a high
 #' \code{competitive_entry_rate} through arithmetic alone.
 #'
-#' For the pair-level construct use \code{\link{compute_dyadic_forbearance}}.
-#' The function name is retained for backward compatibility with
-#' \code{plot-forbearance.R} and downstream consumers.
+#' For the pair-level construct use \code{dyadic_entry_restraint()}.
 #'
 #' @param entry_log A \code{data.frame} produced by \code{track_entry_decisions()}.
 #' @param by_firm Logical. If \code{TRUE}, return metrics for each firm
@@ -332,10 +331,11 @@ track_entry_decisions <- function(env = NULL,
 #'   h[[t]] <- m
 #' }
 #' entry_log <- track_entry_decisions(holdings_history = h)
-#' compute_forbearance_metrics(entry_log)
-#' compute_forbearance_metrics(entry_log, by_firm = TRUE)
-#' @export
-compute_forbearance_metrics <- function(entry_log, by_firm = FALSE) {
+#' entry_restraint_metrics(entry_log)
+#' entry_restraint_metrics(entry_log, by_firm = TRUE)
+#' @keywords internal
+#' @noRd
+entry_restraint_metrics <- function(entry_log, by_firm = FALSE) {
   stopifnot(is.data.frame(entry_log))
   if (nrow(entry_log) == 0) {
     return(list(
@@ -383,12 +383,12 @@ compute_forbearance_metrics <- function(entry_log, by_firm = FALSE) {
 
 
 # ---------------------------------------------------------------------------- #
-#  compute_forbearance_trajectory
+#  entry_restraint_trajectory
 # ---------------------------------------------------------------------------- #
 
 #' Compute competitive entry rate over time (rolling window)
 #'
-#' Useful for plotting how forbearance evolves across the simulation.
+#' Useful for plotting how entry restraint evolves across the simulation.
 #'
 #' @param entry_log A \code{data.frame} produced by \code{track_entry_decisions()}.
 #' @param window Integer. Number of consecutive ADD events in the rolling
@@ -405,9 +405,10 @@ compute_forbearance_metrics <- function(entry_log, by_firm = FALSE) {
 #'   h[[t]] <- m
 #' }
 #' entry_log <- track_entry_decisions(holdings_history = h)
-#' compute_forbearance_trajectory(entry_log, window = 3)
-#' @export
-compute_forbearance_trajectory <- function(entry_log, window = 50L) {
+#' entry_restraint_trajectory(entry_log, window = 3)
+#' @keywords internal
+#' @noRd
+entry_restraint_trajectory <- function(entry_log, window = 50L) {
   adds <- entry_log %>% filter(action_type == "add") %>% arrange(step)
   n <- nrow(adds)
   if (n < window) {
@@ -527,8 +528,8 @@ expand_entry_rivals <- function(entry_log, drop_uncontested = TRUE) {
 #' Multimarket contact matrix from a holdings matrix
 #'
 #' Contact between firms \eqn{i} and \eqn{j} is the number of activities both
-#' hold. This is the conditioning variable the multimarket forbearance
-#' construct is defined on, and it is what distinguishes forbearance from
+#' hold. This is the conditioning variable the multimarket mutual-restraint
+#' construct is defined on, and it is what distinguishes mutual restraint from
 #' ordinary crowding avoidance.
 #'
 #' @param holdings An \eqn{M \times N}{M x N} binary firm-by-activity matrix,
@@ -560,10 +561,10 @@ compute_multimarket_contact <- function(holdings, at = 1L) {
 
 
 # ---------------------------------------------------------------------------- #
-#  compute_dyadic_forbearance
+#  dyadic_entry_restraint
 # ---------------------------------------------------------------------------- #
 
-#' Pair-level forbearance, optionally corrected for exposure
+#' Pair-level entry restraint, optionally corrected for exposure
 #'
 #' For each ordered pair (\code{firm}, \code{rival}), how often the focal firm
 #' moved into activities that specific rival held. With \code{holdings}
@@ -574,7 +575,7 @@ compute_multimarket_contact <- function(holdings, at = 1L) {
 #'
 #' @section Reading the output:
 #'
-#' \code{forbearance_index} is \code{expected_rate - observed_rate}, so
+#' \code{restraint_index} is \code{expected_rate - observed_rate}, so
 #' POSITIVE means the focal firm entered the rival's space LESS than chance,
 #' that is restraint. It is defined only when \code{holdings} is supplied.
 #' Without \code{holdings} the function returns incidence counts and shares
@@ -597,7 +598,7 @@ compute_multimarket_contact <- function(holdings, at = 1L) {
 #' @return A \code{data.frame}, one row per ordered pair observed, with
 #'   \code{firm}, \code{rival}, \code{n_entries_focal},
 #'   \code{n_entries_vs_rival}, \code{observed_rate}, \code{expected_rate},
-#'   \code{forbearance_index}, \code{exposure_corrected} and \code{sparse}.
+#'   \code{restraint_index}, \code{exposure_corrected} and \code{sparse}.
 #' @examples
 #' set.seed(7)
 #' h <- list(matrix(rbinom(12, 1, 0.4), nrow = 3))
@@ -610,12 +611,13 @@ compute_multimarket_contact <- function(holdings, at = 1L) {
 #' entry_log <- track_entry_decisions(holdings_history = h)
 #'
 #' ## Incidence shares only (no exposure correction)
-#' compute_dyadic_forbearance(entry_log, min_entries = 1)
+#' dyadic_entry_restraint(entry_log, min_entries = 1)
 #'
-#' ## Exposure-corrected: positive forbearance_index = restraint
-#' compute_dyadic_forbearance(entry_log, holdings = h, min_entries = 1)
-#' @export
-compute_dyadic_forbearance <- function(entry_log, holdings = NULL,
+#' ## Exposure-corrected: positive restraint_index = restraint
+#' dyadic_entry_restraint(entry_log, holdings = h, min_entries = 1)
+#' @keywords internal
+#' @noRd
+dyadic_entry_restraint <- function(entry_log, holdings = NULL,
                                        min_entries = 5L) {
   stopifnot(is.data.frame(entry_log))
 
@@ -625,7 +627,7 @@ compute_dyadic_forbearance <- function(entry_log, holdings = NULL,
                       n_entries_focal = integer(0),
                       n_entries_vs_rival = integer(0),
                       observed_rate = numeric(0), expected_rate = numeric(0),
-                      forbearance_index = numeric(0),
+                      restraint_index = numeric(0),
                       exposure_corrected = logical(0), sparse = logical(0)))
   }
 
@@ -638,7 +640,7 @@ compute_dyadic_forbearance <- function(entry_log, holdings = NULL,
                       n_entries_focal = integer(0),
                       n_entries_vs_rival = integer(0),
                       observed_rate = numeric(0), expected_rate = numeric(0),
-                      forbearance_index = numeric(0),
+                      restraint_index = numeric(0),
                       exposure_corrected = logical(0), sparse = logical(0)))
   }
 
@@ -650,11 +652,11 @@ compute_dyadic_forbearance <- function(entry_log, holdings = NULL,
   # ---- exposure baseline ----
   if (is.null(holdings)) {
     pair$expected_rate      <- NA_real_
-    pair$forbearance_index  <- NA_real_
+    pair$restraint_index  <- NA_real_
     pair$exposure_corrected <- FALSE
-    message("compute_dyadic_forbearance(): no holdings supplied, so ",
+    message("dyadic_entry_restraint(): no holdings supplied, so ",
             "observed_rate is an incidence share, not a rate against ",
-            "opportunity, and forbearance_index is NA. Supply holdings (a ",
+            "opportunity, and restraint_index is NA. Supply holdings (a ",
             "list of matrices or env$bi_env_arr) for the exposure correction.")
   } else {
     get_state <- if (is.array(holdings) && length(dim(holdings)) == 3) {
@@ -744,13 +746,13 @@ compute_dyadic_forbearance <- function(entry_log, holdings = NULL,
     }, numeric(1))
 
     pair$expected_rate      <- exp_by_pair
-    pair$forbearance_index  <- pair$expected_rate - pair$observed_rate
+    pair$restraint_index  <- pair$expected_rate - pair$observed_rate
     pair$exposure_corrected <- TRUE
   }
 
   pair$sparse <- pair$n_entries_focal < min_entries
   pair <- pair[, c("firm", "rival", "n_entries_focal", "n_entries_vs_rival",
-                   "observed_rate", "expected_rate", "forbearance_index",
+                   "observed_rate", "expected_rate", "restraint_index",
                    "exposure_corrected", "sparse")]
   pair <- pair[order(pair$firm, pair$rival), ]
   rownames(pair) <- NULL

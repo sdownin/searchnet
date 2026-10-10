@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot-degrees.R
 \name{saomnk_plot_degree_4panel}
 \alias{saomnk_plot_degree_4panel}
-\title{Standalone plot functions for SaoMNK degree visualizations.}
+\title{Standalone plot functions for SAOM-NK degree visualizations.}
 \usage{
 saomnk_plot_degree_4panel(
   env,

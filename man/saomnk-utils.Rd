@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{saomnk-utils}
 \alias{saomnk-utils}
-\title{SaoMNK Utility Functions}
+\title{SAOM-NK Utility Functions}
 \description{
-Standalone helper functions used throughout the SaoMNK package.
+Standalone helper functions used throughout the SAOM-NK package.
 }

@@ -1131,7 +1131,7 @@ searchnet theory vignette (`vignette("saomnk-theory")`).
   System II* (pp. 425--460). Addison-Wesley.
 - Brock, W. A., & Durlauf, S. N. (2001). Discrete choice with social
   interactions. *Review of Economic Studies*, 68(2), 235--260.
-  *(Provides the economic foundation for SaoMNK's social-interaction
+  *(Provides the economic foundation for SAOM-NK's social-interaction
   channel; recovered as Property 5 in the M -> infinity, congestion-only,
   mean-field limit. See `vignette("saomnk-brock-durlauf")` for the full
   reduction.)*

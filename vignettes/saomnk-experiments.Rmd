@@ -29,7 +29,7 @@ if (requireNamespace("searchnet", quietly = TRUE)) {
 } else {
   dir_r <- file.path(getwd(), "R")
   if (!file.exists(file.path(dir_r, "utils.R")))
-    dir_r <- "D:/Search_networks/SaoMNK/R"
+    dir_r <- file.path(dirname(getwd()), "R")  # knitting from vignettes/
   .saomnk_dir <- dir_r
   .saomnk_dir <- dir_r; source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
 }

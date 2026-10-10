@@ -2,9 +2,9 @@
 % Please edit documentation in R/mean_field_solver.R
 \name{mean-field-solver}
 \alias{mean-field-solver}
-\title{Mean-Field Equilibrium Solver for the SaoMNK Brock-Durlauf Reduction}
+\title{Mean-Field Equilibrium Solver for the SAOM-NK Brock-Durlauf Reduction}
 \description{
-Standalone helper operationalizing Property~4 of the SaoMNK
+Standalone helper operationalizing Property~4 of the SAOM-NK
 proof set (the Gibbs/Brock-Durlauf equivalence, under single-flip logit
 revision): the mean-field
 self-consistency equation
@@ -22,7 +22,7 @@ emerges.
 
 This file complements the existing \code{searchnet-brock-durlauf.R}
 utilities (\code{\link{bd_self_consistency}} etc.) by exposing a single
-end-user-friendly entry-point parameterised in the SaoMNK quantities a
+end-user-friendly entry-point parameterised in the SAOM-NK quantities a
 strategy researcher actually controls (\code{theta_inPop}, \code{M},
 \code{T}) rather than the spin-form \code{(beta, J, h)} triple of
 Brock & Durlauf.

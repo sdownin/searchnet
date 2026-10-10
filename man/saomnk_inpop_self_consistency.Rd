@@ -2,7 +2,7 @@
 % Please edit documentation in R/searchnet-brock-durlauf.R
 \name{saomnk_inpop_self_consistency}
 \alias{saomnk_inpop_self_consistency}
-\title{Solve the SaoMNK-inPop Self-Consistency Equation (Operational Fixed Point)}
+\title{Solve the SAOM-NK inPop Self-Consistency Equation (Operational Fixed Point)}
 \usage{
 saomnk_inpop_self_consistency(
   beta,

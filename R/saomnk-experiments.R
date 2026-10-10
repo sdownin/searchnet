@@ -1,5 +1,5 @@
-#' @title SaoMNK Monte Carlo Experiment Runner
-#' @description R6 class for running batches of SaoMNK simulations,
+#' @title SAOM-NK Monte Carlo Experiment Runner
+#' @description R6 class for running batches of SAOM-NK simulations,
 #'   aggregating results, and analyzing market entry survival curves.
 #'
 #' @import R6
@@ -45,8 +45,8 @@ SaoMNKexperiments <- R6Class("SaoMNKexperiments",
                                #'
                                #' @param name A name for the experiment.
                                #' @param n The number of Monte Carlo simulations to run.
-                               #' @param environ_params Base environmental parameters for SaoMNK.
-                               #' @param structure_model Base structural model for SaoMNK search_rsiena.
+                               #' @param environ_params Base environmental parameters for SAOM-NK.
+                               #' @param structure_model Base structural model for SAOM-NK search_rsiena.
                                #' @param steps_per_actor Base steps per actor for search_rsiena.
                                #' @param theta_shocks Base theta shocks list (optional).
                                #' @param target_markets Vector of component IDs representing the target market(s).
@@ -96,17 +96,17 @@ SaoMNKexperiments <- R6Class("SaoMNKexperiments",
                                #' Executes 'n' simulations based on the initialized parameters.
                                #'
                                #' @param theta_shocks Optional list to override base_theta_shocks for this specific run set.
-                               #' @param store_full_object If TRUE, stores the entire SaoMNK object for each run. FALSE (default) stores minimal data.
+                               #' @param store_full_object If TRUE, stores the entire SAOM-NK object for each run. FALSE (default) stores minimal data.
                                #' @param SaoMNK_class The R6 class generator for the simulation (e.g., SaomNkRSienaBiEnv). Needed if it's not automatically found.
                                run_simulations = function(theta_shocks = NULL, store_full_object = FALSE, SaoMNK_class = NULL) {
 
-                                 # Determine the SaoMNK class generator to use
+                                 # Determine the SAOM-NK class generator to use
                                  if (is.null(SaoMNK_class)) {
                                    # Attempt to find the class generator (assuming it's named SaomNkRSienaBiEnv)
                                    if (exists("SaomNkRSienaBiEnv") && inherits(SaomNkRSienaBiEnv, "R6ClassGenerator")) {
                                      SaoMNK_class <- SaomNkRSienaBiEnv
                                    } else {
-                                     stop("SaoMNK class generator 'SaomNkRSienaBiEnv' not found or is not an R6ClassGenerator. Load it or pass it via the SaoMNK_class argument.")
+                                     stop("SAOM-NK class generator 'SaomNkRSienaBiEnv' not found or is not an R6ClassGenerator. Load it or pass it via the SaoMNK_class argument.")
                                    }
                                  } else {
                                    # Validate the passed class generator
@@ -138,7 +138,7 @@ SaoMNKexperiments <- R6Class("SaoMNKexperiments",
                                    run_seed_i <- self$batch_seeds[i]
                                    if(self$verbose_run) cat(sprintf('\n--- Starting simulation %s/%s, seed=%s ---\n', i, self$n_simulations, run_seed_i))
 
-                                   # Create a *new* SaoMNK instance for each run to ensure independence
+                                   # Create a *new* SAOM-NK instance for each run to ensure independence
                                    env_i <- tryCatch({
                                      # Use the determined class generator
                                      SaoMNK_class$new(self$base_environ_params)

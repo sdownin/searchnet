@@ -1,6 +1,6 @@
 # plot-phase-space.R
 # =============================================================================
-# Phase Space Visualization System for SearchNet (SaoMNK)
+# Phase Space Visualization System for SearchNet (SAOM-NK)
 # =============================================================================
 # Plots the network-behavior-fitness phase space -- the "showstopper" figure.
 # Three fundamental dimensions of any search system:

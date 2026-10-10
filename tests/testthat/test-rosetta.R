@@ -3,6 +3,10 @@
 skip_if_not_installed("yaml")
 
 .rs_home <- file.path(pkg_root, "inst", "rosetta")
+## Under R CMD check there is no source tree: use the registry installed with
+## the package under test.
+if (!file.exists(file.path(.rs_home, "classes.yaml")))
+  .rs_home <- system.file("rosetta", package = "searchnet")
 skip_if_not(file.exists(file.path(.rs_home, "classes.yaml")), "registry directory not found")
 old_opt <- options(searchnet.rosetta_path = .rs_home)
 withr::defer(options(old_opt), teardown_env())
@@ -201,6 +205,7 @@ test_that("rosetta_plot builds a figure", {
 })
 
 test_that("rosetta_plot groups classes sharing a {K} dimension under one badge", {
+  local_close_new_devices()  # rosetta_plot() opens a device to compose its panels
   full <- saomnk_model(density = -1, popularity = -0.2,
                        influence_matrix = saomnk_block_diagonal(6, 2),
                        c4 = list(effect = "cycle4", parameter = 0.1))
@@ -458,6 +463,10 @@ test_that("rosetta_lean names the statements and writes an instance where suppor
 test_that("row II: the relation label and the first column do not overlap (nk-adaptive-walk)", {
   ## Boxes measured independently of the layout code: the panel width comes
   ## from the built gtable, text widths from grid at the size drawn.
+  ## Order-proof: the registry is the source tree's (never an installed
+  ## searchnet's), and every device opened here is closed on exit, even when
+  ## an expectation errors, so no later test inherits it.
+  withr::local_options(searchnet.rosetta_path = .rs_home)
   cl <- rosetta_classes()
   e <- rosetta_entry("nk-adaptive-walk")
   core <- c("complementarity", "scope", "crowding", "contact", "imitation")
@@ -470,25 +479,42 @@ test_that("row II: the relation label and the first column do not overlap (nk-ad
       gp = grid::gpar(fontsize = size * ggplot2::.pt, lineheight = 0.9))), "inches",
       valueOnly = TRUE)
   }
-  for (W in c(6, 8, 12)) {
-    row <- .rosetta_row_special(t2, cl, e, width_in = W)
+  ## Measures one row on its own null PDF device and closes it on exit.
+  measure <- function(row, W) {
     grDevices::pdf(NULL, width = W, height = 2.5)
+    dev <- grDevices::dev.cur()
+    on.exit(if (dev %in% grDevices::dev.list()) grDevices::dev.off(dev), add = TRUE)
     g <- ggplot2::ggplotGrob(row)
     panel_in <- W - sum(grid::convertWidth(g$widths, "inches", valueOnly = TRUE))
     upi <- (n + 0.7) / panel_in
     is_text <- vapply(row$layers, function(l) inherits(l$geom, "GeomText"), TRUE)
     rel_l <- Filter(function(l) isTRUE(l$geom_params$parse), row$layers[is_text])[[1]]
-    expr_l <- Filter(function(l) identical(rlang::as_label(l$mapping$label), "expr"),
+    expr_l <- Filter(function(l) identical(all.vars(l$mapping$label), "expr"),
                      row$layers[is_text])
-    expect_length(expr_l, 1L)
-    rel_right <- rel_l$data$x +
-      wid(rel_l$data$label, rel_l$aes_params$size, parse = TRUE) * upi  # hjust = 0
     d <- row$data
-    half <- vapply(seq_len(n), function(i) wid(d$expr[i], d$esize[i]) * upi / 2, 1)
-    grDevices::dev.off()
+    list(rel_l = rel_l, n_expr = length(expr_l),
+         rel_right = rel_l$data$x +
+           wid(rel_l$data$label, rel_l$aes_params$size, parse = TRUE) * upi,  # hjust = 0
+         half = vapply(seq_len(n), function(i) wid(d$expr[i], d$esize[i]) * upi / 2, 1))
+  }
+  n_dev <- length(grDevices::dev.list())
+  for (W in c(6, 8, 12)) {
+    row <- .rosetta_row_special(t2, cl, e, width_in = W)
+    m <- measure(row, W)
+    rel_l <- m$rel_l; rel_right <- m$rel_right; half <- m$half
+    d <- row$data
+    expect_equal(m$n_expr, 1L)
+    ## The layout's own reservation agrees: the label ends before column 1's
+    ## allotted half-width begins.
+    ex <- ifelse(t2$status %in% .ROSETTA_ON, paste("+", t2$expression), "+ 0")
+    ex[1] <- sub("^\\+ ", "", ex[1])
+    lay <- .rosetta_row2_layout(ex, e$relation, n, width_in = W)
+    expect_equal(lay$expr, d$expr)
+    expect_lt(lay$rel_right, 1 - lay$half[1])
     expect_equal(rel_l$aes_params$hjust, 0)
     expect_lt(rel_right, d$x[1] - half[1])                          # label | column 1
     expect_true(all(d$x[-n] + half[-n] < d$x[-1] - half[-1]))      # column | column
     expect_true(all(d$esize >= 1.8))
   }
+  expect_equal(length(grDevices::dev.list()), n_dev)                 # no device left open
 })

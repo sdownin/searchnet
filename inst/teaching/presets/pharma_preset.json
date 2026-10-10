@@ -1,0 +1,39 @@
+{
+  "industry": "pharma",
+  "N": 12,
+  "activity_names": [
+    "Oncology-Solid", "Oncology-Heme", "Immunology", "Neuroscience",
+    "Cardio-Metabolic", "Rare-Disease", "Gene-Therapy", "mRNA-Platform",
+    "Biosimilars", "Vaccines", "Anti-Infectives", "Ophthalmology"
+  ],
+  "epistasis": "modular",
+  "blocks": 4,
+  "density": 0.2,
+  "density_param": -0.7,
+  "popularity": 0.2,
+  "epistasis_weight": 0.45,
+  "difficulty_settings": {
+    "intro": {
+      "steps_per_round": 5,
+      "n_AI": 2,
+      "shock_probability": 0
+    },
+    "intermediate": {
+      "steps_per_round": 10,
+      "n_AI": 4,
+      "shock_probability": 0.15
+    },
+    "advanced": {
+      "steps_per_round": 20,
+      "n_AI": 8,
+      "shock_probability": 0.4
+    }
+  },
+  "description": "Pharmaceutical R&D portfolio management. Activities represent therapeutic area investments. High scope costs reflect the capital intensity of drug development. Epistasis blocks: {Oncology-Solid, Oncology-Heme, Immunology} immuno-oncology cluster, {Neuroscience, Cardio-Metabolic, Rare-Disease} chronic disease cluster, {Gene-Therapy, mRNA-Platform, Vaccines} platform technology cluster, {Biosimilars, Anti-Infectives, Ophthalmology} specialty cluster.",
+  "learning_objectives": [
+    "Understand R&D portfolio strategy under high capital costs",
+    "Observe how therapeutic area synergies (epistasis) reward focused strategies",
+    "Experience patent cliff shocks and pipeline disruption events",
+    "See how different firms converge on similar therapeutic niches (strategic groups)"
+  ]
+}

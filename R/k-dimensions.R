@@ -247,7 +247,7 @@
   f()
 }
 
-#' Classify a statistic by its decision and outcome {K} dimensions
+#' Classify a statistic by its decision and outcome \{K\} dimensions
 #'
 #' Derives the two fields of any actor statistic `s_i(B)`, so that a
 #' researcher's own effect classifies itself by the same rules as the
@@ -398,7 +398,7 @@ searchnet_classify_effect <- function(stat = NULL, change = NULL, target = NULL,
                      Sociality = "other actors' holdings (the overlap a move creates)",
                      Epistasis = "components coupled through W")
 
-#' The decision and outcome {K} dimensions of each effect
+#' The decision and outcome \{K\} dimensions of each effect
 #'
 #' Classifies every effect of the package by the four \{K\} dimensions
 #' (Expansiveness K_AC, Popularity K_CA, Sociality K_AA, Epistasis K_CC),

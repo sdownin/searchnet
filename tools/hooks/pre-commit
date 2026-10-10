@@ -38,6 +38,26 @@ PATTERNS="$HOOK_DIR/../internal-file-patterns.txt"
 staged=$(git diff --cached --name-only --diff-filter=AM)
 [ -z "$staged" ] && exit 0
 
+# Credentials in staged CONTENT (added 2026-10-10, after a Google API key was
+# committed in a script and had to be rotated). Scans only the lines this
+# commit adds, and prints file names, never the matched text, so the hook's
+# own output cannot leak a key. Patterns: Google API keys (AIza..., and the
+# newer AQ. form), GitHub tokens, AWS access key ids, OpenAI/Anthropic keys.
+SECRET_RE='AIza[0-9A-Za-z_-]{35}|AQ\.[0-9A-Za-z_-]{40,}|gh[pousr]_[0-9A-Za-z]{36,}|AKIA[0-9A-Z]{16}|sk-(ant-|proj-)?[0-9A-Za-z_-]{32,}'
+secret_files=$(git diff --cached -U0 --diff-filter=AM --no-color |
+  awk '/^\+\+\+ b\//{f=substr($0,7); next} /^\+/{print f "\t" substr($0,2)}' |
+  grep -E "	.*($SECRET_RE)" | cut -f1 | sort -u)
+if [ -n "$secret_files" ]; then
+  echo
+  echo "COMMIT BLOCKED: staged content looks like an API key or token in:"
+  printf '%s\n' "$secret_files" | sed 's/^/      /'
+  echo
+  echo "  Read the key from the environment instead (e.g. os.environ['GEMINI_API_KEY'],"
+  echo "  Sys.getenv('GEMINI_API_KEY')), unstage, and if it was a real key, rotate it."
+  echo
+  exit 1
+fi
+
 if [ ! -f "$PATTERNS" ]; then
   echo "pre-commit: $PATTERNS is missing; cannot verify. Restore it or"
   echo "            commit with --no-verify if you know what you are doing."

@@ -17,7 +17,7 @@
 \title{Exploration-Exploitation Plot Functions}
 \description{
 A family of plotting functions for visualizing exploration vs. exploitation
-dynamics in SaoMNK simulations. Includes strategy-level views, phase analysis,
+dynamics in SAOM-NK simulations. Includes strategy-level views, phase analysis,
 subsidy effects, DID exploration analysis, and event study plots.
 
 All functions take a \code{SaomNkRSienaBiEnv} object as their first argument.

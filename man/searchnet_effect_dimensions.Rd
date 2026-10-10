@@ -2,7 +2,7 @@
 % Please edit documentation in R/k-dimensions.R
 \name{searchnet_effect_dimensions}
 \alias{searchnet_effect_dimensions}
-\title{The decision and outcome {K} dimensions of each effect}
+\title{The decision and outcome \{K\} dimensions of each effect}
 \usage{
 searchnet_effect_dimensions(effects = NULL, rule = "walk", custom = NULL)
 }

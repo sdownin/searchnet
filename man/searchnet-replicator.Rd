@@ -14,6 +14,6 @@ An object of class \code{character} of length 4.
 \description{
 Functions for running replicator dynamics, ELO tournaments,
 and computing evolutionarily stable strategies (ESS) for policy type
-populations in the SaoMNK framework.
+populations in the SAOM-NK framework.
 }
 \keyword{datasets}

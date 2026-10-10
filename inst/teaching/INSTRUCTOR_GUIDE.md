@@ -12,13 +12,25 @@ The searchnet classroom module is a Capsim-style strategy simulation where stude
 
 ## Quick Start
 
-### 1. Install and Load
+### 1. Install and Check (about 10 minutes on a fresh machine)
+
+You need R 4.1.0 or later (https://CRAN.R-project.org). Then, in R:
 
 ```r
-# If not installed:
-# devtools::install_local("D:/Search_networks/SaoMNK")
+# Step 1: install searchnet from GitHub (once per machine)
+install.packages("remotes")
+remotes::install_github("sdownin/searchnet")
+
+# Step 2: check the installation; runs a 2-30 second seeded test simulation
+searchnet::searchnet_check_setup()
+
 library(searchnet)
 ```
+
+`searchnet_check_setup()` ends with either "All checks passed" or a list of
+problems, each with the command that fixes it. Ask workshop participants to
+run steps 1 and 2 before the session. For a reproducible class, pin a release
+tag, for example `remotes::install_github("sdownin/searchnet@v0.12.9")`.
 
 ### 2. Initialize a Session
 
@@ -40,6 +52,14 @@ Each round, students submit their adds and drops:
 session <- searchnet_classroom_submit(session, "student_1", adds = c(3, 7), drops = c(1))
 session <- searchnet_classroom_submit(session, "student_2", adds = c(5),    drops = c(2, 4))
 # ... collect all student decisions ...
+```
+
+For a whole class, submit the round at once from a form export (see
+"Collecting Decisions with a Form" below):
+
+```r
+session <- searchnet_classroom_submit_batch(session, "round1_responses.csv")
+attr(session, "batch_report")   # one line per row: submitted or why not
 ```
 
 ### 4. Advance the Round
@@ -76,7 +96,38 @@ searchnet_classroom_debrief(session, output_dir = "class_debrief")
 
 **Low-tech (any class size):** Students write decisions on paper/cards. TA or instructor enters them into R between rounds.
 
-**Medium-tech:** Students submit via Google Form. Instructor batch-processes the form responses.
+**Medium-tech:** Students submit via Google Form (or Qualtrics, Microsoft Forms). Instructor exports the responses as CSV and submits the round with `searchnet_classroom_submit_batch()`.
+
+### Collecting Decisions with a Form
+
+Build a form with four questions and export the responses as CSV each round.
+Extra columns, such as the timestamp or e-mail address a form adds, are
+ignored.
+
+| Column       | Example     | Meaning |
+|:-------------|:------------|:--------|
+| `student_id` | `student_3` | Roster ID. A bare `3` is read as `student_3`. |
+| `round`      | `1`         | The round being played (`session$current_round + 1`). |
+| `adds`       | `3;7`       | Activity numbers to add, separated by semicolons, commas, bars, or spaces. Blank means none. |
+| `drops`      | `1`         | Activity numbers to drop, same format. |
+
+If your form uses other question titles, rename the columns or pass them:
+`searchnet_classroom_submit_batch(session, "responses.csv", student_col = "Your ID", adds_col = "Enter", drops_col = "Exit")`.
+
+Every row is checked before anything is submitted. A row is rejected when its
+student is not on the roster, its round is not the current one, a cell is not
+a list of activity numbers, an activity number is outside 1 to N, or the same
+student appears in more than one row. Rejected rows are listed with the
+reason; the valid rows are submitted. To submit nothing unless every row is
+valid, pass `atomic = TRUE`. Adding an activity a firm already holds, or
+dropping one it does not hold, is not an error: as with
+`searchnet_classroom_submit()`, it is ignored with a warning. Students who
+did not respond stay pending; `searchnet_classroom_advance(session, force =
+TRUE)` plays the round with no move for them.
+
+Filter the export to the current round's responses before submitting (a form
+that collects every round in one sheet will otherwise produce wrong-round
+rejections for the earlier rounds).
 
 **High-tech:** Use the searchnet web app (saomnk-app) where students submit decisions directly through a browser interface.
 
@@ -112,6 +163,38 @@ Stronger complementarities and popularity effects create winner-take-most dynami
 - **Specialty:** Biosimilars, Anti-Infectives, Ophthalmology
 
 High scope costs reflect capital intensity. Good for healthcare strategy and R&D management courses.
+
+### Custom Presets
+
+The three presets are JSON files in
+`system.file("teaching", "presets", package = "searchnet")`. A custom preset
+uses the same fields; copy one of them as a starting point.
+
+| Field | Required | Type | Meaning |
+|:------|:---------|:-----|:--------|
+| `N` | yes | whole number, at least 2 | Number of activities. Overrides the `N` argument of `searchnet_classroom_init()`. |
+| `activity_names` | yes | list of distinct strings, at most `N` | Activity labels, in column order. Fewer than `N` are padded as `Activity_k`. |
+| `density` | yes | number in [0, 1] | Initial density of the firm-activity network. |
+| `influence_weight` | yes | number | Weight on the complementarity (influence matrix) term. The older name `epistasis_weight`, used by the shipped presets, is also accepted. |
+| `blocks` | no (default 3) | whole number, 1 to `N` | Number of complementarity clusters in the block-diagonal influence matrix. |
+| `epistasis` | no | `"modular"` | The only structure implemented (block-diagonal). |
+| `density_param` | no (default -0.5) | number | Density (cost of holding an activity) coefficient. |
+| `popularity` | no (default 0.3) | number | Popularity (crowding) coefficient. |
+| `difficulty_settings` | no | object | If given, must define `intro`, `intermediate`, and `advanced`, each with `steps_per_round` (whole number, at least 1), `n_AI` (whole number, at least 1), and `shock_probability` (number in [0, 1]). The defaults are 5/2/0, 10/4/0.1, and 20/8/0.3. |
+| `industry`, `description` | no | string | Labels for your own records. |
+| `learning_objectives` | no | list of strings | Notes for your own records. |
+
+Any other field produces a warning and is ignored. Check a file before class,
+then use it:
+
+```r
+searchnet_validate_preset("my_preset.json")   # lists every problem at once
+session <- searchnet_classroom_init(
+  n_students = 20, industry = "custom",
+  custom_params = "my_preset.json",           # a path or a named list
+  difficulty = "intro", seed = 2026
+)
+```
 
 ---
 
@@ -238,7 +321,10 @@ This is the Imitation Mirage -- it is a feature, not a bug. Use it as a teaching
 Give them the Student Handout. In the airline preset, suggest they "pick a hub and 2-3 connecting routes" as a starting heuristic.
 
 **"The AI firms are too strong/weak"**
-Adjust difficulty level. For more control, use `industry = "custom"` and set `n_AI` and `steps_per_round` directly.
+Adjust difficulty level. For more control, use `industry = "custom"` and set `n_AI` and `steps_per_round` in the preset's `difficulty_settings` (see Custom Presets).
+
+**"A participant's installation does not work"**
+Ask them to run `searchnet::searchnet_check_setup()` and read the last lines: each problem comes with the command that fixes it.
 
 **"I want to add a shock mid-game"**
 Set `shocks = TRUE` in the init call. Shock timing and type are pre-generated but hidden from students. To add manual shocks, modify the `shock_schedule` element of the session object directly.

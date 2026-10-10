@@ -1,0 +1,128 @@
+---
+title: "From Your Own Data to {K} Readings"
+author: "Stephen Downing"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{From Your Own Data to {K} Readings}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
+                      fig.height = 4, out.width = "100%")
+library(searchnet)
+```
+
+SAOM-NK works on `B`, an actor-by-component matrix with one slice per period.
+Observed data rarely arrive in that shape. They arrive in long format: one row
+per actor, component and period, sometimes with a weight. This vignette goes
+from such records to `B`, reads the four {K} dimensions off it, and hands the
+result to the estimation layer.
+
+## 1. Long data
+
+The example is synthetic: ten actors, eight components, four periods, and a
+numeric weight on each record (an intensity, a count, a share).
+
+```{r data}
+set.seed(42)
+grid <- expand.grid(actor = sprintf("actor_%02d", 1:10),
+                    component = sprintf("comp_%d", 1:8),
+                    period = 1:4, stringsAsFactors = FALSE)
+long <- grid[runif(nrow(grid)) < 0.35, ]
+long$weight <- round(rexp(nrow(long), 2), 2)
+head(long)
+```
+
+## 2. Long data to B
+
+`searchnet_bipartite_from_long()` builds the array. A tie is a summed weight
+above `threshold`; with `weight = NULL` any record is a tie. Passing `actors`
+fixes the universe, so an actor with no records in a period, or none at all,
+keeps a row of zeros and composition is stable across waves.
+
+```{r build}
+obs <- searchnet_bipartite_from_long(
+  long, actor = "actor", component = "component", period = "period",
+  weight = "weight", threshold = 0.1,
+  actors = sprintf("actor_%02d", 1:11),   # actor_11 never appears
+  components = sprintf("comp_%d", 1:8))
+obs
+dim(obs$B)
+```
+
+## 3. {K} readings
+
+`searchnet_k_readings()` returns one row per node and period. The definitions
+are those of `system.file("rosetta", "K_DIMENSIONS.md", package = "searchnet")`
+and are computed exactly as the simulation engine computes its {K}-4 degrees:
+
+- **Expansiveness** `K_AC`: components an actor holds (row sum of `B`).
+- **Popularity** `K_CA`: actors holding a component (column sum).
+- **Sociality** `K_AA`: other actors sharing at least one component.
+- **Epistasis** `K_CC`: other components co-held with a component.
+
+`K_AA` and `K_CC` exclude the node itself. The weighted forms,
+`sociality_strength` and `epistasis_strength`, are reported alongside, and the
+accounting identities that tie the four together (total ties; second moment of
+one margin equals total strength in the other projection) are checked for every
+period.
+
+```{r readings}
+k <- searchnet_k_readings(obs)
+head(k[k$level == "actor", c("period", "id", "K_AC", "K_AA", "sociality_strength")])
+head(k[k$level == "component", c("period", "id", "K_CA", "K_CC", "epistasis_strength")])
+```
+
+The `"summary"` attribute gives the per-period totals: density, mean degrees,
+mean pairwise Jaccard overlap of portfolios, and `tie_jaccard`, the overlap of
+each period's tie set with the one before it. Values that are very low warn
+that a SAOM will see too much change between waves.
+
+```{r summary}
+s <- attr(k, "summary")
+s[, c("period", "ties", "density", "mean_K_AC", "mean_K_AA",
+      "mean_K_CA", "mean_K_CC", "tie_jaccard")]
+```
+
+## 4. Plot
+
+Mean degree per period, one panel per dimension, in the order of the {K}-4
+panel.
+
+```{r plot}
+long_means <- rbind(
+  data.frame(period = s$period, dimension = "Expansiveness (K_AC)", mean = s$mean_K_AC),
+  data.frame(period = s$period, dimension = "Popularity (K_CA)",    mean = s$mean_K_CA),
+  data.frame(period = s$period, dimension = "Sociality (K_AA)",     mean = s$mean_K_AA),
+  data.frame(period = s$period, dimension = "Epistasis (K_CC)",     mean = s$mean_K_CC))
+long_means$dimension <- factor(long_means$dimension, levels = unique(long_means$dimension))
+ggplot2::ggplot(long_means, ggplot2::aes(period, mean)) +
+  ggplot2::geom_line() + ggplot2::geom_point() +
+  ggplot2::facet_wrap(~ dimension, nrow = 1, scales = "free_y") +
+  ggplot2::labs(x = "Period", y = "Mean degree") +
+  ggplot2::theme_minimal()
+```
+
+## 5. Into estimation
+
+`obs` goes straight to `searchnet_coevolve_data()` as the bipartite dependent
+network, and `searchnet_k_covariate()` reshapes any reading into the
+node-by-period matrix it takes for a varying covariate. A degree of the
+dependent network entered this way is a lagged reading of the network itself,
+a different estimand from the endogenous effects (`outAct`, `inPop`) that model
+the same degree as a mechanism.
+
+```{r coevolve, eval = requireNamespace("RSiena", quietly = TRUE)}
+arch <- array(rbinom(8 * 8 * 4, 1, 0.25), dim = c(8, 8, 4))
+dat <- searchnet_coevolve_data(
+  bipartite = obs, component = arch,
+  actor_covars = list(scope = searchnet_k_covariate(k, "K_AC")),
+  verbose = FALSE)
+class(dat)
+```

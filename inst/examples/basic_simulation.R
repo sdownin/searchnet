@@ -1,9 +1,9 @@
 #!/usr/bin/env Rscript
-#' Basic SaoMNK Simulation Example
+#' Basic SAOM-NK Simulation Example
 #'
 #' Demonstrates the core API: create environment, configure model, run, visualize.
 
-library(SaoMNK)
+library(searchnet)
 
 ## 1. Environment Configuration
 environ_params <- list(

@@ -50,7 +50,7 @@ The \code{env} object (modified in place) with
 returned invisibly.
 }
 \description{
-Executes independent replications of a SaoMNK multiwave simulation, each
+Executes independent replications of a SAOM-NK multiwave simulation, each
 starting from the same initial bipartite matrix but with a different random
 seed.  When \code{parallel = TRUE} and the \pkg{future} / \pkg{future.apply}
 packages are available, replications run across multiple R worker processes.

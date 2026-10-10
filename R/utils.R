@@ -1,5 +1,5 @@
-#' @title SaoMNK Utility Functions
-#' @description Standalone helper functions used throughout the SaoMNK package.
+#' @title SAOM-NK Utility Functions
+#' @description Standalone helper functions used throughout the SAOM-NK package.
 #' @name saomnk-utils
 NULL
 

@@ -25,7 +25,7 @@ run_calibrated_counterfactual(
 \item{\code{name}}{Character. Scenario label for output.}
 \item{\code{modify}}{Named list of \code{effect -> multiplier}
 overrides.  For example, \code{list(cycle4 = 2.0)} doubles the
-bipartite closure parameter.  The keys are SaoMNK-side effect names --
+bipartite closure parameter.  The keys are SAOM-NK-side effect names --
 what \code{\link{saom_to_saomnk}} produced -- and a key that matches no
 baseline effect is a hard error, not a silent no-op.}
 \item{\code{description}}{Optional character description.}

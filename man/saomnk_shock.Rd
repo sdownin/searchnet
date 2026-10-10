@@ -1,7 +1,7 @@
 % Generated manually for R CMD check compliance
 \name{saomnk_shock}
 \alias{saomnk_shock}
-\title{Define an Exogenous Shock to a SaoMNK Model Parameter}
+\title{Define an Exogenous Shock to a SAOM-NK Model Parameter}
 \description{
 Constructs a shock specification that can be passed to
 \code{\link{saomnk_run}} via the \code{shocks} argument.

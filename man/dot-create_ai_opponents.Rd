@@ -7,7 +7,7 @@
 .create_ai_opponents(env, model, n_ai, actor_ids)
 }
 \arguments{
-\item{env}{SaoMNK environment}
+\item{env}{SAOM-NK environment}
 
 \item{model}{saomnk_model object}
 

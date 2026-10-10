@@ -39,9 +39,11 @@ Shocks are pre-scheduled but their timing is unknown to students.}
 
 \item{seed}{Integer or NULL. Random seed for reproducibility.}
 
-\item{custom_params}{Named list of custom parameters when
-\code{industry = "custom"}. Must include at minimum: \code{N},
-\code{activity_names}, \code{density}, \code{influence_weight}.}
+\item{custom_params}{A named list, or the path to a preset JSON file, used
+when \code{industry = "custom"}. It is checked with
+\code{\link{searchnet_validate_preset}} and must include at minimum
+\code{N}, \code{activity_names}, \code{density}, and
+\code{influence_weight} (or its older name \code{epistasis_weight}).}
 }
 \value{
 A list of class \code{"searchnet_classroom"} containing the

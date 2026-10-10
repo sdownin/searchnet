@@ -2,7 +2,7 @@
 % Please edit documentation in R/saomnk-api.R
 \name{saomnk-api}
 \alias{saomnk-api}
-\title{User-Friendly API for SaoMNK Simulations}
+\title{User-Friendly API for SAOM-NK Simulations}
 \description{
 Wrapper functions that provide a clean interface to the searchnet simulation
 engine. Users never need to construct internal \code{self$} references,

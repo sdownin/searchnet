@@ -1,4 +1,4 @@
-#' Standalone plot functions for SaoMNK degree visualizations.
+#' Standalone plot functions for SAOM-NK degree visualizations.
 #'
 #' Extracted from saomnk-class.R plot methods. Each function takes an
 #' \code{env} (SaomNkRSienaBiEnv) object as its first argument in place of

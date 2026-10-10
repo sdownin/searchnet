@@ -1,7 +1,7 @@
 # ============================================================================
 # plot-markets.R
 # Standalone market-related plot functions extracted from saomnk-class.R
-# Each function takes `env` (an SaoMNK environment) as its first argument.
+# Each function takes `env` (an SAOM-NK environment) as its first argument.
 # All self$ references have been replaced with env$.
 # ============================================================================
 

@@ -162,20 +162,15 @@ export(saomnk_plot_market_entry_survival_strategy)
 export(saomnk_plot_market_entry_survival_v0)
 
 # ---------------------------------------------------------------------------
-# Entry/exit tracking -- track-entries.R
+# Entry/exit tracking -- track-entries.R (restraint measures are internal)
 # ---------------------------------------------------------------------------
 export(track_entry_decisions)
-export(compute_forbearance_metrics)
-export(compute_forbearance_trajectory)
 export(expand_entry_rivals)
 export(compute_multimarket_contact)
-export(compute_dyadic_forbearance)
 
 # ---------------------------------------------------------------------------
-# Plot functions -- plot-forbearance.R
+# Plot functions -- plot-entry-restraint.R (restraint plots are internal)
 # ---------------------------------------------------------------------------
-export(saomnk_plot_forbearance)
-export(saomnk_plot_forbearance_spectrum)
 export(saomnk_plot_entry_rivalry)
 
 # ---------------------------------------------------------------------------
@@ -247,6 +242,10 @@ export(searchnet_classroom_leaderboard)
 export(searchnet_classroom_debrief)
 export(searchnet_classroom_status)
 S3method(print, searchnet_classroom)
+export(searchnet_classroom_submit_batch)
+export(searchnet_check_setup)
+export(searchnet_validate_preset)
+S3method(print, searchnet_setup_check)
 
 # ---------------------------------------------------------------------------
 # Strategy Game mode -- searchnet-game.R
@@ -402,6 +401,13 @@ export(searchnet_coevolve_data)
 export(searchnet_coevolve_effects)
 export(searchnet_coevolve_available_effects)
 
+# Observed data: long-format records to the actor-by-component array and its
+# {K} readings (R/searchnet-observed.R).
+export(searchnet_bipartite_from_long)
+export(searchnet_k_readings)
+export(searchnet_k_covariate)
+S3method(print, searchnet_bipartite)
+
 # ---------------------------------------------------------------------------
 # Engine hygiene: provenance, opportunity table, readback check
 # (searchnet-seeds.R, searchnet-opportunity.R, searchnet-readback.R)
@@ -412,6 +418,15 @@ export(searchnet_opportunity_table)
 S3method(print, searchnet_opportunity_table)
 export(searchnet_readback_check)
 S3method(print, searchnet_readback)
+
+# ---------------------------------------------------------------------------
+# Planted-truth recovery and power harness (searchnet-recovery.R)
+# ---------------------------------------------------------------------------
+export(searchnet_recovery)
+S3method(print, searchnet_recovery)
+S3method(summary, searchnet_recovery)
+S3method(print, summary.searchnet_recovery)
+S3method(plot, searchnet_recovery)
 
 # ---------------------------------------------------------------------------
 # Formal verification with Lean 4 (lean-tools.R, lean-export.R; inst/lean)

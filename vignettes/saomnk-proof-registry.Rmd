@@ -332,11 +332,11 @@ cat(sprintf("\n## Part A Verification Summary\nAll %d/%d steps verified computat
 These definitions extend NK to the multi-actor, network-embedded,
 stochastic-choice setting.
 
-## B1: SaoMNK Model
+## B1: SAOM-NK Model
 
 > **Statement.** A tuple $(M, N, \mathbf{E}, \{f_d\}, \boldsymbol{\theta}, \beta)$.
 
-*Plain English:* The SaoMNK model is an NK landscape plus multiple actors,
+*Plain English:* The SAOM-NK model is an NK landscape plus multiple actors,
 network effects, and stochastic choice.
 
 ```{r B1}
@@ -344,14 +344,14 @@ M <- 3; N <- 4
 env_b <- SaomNkRSienaBiEnv$new(list(
   M = M, N = N, BI_PROB = 0.3, rand_seed = 10, name = "_proofB_"
 ))
-check("B1a", sprintf("SaoMNK environment created: M=%d, N=%d", M, N),
+check("B1a", sprintf("SAOM-NK environment created: M=%d, N=%d", M, N),
       env_b$M == M && env_b$N == N)
 check("B1b", "Bipartite matrix is M x N binary",
       all(dim(env_b$bipartite_matrix) == c(M, N)) &&
       all(env_b$bipartite_matrix %in% c(0, 1)))
 ```
 
-## B2: SaoMNK Utility
+## B2: SAOM-NK Utility
 
 > **Statement.** $u_i(\mathbf{b}_i; \mathbf{B}_{-i}, \mathbf{E}) =
 > \sum_{d=1}^{N} f_d(\mathbf{b}_i \odot \mathbf{E}_{d\cdot})
@@ -381,7 +381,7 @@ check("B2b", sprintf("Actor 1 total utility = %.4f", util$total),
       is.numeric(util$total) && length(util$total) == 1)
 ```
 
-## B3: Power Key Indexing in SaoMNK
+## B3: Power Key Indexing in SAOM-NK
 
 > **Statement.** $f_d(\mathbf{b}_i \odot \mathbf{E}_{d\cdot})
 > = \text{NK\_land}[\sum_j b_{ij} E_{dj} \text{PK}(N)_j + 1, d]$.
@@ -489,7 +489,7 @@ cat(sprintf("\n## Part B Verification Summary\nAll %d/%d steps verified computat
 
 # Part C: Property 1 --- Reduction (Steps C1--C10) {#part-c}
 
-The standard NK model is a degenerate special case of SaoMNK.
+The standard NK model is a degenerate special case of SAOM-NK.
 
 ## C1--C5: The Five Restrictions
 
@@ -523,7 +523,7 @@ check("C5", "R5: constant rate (single actor, rate irrelevant)", TRUE)
 > for every $\mathbf{x}$, because
 > $u(\mathbf{x}; \mathbf{A}) = \sum_{d} f_d(\mathbf{x}_{N(d)})$ with no
 > factor $x_d$: every component contributes whether its bit is 0 or 1.
-> The SaoMNK utility reduces to NK fitness up to scaling by $N$. The
+> The SAOM-NK utility reduces to NK fitness up to scaling by $N$. The
 > held-only reading of B2 gives the same identity for every landscape
 > whose component payoffs vanish when the component is off
 > (proof table C6).
@@ -559,7 +559,7 @@ for (d in 1:N_c) {
 ## Independent NK fitness for an arbitrary configuration.
 nk_W <- function(x) mean(ifelse(x == 1, f1, f0))
 
-## The SaoMNK side: the fitness the engine assigns to the same configuration.
+## The SAOM-NK side: the fitness the engine assigns to the same configuration.
 saom_row <- function(x)
   which(apply(FL_c[, 1:N_c, drop = FALSE], 1, function(r) all(r == x)))[1]
 saom_W <- function(x) FL_c[saom_row(x), 2 * N_c + 1]
@@ -569,7 +569,7 @@ for (r in seq_len(nrow(FL_c))) {
   x <- FL_c[r, 1:N_c]
   max_diff <- max(max_diff, abs(nk_W(x) - saom_W(x)))
 }
-check("C6", sprintf("Payoff equivalence: max |W_NK - u_SaoMNK| = %.2e", max_diff),
+check("C6", sprintf("Payoff equivalence: max |W_NK - u_SAOM-NK| = %.2e", max_diff),
       max_diff < 1e-10)
 ```
 
@@ -603,11 +603,11 @@ check("C7", sprintf("Index equivalence: full-mask idx=%d, sub-vector idx=%d (bot
 
 ## C8: Lemma 2 --- Dynamic Equivalence
 
-> **Statement.** Under R1--R5, the SaoMNK ministep dynamics produce the
+> **Statement.** Under R1--R5, the SAOM-NK ministep dynamics produce the
 > same state sequence as the NK greedy adaptive walk.
 
 ```{r C8}
-## Compare greedy adaptive walks: pure NK vs SaoMNK with beta=Inf (approximated by beta=100)
+## Compare greedy adaptive walks: pure NK vs SAOM-NK with beta=Inf (approximated by beta=100)
 set.seed(77)
 env_c$component_1_coDyadCovar <- diag(N_c)
 env_c$search_matrix <- diag(N_c)
@@ -631,7 +631,7 @@ for (step in 1:20) {
   nk_path[[length(nk_path) + 1]] <- x_nk
 }
 
-## SaoMNK greedy walk, driven by the engine's own fitness landscape.
+## SAOM-NK greedy walk, driven by the engine's own fitness landscape.
 ## As beta -> Inf (R4) the ministep puts all probability on the toggle with
 ## the largest utility gain, so the limit walk is the argmax of delta_u.
 x_saom <- x_start
@@ -651,15 +651,15 @@ env_c$bipartite_matrix[1, ] <- x_saom
 
 paths_match <- length(nk_path) == length(saom_path) &&
   all(sapply(seq_along(nk_path), function(i) all(nk_path[[i]] == saom_path[[i]])))
-check("C8", sprintf("Dynamic equivalence: %d NK steps, %d SaoMNK steps, paths match=%s",
+check("C8", sprintf("Dynamic equivalence: %d NK steps, %d SAOM-NK steps, paths match=%s",
                      length(nk_path) - 1, length(saom_path) - 1, paths_match),
       paths_match)
 ```
 
 ## C9: Property 1 --- Reduction
 
-> **Statement.** The standard NK model is a degenerate special case of SaoMNK.
-> $\text{NK} \subset \text{SaoMNK}$.
+> **Statement.** The standard NK model is a degenerate special case of SAOM-NK.
+> $\text{NK} \subset \text{SAOM-NK}$.
 
 ```{r C9}
 ## Use verify_nk_equivalence for exhaustive verification
@@ -676,7 +676,7 @@ env_c9$compute_fitness_landscape(
 
 result_c9 <- env_c9$verify_nk_equivalence(max_N = 12, landscape_id = 1)
 max_diff_c9 <- max(result_c9$difference)
-check("C9", sprintf("Property 1 verified: max |NK - SaoMNK| = %.2e across all 2^%d configs",
+check("C9", sprintf("Property 1 verified: max |NK - SAOM-NK| = %.2e across all 2^%d configs",
                      max_diff_c9, N_c),
       max_diff_c9 < 1e-10)
 ```
@@ -684,7 +684,7 @@ check("C9", sprintf("Property 1 verified: max |NK - SaoMNK| = %.2e across all 2^
 ## C10: Computational Verification Remark
 
 > **Statement.** The equivalence can be verified computationally for all
-> $2^N$ configurations. The Tutorial confirms $\max|f_{NK} - f_{SaoMNK}| < 10^{-15}$.
+> $2^N$ configurations. The Tutorial confirms $\max|f_{NK} - f_{\text{SAOM-NK}}| < 10^{-15}$.
 
 ```{r C10}
 check("C10", sprintf("Computational verification: %d configs checked, max diff = %.2e",
@@ -706,7 +706,7 @@ cat(sprintf("\n## Part C Verification Summary\nAll %d/%d steps verified computat
 
 # Part D: Property 2 --- Generalization (Steps D1--D6) {#part-d}
 
-SaoMNK strictly extends NK along three independent dimensions.
+SAOM-NK strictly extends NK along three independent dimensions.
 
 ## D1: Lemma 3 --- Landscape Endogeneity
 
@@ -747,7 +747,7 @@ check("D1", sprintf("Landscape endogeneity: u1 changes from %.4f to %.4f when ac
 
 ## D2: Lemma 4 --- Search Precision Spectrum
 
-> **Statement.** For any $\beta \in (0, \infty)$, the SaoMNK dynamics assign
+> **Statement.** For any $\beta \in (0, \infty)$, the SAOM-NK dynamics assign
 > positive probability to every single-bit flip, including fitness-decreasing
 > ones.
 
@@ -781,7 +781,7 @@ check("D2", sprintf("Bounded rationality: %d decreasing moves, all probs > 0 = %
 ```{r D3}
 state_space_NK <- 2^N_d
 state_space_SaoMNK <- 2^(M_d * N_d)
-check("D3", sprintf("State space: NK = 2^%d = %d vs SaoMNK = 2^%d = %d",
+check("D3", sprintf("State space: NK = 2^%d = %d vs SAOM-NK = 2^%d = %d",
                      N_d, state_space_NK, M_d * N_d, state_space_SaoMNK),
       state_space_SaoMNK > state_space_NK)
 ```
@@ -817,7 +817,7 @@ if (has_decreasing) {
 
 ## D6: Property 2 --- Generalization
 
-> **Statement.** SaoMNK strictly extends NK: $\text{NK} \subsetneq \text{SaoMNK}$.
+> **Statement.** SAOM-NK strictly extends NK: $\text{NK} \subsetneq \text{SAOM-NK}$.
 > Three independent dimensions produce behavior impossible in any NK model.
 
 ```{r D6}
@@ -839,11 +839,11 @@ cat(sprintf("\n## Part D Verification Summary\nAll %d/%d steps verified computat
 
 # Part E: Property 3 --- Approximation (Steps E1--E12) {#part-e}
 
-Any NK landscape can be reproduced within SaoMNK.
+Any NK landscape can be reproduced within SAOM-NK.
 
 ## E1: Property Statement
 
-> **Statement.** For any NK landscape, there exists a SaoMNK parameterization
+> **Statement.** For any NK landscape, there exists a SAOM-NK parameterization
 > that reproduces the NK payoff structure to arbitrary precision.
 
 ```{r E1}
@@ -929,12 +929,12 @@ check("E7", sprintf("M=20,K=7: Q=%d suffices (Q*M=%d >= %d)",
 
 ## E8--E11: Universal Approximation via Mixed Logit
 
-> **Proposition 3.** The SaoMNK model with random effects (mixed logit)
+> **Proposition 3.** The SAOM-NK model with random effects (mixed logit)
 > can approximate any NK payoff function to arbitrary precision via
 > McFadden & Train (2000).
 
 ```{r E8-E11}
-## Verify that SaoMNK choice probabilities follow the conditional logit form
+## Verify that SAOM-NK choice probabilities follow the conditional logit form
 ## P(j | b_i) = exp(V_ij) / sum_k exp(V_ik)
 env_e <- SaomNkRSienaBiEnv$new(list(
   M = 2, N = 4, BI_PROB = 0.5, rand_seed = 55, name = "_thm3_"
@@ -958,8 +958,8 @@ manual_probs <- c(exp_vals / denom, 1 / denom)
 computed_probs <- cp_e[[1]]$probabilities
 
 max_prob_diff <- max(abs(manual_probs - computed_probs))
-check("E8", "Prop 3: SaoMNK stated as mixed logit (McFadden-Train)", TRUE)
-check("E9", sprintf("SaoMNK is a conditional logit: max P diff = %.2e", max_prob_diff),
+check("E8", "Prop 3: SAOM-NK stated as mixed logit (McFadden-Train)", TRUE)
+check("E9", sprintf("SAOM-NK is a conditional logit: max P diff = %.2e", max_prob_diff),
       max_prob_diff < 1e-12)
 check("E10", "Mixed logit extension: random effects generalize conditional logit", TRUE)
 check("E11", "McFadden-Train (2000) universality: any RUM approximable by mixed logit", TRUE)
@@ -991,7 +991,7 @@ cat(sprintf("\n## Part E Verification Summary\nAll %d/%d steps verified computat
 
 # Part F: Property 4 --- SAOM-QRE Convergence (Steps F1--F8) {#part-f}
 
-The SaoMNK CTMC converges to a unique stationary distribution. It is a
+The SAOM-NK CTMC converges to a unique stationary distribution. It is a
 Gibbs measure and a QRE under single-flip logit revision. Under the
 multinomial ministep it is not the Gibbs measure: at $M = 1$ the chain
 is reversible with stationary law proportional to
@@ -1158,7 +1158,7 @@ check("F6", "Chain of identification (single-flip revision): logit + potential g
 
 ## F7: Property 4 --- SAOM-QRE Equivalence
 
-> **Statement.** The stationary distribution of the SaoMNK CTMC with logit
+> **Statement.** The stationary distribution of the SAOM-NK CTMC with logit
 > choice (1) exists, (2) is unique, and (3) is independent of initial
 > conditions. Under single-flip revision it also (4) has the Gibbs form, a
 > logit QRE, and (5) concentrates on potential maximizers as
@@ -1167,7 +1167,7 @@ check("F6", "Chain of identification (single-flip revision): logit + potential g
 > $M > 1$ it need not be reversible) nor a guarantee of (5).
 
 ```{r F7}
-check("F7", "Property 4: SaoMNK stationary dist is unique (demonstrated by convergence; Gibbs = logit QRE only under single-flip)",
+check("F7", "Property 4: SAOM-NK stationary dist is unique (demonstrated by convergence; Gibbs = logit QRE only under single-flip)",
       density_gap < 0.5)
 ```
 
@@ -1791,7 +1791,7 @@ check("I4", sprintf("Beta concentration: P(Nash) at high beta (%.3f) > low beta 
 
 ## I5: Ising Model Correspondence
 
-> **Statement.** The SaoMNK model maps to the Ising model: binary
+> **Statement.** The SAOM-NK model maps to the Ising model: binary
 > activities $\leftrightarrow$ spins, $W$ matrix $\leftrightarrow$ coupling
 > constants, $\beta \leftrightarrow$ inverse temperature, Gibbs measure
 > $\leftrightarrow$ Boltzmann distribution.
@@ -1799,8 +1799,8 @@ check("I4", sprintf("Beta concentration: P(Nash) at high beta (%.3f) > low beta 
 ```{r I5}
 ## Verify the structural correspondence:
 ## Ising energy: H(sigma) = -sum_{j<k} J_{jk} sigma_j sigma_k - h * sum_j sigma_j
-## SaoMNK XWX:   B_i' W B_i is the quadratic form (analogous to spin-spin coupling)
-## SaoMNK density: sum(B_i) is the "external field" term
+## SAOM-NK XWX:   B_i' W B_i is the quadratic form (analogous to spin-spin coupling)
+## SAOM-NK density: sum(B_i) is the "external field" term
 
 ## For a single actor (M=1), the XWX potential is exactly the Ising Hamiltonian
 ## with J_{jk} = W_{jk} and h = theta_density
@@ -1812,7 +1812,7 @@ ising_coupling <- as.numeric(B_test %*% W_test %*% t(B_test))
 saomnk_xwx     <- as.numeric(B_test %*% W_test %*% t(B_test))
 
 cat(sprintf("  Ising coupling energy:  %.4f\n", ising_coupling))
-cat(sprintf("  SaoMNK XWX quadratic:   %.4f\n", saomnk_xwx))
+cat(sprintf("  SAOM-NK XWX quadratic:   %.4f\n", saomnk_xwx))
 
 check("I5", "Ising correspondence: XWX quadratic form = Ising coupling energy",
       abs(ising_coupling - saomnk_xwx) < 1e-12)

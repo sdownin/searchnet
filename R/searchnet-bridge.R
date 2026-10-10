@@ -1,17 +1,17 @@
-#' @title Empirical Bridge: SAOM Estimation to SaoMNK Simulation
+#' @title Empirical Bridge: SAOM Estimation to SAOM-NK Simulation
 #' @description
 #' Functions that bridge between empirical SAOM estimation (e.g., from the ORM
-#' project) and SaoMNK counterfactual simulation.  The core idea is that
+#' project) and SAOM-NK counterfactual simulation.  The core idea is that
 #' RSiena's \code{siena07()} estimates the actor-oriented conditional logit
 #' utility for an observed network; these estimated parameters can be
-#' transplanted directly into SaoMNK's bipartite structure model to run
+#' transplanted directly into SAOM-NK's bipartite structure model to run
 #' calibrated counterfactual simulations.
 #'
 #' The workflow is:
 #' \enumerate{
-#'   \item Estimate a SAOM with RSiena on empirical data (outside SaoMNK).
+#'   \item Estimate a SAOM with RSiena on empirical data (outside SAOM-NK).
 #'   \item Use \code{\link{saom_to_saomnk}} to map estimated thetas to
-#'         SaoMNK's effect parameterization.
+#'         SAOM-NK's effect parameterization.
 #'   \item Use \code{\link{empirical_to_saomnk_env}} to build a bipartite
 #'         environment from the empirical network.
 #'   \item Use \code{\link{run_calibrated_counterfactual}} to compare baseline
@@ -33,14 +33,14 @@ NULL
 ## The four K-degree measures compared by run_calibrated_counterfactual()
 .BRIDGE_K_MEASURES <- c("K_AC", "K_CA", "K_AA", "K_CC")
 
-## RSiena rate-function effects.  These have no representation in the SaoMNK
+## RSiena rate-function effects.  These have no representation in the SAOM-NK
 ## structure model, which governs opportunity through `iterations` rather than
 ## through an estimated rate function.  They are extracted and reported, never
 ## silently dropped.
 .BRIDGE_RATE_SHORTNAMES <- c("Rate", "RateX", "outRate", "outRateInv", "outRateLog")
 
 ## The RSiena slot the bridge registers the influence matrix W into, and the
-## SaoMNK effect that reads it.  The engine addresses dyadic covariates by the
+## SAOM-NK effect that reads it.  The engine addresses dyadic covariates by the
 ## declared R6 field name (see R/saomnk-base.R, the XWX branch of
 ## `include_rsiena_effect_from_eff_list()`), so the covariate entry and the
 ## effect entry must name the SAME slot or the effect is registered against
@@ -48,7 +48,7 @@ NULL
 .BRIDGE_W_SLOT     <- "self$component_1_coDyadCovar"
 .BRIDGE_W_EFFECT   <- "XWX"
 
-## SaoMNK effects that are identified by a registered covariate (`interaction1`).
+## SAOM-NK effects that are identified by a registered covariate (`interaction1`).
 ## Converting one out of a SAOM produces the effect NAME but not the covariate
 ## it was estimated on, and the bridge registers no monadic or actor-component
 ## covariates.  Such an effect either never reaches the utility function (the
@@ -59,7 +59,7 @@ NULL
 .BRIDGE_COVARIATE_DEPENDENT <- c("egoX", "altX", "X", "totInDist2", "simEgoInDist2")
 
 ## Effects RSiena does not implement for a BIPARTITE dependent variable, which
-## is the only kind SaoMNK simulates.  Verified against RSiena 1.5.0 by calling
+## is the only kind SAOM-NK simulates.  Verified against RSiena 1.5.0 by calling
 ## `getEffects()` on a bipartite `sienaDataCreate()` object: `transTriads`
 ## appears in the `symmetricObjective` effect group only, so it is unreachable
 ## from a two-mode DV no matter what parameter it is given.  This is a
@@ -67,8 +67,7 @@ NULL
 ## from a non-identification (a model that will not estimate).
 .BRIDGE_NOT_IN_BIPARTITE <- c("transTriads")
 
-## The caveat that must accompany every matched-seed counterfactual.  Wording
-## follows D:/innovation_shocks/03_STUDY_DESIGN.md section 6.3.
+## The caveat that must accompany every matched-seed counterfactual.
 .BRIDGE_MATCHED_SEED_CAVEAT <- paste0(
   "Matched seeds fix INITIALISATION only. Both arms share the landscape, the W ",
   "matrix, the NK noise matrix and the initial holdings, so \"same actors, same ",
@@ -85,14 +84,14 @@ NULL
 #  saom_to_saomnk
 # ---------------------------------------------------------------------------- #
 
-#' Convert SAOM estimated parameters to SaoMNK structure model
+#' Convert SAOM estimated parameters to SAOM-NK structure model
 #'
-#' Maps an RSiena theta vector to SaoMNK's bipartite effect system.
+#' Maps an RSiena theta vector to SAOM-NK's bipartite effect system.
 #' Both frameworks use the same actor-oriented conditional logit utility,
 #' so the mapping is direct for shared effects, with sign/scale adjustments
 #' for framework-specific parameterizations.
 #'
-#' Rate parameters are extracted but not simulated: the SaoMNK structure model
+#' Rate parameters are extracted but not simulated: the SAOM-NK structure model
 #' has no rate-function representation, so opportunity is governed by
 #' \code{iterations} rather than by an estimated rate.  Any rate effect found in
 #' \code{saom_result} is returned in \code{$rate_params} and announced with a
@@ -124,19 +123,19 @@ NULL
 #'   warn-and-proceed behavior; the approximations are then listed in a
 #'   \code{warning()} and in \code{$approximate}, and must be reported with any
 #'   result built from them.  \code{strict} does NOT relax a non-implementation:
-#'   an effect whose SaoMNK counterpart does not exist for a bipartite dependent
+#'   an effect whose SAOM-NK counterpart does not exist for a bipartite dependent
 #'   variable (see \code{.BRIDGE_NOT_IN_BIPARTITE}) is refused either way.
 #' @param verbose Logical. If \code{TRUE}, prints the mapping table and
 #'   diagnostics (default \code{TRUE}).
 #' @return A list with components:
 #'   \describe{
-#'     \item{\code{effects}}{List of effect specs ready for a SaoMNK structure
+#'     \item{\code{effects}}{List of effect specs ready for a SAOM-NK structure
 #'       model (each element has \code{effect}, \code{parameter}, \code{fix},
 #'       \code{dv_name}).}
 #'     \item{\code{mapping_table}}{A \code{data.frame} documenting each
 #'       conversion: SAOM effect name, point estimate \code{saom_theta}, the
 #'       value actually converted \code{saom_theta_used} (identical to
-#'       \code{saom_theta} unless \code{draw_theta = TRUE}), SE, SaoMNK effect,
+#'       \code{saom_theta} unless \code{draw_theta = TRUE}), SE, SAOM-NK effect,
 #'       converted parameter, \code{mapping_status} (\code{"exact"} or
 #'       \code{"approximate"}), and description.  \code{mapping_status} is what
 #'       makes an approximation visible in the returned object rather than only
@@ -205,12 +204,12 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
     thetas <- theta_point
   }
 
-  ## -- Split off rate parameters (not representable in SaoMNK) -------------- ##
+  ## -- Split off rate parameters (not representable in SAOM-NK) -------------- ##
 
   is_rate     <- .is_rate_effect(names(thetas), eff_meta)
   rate_params <- .rate_param_table(thetas, theta_point, se, eff_meta, is_rate)
 
-  ## -- SAOM -> SaoMNK mapping table ----------------------------------------- ##
+  ## -- SAOM -> SAOM-NK mapping table ----------------------------------------- ##
   ## The crosswalk and the meaning of each entry's `status` are in
   ## .bridge_crosswalk(), below.
 
@@ -222,7 +221,7 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
   log_rows    <- list()
   unmapped    <- character(0)
   approx_rows <- list()   # entries whose crosswalk status is "approximate"
-  unavail_rows <- list()  # entries whose SaoMNK target is not implemented
+  unavail_rows <- list()  # entries whose SAOM-NK target is not implemented
 
   for (i in seq_along(thetas)) {
 
@@ -304,13 +303,13 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
               u$saom, u$theta, u$saomnk, u$desc),
       character(1))
     stop(sprintf(
-      paste0("saom_to_saomnk(): %d estimated effect(s) map onto a SaoMNK effect that ",
+      paste0("saom_to_saomnk(): %d estimated effect(s) map onto a SAOM-NK effect that ",
              "RSiena does not implement for a BIPARTITE dependent variable, which is ",
-             "the only kind SaoMNK simulates:\n%s\n",
+             "the only kind SAOM-NK simulates:\n%s\n",
              "This is a NON-IMPLEMENTATION, not a null and not a non-identification: ",
              "RSiena 1.5.0 offers %s in the symmetricObjective effect group only ",
              "(verified with getEffects() on a bipartite sienaData object), so it can ",
-             "never enter a SaoMNK structure model and no parameter value would make ",
+             "never enter a SAOM-NK structure model and no parameter value would make ",
              "it act. Report it as unavailable; do not report it as a zero effect. ",
              "strict = FALSE does not relax this. Drop the effect from the SAOM ",
              "before bridging, or re-specify the closure hypothesis on a statistic ",
@@ -333,7 +332,7 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
     if (isTRUE(strict)) {
       stop(sprintf(
         paste0("saom_to_saomnk(strict = TRUE): %d estimated effect(s) have only an ",
-               "APPROXIMATE SaoMNK counterpart. Each is a different statistic standing ",
+               "APPROXIMATE SAOM-NK counterpart. Each is a different statistic standing ",
                "in for the estimated one, so a counterfactual converted through it is ",
                "calibrated to a DIFFERENT model from the one that was estimated:\n%s\n",
                "Refusing to convert. Either drop these effects from the SAOM before ",
@@ -370,7 +369,7 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
   n_eval <- sum(!is_rate)
 
   if (verbose) {
-    cat(sprintf("\n=== SAOM -> SaoMNK Parameter Bridge ===\n"))
+    cat(sprintf("\n=== SAOM -> SAOM-NK Parameter Bridge ===\n"))
     cat(sprintf("Mapped: %d / %d evaluation effects (%.0f%%)\n",
                 nrow(mapping_table), n_eval,
                 100 * nrow(mapping_table) / max(n_eval, 1)))
@@ -397,18 +396,18 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
   if (nrow(rate_params) > 0) {
     warning(sprintf(
       paste0("saom_to_saomnk(): %d rate parameter(s) were extracted but CANNOT be ",
-             "mapped into the SaoMNK structure model, which has no rate-function ",
+             "mapped into the SAOM-NK structure model, which has no rate-function ",
              "representation: %s. They are returned in $rate_params and are NOT ",
              "applied; opportunity in the simulation is governed by `iterations`. ",
              "Any counterfactual built from this object therefore holds the rate ",
-             "function at the SaoMNK default rather than at the estimated values."),
+             "function at the SAOM-NK default rather than at the estimated values."),
       nrow(rate_params), paste(rate_params$saom_effect, collapse = ", ")),
       call. = FALSE)
   }
 
   if (length(unmapped) > 0) {
     warning(sprintf(
-      paste0("saom_to_saomnk(): %d estimated effect(s) have no SaoMNK counterpart ",
+      paste0("saom_to_saomnk(): %d estimated effect(s) have no SAOM-NK counterpart ",
              "and were DROPPED: %s. The converted structure model is therefore not ",
              "the estimated model; report the omission with any result built from it."),
       length(unmapped), paste(unmapped, collapse = ", ")),
@@ -435,13 +434,13 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
 #  saom_to_saomnk internal helpers
 # ---------------------------------------------------------------------------- #
 
-#' The SAOM -> SaoMNK crosswalk
+#' The SAOM -> SAOM-NK crosswalk
 #'
 #' One entry per RSiena short name \code{saom_to_saomnk()} recognizes. Kept
 #' outside that function so tests can read it: an \code{"exact"} status is a
 #' claim about searchnet's statistic, and
 #' \code{tests/testthat/test-structural-stats-vs-rsiena.R} fails on an exact
-#' entry whose SaoMNK effect it does not pin to RSiena's \code{siena07()}
+#' entry whose SAOM-NK effect it does not pin to RSiena's \code{siena07()}
 #' target.
 #'
 #' @param scale_factor Multiplier applied by every \code{transform}.
@@ -451,13 +450,13 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
 .bridge_crosswalk <- function(scale_factor = 1.0) {
 
   ## Each entry: saom name, saomnk shortName, status, transform, description.
-  ## Sign conventions: RSiena density is negative (costly); SaoMNK density
+  ## Sign conventions: RSiena density is negative (costly); SAOM-NK density
   ## likewise.  The transform is the identity (* scale_factor) unless a
   ## rescaling is needed for the bipartite representation.
   ##
   ## `status` is the load-bearing field, and it has three values:
   ##
-  ##   "exact"        the SaoMNK effect IS the estimated effect, up to
+  ##   "exact"        the SAOM-NK effect IS the estimated effect, up to
   ##                  scale_factor.  Converting it changes nothing about what
   ##                  the model says.  It rests on two things: searchnet
   ##                  registers RSiena's own effect of that name, and the
@@ -473,11 +472,11 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
   ##                  pin, and none of the five statistics matched RSiena.
   ##                  A covariate-dependent effect still needs the covariate it
   ##                  was estimated on (see .BRIDGE_COVARIATE_DEPENDENT).
-  ##   "approximate"  the SaoMNK effect is a DIFFERENT statistic standing in for
+  ##   "approximate"  the SAOM-NK effect is a DIFFERENT statistic standing in for
   ##                  the estimated one.  A counterfactual run through it is
   ##                  calibrated to a different model than the one estimated, so
   ##                  `strict = TRUE` refuses it and `strict = FALSE` warns.
-  ##   "unavailable"  the SaoMNK effect does not exist for a bipartite dependent
+  ##   "unavailable"  the SAOM-NK effect does not exist for a bipartite dependent
   ##                  variable in RSiena 1.5.0, so the mapping can never be
   ##                  simulated.  Refused regardless of `strict`, and reported
   ##                  as a NON-IMPLEMENTATION rather than as a null.
@@ -764,7 +763,7 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
     saom_theta        = as.numeric(theta_point[idx]),
     saom_theta_used   = as.numeric(thetas[idx]),
     saom_se           = as.numeric(se[idx]),
-    note              = "extracted; NOT applied to the SaoMNK simulation",
+    note              = "extracted; NOT applied to the SAOM-NK simulation",
     stringsAsFactors  = FALSE
   )
   rownames(out) <- NULL
@@ -856,10 +855,10 @@ saom_to_saomnk <- function(saom_result, scale_factor = 1.0,
 #  empirical_to_saomnk_env
 # ---------------------------------------------------------------------------- #
 
-#' Create SaoMNK environment from empirical MI data
+#' Create SAOM-NK environment from empirical MI data
 #'
 #' Converts a one-mode firm-firm supply chain network into a bipartite
-#' firm x SIC-category representation suitable for SaoMNK simulation.
+#' firm x SIC-category representation suitable for SAOM-NK simulation.
 #' The bipartite matrix encodes which SIC categories each firm participates
 #' in, both directly and through supply-chain partnerships.
 #'
@@ -976,7 +975,7 @@ empirical_to_saomnk_env <- function(mi_data, wave = 1, imputation = 1,
   if (max(W) > 0) W <- W / max(W)
   diag(W) <- 1
 
-  ## -- Create SaoMNK environment -------------------------------------------- ##
+  ## -- Create SAOM-NK environment -------------------------------------------- ##
 
   env <- SaomNkRSienaBiEnv$new(list(
     M         = M,
@@ -1055,7 +1054,7 @@ empirical_to_saomnk_env <- function(mi_data, wave = 1, imputation = 1,
 #'     \item{\code{name}}{Character. Scenario label for output.}
 #'     \item{\code{modify}}{Named list of \code{effect -> multiplier}
 #'       overrides.  For example, \code{list(cycle4 = 2.0)} doubles the
-#'       bipartite closure parameter.  The keys are SaoMNK-side effect names --
+#'       bipartite closure parameter.  The keys are SAOM-NK-side effect names --
 #'       what \code{\link{saom_to_saomnk}} produced -- and a key that matches no
 #'       baseline effect is a hard error, not a silent no-op.}
 #'     \item{\code{description}}{Optional character description.}
@@ -1340,7 +1339,7 @@ run_calibrated_counterfactual <- function(bridge_env, bridge_params,
              "contain: %s. Available effects: %s. A key that matches nothing is not a ",
              "weak intervention -- it is NO intervention, and it would otherwise be ",
              "reported as a delta near zero with a full Monte Carlo interval around it. ",
-             "Check the spelling, and note that the keys are SaoMNK-side effect names ",
+             "Check the spelling, and note that the keys are SAOM-NK-side effect names ",
              "(what saom_to_saomnk() produced), not the SAOM names they came from."),
       as.character(scenario$name), length(unknown_keys),
       paste(unknown_keys, collapse = ", "),
@@ -1869,7 +1868,7 @@ run_calibrated_counterfactual <- function(bridge_env, bridge_params,
 #'
 #' @return Named list of scenario specifications.  Each element is a list
 #'   with \code{name}, \code{description}, and \code{modify}.
-#' @section Keys are SaoMNK-side effect names:
+#' @section Keys are SAOM-NK-side effect names:
 #' Every \code{modify} key must name an effect the converted baseline model
 #' actually contains, because \code{\link{run_calibrated_counterfactual}} now
 #' refuses a key that matches nothing rather than ignoring it.  A scenario is
@@ -1886,7 +1885,7 @@ get_orm_scenarios <- function() {
     ## Closure for a BIPARTITE dependent variable is the 4-cycle, not the
     ## transitive triad: RSiena 1.5.0 offers `transTriads` in the
     ## symmetricObjective group only, so a scenario keyed on `transTriads`
-    ## could never match an effect a SaoMNK model is able to carry.
+    ## could never match an effect a SAOM-NK model is able to carry.
     double_closure = list(
       name        = "Double Closure (2x 4-cycle)",
       description = paste0("What if closure tendency were twice as strong? ",

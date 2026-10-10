@@ -2,7 +2,7 @@
 % Please edit documentation in R/nk-classic.R
 \name{nk_to_saomnk}
 \alias{nk_to_saomnk}
-\title{Convert a classic NK landscape to a SaoMNK configuration}
+\title{Convert a classic NK landscape to a SAOM-NK configuration}
 \usage{
 nk_to_saomnk(landscape, M = 1L)
 }
@@ -11,7 +11,7 @@ nk_to_saomnk(landscape, M = 1L)
 
 \item{M}{Integer. Number of actors to place on the landscape. \code{M = 1}
 gives the exact NK reduction; \code{M > 1} embeds the same landscape in a
-multi-actor SaoMNK search (the generalization direction).}
+multi-actor SAOM-NK search (the generalization direction).}
 }
 \value{
 A list with components \code{env_params} (arguments for
@@ -21,9 +21,9 @@ A list with components \code{env_params} (arguments for
 }
 \description{
 Emits the environment and structure-model settings that make a
-single-actor SaoMNK environment search the supplied NK landscape.  This is
+single-actor SAOM-NK environment search the supplied NK landscape.  This is
 the constructive content of the Reduction property (Property 1): NK is the
-\eqn{M = 1}, \eqn{\beta \to \infty} special case of SaoMNK.
+\eqn{M = 1}, \eqn{\beta \to \infty} special case of SAOM-NK.
 }
 \examples{
 nk <- nk_landscape(N = 8, K = 2, seed = 42)

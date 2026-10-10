@@ -1,7 +1,7 @@
 """
 SearchNet Visualization Utilities
 ==================================
-Base module for all SearchNet (SaoMNK) manim animations.
+Base module for all SearchNet (SAOM-NK) manim animations.
 Provides color palettes, base scene class, NK landscape generators,
 and CSV data loaders for R-exported simulation output.
 
@@ -331,7 +331,7 @@ def nk_surface_function(x, y, fitness_cache, smoothing=0.3):
 def create_block_diagonal_matrix(N, blocks):
     """
     Create a block-diagonal adjacency/interaction matrix.
-    Python equivalent of the R helper in SaoMNK.
+    Python equivalent of the R helper in SAOM-NK.
 
     Parameters
     ----------

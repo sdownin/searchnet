@@ -1,8 +1,8 @@
 ###############################################################################
 ## test-mean-field.R
 ##
-## Unit and integration tests for the SaoMNK mean-field equilibrium solver
-## (Property 5 of the SaoMNK proof set, inst/proofs/PROOF_TABLE.md Part L;
+## Unit and integration tests for the SAOM-NK mean-field equilibrium solver
+## (Property 5 of the SAOM-NK proof set, inst/proofs/PROOF_TABLE.md Part L;
 ## Property 5 in the paper: Brock--Durlauf reduction of the
 ## SAOM logit ministep).
 ##
@@ -130,7 +130,7 @@ test_that("solve_mean_field validates its arguments", {
 # ===========================================================================
 ##
 ## This is the empirical validation of Property 5: when the
-## SaoMNK ministep is run with theta_inPop above the Curie--Weiss threshold, the realized
+## SAOM-NK ministep is run with theta_inPop above the Curie--Weiss threshold, the realized
 ## population mean must concentrate near one of the analytical mean-field
 ## fixed points.  We check |p_emp - p_binding| < 0.15 in adoption form.
 ##
@@ -161,7 +161,7 @@ test_that("simulation lands near the binding (Option B) fixed point", {
 
   ## Source the API wrappers (not loaded by helper-setup.R)
   tryCatch(
-    source(file.path(dir_r, "saomnk-api.R"), local = FALSE),
+    if (dir.exists(dir_r)) source(file.path(dir_r, "saomnk-api.R"), local = FALSE),
     error = function(e) stop(paste("api source failed:", e$message))
   )
 
@@ -216,7 +216,7 @@ test_that("Option C: sub-threshold linear-CW regime, where B&D applies", {
   skip_if_not_installed("RSiena")
 
   tryCatch(
-    source(file.path(dir_r, "saomnk-api.R"), local = FALSE),
+    if (dir.exists(dir_r)) source(file.path(dir_r, "saomnk-api.R"), local = FALSE),
     error = function(e) stop(paste("api source failed:", e$message))
   )
 

@@ -1,5 +1,5 @@
 ---
-title: "Validating SaoMNK: Reproducing Classical NK Landscape Dynamics"
+title: "Validating SAOM-NK: Reproducing Classical NK Landscape Dynamics"
 author: "Stephen Downing"
 date: "`r Sys.Date()`"
 output:
@@ -7,7 +7,7 @@ output:
     toc: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Validating SaoMNK Against Classical NK}
+  %\VignetteIndexEntry{Validating SAOM-NK Against Classical NK}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
@@ -28,12 +28,12 @@ knitr::opts_chunk$set(
 
 # Overview
 
-This vignette validates the SaoMNK framework against canonical results
+This vignette validates the SAOM-NK framework against canonical results
 from the NK fitness landscape literature, particularly Levinthal (1997).
-We demonstrate that SaoMNK reproduces the classical dynamics of search
+We demonstrate that SAOM-NK reproduces the classical dynamics of search
 on rugged landscapes---local optima trapping, the effect of epistasis on
 ruggedness, and the exploration--exploitation tradeoff---while also
-showing how SaoMNK's endogenous network structure yields richer dynamics
+showing how SAOM-NK's endogenous network structure yields richer dynamics
 unavailable in the standard NK model.
 
 > **Rerun 2026-10-07:** single-agent runs stop at 8/16 ties -> both reach 16/16 ties, no trapping at either density; claim no longer supported as stated.
@@ -46,7 +46,7 @@ The validation proceeds in three parts:
     sociality ($K_{AA}$) and endogenous epistasis ($K_{CC}$) emerge from
     the coupled bipartite process.
 3.  **Parameter mapping**: A systematic correspondence between NK
-    parameters and SaoMNK configuration.
+    parameters and SAOM-NK configuration.
 
 ```{r load-saomnk}
 if (requireNamespace("searchnet", quietly = TRUE)) {
@@ -54,7 +54,7 @@ if (requireNamespace("searchnet", quietly = TRUE)) {
 } else {
   dir_r <- file.path(getwd(), "R")
   if (!file.exists(file.path(dir_r, "utils.R")))
-    dir_r <- "D:/Search_networks/SaoMNK/R"
+    dir_r <- file.path(dirname(getwd()), "R")  # knitting from vignettes/
   .saomnk_dir <- dir_r
   .saomnk_dir <- dir_r; source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
 }
@@ -70,7 +70,7 @@ epistatic interactions per component. Levinthal (1997) showed that as
 $K$ increases, the number of local optima grows and the agent is
 increasingly likely to become trapped at suboptimal peaks.
 
-SaoMNK reproduces this by setting $M=2$ (single actor) with $N=8$
+SAOM-NK reproduces this by setting $M=2$ (single actor) with $N=8$
 components. The epistasis structure is specified via a block-diagonal
 influence matrix passed to the `XWX` effect, which captures the
 component--component interdependence mediated by actor affiliations. The
@@ -224,7 +224,7 @@ density) permit broader exploration and higher attained fitness.
 # 2. Multi-Agent Search: Endogenous Sociality and Epistasis
 
 The classical NK model treats agents as isolated searchers on a fixed
-landscape. SaoMNK extends this by embedding multiple actors ($M > 1$) in
+landscape. SAOM-NK extends this by embedding multiple actors ($M > 1$) in
 the same component space. When actors share components, two endogenous
 projection networks emerge:
 
@@ -366,12 +366,12 @@ epistasis projection. These feedback loops produce dynamics that the
 classical NK model cannot capture: emergent coordination, herding, and
 endogenous landscape deformation.
 
-# 3. Parameter Mapping: NK to SaoMNK
+# 3. Parameter Mapping: NK to SAOM-NK
 
 The following table provides a systematic mapping between the classical
-NK model and the SaoMNK framework:
+NK model and the SAOM-NK framework:
 
-| NK Concept | NK Parameter | SaoMNK Parameter | Notes |
+| NK Concept | NK Parameter | SAOM-NK Parameter | Notes |
 |:-----------------|:-----------------|:-----------------|:-----------------|
 | Components | $N$ | `N` | Dimension of the binary string / component space |
 | Epistasis | $K$ | `influence_matrix` + `XWX` | Block-diagonal matrix specifies which components interact; `XWX` parameter scales the strength |
@@ -384,10 +384,10 @@ NK model and the SaoMNK framework:
 | Social structure | Not in NK | `inPop` effect | Preferential attachment to popular components creates emergent $K_{AA}$ |
 | Agent heterogeneity | Not in NK | `egoX`, strategy covariates | Actor-level covariates differentiate search strategies |
 
-# 4. Key Insight: NK as a Special Case of SaoMNK
+# 4. Key Insight: NK as a Special Case of SAOM-NK
 
 The validation demonstrates that the classical NK model is a special
-case of SaoMNK, obtained by:
+case of SAOM-NK, obtained by:
 
 1.  Setting $M = 1$ (minimal agent),
 2.  Zeroing all endogenous structural effects (`inPop = 0`,
@@ -395,7 +395,7 @@ case of SaoMNK, obtained by:
 3.  Specifying the epistasis structure via a block-diagonal `XWX`
     matrix.
 
-Under these restrictions, SaoMNK reproduces the canonical NK dynamics:
+Under these restrictions, SAOM-NK reproduces the canonical NK dynamics:
 
 -   **Rugged landscapes** emerge from the interaction of negative
     density (cost of scope) and positive XWX (benefit of
@@ -408,7 +408,7 @@ Under these restrictions, SaoMNK reproduces the canonical NK dynamics:
 > **Rerun 2026-10-07:** single-agent runs stop at 8/16 ties -> both reach 16/16 ties, no trapping at either density; claim no longer supported as stated.
 
 When the restrictions are relaxed ($M > 1$, endogenous effects
-$\neq 0$), SaoMNK produces dynamics that go beyond the NK framework:
+$\neq 0$), SAOM-NK produces dynamics that go beyond the NK framework:
 
 -   **Endogenous** $K_{CC}$: The effective epistasis ($K$) is no longer
     a fixed parameter but emerges from the coupled actor--component
@@ -420,7 +420,7 @@ $\neq 0$), SaoMNK produces dynamics that go beyond the NK framework:
     collective search behavior of all actors, creating path dependencies
     and coordination effects absent from the classical NK model.
 
-This validation establishes SaoMNK as a proper generalization of the NK
+This validation establishes SAOM-NK as a proper generalization of the NK
 framework, grounding its novel contributions in the well-understood
 dynamics of the canonical model.
 

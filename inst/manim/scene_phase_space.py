@@ -342,7 +342,7 @@ class PhaseSpaceScene(ThreeDScene):
 
         # ── Source annotation ──────────────────────────────────────
         source = Text(
-            "SearchNet (SaoMNK) Phase Space",
+            "SearchNet (SAOM-NK) Phase Space",
             font_size=11,
             color=C["text_dim"],
             slant=ITALIC,

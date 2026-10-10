@@ -1,7 +1,7 @@
 # ============================================================================
 # plot-snapshots.R
 # Standalone snapshot and degree progress plot functions extracted from
-# saomnk-class.R.  Each function takes `env` (an SaoMNK environment) as its
+# saomnk-class.R.  Each function takes `env` (an SAOM-NK environment) as its
 # first argument.  All self$ references have been replaced with env$.
 # ============================================================================
 

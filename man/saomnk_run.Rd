@@ -1,7 +1,7 @@
 % Generated manually for R CMD check compliance
 \name{saomnk_run}
 \alias{saomnk_run}
-\title{Run a SaoMNK Search Simulation}
+\title{Run a SAOM-NK Search Simulation}
 \description{
 Executes the SAOM-based search simulation on a prepared environment and
 structure model.

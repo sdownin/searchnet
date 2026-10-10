@@ -181,7 +181,7 @@ test_that("saomnk_block_diagonal() rejects invalid inputs", {
 # ===========================================================================
 test_that("print.saomnk_model() runs without error", {
   mod <- saomnk_model(density = -0.5, popularity = 0.2)
-  expect_output(print(mod), "SaoMNK Structure Model")
+  expect_output(print(mod), "SAOM-NK Structure Model")
 })
 
 test_that("print.saomnk_model() shows effects", {

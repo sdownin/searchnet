@@ -24,7 +24,7 @@ saomnk_social_multiplier(env = NULL, beta = NULL,
                          m_star = NULL)
 }
 \arguments{
-  \item{env}{Optional SaoMNK environment (\code{SaomNkRSienaBiEnv}) from
+  \item{env}{Optional SAOM-NK environment (\code{SaomNkRSienaBiEnv}) from
     which to extract parameters.  If \code{NULL} (default), explicit
     \code{beta}, \code{J}, \code{h} must be supplied.}
   \item{beta}{Numeric inverse-temperature.  Required when \code{env} is
@@ -68,7 +68,7 @@ saomnk_social_multiplier(beta = 1, J = 0.5, h = 0)
 saomnk_social_multiplier(beta = 1, J = 0.95, h = 0)
 
 \dontrun{
-## Env-based extraction from a fitted SaoMNK environment
+## Env-based extraction from a fitted SAOM-NK environment
 env <- saomnk_env(M = 50, N = 1, density = 0.5, seed = 1)
 mod <- saomnk_model(density = -0.5, popularity = -2)
 saomnk_run(env, mod, steps_per_actor = 50, seed = 1)

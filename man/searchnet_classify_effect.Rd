@@ -2,7 +2,7 @@
 % Please edit documentation in R/k-dimensions.R
 \name{searchnet_classify_effect}
 \alias{searchnet_classify_effect}
-\title{Classify a statistic by its decision and outcome {K} dimensions}
+\title{Classify a statistic by its decision and outcome \{K\} dimensions}
 \usage{
 searchnet_classify_effect(
   stat = NULL,

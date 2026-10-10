@@ -2,7 +2,7 @@
 % Please edit documentation in R/searchnet-export.R
 \name{searchnet-export}
 \alias{searchnet-export}
-\title{Export SaoMNK Simulation Results to CSV}
+\title{Export SAOM-NK Simulation Results to CSV}
 \description{
 Functions to export simulation results from \code{SaomNkRSienaBiEnv} objects
 to CSV files for consumption by external tools such as Python/manim

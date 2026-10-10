@@ -348,16 +348,18 @@ saomnk_behavior_effects <- function(M = 10L, N = 6L,
 #' simulation run per actor, which is what a plot or a panel regression wants.
 #' \code{wide = TRUE} gives a runs-by-actors matrix.
 #'
-#' Note that a "run" is one row of the theta matrix, not one ministep. Under the
-#' unconditional estimation that a two-DV model forces, each run contains
-#' several ministeps, so the behavior is observed at the end of each run rather
-#' than after every individual change. Per-ministep behavior changes are in
+#' Note that a "run" here is one simulated segment, not one row of the theta
+#' matrix and not one ministep. A segment is a maximal block of identical theta
+#' rows (shock boundaries also start one), so a run without shocks or drifting
+#' parameters has exactly one row. Each segment contains several ministeps, so
+#' the behavior is observed at the end of each segment rather than after every
+#' individual change. Per-ministep behavior changes are in
 #' \code{env$chain_stats}, in the \code{beh_difference} column of the rows whose
 #' \code{dv_varname} is the behavior DV.
 #'
 #' @param env A \code{SaomNkRSienaBiEnv} object after a run whose structure
 #'   model declared a \code{dv_behavior} block.
-#' @param wide Logical. Return a runs x actors matrix instead of a long data
+#' @param wide Logical. Return a segments x actors matrix instead of a long data
 #'   frame (default \code{FALSE}).
 #' @param name Character. DV name to extract (default: the standard behavior
 #'   DV name).
@@ -380,7 +382,7 @@ saomnk_behavior_effects <- function(M = 10L, N = 6L,
 #'
 #' beh <- saomnk_get_behavior(env)
 #' head(beh)
-#' saomnk_get_behavior(env, wide = TRUE)[1:3, ]
+#' saomnk_get_behavior(env, wide = TRUE)  # one row per segment
 #' }
 #' @export
 saomnk_get_behavior <- function(env, wide = FALSE,

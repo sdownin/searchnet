@@ -4,7 +4,7 @@
 #' on NK fitness landscapes embedded in social networks. Uses RSiena's
 #' Stochastic Actor-Oriented Model methodology to represent firm activity
 #' systems as bipartite actor-component networks with endogenous feedback
-#' loops. Formerly known as SaoMNK.
+#' loops. Formerly known as SAOM-NK.
 #'
 #' @section Core Classes:
 #' \describe{

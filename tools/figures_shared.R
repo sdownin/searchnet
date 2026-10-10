@@ -282,10 +282,10 @@ fs_fig_nk_validation <- function(base_size = 11, compact = FALSE) {
   red <- NULL
   fs_quiet(red <- nk_verify_reduction(N = 10, K = 3, seed = 42))
   sub_sweep <- if (!compact) {
-    sprintf("nk_sweep_K(): mean local optima, 4 landscapes per K\nnk_verify_reduction(N = 10, K = 3): max |NK - SaoMNK|\n= %s over %d configurations",
+    sprintf("nk_sweep_K(): mean local optima, 4 landscapes per K\nnk_verify_reduction(N = 10, K = 3): max |NK - SAOM-NK|\n= %s over %d configurations",
             format(signif(red$max_difference, 2)), red$n_configs)
   } else {
-    sprintf("nk_sweep_K(): mean local optima,\n4 landscapes per K\nnk_verify_reduction(N = 10, K = 3):\nmax |NK - SaoMNK| = %s over %d\nconfigurations",
+    sprintf("nk_sweep_K(): mean local optima,\n4 landscapes per K\nnk_verify_reduction(N = 10, K = 3):\nmax |NK - SAOM-NK| = %s over %d\nconfigurations",
             format(signif(red$max_difference, 2)), red$n_configs)
   }
   p_sweep <- ggplot(sweep, aes(K, n_opt)) +

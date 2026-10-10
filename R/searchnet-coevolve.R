@@ -142,6 +142,7 @@
 ## Coerce a list of W matrices, or a 3-d array, to a 3-d array. Anything else
 ## is a user error and is named as such.
 .searchnet_as_wave_array <- function(x, arg) {
+  if (inherits(x, "searchnet_bipartite")) x <- x$B
   if (is.array(x) && length(dim(x)) == 3L) return(x)
   if (is.list(x)) {
     if (!length(x))
@@ -249,8 +250,10 @@
 #' simultaneous feedback. Do not report a coefficient on it as a coevolution
 #' parameter.
 #'
-#' @param bipartite An \code{M x N x W} array, or a list of \code{W} matrices
-#'   each \code{M x N}: actors by components, the standing searchnet DV.
+#' @param bipartite An \code{M x N x W} array, a list of \code{W} matrices
+#'   each \code{M x N}, or the result of
+#'   \code{\link{searchnet_bipartite_from_long}}: actors by components, the
+#'   standing searchnet DV.
 #' @param component An \code{N x N x W} array, or a list of \code{W} matrices
 #'   each \code{N x N}: the directed component-to-component architecture.
 #'   Diagonals are forced to zero, with a message if any were non-zero.

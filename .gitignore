@@ -247,5 +247,8 @@ inst/lean/lake-packages/
 # lake-manifest.json pins Mathlib and IS tracked; the blanket *.json rule above
 # would otherwise hide it.
 !inst/lean/lake-manifest.json
+# The classroom presets ship with the package; without this exception the blanket
+# *.json rule kept them out of git, so an installed searchnet had no presets.
+!inst/teaching/presets/*.json
 paper/preprint/
 paper/searchnet-jss-preprint.*

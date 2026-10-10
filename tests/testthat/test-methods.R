@@ -36,7 +36,7 @@ test_that("print.saomnk_model() shows header, effects, and thetas", {
   mod <- saomnk_model(density = -0.5, popularity = 0.2, scope = 0.1)
   out <- capture.output(print(mod))
   expect_true(length(out) > 0)
-  expect_true(any(grepl("SaoMNK Structure Model", out)))
+  expect_true(any(grepl("SAOM-NK Structure Model", out)))
   expect_true(any(grepl("density", out)))
   expect_true(any(grepl("crowding \\(inPop\\)", out)))
   expect_true(any(grepl("scope \\(outAct\\)", out)))
@@ -113,7 +113,7 @@ test_that("print.saomnk_model() omits sections that are empty", {
 test_that("print.saomnk_shock() shows effect, target value, and portion", {
   s <- saomnk_shock("density", parameter = -2.0, portion = 2)
   out <- capture.output(print(s))
-  expect_true(any(grepl("SaoMNK shock segment", out)))
+  expect_true(any(grepl("SAOM-NK shock segment", out)))
   expect_true(any(grepl("portion: 2", out)))
   expect_true(any(grepl("density", out)))
   expect_true(any(grepl("-2", out)))

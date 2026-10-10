@@ -1,6 +1,6 @@
 ###############################################################################
 ## test-reproducibility.R
-## Reproducibility guarantees for SaoMNK simulations
+## Reproducibility guarantees for SAOM-NK simulations
 ##
 ## Philosophy: "Users don't have to trust us -- they just trust the tests."
 ## Reproducibility is foundational for scientific computing. These tests
@@ -26,7 +26,7 @@ test_that("same seed produces identical initial bipartite matrix", {
 
 test_that("same seed + same M/N/density via saomnk_env gives identical init", {
   tryCatch(
-    source(file.path(dir_r, "saomnk-api.R"), local = FALSE),
+    if (dir.exists(dir_r)) source(file.path(dir_r, "saomnk-api.R"), local = FALSE),
     error = function(e) stop("Could not source saomnk-api.R")
   )
 

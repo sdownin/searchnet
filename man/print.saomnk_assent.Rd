@@ -2,7 +2,7 @@
 % Please edit documentation in R/saomnk-methods.R
 \name{print.saomnk_assent}
 \alias{print.saomnk_assent}
-\title{Print a SaoMNK Assent (Confirmation) Rule}
+\title{Print a SAOM-NK Assent (Confirmation) Rule}
 \usage{
 \method{print}{saomnk_assent}(x, ...)
 }

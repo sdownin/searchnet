@@ -1,4 +1,4 @@
-#' @title Export SaoMNK Simulation Results to CSV
+#' @title Export SAOM-NK Simulation Results to CSV
 #'
 #' @description
 #' Functions to export simulation results from \code{SaomNkRSienaBiEnv} objects

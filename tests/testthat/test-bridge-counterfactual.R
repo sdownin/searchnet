@@ -74,7 +74,7 @@ if (!exists("saom_to_saomnk", mode = "function") &&
 ## ---------------------------------------------------------------------------
 
 ## NOTE on the third effect. The fixture used `transTrip` until the crosswalk
-## learned to refuse mappings whose SaoMNK target does not exist for a bipartite
+## learned to refuse mappings whose SAOM-NK target does not exist for a bipartite
 ## dependent variable. `transTrip -> transTriads` is exactly such a mapping
 ## (transTriads lives in RSiena's symmetricObjective group only), so every test
 ## that merely needs "a second evaluation effect" now uses `inPop`, which maps
@@ -802,7 +802,7 @@ test_that("a non-sienaFit, non-named-numeric input is refused", {
 test_that("unmapped effects raise a warning that names each dropped effect", {
   thetas <- c(density = -1.2, unheardOf = 0.4, alsoMissing = -0.2)
   expect_warning(saom_to_saomnk(thetas, verbose = FALSE),
-                 "2 estimated effect\\(s\\) have no SaoMNK counterpart")
+                 "2 estimated effect\\(s\\) have no SAOM-NK counterpart")
   expect_warning(saom_to_saomnk(thetas, verbose = FALSE),
                  "unheardOf, alsoMissing", fixed = TRUE)
   ## The warning must say what the omission costs, not just that it happened.
@@ -842,7 +842,7 @@ test_that("rate parameters land in $rate_params and fire their own warning", {
                  "governed by `iterations`", fixed = TRUE)
   ## The consequence for the counterfactual must be stated, not implied.
   expect_warning(saom_to_saomnk(fit, verbose = FALSE),
-                 "SaoMNK default rather than at the estimated values",
+                 "SAOM-NK default rather than at the estimated values",
                  fixed = TRUE)
 
   b <- suppressWarnings(saom_to_saomnk(fit, verbose = FALSE))
@@ -1090,7 +1090,7 @@ test_that("an unresolvable row mismatch warns and falls back to name inference",
   expect_length(warned, 2L)
   expect_true(any(grepl("3 effect rows but 2 estimated", warned)))
   expect_true(any(grepl("inferred from effect names only", warned, fixed = TRUE)))
-  expect_true(any(grepl("have no SaoMNK counterpart", warned, fixed = TRUE)))
+  expect_true(any(grepl("have no SAOM-NK counterpart", warned, fixed = TRUE)))
 
   ## $coefficients here is unnamed, so the fallback invents positional names
   ## and every effect becomes unmapped -- which is loudly reported, not silent.
@@ -1657,10 +1657,10 @@ test_that("every shipped scenario has the fields run_calibrated_counterfactual r
   }
 })
 
-test_that("scenario modify keys are SaoMNK-side effect names, not SAOM ones", {
-  ## The multiplier is matched against `e$effect`, which is the SaoMNK name
+test_that("scenario modify keys are SAOM-NK-side effect names, not SAOM ones", {
+  ## The multiplier is matched against `e$effect`, which is the SAOM-NK name
   ## produced by the crosswalk, not the SAOM name it came from. `cycle4`
-  ## (SaoMNK) rather than `cycle3`/`recip` (SAOM) is the tell.
+  ## (SAOM-NK) rather than `cycle3`/`recip` (SAOM) is the tell.
   sc <- get_orm_scenarios()
   keys <- unique(unlist(lapply(sc, function(s) names(s$modify))))
   expect_true("cycle4" %in% keys)
@@ -1680,7 +1680,7 @@ test_that("scenario modify keys are SaoMNK-side effect names, not SAOM ones", {
 })
 
 test_that("double_closure targets a statistic a bipartite DV actually has", {
-  ## It used to modify `transTriads`, which no bipartite SaoMNK model can carry,
+  ## It used to modify `transTriads`, which no bipartite SAOM-NK model can carry,
   ## so the scenario was a no-op dressed as an intervention.
   sc <- get_orm_scenarios()$double_closure
   expect_identical(names(sc$modify), "cycle4")
@@ -1689,7 +1689,7 @@ test_that("double_closure targets a statistic a bipartite DV actually has", {
 
 test_that("no shipped scenario names an effect the crosswalk cannot produce", {
   ## `double_closure` used to be keyed on `transTriads`, which no bipartite
-  ## SaoMNK model can carry: the scenario could never match an effect, and
+  ## SAOM-NK model can carry: the scenario could never match an effect, and
   ## run_calibrated_counterfactual() now refuses such a key outright. Every
   ## shipped scenario must therefore name something the crosswalk can emit, or
   ## the influence effect the bridge registers itself.

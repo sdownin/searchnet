@@ -3,7 +3,7 @@
 \alias{SaoMNKexperiments}
 \title{R6 Class for Monte Carlo Experiment Batches}
 \description{
-R6 class for running batches of SaoMNK simulations, aggregating results,
+R6 class for running batches of SAOM-NK simulations, aggregating results,
 and analyzing market entry survival curves.
 }
 \examples{

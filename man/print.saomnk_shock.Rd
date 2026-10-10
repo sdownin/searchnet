@@ -2,7 +2,7 @@
 % Please edit documentation in R/saomnk-methods.R
 \name{print.saomnk_shock}
 \alias{print.saomnk_shock}
-\title{Print a SaoMNK Shock Specification}
+\title{Print a SAOM-NK Shock Specification}
 \usage{
 \method{print}{saomnk_shock}(x, ...)
 }

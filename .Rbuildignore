@@ -117,3 +117,13 @@
 # package tarball too, which the JSS build content-gates. The bracket keeps
 # this file itself clear of the gate's word pattern; the regex is unchanged.
 ^vignettes/saomnk-a[m]r-basins\.Rmd$
+# Top-level scratch (2026-10-10): run logs, console sinks, probe scripts and
+# stray plots written at the repository root are never package content.
+^_[^/]*$
+^[^/]*\.txt$
+^[^/]*\.(jpe?g|png|pdf|html)$
+^FLAG_.*$
+^\.ipynb_checkpoints$
+# A standalone dev script that sources R/ from the repository root; it is not
+# a test R CMD check can run from the installed package.
+^tests/verify_searchnet_port\.R$

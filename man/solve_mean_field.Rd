@@ -2,7 +2,7 @@
 % Please edit documentation in R/mean_field_solver.R
 \name{solve_mean_field}
 \alias{solve_mean_field}
-\title{Solve the SaoMNK Mean-Field Self-Consistency Equation}
+\title{Solve the SAOM-NK Mean-Field Self-Consistency Equation}
 \usage{
 solve_mean_field(
   theta_inPop,
@@ -57,7 +57,7 @@ element of each vector is the converged value.}
 }
 \description{
 Solves the Curie--Weiss / Brock--Durlauf self-consistency equation for the
-equilibrium population mean \eqn{m^{*}} of the SaoMNK logit ministep
+equilibrium population mean \eqn{m^{*}} of the SAOM-NK logit ministep
 under the symmetric, mean-field specialisation of Property~4.  Specifically,
 for an inPop-only structure model with \eqn{M} symmetric actors and Gibbs
 temperature \eqn{T}, the population magnetisation satisfies
@@ -95,6 +95,6 @@ interactions. \emph{Review of Economic Studies} 68(2), 235--260.
 
 Downing, S. (2026). Properties 4 and 5: stationary distribution (Gibbs under
 single-flip revision) and the
-Brock--Durlauf reduction of the SaoMNK ministep.
+Brock--Durlauf reduction of the SAOM-NK ministep.
 \code{inst/proofs/PROOF_TABLE.md}, rows L8, L10, L16--L18.
 }

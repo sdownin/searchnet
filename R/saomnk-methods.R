@@ -59,7 +59,7 @@ NULL
 #  print.saomnk_model
 # ---------------------------------------------------------------------------- #
 
-#' Print a SaoMNK Structure Model
+#' Print a SAOM-NK Structure Model
 #'
 #' Compact console summary of a specification built by
 #' \code{\link{saomnk_model}}: the effects with their parameter values and
@@ -81,7 +81,7 @@ print.saomnk_model <- function(x, ...) {
 
   dv <- x$dv_bipartite
 
-  cat("SaoMNK Structure Model\n")
+  cat("SAOM-NK Structure Model\n")
   cat("----------------------\n")
 
   effs <- dv$effects
@@ -155,7 +155,7 @@ print.saomnk_model <- function(x, ...) {
 #  print.saomnk_shock
 # ---------------------------------------------------------------------------- #
 
-#' Print a SaoMNK Shock Specification
+#' Print a SAOM-NK Shock Specification
 #'
 #' Shows which parameter(s) the shock sets, to what values, and the relative
 #' portion of the simulation chain the segment occupies.  A single shock
@@ -173,7 +173,7 @@ print.saomnk_model <- function(x, ...) {
 #' saomnk_shock("density", parameter = -2.0, portion = 1)
 print.saomnk_shock <- function(x, ...) {
 
-  cat("SaoMNK shock segment\n")
+  cat("SAOM-NK shock segment\n")
   cat(sprintf("  portion: %d (relative share of the simulation chain)\n",
               x$portion))
   cat(sprintf("  sets %d parameter(s) for this segment:\n", length(x$effect)))
@@ -191,7 +191,7 @@ print.saomnk_shock <- function(x, ...) {
 #  print.saomnk_assent
 # ---------------------------------------------------------------------------- #
 
-#' Print a SaoMNK Assent (Confirmation) Rule
+#' Print a SAOM-NK Assent (Confirmation) Rule
 #'
 #' Reports the rule type -- uniform probability, per-actor probabilities, a
 #' dyad-specific probability matrix, or attribute screening -- with its
@@ -206,7 +206,7 @@ print.saomnk_shock <- function(x, ...) {
 #' saomnk_assent(prob = 0.5)
 print.saomnk_assent <- function(x, ...) {
 
-  cat("SaoMNK assent (confirmation) rule")
+  cat("SAOM-NK assent (confirmation) rule")
   if (!is.null(x$name)) cat(sprintf(": '%s'", x$name))
   cat("\n")
 
@@ -240,7 +240,7 @@ print.saomnk_assent <- function(x, ...) {
 #  print.saomnk_summary
 # ---------------------------------------------------------------------------- #
 
-#' Print a SaoMNK Model Summary Table
+#' Print a SAOM-NK Model Summary Table
 #'
 #' Displays the regression-style table returned by
 #' \code{\link{saomnk_summary}} as formatted text.  Without this method the

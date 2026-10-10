@@ -1,10 +1,10 @@
 % Generated manually for R CMD check compliance
 \name{saomnk_env}
 \alias{saomnk_env}
-\title{Create a SaoMNK Search Environment}
+\title{Create a SAOM-NK Search Environment}
 \description{
 Initialises a bipartite search environment of \eqn{M} actors and \eqn{N}
-components. This is the starting point for any SaoMNK simulation.
+components. This is the starting point for any SAOM-NK simulation.
 }
 \usage{
 saomnk_env(M, N, density = 0, seed = NULL, name = NULL)

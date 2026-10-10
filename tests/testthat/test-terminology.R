@@ -21,9 +21,12 @@
 ###############################################################################
 
 pkg_root <- normalizePath(file.path(dirname(dirname(getwd()))), winslash = "/")
-if (!file.exists(file.path(pkg_root, "DESCRIPTION"))) {
-  pkg_root <- normalizePath("D:/Search_networks/SaoMNK", winslash = "/")
+if (!file.exists(file.path(pkg_root, "DESCRIPTION")) &&
+    !nzchar(Sys.getenv("_R_CHECK_PACKAGE_NAME_"))) {
+  pkg_root <- normalizePath("D:/Search_networks/SaoMNK", winslash = "/", mustWork = FALSE)
 }
+## The rule scans the source tree, which R CMD check does not ship with the tests.
+skip_if_not(dir.exists(file.path(pkg_root, "R")), "package source tree not available")
 
 ## The ONLY places the old terms may appear, and only in these phrasings.
 ## Each is the concordance ("it is also called the interaction matrix"), stated

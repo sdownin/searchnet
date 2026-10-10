@@ -2,7 +2,7 @@
 % Please edit documentation in R/searchnet-bridge.R
 \name{.bridge_crosswalk}
 \alias{.bridge_crosswalk}
-\title{The SAOM -> SaoMNK crosswalk}
+\title{The SAOM -> SAOM-NK crosswalk}
 \usage{
 .bridge_crosswalk(scale_factor = 1)
 }
@@ -18,7 +18,7 @@ One entry per RSiena short name \code{saom_to_saomnk()} recognizes. Kept
 outside that function so tests can read it: an \code{"exact"} status is a
 claim about searchnet's statistic, and
 \code{tests/testthat/test-structural-stats-vs-rsiena.R} fails on an exact
-entry whose SaoMNK effect it does not pin to RSiena's \code{siena07()}
+entry whose SAOM-NK effect it does not pin to RSiena's \code{siena07()}
 target.
 }
 \keyword{internal}

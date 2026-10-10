@@ -3,6 +3,8 @@
 ## Tests that plot functions return ggplot objects without errors
 ###############################################################################
 
+local_close_new_devices()
+
 test_that("plot_bipartite_system_from_mat returns a plot object", {
   skip_if_not_installed("RSiena")
 

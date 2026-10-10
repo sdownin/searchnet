@@ -4340,11 +4340,11 @@ SaomNkRSienaBiEnv <- R6Class(
     },
 
 
-    #' Verify Property 1 (Reduction): SaoMNK with M=1, theta=0, beta->inf recovers NK
+    #' Verify Property 1 (Reduction): SAOM-NK with M=1, theta=0, beta->inf recovers NK
     #'
     #' @description
     #' Exhaustively enumerates all \eqn{2^N} binary configurations and compares
-    #' the NK fitness (from the stored landscape) to the single-actor SaoMNK
+    #' the NK fitness (from the stored landscape) to the single-actor SAOM-NK
     #' utility.  Under the reduction conditions (one actor, no social/strategic
     #' effects), these must be identical up to floating-point tolerance.
     #'
@@ -4397,7 +4397,7 @@ SaomNkRSienaBiEnv <- R6Class(
       # then compare to the engine's stored fitness. If masking or row-indexing
       # were inconsistent (e.g. an endianness bug), configs sharing a code would
       # carry different contributions and the difference would become non-zero.
-      # With theta = 0 and no social terms the single-actor SaoMNK utility
+      # With theta = 0 and no social terms the single-actor SAOM-NK utility
       # equals this NK fitness exactly -- there is NO multiplication by x[d]
       # (averaging the x[d] factor in was a bug that made the check meaningless).
       nk_indep <- numeric(n_configs)
@@ -4415,7 +4415,7 @@ SaomNkRSienaBiEnv <- R6Class(
         difference     = abs(nk_indep - f_stored)
       )
 
-      cat(sprintf("NK-SaoMNK equivalence check: N=%d, max difference = %.2e\n",
+      cat(sprintf("NK vs SAOM-NK equivalence check: N=%d, max difference = %.2e\n",
                   N, max(results$difference)))
       return(results)
     },
@@ -4923,7 +4923,7 @@ SaomNkRSienaBiEnv <- R6Class(
       old_components <- which(colSums(.path_start) >  0)
       
       ## remove chain entries where no change was made (keep if !stability )
-      ## Keep all steps (including no-change for forbearance measures)
+      ## Keep all steps (including no-change for entry-restraint measures)
       tiechdf <- self$chain_stats
       
       ## get matrix timeseries and network statistics timeseries
@@ -10717,7 +10717,7 @@ SaomNkRSienaBiEnv <- R6Class(
   
   
   # R6 method for plotting exploration vs exploitation in SAOM NK simulation
-  # Add this method to your SaoMNK R6 class
+  # Add this method to your SAOM-NK R6 class
   
   plot_exploration_exploitation = function(
     actor_ids = c(),
@@ -15087,12 +15087,12 @@ SaomNkRSienaBiEnv <- R6Class(
   # Mean-field equilibrium diagnostic (Property 5: Brock-Durlauf reduction)
   # =========================================================================
   #
-  # Compares the analytical mean-field fixed point m* of the SaoMNK ministep
+  # Compares the analytical mean-field fixed point m* of the SAOM-NK ministep
   # against the empirical population mean of the realized bipartite matrix.
   # Wraps `solve_mean_field()` (R/mean_field_solver.R) and reads theta_inPop
   # from the structure model used in the most recent run.  Discrepancy is the
   # gap |m_emp - m_star_closest| in spin form, with adoption-form analogues
-  # provided for comparison to the SaoMNK simulator's native [0,1] DV.
+  # provided for comparison to the SAOM-NK simulator's native [0,1] DV.
   #
   # @param T Numeric Gibbs temperature (default 1).
   # @param theta_inPop_override Numeric (length 1) or NULL.  If non-NULL,
@@ -15271,7 +15271,7 @@ SaomNkRSienaBiEnv <- R6Class(
   # the regime as "reversible" (no path-dependence) or "hysteretic"
   # (strategic irreversibility).
   #
-  # Ported into the SaoMNK API so that the underlying simulator is the package's own
+  # Ported into the SAOM-NK API so that the underlying simulator is the package's own
   # SAOM ministep (and thus inherits all RSiena effects, not just NK + 10
   # hand-coded social terms).
   #

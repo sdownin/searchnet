@@ -2,7 +2,7 @@
 % Please edit documentation in R/searchnet-game.R
 \name{searchnet-game}
 \alias{searchnet-game}
-\title{Strategy Game Mode for SaoMNK}
+\title{Strategy Game Mode for SAOM-NK}
 \description{
 Interactive game loop where a human player controls one firm and competes
 against AI opponents that follow SAOM-NK logit choice rules.  Provides

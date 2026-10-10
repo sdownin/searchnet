@@ -2,7 +2,7 @@
 % Please edit documentation in R/saomnk-methods.R
 \name{print.saomnk_summary}
 \alias{print.saomnk_summary}
-\title{Print a SaoMNK Model Summary Table}
+\title{Print a SAOM-NK Model Summary Table}
 \usage{
 \method{print}{saomnk_summary}(x, ...)
 }

@@ -18,8 +18,10 @@ searchnet_coevolve_data(
 )
 }
 \arguments{
-\item{bipartite}{An \code{M x N x W} array, or a list of \code{W} matrices
-each \code{M x N}: actors by components, the standing searchnet DV.}
+\item{bipartite}{An \code{M x N x W} array, a list of \code{W} matrices
+each \code{M x N}, or the result of
+\code{\link{searchnet_bipartite_from_long}}: actors by components, the
+standing searchnet DV.}
 
 \item{component}{An \code{N x N x W} array, or a list of \code{W} matrices
 each \code{N x N}: the directed component-to-component architecture.

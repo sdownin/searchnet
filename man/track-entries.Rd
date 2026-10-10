@@ -2,7 +2,7 @@
 % Please edit documentation in R/track-entries.R
 \name{track-entries}
 \alias{track-entries}
-\title{Competitive Entry/Exit Tracking for SaoMNK Simulations}
+\title{Competitive Entry/Exit Tracking for SAOM-NK Simulations}
 \description{
 Records metadata about each ADD and DROP action in the SAOM ministep
 chain: was the activity occupied by rivals, how many were present, and
@@ -16,17 +16,18 @@ output format (holdings history list or entry log data.frame).
 \section{Which statistics are dyadic, and which are not}{
 
 
-Mutual forbearance in the sense of Edwards (1955), Bernheim and Whinston
+Multimarket mutual restraint in the sense of Edwards (1955), Bernheim and Whinston
 (1990), Baum and Korn (1996, 1999) and Gimeno (1999) is a property of a
 FIRM PAIR, conditional on how many markets that pair meets in. It is not a
 property of a firm, and it is not the same thing as avoiding occupied cells.
 
-The population-level statistics in \code{compute_forbearance_metrics()}
-(\code{competitive_entry_rate}, \code{avoidance_rate} and the rest) are
+The population-level entry statistics (\code{competitive_entry_rate},
+\code{avoidance_rate} and the rest, computed by the internal
+\code{entry_restraint_metrics()}) are
 counts over rivals with no rival identity in them. Entering a cell held by a
 rival met nowhere else and entering a cell held by a rival met in twenty
 markets are the same event to those statistics, and only the second is what
-mutual forbearance is about. Cell avoidance is also just as consistent with
+mutual restraint is about. Cell avoidance is also just as consistent with
 differentiation or crowding avoidance, which is the alternative the
 multimarket literature spends its effort ruling out. Those statistics are
 therefore descriptive measures of entry into contested space. They are
@@ -34,8 +35,8 @@ useful, they are not the multimarket construct, and they are deliberately
 documented here without a citation that would imply otherwise.
 
 The dyadic construct is served by \code{expand_entry_rivals()},
-\code{compute_multimarket_contact()} and \code{compute_dyadic_forbearance()},
-which are conditional on the pair and, when holdings are supplied, corrected
+\code{compute_multimarket_contact()} and the internal
+\code{dyadic_entry_restraint()}, which are conditional on the pair and, when holdings are supplied, corrected
 for exposure.
 }
 

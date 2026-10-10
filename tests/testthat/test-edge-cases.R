@@ -1,6 +1,6 @@
 ###############################################################################
 ## test-edge-cases.R
-## Edge cases and robustness tests for SaoMNK
+## Edge cases and robustness tests for SAOM-NK
 ##
 ## Philosophy: "Users don't have to trust us -- they just trust the tests."
 ## These tests verify that the engine handles boundary conditions gracefully:

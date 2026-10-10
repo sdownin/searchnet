@@ -85,6 +85,38 @@ Your instructor will specify the exact method, but the basic information is:
 
 This means: enter markets #3 and #7, and exit market #1.
 
+### If Your Instructor Uses a Form
+
+Answer the four questions exactly like this, so the round can be submitted
+for the whole class at once:
+
+| Question     | You enter  | Notes |
+|:-------------|:-----------|:------|
+| Student ID   | `student_5` | The ID your instructor gave you. |
+| Round        | `1`        | The round you are deciding now. |
+| Activities to ADD  | `3;7` | Numbers only, separated by semicolons or commas. Leave blank for none. |
+| Activities to DROP | `1`   | Same format. Leave blank for none. |
+
+Submit once per round. If you submit twice for the same round, both answers
+are rejected and your firm holds its portfolio, so ask your instructor to
+remove the one you did not mean.
+
+---
+
+## Running the Simulation Yourself (Optional)
+
+You do not need R to play. If you want to explore the model on your own
+machine (R 4.1.0 or later):
+
+```r
+install.packages("remotes")
+remotes::install_github("sdownin/searchnet")   # step 1: install
+searchnet::searchnet_check_setup()              # step 2: check, about 30 seconds
+```
+
+The check ends with "All checks passed" or tells you the command that fixes
+each problem.
+
 ---
 
 ## Scoring Explained

@@ -1,0 +1,160 @@
+---
+title: "Planted-Truth Recovery and Power for a Bipartite SAOM"
+author: "Stephen Downing"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Planted-Truth Recovery and Power}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## What this vignette shows, and what it does not
+
+`searchnet_recovery()` plants a parameter vector in an actor-by-component
+SAOM, simulates panels from it, re-estimates each panel with RSiena under one
+fixed algorithm, and reports how well each planted value comes back. It is the
+planted-truth gate to run before trusting a SAOM-NK design: the design should
+return zero where nothing is planted, and recover what is planted.
+
+**The results below show recovery at one design: M = 30 actors, N = 12
+components, 3 waves, 100 replications, initial density 0.2, and the planted
+values stated. Nothing more.** They say nothing about a smaller panel, a
+sparser network, more effects, or a different estimation algorithm. Run the
+harness at your own design.
+
+**How the results were produced.** The two runs take a few minutes, so the
+chunks that run them are shown with `eval = FALSE`. The printed output comes
+from results precomputed with exactly that code by
+`tools/make_recovery_vignette_data.R` and stored in
+`inst/extdata/searchnet_recovery_vignette.rds`, which the vignette loads.
+
+```{r load}
+library(searchnet)
+path <- system.file("extdata", "searchnet_recovery_vignette.rds",
+                    package = "searchnet")
+if (!nzchar(path))  # building from a source tree without an installed copy
+  path <- file.path("..", "inst", "extdata", "searchnet_recovery_vignette.rds")
+stored <- readRDS(path)
+```
+
+## The design
+
+Two effects on the bipartite network: outdegree (`density`) and indegree
+popularity (`inPop`), the focal effect. The basic rate is 5 per period. These
+values keep the network near its starting density of 0.2 over the panel, so
+every period carries change for the estimator to use.
+
+The estimation algorithm is the same for every replication: unconditional
+method of moments (`cond = FALSE`, so period rates are estimated with standard
+errors and compare directly with the planted rate), `n3 = 500`, `nsub = 4`,
+`nbrNodes = 1`, and a seed derived per replication from `seed`. Hold
+`nbrNodes` and `seed` fixed when comparing two harness runs: `nbrNodes` enters
+the algorithm, so changing it changes the estimates.
+
+The criteria were written into the generating script before it was run.
+
+## Recovery
+
+```{r recovery-run, eval = FALSE}
+rec <- searchnet_recovery(
+  effects_spec = c("density", "inPop"),
+  theta_true   = c(rate = 5, density = -1.5, inPop = 0.10),
+  M = 30, N = 12, waves = 3, reps = 100,
+  nbrNodes = 1, seed = 20261010, n3 = 500, nsub = 4,
+  focal = "inPop",
+  criterion = list(max_abs_bias = 0.03, min_coverage = 0.90,
+                   min_converged_share = 0.90))
+```
+
+```{r recovery-print}
+rec <- stored$recovery
+rec
+```
+
+Reading the columns: `bias` and `rmse` are against the planted value;
+`coverage` is the share of 95% Wald intervals containing it; `reject` is the
+share of fits rejecting H0: theta = 0 at alpha = 0.05, which is power when the
+planted value is nonzero. `mde` is the approximate minimum detectable effect
+at 80% power, (z_{0.975} + z_{0.80}) times the mean estimated standard error.
+It treats the Wald statistic as normal with the SE fixed at its planted-value
+mean, so read it as a scale, not an exact threshold.
+
+`summary()` adds the Monte Carlo standard errors, the replication status
+table and each verdict check:
+
+```{r recovery-summary}
+summary(rec)
+```
+
+```{r recovery-plot, fig.width = 6, fig.height = 3}
+plot(rec)
+```
+
+## Null mode: the size check
+
+With `null = TRUE`, the focal planted value is set to zero and everything else
+is unchanged. The rejection rate on the focal effect is then the empirical
+size of the test, and should sit near alpha.
+
+```{r null-run, eval = FALSE}
+rec0 <- searchnet_recovery(
+  effects_spec = c("density", "inPop"),
+  theta_true   = c(rate = 5, density = -1.5, inPop = 0.10),
+  M = 30, N = 12, waves = 3, reps = 100,
+  nbrNodes = 1, seed = 20261010, n3 = 500, nsub = 4,
+  focal = "inPop", null = TRUE,
+  criterion = list(max_size = 0.10, min_converged_share = 0.90))
+```
+
+```{r null-print}
+rec0 <- stored$null
+rec0
+```
+
+The null design did not estimate as cleanly as the recovery design: with the
+popularity effect removed, some panels give RSiena a period rate it cannot
+bound. Those replications are listed rather than dropped:
+
+```{r null-failures}
+rec0$reps[rec0$reps$status != "converged", ]
+```
+
+That is a property of this design at this size, and it is part of the result.
+
+## Replications that do not converge
+
+A replication counts as converged when the overall maximum convergence ratio
+(`tconv.max`) is below 0.25 and every parameter has a finite standard error.
+The others are filed as `not_converged`, `non_identified` (a missing standard
+error: a non-identification, not a fit), `error_simulation` or
+`error_estimation`. Every status is counted and printed. Summaries use the
+converged replications only, and `rec$estimates` keeps the estimates of the
+rest for inspection. A design where many replications fail to converge has
+answered a question too: it is not estimable at that size.
+
+## Reporting a null with its bound
+
+When an empirical estimate of the focal effect is not distinguishable from
+zero, report the harness MDE at the empirical design alongside it: the null
+then reads as "no effect larger than about the MDE", a bound on the
+association, rather than as evidence of absence.
+
+## A fast check
+
+The same call with tiny settings runs in a few seconds and is what the test
+suite uses. It is a smoke test of the machinery, not evidence about any
+design.
+
+```{r tiny, eval = FALSE}
+searchnet_recovery(c("density", "inPop"),
+                   theta_true = c(rate = 3, density = -1.2, inPop = 0.15),
+                   reps = 2, M = 8, N = 6, waves = 3,
+                   n3 = 60, nsub = 1, seed = 7)
+```

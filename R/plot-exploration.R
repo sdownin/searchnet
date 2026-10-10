@@ -1,6 +1,6 @@
 # plot-exploration.R
-# Standalone exploration/exploitation plot functions extracted from SaoMNK R6 class.
-# Each function takes `env` (an SaoMNK environment/instance) as its first argument.
+# Standalone exploration/exploitation plot functions extracted from SAOM-NK R6 class.
+# Each function takes `env` (an SAOM-NK environment/instance) as its first argument.
 # All self$ references have been replaced with env$.
 
 

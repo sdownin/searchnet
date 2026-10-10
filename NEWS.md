@@ -1,3 +1,28 @@
+# searchnet 0.13.0
+
+Released 2026-10-10. No change to simulated results or to `inst/rosetta/effect_dimensions.csv`. Suite: 68 files, 957 tests, 7218 expectations, 0 failures, 0 errors, 5 skips. `R CMD check --as-cran` from a clean build: 0 errors, 0 warnings.
+
+## New
+
+* **Observed data.** `searchnet_bipartite_from_long()` turns long-format records (actor, component, optional period and weight) into the actor-by-component array, with fixed actor, component and period sets so composition stays stable across waves. `searchnet_k_readings()` reports the four {K} degrees and their strengths per node and period, computed exactly as the simulation engine computes them (tested against `saomnk_get_degrees()` at every step of a seeded run), and asserts the accounting identities in `K_DIMENSIONS.md`. `searchnet_k_covariate()` reshapes a reading for `searchnet_coevolve_data()`, which now accepts the loaded object directly. New vignette "From Your Own Data to {K} Readings".
+* **Planted-truth recovery and power.** `searchnet_recovery()` simulates a bipartite SAOM from known parameters, re-estimates it with a fixed algorithm, and reports per effect the bias, RMSE, coverage, rejection rate (the size, in null mode), an approximate minimum detectable effect and Monte Carlo standard errors. Replications that fail to converge or estimate are counted by status, never dropped. A PASS/FAIL verdict is given only against an explicit criterion. New vignette "Planted-Truth Recovery and Power".
+* **Workshops and classes.** `searchnet_check_setup()` diagnoses an installation in one call, with a short seeded smoke run and a fix for each problem. `searchnet_classroom_submit_batch()` submits a round from a form-export CSV with per-row validation and an `atomic` mode. `searchnet_validate_preset()` checks a custom classroom preset, and `searchnet_classroom_init(industry = "custom")` uses it and accepts a JSON path.
+
+## Changed
+
+* **One name for the model: SAOM-NK.** Prose, documentation, vignettes, the proofs, printed output and figure labels now say "SAOM-NK" where they said "SaoMNK" (for example `print()` of a model now heads "SAOM-NK Structure Model", and `saom_to_saomnk()` messages say "SAOM-NK counterpart"). Code that matched the old printed strings must match the new ones. **Names that keep "SaoMNK"**, because changing them would break existing code: the R6 class `SaoMNKexperiments` and its `SaoMNK_class` argument, the classes `SaomNkRSienaBiEnv` / `SaomNkRSienaBiEnv_base`, and all lower-case function names (`nk_to_saomnk()`, `saom_to_saomnk()`, `saomnk_*`). The package itself is **searchnet** (formerly SaoMNK).
+* The entry-restraint measures (population, rolling and dyadic) and their two plots are now internal and carry generic names: `entry_restraint_metrics()`, `entry_restraint_trajectory()`, `dyadic_entry_restraint()`, `plot_entry_restraint()` and `plot_entry_restraint_spectrum()`. The dyadic output column is now `restraint_index`, still signed so that a positive value means restraint. The old exported names are removed; no aliases are kept.
+* README: the animated landscape opens the page, followed by the static figure of one run's inputs, start and end networks and {K}-4 trajectories.
+
+## Fixed
+
+* The classroom presets now ship with the package (a `.gitignore` rule had kept them out of the repository, so `searchnet_classroom_init()` only worked from a source checkout). Machine-specific paths are removed from the preset loader, the vignettes and the teaching guides.
+* The `saomnk_get_behavior()` example no longer fails under `--run-donttest`; the docs now say that `wide = TRUE` gives one row per simulated segment, not per theta row.
+* `R CMD check` is clean: the `rosetta_plot()` aesthetic columns are declared, `{K}` is escaped in two Rd titles, the S3 methods of new classes use `\method` markup, tests no longer use rlang, and the license badge links a page that responds.
+* The test suite runs against the installed package under `R CMD check` and never falls back to a hard-coded working copy. Tests close every graphics device they open, so results no longer depend on file order.
+* A GitHub Actions R CMD check workflow is added, and the README badge reports it.
+* Housekeeping: 242 committed console logs under `tests/testthat/` are untracked, and top-level scratch files and a standalone port-verification script are excluded from the build.
+
 # searchnet 0.12.9
 
 Released 2026-10-10. No change to simulated results or to `inst/rosetta/effect_dimensions.csv`. Suite: 65 files, 924 tests, 6911 expectations, 0 failures, 0 errors, 5 skips.

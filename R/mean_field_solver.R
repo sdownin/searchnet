@@ -1,5 +1,5 @@
-#' @title Mean-Field Equilibrium Solver for the SaoMNK Brock-Durlauf Reduction
-#' @description Standalone helper operationalizing Property~4 of the SaoMNK
+#' @title Mean-Field Equilibrium Solver for the SAOM-NK Brock-Durlauf Reduction
+#' @description Standalone helper operationalizing Property~4 of the SAOM-NK
 #'   proof set (the Gibbs/Brock-Durlauf equivalence, under single-flip logit
 #'   revision): the mean-field
 #'   self-consistency equation
@@ -17,7 +17,7 @@
 #'
 #'   This file complements the existing \code{searchnet-brock-durlauf.R}
 #'   utilities (\code{\link{bd_self_consistency}} etc.) by exposing a single
-#'   end-user-friendly entry-point parameterised in the SaoMNK quantities a
+#'   end-user-friendly entry-point parameterised in the SAOM-NK quantities a
 #'   strategy researcher actually controls (\code{theta_inPop}, \code{M},
 #'   \code{T}) rather than the spin-form \code{(beta, J, h)} triple of
 #'   Brock & Durlauf.
@@ -49,10 +49,10 @@ NULL
 #  solve_mean_field
 # ---------------------------------------------------------------------------- #
 
-#' Solve the SaoMNK Mean-Field Self-Consistency Equation
+#' Solve the SAOM-NK Mean-Field Self-Consistency Equation
 #'
 #' Solves the Curie--Weiss / Brock--Durlauf self-consistency equation for the
-#' equilibrium population mean \eqn{m^{*}} of the SaoMNK logit ministep
+#' equilibrium population mean \eqn{m^{*}} of the SAOM-NK logit ministep
 #' under the symmetric, mean-field specialisation of Property~4.  Specifically,
 #' for an inPop-only structure model with \eqn{M} symmetric actors and Gibbs
 #' temperature \eqn{T}, the population magnetisation satisfies
@@ -108,7 +108,7 @@ NULL
 #'
 #'   Downing, S. (2026). Properties 4 and 5: stationary distribution (Gibbs under
 #'   single-flip revision) and the
-#'   Brock--Durlauf reduction of the SaoMNK ministep.
+#'   Brock--Durlauf reduction of the SAOM-NK ministep.
 #'   \code{inst/proofs/PROOF_TABLE.md}, rows L8, L10, L16--L18.
 #' @examples
 #' ## Subcritical: theta_inPop * (M - 1) / 2 < 2 * T  =>  unique m* = 0

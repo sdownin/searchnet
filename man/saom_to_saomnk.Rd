@@ -2,7 +2,7 @@
 % Please edit documentation in R/searchnet-bridge.R
 \name{saom_to_saomnk}
 \alias{saom_to_saomnk}
-\title{Convert SAOM estimated parameters to SaoMNK structure model}
+\title{Convert SAOM estimated parameters to SAOM-NK structure model}
 \usage{
 saom_to_saomnk(
   saom_result,
@@ -44,7 +44,7 @@ one and the effect it would become.  \code{strict = FALSE} restores the
 warn-and-proceed behavior; the approximations are then listed in a
 \code{warning()} and in \code{$approximate}, and must be reported with any
 result built from them.  \code{strict} does NOT relax a non-implementation:
-an effect whose SaoMNK counterpart does not exist for a bipartite dependent
+an effect whose SAOM-NK counterpart does not exist for a bipartite dependent
 variable (see \code{.BRIDGE_NOT_IN_BIPARTITE}) is refused either way.}
 
 \item{verbose}{Logical. If \code{TRUE}, prints the mapping table and
@@ -53,13 +53,13 @@ diagnostics (default \code{TRUE}).}
 \value{
 A list with components:
 \describe{
-\item{\code{effects}}{List of effect specs ready for a SaoMNK structure
+\item{\code{effects}}{List of effect specs ready for a SAOM-NK structure
 model (each element has \code{effect}, \code{parameter}, \code{fix},
 \code{dv_name}).}
 \item{\code{mapping_table}}{A \code{data.frame} documenting each
 conversion: SAOM effect name, point estimate \code{saom_theta}, the
 value actually converted \code{saom_theta_used} (identical to
-\code{saom_theta} unless \code{draw_theta = TRUE}), SE, SaoMNK effect,
+\code{saom_theta} unless \code{draw_theta = TRUE}), SE, SAOM-NK effect,
 converted parameter, \code{mapping_status} (\code{"exact"} or
 \code{"approximate"}), and description.  \code{mapping_status} is what
 makes an approximation visible in the returned object rather than only
@@ -84,13 +84,13 @@ distribution?}
 }
 }
 \description{
-Maps an RSiena theta vector to SaoMNK's bipartite effect system.
+Maps an RSiena theta vector to SAOM-NK's bipartite effect system.
 Both frameworks use the same actor-oriented conditional logit utility,
 so the mapping is direct for shared effects, with sign/scale adjustments
 for framework-specific parameterizations.
 }
 \details{
-Rate parameters are extracted but not simulated: the SaoMNK structure model
+Rate parameters are extracted but not simulated: the SAOM-NK structure model
 has no rate-function representation, so opportunity is governed by
 \code{iterations} rather than by an estimated rate.  Any rate effect found in
 \code{saom_result} is returned in \code{$rate_params} and announced with a

@@ -20,29 +20,54 @@ NULL
 #' @return A list parsed from the JSON preset file.
 #' @keywords internal
 .load_teaching_preset <- function(industry) {
-  preset_file <- system.file(
-    "teaching", "presets", paste0(industry, "_preset.json"),
-    package = "searchnet"
-  )
-  if (preset_file == "" || !file.exists(preset_file)) {
-    # Fallback: try local path (dev mode)
-    preset_file <- file.path(
-      find.package("searchnet", quiet = TRUE)[1] %||% ".",
-      "inst", "teaching", "presets", paste0(industry, "_preset.json")
-    )
+  fname <- paste0(industry, "_preset.json")
+  preset_file <- system.file("teaching", "presets", fname, package = "searchnet")
+  if (!nzchar(preset_file) || !file.exists(preset_file)) {
+    # Development fallback: a searchnet source checkout, located from the
+    # package root (never a hard-coded drive path).
+    root <- .searchnet_source_root()
+    preset_file <- if (is.null(root)) "" else
+      file.path(root, "inst", "teaching", "presets", fname)
   }
-  if (!file.exists(preset_file)) {
-    # Final fallback for development
-    dev_path <- file.path("D:/Search_networks/SaoMNK/inst/teaching/presets",
-                          paste0(industry, "_preset.json"))
-    if (file.exists(dev_path)) {
-      preset_file <- dev_path
-    } else {
-      stop("Preset file not found for industry '", industry, "'. ",
-           "Available presets: airline, tech, pharma", call. = FALSE)
-    }
+  if (!nzchar(preset_file) || !file.exists(preset_file)) {
+    stop("Preset file not found for industry '", industry, "'. ",
+         "Available presets: airline, tech, pharma. ",
+         "Run searchnet_check_setup() to diagnose the installation.",
+         call. = FALSE)
   }
   jsonlite::fromJSON(preset_file, simplifyVector = FALSE)
+}
+
+
+#' Locate a searchnet source checkout
+#'
+#' Returns the root of a searchnet source tree, or NULL. Checks the path the
+#' namespace was loaded from (pkgload::load_all() loads from the source tree),
+#' then walks up from the working directory looking for a DESCRIPTION whose
+#' Package field is searchnet.
+#' @keywords internal
+#' @noRd
+.searchnet_source_root <- function() {
+  is_root <- function(d) {
+    f <- file.path(d, "DESCRIPTION")
+    if (!file.exists(f) || !dir.exists(file.path(d, "inst"))) return(FALSE)
+    pkg <- tryCatch(unname(read.dcf(f, fields = "Package")[1, 1]),
+                    error = function(e) NA_character_)
+    identical(pkg, "searchnet")
+  }
+  cands <- character()
+  ns_path <- tryCatch(getNamespaceInfo("searchnet", "path"),
+                      error = function(e) NULL)
+  if (!is.null(ns_path)) cands <- c(cands, ns_path)
+  d <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  repeat {
+    cands <- c(cands, d)
+    parent <- dirname(d)
+    if (identical(parent, d)) break
+    d <- parent
+  }
+  for (cand in cands) if (is_root(cand)) return(cand)
+  NULL
 }
 
 
@@ -57,7 +82,7 @@ NULL
 
 
 #' Create AI firm decision logic
-#' @param env SaoMNK environment
+#' @param env SAOM-NK environment
 #' @param model saomnk_model object
 #' @param n_ai Number of AI actors
 #' @param actor_ids Integer vector of AI actor IDs
@@ -98,9 +123,11 @@ NULL
 #' @param shocks Logical. Include surprise exogenous shocks? (default FALSE).
 #'   Shocks are pre-scheduled but their timing is unknown to students.
 #' @param seed Integer or NULL. Random seed for reproducibility.
-#' @param custom_params Named list of custom parameters when
-#'   \code{industry = "custom"}. Must include at minimum: \code{N},
-#'   \code{activity_names}, \code{density}, \code{influence_weight}.
+#' @param custom_params A named list, or the path to a preset JSON file, used
+#'   when \code{industry = "custom"}. It is checked with
+#'   \code{\link{searchnet_validate_preset}} and must include at minimum
+#'   \code{N}, \code{activity_names}, \code{density}, and
+#'   \code{influence_weight} (or its older name \code{epistasis_weight}).
 #' @return A list of class \code{"searchnet_classroom"} containing the
 #'   environment, model, student roster, AI configuration, round tracker,
 #'   decision log, and leaderboard history.
@@ -130,7 +157,9 @@ searchnet_classroom_init <- function(n_students, n_rounds = 10, N = 12,
     if (is.null(custom_params)) {
       stop("custom_params required when industry = 'custom'", call. = FALSE)
     }
-    preset <- custom_params
+    ## A path to a preset JSON file or a list; checked against the schema the
+    ## shipped presets follow (see searchnet_validate_preset()).
+    preset <- searchnet_validate_preset(custom_params, quiet = TRUE)
     preset$difficulty_settings <- preset$difficulty_settings %||% list(
       intro        = list(steps_per_round = 5, n_AI = 2, shock_probability = 0),
       intermediate = list(steps_per_round = 10, n_AI = 4, shock_probability = 0.1),

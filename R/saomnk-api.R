@@ -1,4 +1,4 @@
-#' @title User-Friendly API for SaoMNK Simulations
+#' @title User-Friendly API for SAOM-NK Simulations
 #' @description
 #' Wrapper functions that provide a clean interface to the searchnet simulation
 #' engine. Users never need to construct internal \code{self$} references,
@@ -132,10 +132,10 @@ saomnk_block_diagonal <- function(N, blocks) {
 #  saomnk_env
 # ---------------------------------------------------------------------------- #
 
-#' Create a SaoMNK Search Environment
+#' Create a SAOM-NK Search Environment
 #'
 #' Initialises a bipartite search environment of \eqn{M} actors and \eqn{N}
-#' components.  This is the starting point for any SaoMNK simulation.
+#' components.  This is the starting point for any SAOM-NK simulation.
 #'
 #' @param M Integer. Number of actors (firms, agents).
 #' @param N Integer. Number of components (resources, technologies, markets).
@@ -174,7 +174,7 @@ saomnk_env <- function(M, N, density = 0, seed = NULL, name = NULL) {
 #  saomnk_model
 # ---------------------------------------------------------------------------- #
 
-#' Define a SaoMNK Structure Model
+#' Define a SAOM-NK Structure Model
 #'
 #' Builds the SAOM objective function specification that governs actor search
 #' behavior.
@@ -634,7 +634,7 @@ saomnk_model <- function(density            = -0.5,
 #  saomnk_shock
 # ---------------------------------------------------------------------------- #
 
-#' Define an Exogenous Shock to a SaoMNK Model Parameter
+#' Define an Exogenous Shock to a SAOM-NK Model Parameter
 #'
 #' Constructs a shock specification that can be passed to
 #' \code{\link{saomnk_run}} via the \code{shocks} argument.  Shocks divide the
@@ -732,7 +732,7 @@ saomnk_shock <- function(effect, parameter, portion = 1L,
 #  saomnk_run
 # ---------------------------------------------------------------------------- #
 
-#' Run a SaoMNK Search Simulation
+#' Run a SAOM-NK Search Simulation
 #'
 #' Executes the SAOM-based search simulation on a prepared environment and
 #' structure model.  This is the primary entry point for running simulations
@@ -850,7 +850,7 @@ saomnk_run <- function(env, model, steps_per_actor = 30,
 
 #' Run Parallel Monte Carlo Replications
 #'
-#' Executes independent replications of a SaoMNK multiwave simulation, each
+#' Executes independent replications of a SAOM-NK multiwave simulation, each
 #' starting from the same initial bipartite matrix but with a different random
 #' seed.  When \code{parallel = TRUE} and the \pkg{future} / \pkg{future.apply}
 #' packages are available, replications run across multiple R worker processes.

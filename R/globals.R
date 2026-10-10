@@ -56,6 +56,9 @@ utils::globalVariables(c(
   "treated_normalized", "treatment", "treatment_group", "type", "utility",
   "utility_mean", "value", "value_contributions", "wave_id", "weight",
   "Weight", "width", "x", "x_from", "x_to", "xend", "y", "y_from", "y_to",
-  "yend"
+  "yend",
+  ## Columns of the data frames built in R/rosetta-plot.R and mapped in
+  ## aes() there (row panels, {K} badges, the W heat map, its K-per-row bars).
+  "b", "badge", "chip", "cons", "eff", "esize", "lab", "r", "st", "w",
+  "x0", "x1", "xmax", "xmin", "yt"
 ))
-

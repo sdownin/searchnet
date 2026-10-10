@@ -43,7 +43,7 @@ state: environment, model, scoreboard history, round counter, and
 configuration.
 }
 \description{
-Creates a new game state object containing a SaoMNK environment, model,
+Creates a new game state object containing a SAOM-NK environment, model,
 and bookkeeping structures.  The player controls one firm; AI opponents
 follow the SAOM conditional-logit rule at the chosen difficulty level.
 }

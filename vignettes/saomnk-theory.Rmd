@@ -1,5 +1,5 @@
 ---
-title: "Theoretical Foundations: From NK to SaoMNK"
+title: "Theoretical Foundations: From NK to SAOM-NK"
 author: "Stephen Downing"
 date: "`r Sys.Date()`"
 output:
@@ -7,7 +7,7 @@ output:
     toc: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Theoretical Foundations: From NK to SaoMNK}
+  %\VignetteIndexEntry{Theoretical Foundations: From NK to SAOM-NK}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# From NK to SaoMNK
+# From NK to SAOM-NK
 
 ## The NK Model
 
@@ -52,7 +52,7 @@ The classical NK model has several limitations that `searchnet` addresses:
 4. **No endogeneity**: The conventional $K$ is set exogenously. In reality,
    epistatic coupling emerges from actors' overlapping affiliations.
 
-## The SaoMNK Generalization
+## The SAOM-NK Generalization
 
 `searchnet` endogenizes the NK landscape by reformulating it as a **bipartite
 network** of $M$ actors affiliating with $N$ components.
@@ -157,7 +157,7 @@ where the landscape co-evolves with the searcher's network position.
 
 ## Formal Framework
 
-The following definitions and properties establish SaoMNK as a strict
+The following definitions and properties establish SAOM-NK as a strict
 generalization of the NK model within a stochastic actor-oriented
 architecture. Result numbers follow the numbering table at the top of
 `inst/proofs/PROOF_TABLE.md`, which is the package's single numbering
@@ -176,11 +176,11 @@ neighborhood of component $d$ (including itself), and each
 $f_d: \{0,1\}^{K+1} \to [0,1]$ is drawn i.i.d.\ from $\text{Uniform}(0,1)$
 (Kauffman, 1993).
 
-### Definition 2: SaoMNK Utility
+### Definition 2: SAOM-NK Utility
 
 For actor $i$ with affiliation vector $\mathbf{b}_i \in \{0,1\}^N$
 in the context of all other actors' affiliations $\mathbf{B}_{-i}$ and
-influence matrix $E \in \{0,1\}^{N \times N}$, the SaoMNK utility function
+influence matrix $E \in \{0,1\}^{N \times N}$, the SAOM-NK utility function
 is:
 
 $$u_i(\mathbf{b}_i; \mathbf{B}_{-i}, E) = \underbrace{\sum_{d=1}^{N} f_d(\mathbf{b}_i \odot E_{d\cdot})}_{\text{NK component}} + \underbrace{\sum_{k=1}^{p} \theta_k \cdot s_k(\mathbf{b}_i, \mathbf{B})}_{\text{SAOM statistics}}$$
@@ -210,7 +210,7 @@ choice. The $1$ in the denominator represents the option of making no change.
 
 ### Property 1: Reduction (NK as Special Case)
 
-*Under restrictions R1--R5, SaoMNK reduces exactly to the NK adaptive walk.*
+*Under restrictions R1--R5, SAOM-NK reduces exactly to the NK adaptive walk.*
 
 The restrictions are: (R1) $M=1$ actor, (R2) influence matrix
 $E = A$ fixed exogenously, (R3) all structural parameters $\theta_k = 0$,
@@ -221,7 +221,7 @@ precisely the NK adaptive walk (Kauffman, 1993).
 
 ### Property 2: Generalization
 
-*SaoMNK strictly extends NK along three dimensions:*
+*SAOM-NK strictly extends NK along three dimensions:*
 
 (a) **Multi-actor interaction** ($M > 1$): Multiple actors search
 simultaneously on the same landscape. With no cross-actor effect
@@ -238,25 +238,25 @@ to deterministic greedy search ($\beta \to \infty$).
 
 ### Property 3: Approximation (Mixed Logit Universality)
 
-*For any NK landscape, there exists a SaoMNK parameterization that
+*For any NK landscape, there exists a SAOM-NK parameterization that
 reproduces its fitness function to arbitrary precision.*
 
 This follows from the McFadden and Train (2000) universality result: any
 random utility model (specifically, any discrete choice model in the
 McFadden, 1974 conditional-logit family, including the social-interaction
 extension of Brock and Durlauf, 2001) can be approximated arbitrarily well
-by a mixed logit specification. Since the SaoMNK objective function admits
+by a mixed logit specification. Since the SAOM-NK objective function admits
 mixed logit form, it inherits this approximation guarantee.
 
 ### Property 4: SAOM--QRE Equivalence
 
-*The stationary distribution of the SaoMNK ministep process is unique; under
+*The stationary distribution of the SAOM-NK ministep process is unique; under
 single-flip logit revision it is a Quantal Response Equilibrium (QRE).*
 
 The logit choice rule (Definition 3) applied to a finite strategic game
 defines a logit QRE (McKelvey & Palfrey, 1995). Under standard regularity
 conditions (finite action space, continuous payoffs, positive ministep
-rates), the SaoMNK Markov chain is ergodic with a unique stationary
+rates), the SAOM-NK Markov chain is ergodic with a unique stationary
 distribution. For a potential game under single-flip logit revision, that
 distribution is the Gibbs measure, a logit QRE of the underlying network
 game (Blume, 1993). The multinomial ministep used by RSiena and searchnet
@@ -275,12 +275,12 @@ concept.
 ### Property 5: Brock--Durlauf Recovery (Economic Foundation)
 
 *The Brock and Durlauf (2001) binary discrete-choice-with-social-interactions
-model is recovered as a degenerate special case of SaoMNK in the
+model is recovered as a degenerate special case of SAOM-NK in the
 $M \to \infty$, congestion-only, mean-field limit.*
 
 Property 5 is the *complementary* reduction to Property 1 (NK Reduction),
 which takes the single-actor / greedy / no-network limit. Together,
-Properties 1 and 5 establish that SaoMNK contains both Kauffman (1993)
+Properties 1 and 5 establish that SAOM-NK contains both Kauffman (1993)
 NK landscape search and Brock & Durlauf (2001) discrete choice with
 social interactions as special cases of a single CTMC. The five
 restrictions Rb1--Rb5 (many-actor mean-field; component independence;
@@ -293,7 +293,7 @@ verification is provided by `verify_brock_durlauf_reduction()`. See
 including the bifurcation diagram showing the $\beta J > 1$ multiplicity
 threshold (Corollary 2, L11) and the social-multiplier formula
 (Corollary 3, L12). The reflection-problem identification result of
-Manski (1993) is resolved in SaoMNK via the logit nonlinearity (Remark
+Manski (1993) is resolved in SAOM-NK via the logit nonlinearity (Remark
 L13).
 
 *[Revised 2026-10-07: which process the property describes.]* Like
@@ -341,7 +341,7 @@ is exactly $2w$. See `PROOF_TABLE.md` Part N.
 
 ### Equilibrium-Concept Typology
 
-Property 4 places SaoMNK within a broader landscape of equilibrium
+Property 4 places SAOM-NK within a broader landscape of equilibrium
 concepts. Equilibrium solutions to strategic games can be organized along
 two dimensions: the rationality assumption (full vs. bounded) and the
 temporal structure (static vs. dynamic). The following typology clarifies
@@ -350,7 +350,7 @@ where the SAOM--QRE connection sits relative to classical alternatives:
 |                        | **Static**                        | **Dynamic**                             |
 |:-----------------------|:----------------------------------|:----------------------------------------|
 | **Full rationality**   | Nash equilibrium                  | MPE (Ericson & Pakes, 1995; Wibbens et al., 2025) |
-| **Bounded rationality**| Static QRE (McKelvey & Palfrey, 1995) | Dynamic QRE / Logit MPE (SaoMNK, single-flip revision) |
+| **Bounded rationality**| Static QRE (McKelvey & Palfrey, 1995) | Dynamic QRE / Logit MPE (SAOM-NK, single-flip revision) |
 
 In the top-left cell, Nash equilibrium assumes perfectly rational
 players in a one-shot or stage game. The top-right cell houses the
@@ -361,7 +361,7 @@ Bernheim and Whinston (1990) also inhabit the full-rationality row.
 
 The bottom row relaxes perfect rationality. In the bottom-left cell,
 McKelvey and Palfrey's (1995) static QRE replaces best response with
-logit probabilistic response but retains a one-shot structure. SaoMNK
+logit probabilistic response but retains a one-shot structure. SAOM-NK
 occupies the bottom-right cell: it combines bounded rationality (the
 logit choice rule from Definition 3) with dynamic, sequential
 decision-making over an evolving network landscape. Doraszelski and
@@ -371,21 +371,21 @@ Eibelsh\"auser and Poensgen (2019) prove that logit Markov QRE
 converges to MPE as the precision parameter $\lambda \to \infty$ for
 all finite dynamic stochastic games, establishing a formal homotopy
 between the bottom-right and top-right cells with $\beta$ as the
-bridging parameter. SaoMNK thus nests both bounded (finite $\beta$)
+bridging parameter. SAOM-NK thus nests both bounded (finite $\beta$)
 and full ($\beta \to \infty$) rationality within a single framework.
 
 For strategic search on rugged NK landscapes, bounded rationality is
 not merely a tractability device but a foundational modeling premise.
 Agents cannot survey the full landscape; they evaluate local
 alternatives and choose probabilistically. This makes the bottom-right
-cell the natural equilibrium home for SaoMNK, with Blume's (1993)
+cell the natural equilibrium home for SAOM-NK, with Blume's (1993)
 convergence result providing the bridge from the SAOM ministep process
 to the logit QRE stationary distribution.
 
 ### Bounded Rationality Spectrum
 
 The rationality parameter $\beta$ governs search precision and connects
-SaoMNK to classical NK behavior at the limit:
+SAOM-NK to classical NK behavior at the limit:
 
 | $\beta$ | Behavior | NK Equivalent | Equilibrium Concept |
 |---------|----------|---------------|---------------------|
@@ -394,7 +394,7 @@ SaoMNK to classical NK behavior at the limit:
 | $\to \infty$ | Greedy deterministic choice | NK adaptive walk | MPE (Ericson \& Pakes, 1995) |
 
 The intermediate regime $\beta \in (0, \infty)$ has no NK analogue---it
-is a genuinely new behavioral domain enabled by the SaoMNK generalization.
+is a genuinely new behavioral domain enabled by the SAOM-NK generalization.
 
 Crucially, the interaction of landscape ruggedness $K$ and rationality
 $\beta$ jointly determines equilibrium selection. When $K$ is high
@@ -424,7 +424,7 @@ library(Matrix)
 DV_NAME <- "self$bipartite_rsienaDV"
 ```
 
-# Illustration: NK vs SaoMNK
+# Illustration: NK vs SAOM-NK
 
 ## Case 1: No Endogenous Effects (Pure Epistasis)
 

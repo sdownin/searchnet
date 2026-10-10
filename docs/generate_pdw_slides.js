@@ -241,7 +241,7 @@ s3.addText([
 });
 
 addCard(s3, 5.3, 2.6, 4.2, 2.3, "EBF8FF");
-s3.addText("SaoMNK (searchnet)", {
+s3.addText("SAOM-NK (searchnet)", {
   x: 5.5, y: 2.75, w: 3.8, h: 0.35,
   fontFace: FONTS.heading, fontSize: 14, color: C.teal, bold: true, margin: 0,
 });
@@ -310,7 +310,7 @@ s5.addShape(pres.shapes.RECTANGLE, {
 const chain = [
   { label: "NK", desc: "Single agent\nfixed landscape", color: C.gray600 },
   { label: "\u2282", desc: "", color: C.amber },
-  { label: "SaoMNK", desc: "M agents\n{K} networks", color: C.teal },
+  { label: "SAOM-NK", desc: "M agents\n{K} networks", color: C.teal },
   { label: "\u2261", desc: "", color: C.amber },
   { label: "Cond. Logit", desc: "McFadden choice\non bipartite DGP", color: C.tealLight },
   { label: "\u2192", desc: "", color: C.amber },
@@ -900,7 +900,7 @@ s17.addTable(kTableData, {
   autoPage: false,
 });
 
-addPlainEnglishBox(s17, "All four K's come from the same matrix B. Change B and you change all four simultaneously. This is the coupling that makes SaoMNK different from standard NK.", 0.5, 3.7, 9.0, 0.75);
+addPlainEnglishBox(s17, "All four K's come from the same matrix B. Change B and you change all four simultaneously. This is the coupling that makes SAOM-NK different from standard NK.", 0.5, 3.7, 9.0, 0.75);
 
 
 // ============================================================
@@ -1232,7 +1232,7 @@ s25.addText("Greedy", {
   fontFace: FONTS.body, fontSize: 10, color: C.gray500, align: "right", margin: 0,
 });
 
-addPlainEnglishBox(s25, "NK is the special case where beta = infinity. SaoMNK nests NK by letting beta be finite.", 0.5, 4.6, 9.0, 0.55);
+addPlainEnglishBox(s25, "NK is the special case where beta = infinity. SAOM-NK nests NK by letting beta be finite.", 0.5, 4.6, 9.0, 0.55);
 
 // ============================================================
 // SECTION 4: RUNNING SIMULATIONS (Slides 26-33)
@@ -1829,7 +1829,7 @@ addFooter(s41, "SECTION 6: Connecting to Your Research", 41);
 
 const resources = [
   { title: "Package Vignettes", desc: "Step-by-step tutorials for common use cases", icon: "1" },
-  { title: "JSS Paper (forthcoming)", desc: "Formal treatment of SaoMNK theory and the searchnet implementation", icon: "2" },
+  { title: "JSS Paper (forthcoming)", desc: "Formal treatment of SAOM-NK theory and the searchnet implementation", icon: "2" },
   { title: "GitHub Repository", desc: "github.com/sdownin/searchnet -- issues, PRs, and development roadmap", icon: "3" },
   { title: "Online Appendix", desc: "Full proofs of Theorems 1-4 and additional simulation results", icon: "4" },
 ];
@@ -1861,7 +1861,7 @@ addContentTitle(s42, "The Formal Foundation: Theorems 1\u20134");
 addFooter(s42, "SECTION 6: Connecting to Your Research", 42);
 
 const theorems = [
-  { num: "Theorem 1", title: "Nesting", desc: "NK is a special case of SaoMNK when M = 1 and \u03B2 \u2192 \u221E." },
+  { num: "Theorem 1", title: "Nesting", desc: "NK is a special case of SAOM-NK when M = 1 and \u03B2 \u2192 \u221E." },
   { num: "Theorem 2", title: "Coupling", desc: "The four K networks are algebraically determined by B. Changing one entry of B changes all four." },
   { num: "Theorem 3", title: "Equilibrium", desc: "The ministep process converges to a Quantal Response Equilibrium (QRE) for finite \u03B2." },
   { num: "Theorem 4", title: "Identification", desc: "The theta parameters are identified from panel data on B via conditional maximum likelihood." },

@@ -15,7 +15,7 @@ Returns a named list of scenario specifications suitable for use with
 \code{\link{run_calibrated_counterfactual}}.  Each scenario modifies one
 or more effect parameters via a multiplier applied to the baseline value.
 }
-\section{Keys are SaoMNK-side effect names}{
+\section{Keys are SAOM-NK-side effect names}{
 
 Every \code{modify} key must name an effect the converted baseline model
 actually contains, because \code{\link{run_calibrated_counterfactual}} now

@@ -26,7 +26,7 @@
 % ---------- title ----------
 \title{%
   \textbf{Online Appendix}\\[6pt]
-  \large SaoMNK: A Stochastic Actor-Oriented Generalization\\
+  \large SAOM-NK: A Stochastic Actor-Oriented Generalization\\
   of the NK Fitness Landscape Model\\[12pt]
   \normalsize Formal Proofs, Computational Demonstration,\\
   and Response to Anticipated Concerns}
@@ -45,19 +45,19 @@
 \begin{abstract}
 \noindent
 This online appendix provides three components supporting the main text's
-claim that the Stochastic Actor-Oriented Model on NK Landscapes (SaoMNK)
+claim that the Stochastic Actor-Oriented Model on NK Landscapes (SAOM-NK)
 formally generalizes Kauffman's (1993) NK fitness landscape framework.
 
 \medskip\noindent
 \textbf{Appendix A} presents three formal properties with complete proofs:
-the \emph{Reduction Property} (NK is a degenerate special case of SaoMNK),
-the \emph{Generalization Property} (SaoMNK strictly extends NK along three
+the \emph{Reduction Property} (NK is a degenerate special case of SAOM-NK),
+the \emph{Generalization Property} (SAOM-NK strictly extends NK along three
 independent dimensions), and the \emph{Approximation Property} (any NK
-payoff structure can be reproduced within SaoMNK to arbitrary precision).
+payoff structure can be reproduced within SAOM-NK to arbitrary precision).
 
 \medskip\noindent
 \textbf{Appendix B} provides computational verification: an R script that
-(i) implements both NK and SaoMNK side by side, (ii) verifies exact
+(i) implements both NK and SAOM-NK side by side, (ii) verifies exact
 numerical equivalence under the reduction conditions ($M=1$,
 $\boldsymbol{\theta}=\mathbf{0}$, $\beta\to\infty$), and (iii) demonstrates
 that $M>1$ produces endogenous landscape co-evolution effects impossible
@@ -68,7 +68,7 @@ in single-actor NK.
 detailed mathematical and conceptual responses.
 
 \medskip\noindent
-Together, these materials establish that SaoMNK is a micro-founded,
+Together, these materials establish that SAOM-NK is a micro-founded,
 empirically estimable generalization of NK that preserves all of NK's
 theoretical insights while adding multi-actor dynamics, endogenous
 landscape co-evolution, and tunable bounded rationality.
@@ -96,11 +96,11 @@ removing the duplicate preamble).}
 
 \begin{enumerate}
   \item \textbf{Property 1 (Reduction):} Standard NK is recovered from
-    SaoMNK by setting $M=1$, $\boldsymbol{\theta}=\mathbf{0}$,
+    SAOM-NK by setting $M=1$, $\boldsymbol{\theta}=\mathbf{0}$,
     $\beta\to\infty$, $\mathbf{E}=\mathbf{A}$, and constant rate functions.
     Proved via Payoff Equivalence (Lemma 1) and Dynamic Equivalence (Lemma 2).
 
-  \item \textbf{Property 2 (Generalization):} SaoMNK strictly extends NK
+  \item \textbf{Property 2 (Generalization):} SAOM-NK strictly extends NK
     along three independent dimensions:
     \begin{itemize}
       \item[(a)] Multi-actor interaction: state space $2^{MN}$ vs.\ $2^N$
@@ -143,8 +143,8 @@ The computational demonstration proceeds in five parts:
     \texttt{nkland\_standard()}, \texttt{nk\_fitness()}, and
     \texttt{nk\_adaptive\_walk()}.
 
-  \item \textbf{SaoMNK with $M=1$.} The \texttt{calc\_fit()} function
-    extracted directly from the SaoMNK R6 class (line 4593 of
+  \item \textbf{SAOM-NK with $M=1$.} The \texttt{calc\_fit()} function
+    extracted directly from the SAOM-NK R6 class (line 4593 of
     \texttt{SAOM\_NK\_R6\_model.R}), plus a bridging function that constructs
     the equivalent $2^N \times N$ landscape matrix from standard NK payoff
     tables.
@@ -160,7 +160,7 @@ The computational demonstration proceeds in five parts:
 
   \item \textbf{Publication-quality figures} (saved as PDF):
     \begin{itemize}
-      \item \textbf{Figure 1:} NK vs.\ SaoMNK fitness scatter plots
+      \item \textbf{Figure 1:} NK vs.\ SAOM-NK fitness scatter plots
             (perfect 45$^\circ$ line confirms exact equivalence)
       \item \textbf{Figure 2:} Paired density plots of final fitness with
             KS test $p$-value annotations
@@ -177,7 +177,7 @@ The computational demonstration proceeds in five parts:
 \section*{B.2 Expected Results}
 
 Under the reduction conditions ($M=1$, $\boldsymbol{\theta}=\mathbf{0}$,
-$\beta\to\infty$), the NK and SaoMNK implementations should produce:
+$\beta\to\infty$), the NK and SAOM-NK implementations should produce:
 \begin{itemize}
   \item \textbf{Identical fitness values} for all configurations (Figure 1:
     perfect correlation $r = 1.000$)
@@ -217,7 +217,7 @@ Below we list the eight concerns addressed.}
 
 \begin{enumerate}
   \item \textbf{``The payoff structure is too structured / not random enough.''}
-    --- The NK payoff table uses identical $U(0,1)$ random draws; SaoMNK
+    --- The NK payoff table uses identical $U(0,1)$ random draws; SAOM-NK
     generalizes the search process, not the landscape.
 
   \item \textbf{``This is just $M$ parallel NK searches.''}
@@ -242,11 +242,11 @@ Below we list the eight concerns addressed.}
 
   \item \textbf{``This loses NK's analytical tractability.''}
     --- NK has no analytical tractability beyond $N=2, K=1$; all published
-    results are simulation-based. SaoMNK ADDS estimability from empirical
+    results are simulation-based. SAOM-NK ADDS estimability from empirical
     data, which NK lacks entirely.
 
   \item \textbf{``How is this different from ABMs that extend NK?''}
-    --- SaoMNK is a proper statistical model (exponential family), not an
+    --- SAOM-NK is a proper statistical model (exponential family), not an
     ad hoc simulation. Parameters are estimable, interpretable, and
     testable. NK is a proven mathematical subset, not an analogy.
 

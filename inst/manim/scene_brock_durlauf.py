@@ -1,11 +1,11 @@
 """
 Scene: Brock & Durlauf (2001) Economic Foundation Theorem
 ==========================================================
-Animated visualization of Property 5: SaoMNK -> B&D2001 reduction.
+Animated visualization of Property 5: SAOM-NK -> B&D2001 reduction.
 
 Shows the canonical pitchfork bifurcation of the self-consistency equation
     m* = tanh(beta*J*m* + beta*h)
-with finite-M SaoMNK CTMC simulation overlays converging to the analytical
+with finite-M SAOM-NK CTMC simulation overlays converging to the analytical
 B&D fixed point as M -> infinity.
 
 Companion to Property 1 (NK = single-actor, greedy limit) in the searchnet
@@ -114,7 +114,7 @@ class BrockDurlaufScene(Scene):
             font="Times New Roman", slant=ITALIC,
         ).next_to(title, DOWN, buff=0.25)
         tagline = Text(
-            "The economic foundation of SaoMNK",
+            "The economic foundation of SAOM-NK",
             font_size=20, color=COLORS["gold"],
             font="Times New Roman",
         ).next_to(subtitle, DOWN, buff=0.45)
@@ -127,10 +127,10 @@ class BrockDurlaufScene(Scene):
         self.play(title_group.animate.scale(0.55).to_edge(UP, buff=0.3),
                   run_time=0.8)
 
-        # Three-foundation diagram around central SaoMNK node
+        # Three-foundation diagram around central SAOM-NK node
         center = Dot(point=ORIGIN, radius=0.35, color=COLORS["navy"])
         center_label = Text(
-            "SaoMNK", font_size=22, color=COLORS["text"],
+            "SAOM-NK", font_size=22, color=COLORS["text"],
             font="Times New Roman", weight=BOLD,
         ).move_to(center.get_center())
 
@@ -413,12 +413,12 @@ class BrockDurlaufScene(Scene):
         self._crit = VGroup(crit_line, crit_label, crit_eq)
 
     # ===================================================================
-    # Phase 4 (25s) — SaoMNK simulation overlays
+    # Phase 4 (25s) — SAOM-NK simulation overlays
     # ===================================================================
     def _phase_4_simulation_overlays(self):
         # Update header
         new_header = Text(
-            "SaoMNK CTMC -> B&D fixed point",
+            "SAOM-NK CTMC -> B&D fixed point",
             font_size=28, color=COLORS["text"],
             font="Times New Roman", weight=BOLD,
         ).to_edge(UP, buff=0.4)
@@ -450,7 +450,7 @@ class BrockDurlaufScene(Scene):
         )
 
         caption = Text(
-            "SaoMNK CTMC at M = {10, 100, 1000} converging to B&D fixed point",
+            "SAOM-NK CTMC at M = {10, 100, 1000} converging to B&D fixed point",
             font_size=18, color=COLORS["dim"],
             font="Times New Roman", slant=ITALIC,
         ).to_edge(DOWN, buff=0.3)
@@ -522,7 +522,7 @@ class BrockDurlaufScene(Scene):
         # Re-draw the three-foundation diagram with B&D highlighted
         center = Dot(point=ORIGIN, radius=0.4, color=COLORS["navy"])
         center_label = Text(
-            "SaoMNK", font_size=24, color=COLORS["text"],
+            "SAOM-NK", font_size=24, color=COLORS["text"],
             font="Times New Roman", weight=BOLD,
         ).move_to(center.get_center())
 
@@ -583,7 +583,7 @@ class BrockDurlaufScene(Scene):
 
         # Property 5 statement
         theorem = Text(
-            "Property 5:  SaoMNK contains B&D2001 the same way it contains NK",
+            "Property 5:  SAOM-NK contains B&D2001 the same way it contains NK",
             font_size=22, color=COLORS["gold"],
             font="Times New Roman", weight=BOLD,
         ).to_edge(UP, buff=0.5)

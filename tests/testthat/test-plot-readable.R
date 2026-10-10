@@ -192,13 +192,13 @@ test_that("plot.searchnet_ergodicity() takes annotate and keeps its return value
 
 test_that("snapshots: plain panel titles; the R6 method draws the same panels", {
   skip_if_not_installed("RSiena")
+  local_close_new_devices()  # building the panels and the R6 method both open one
   env <- readable_env()
   s <- saomnk_plot_snapshots(env, steps = 1, draw = FALSE)[[2]]
   expect_identical(s$bipartite$labels$title, "Who holds what")
   expect_match(s$social$labels$subtitle, "^K_AA: ")
   expect_match(s$heatmap$labels$subtitle, "^K_CC: ")
   grDevices::pdf(NULL)
-  on.exit(grDevices::dev.off(), add = TRUE)
   out <- env$plot_snapshots(c(1, 2), include_init = FALSE)
   expect_length(out, 2)
   expect_s3_class(out[[1]]$bipartite, "ggplot")

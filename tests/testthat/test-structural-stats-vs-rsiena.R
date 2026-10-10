@@ -390,7 +390,7 @@ test_that("negative control: the pre-2026-10-08 inPopX column does NOT match", {
 })
 
 test_that("every crosswalk entry marked exact maps onto a statistic pinned here", {
-  ## saom_to_saomnk()'s "exact" status says the SaoMNK effect IS the estimated
+  ## saom_to_saomnk()'s "exact" status says the SAOM-NK effect IS the estimated
   ## RSiena effect. That is a claim about searchnet's statistic, so it needs a
   ## pin. Five entries carried it without one until 2026-10-04.
   cw <- .bridge_crosswalk()

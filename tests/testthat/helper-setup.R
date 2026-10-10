@@ -6,8 +6,12 @@
 
 ## ---- Load source files directly (avoids segfault from loading all libs at once) ----
 pkg_root <- normalizePath(file.path(dirname(dirname(getwd()))), winslash = "/")
-## Fallback: if running from a different working dir, try known path
-if (!file.exists(file.path(pkg_root, "R", "saomnk-base.R"))) {
+## Fallback: if running from a different working dir, try known path. Never
+## under R CMD check: there the package under test is the installed one, and
+## a hard-coded working copy (possibly on another branch) must not stand in
+## for it.
+if (!file.exists(file.path(pkg_root, "R", "saomnk-base.R")) &&
+    !nzchar(Sys.getenv("_R_CHECK_PACKAGE_NAME_"))) {
   pkg_root <- normalizePath("D:/Search_networks/SaoMNK", winslash = "/")
 }
 
@@ -27,7 +31,11 @@ dir_r <- file.path(pkg_root, "R")
 ## harness follows automatically.
 suppressPackageStartupMessages({
   suppressWarnings({
-    .ns <- readLines(file.path(pkg_root, "NAMESPACE"), warn = FALSE)
+    ## Under R CMD check there is no source tree; the installed package carries
+    ## the same NAMESPACE file.
+    .ns_file <- file.path(pkg_root, "NAMESPACE")
+    if (!file.exists(.ns_file)) .ns_file <- system.file("NAMESPACE", package = "searchnet")
+    .ns <- readLines(.ns_file, warn = FALSE)
     .pkgs <- unique(c(
       "R6",
       sub("^importFrom\\(([^,]+),.*$", "\\1", grep("^importFrom\\(", .ns, value = TRUE)),
@@ -70,7 +78,10 @@ suppressPackageStartupMessages({
 suppressPackageStartupMessages({
   suppressWarnings({
     loader <- file.path(pkg_root, "inst", "saomnk-loader.R")
-    if (file.exists(loader)) {
+    if (!dir.exists(dir_r)) {
+      ## Under R CMD check: nothing to source. The tests run against the
+      ## installed package, whose namespace encloses every test environment.
+    } else if (file.exists(loader)) {
       source(loader, local = FALSE)
     } else {
       ## Fallback: glob in the loader's order. Deliberately NOT a curated list.
@@ -87,6 +98,19 @@ suppressPackageStartupMessages({
 ## message(), so a package that would not load produced a full run of skips
 ## rather than one loud error. If the package cannot be sourced, every result
 ## after this point is meaningless and the run should stop here.
+
+## ---- Graphics devices ----
+## Many plot functions open a device to compose or print. A file or test that
+## leaves one open hands every later file a device it did not ask for, which
+## makes text-measuring tests depend on file order. Call this at the top of a
+## test file (or a test) to close, when that scope ends, every device opened
+## in it.
+local_close_new_devices <- function(env = parent.frame()) {
+  devs <- grDevices::dev.list()
+  withr::defer(for (d in setdiff(grDevices::dev.list(), devs)) grDevices::dev.off(d),
+               envir = env)
+  invisible(devs)
+}
 
 ## ---- Shared constants ----
 DV_NAME <- "self$bipartite_rsienaDV"
