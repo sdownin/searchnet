@@ -9,7 +9,9 @@ searchnet_degree_bounds(
   actor = NULL,
   component = NULL,
   bound_penalty = .SEARCHNET_BOUND_PENALTY,
-  repair_initial = FALSE
+  repair_initial = FALSE,
+  estimate_floor = FALSE,
+  floor_start = -2
 )
 
 \method{print}{searchnet_degree_bounds}(x, ...)
@@ -28,6 +30,18 @@ floor: \code{FALSE} (default) stops with the violating actors or
 components listed; \code{TRUE} adds randomly chosen ties (seeded from the
 run seed) until every floor holds, and says so. A start above a cap is
 never repaired.}
+
+\item{estimate_floor}{Logical. \code{FALSE} (default) keeps the actor floor
+a fixed penalty. \code{TRUE} turns an actor floor of 1 into a FREE
+\code{outIso} evaluation effect: the cost of dropping the last tie,
+estimated rather than assumed (see the section on an estimated floor).
+Requires \code{actor = c(min = 1)}; a floor above 1 is refused as not
+identified.}
+
+\item{floor_start}{Number: the starting value of the estimated
+\code{outIso} coefficient in estimation, and its value when a model built
+from these bounds is simulated. Default -2. Used only with
+\code{estimate_floor = TRUE}.}
 
 \item{x}{A \code{"searchnet_degree_bounds"} object.}
 
@@ -80,6 +94,37 @@ network, and \code{MaxDegree} applies to outdegrees only. A component
 minimum above 3 or a component maximum above 2 is therefore refused with a
 \code{"searchnet_not_implemented"} error. That is a statement about the
 software, not about the world.
+}
+
+\section{An estimated floor (\code{estimate_floor = TRUE})}{
+
+With \code{estimate_floor = TRUE} the actor floor of 1 is no longer a
+constraint. \code{outIso} enters as a free evaluation effect, starting at
+\code{floor_start}, and its estimate measures the cost of dropping the last
+tie: how much less an actor values holding nothing than the other effects
+in the model predict. It is a reluctance RELATIVE to those other effects,
+not an absolute quantity, and it changes when they change. Because an
+evaluation effect values states, it is informed by observed transitions
+into degree 0 (last-tie drops) and out of it (a first tie after holding
+none); when every actor holds a component at the start, that information
+comes from observed last-tie drops and what follows them. Call
+\code{\link{searchnet_floor_identification}} before estimating: with no
+observed transition to degree 0 the coefficient is not identified, and only
+a bound can be reported.
+
+Degree 0 is then allowed in observed and simulated states: the floor is
+left out of \code{\link{searchnet_check_degree_bounds}}, the simulation
+gates, the start-state repair and
+\code{\link{searchnet_portfolio_infeasible}}. Every other bound stays fixed.
+
+A floor \eqn{k > 1} cannot be estimated and is refused with an error of
+class \code{"searchnet_not_identified"}: its only carrier,
+\code{outTrunc(k)}, has the same change statistic for every drop by an
+actor holding \eqn{k} or fewer components, so a free coefficient measures
+how much more the first \eqn{k} ties are worth than later ones, not the
+cost of crossing the floor; RSiena offers no outdegree indicator above
+\code{outIso} (\code{outMore(k)} is the tie count minus
+\code{outTrunc(k)}).
 }
 
 \section{Maximum likelihood}{

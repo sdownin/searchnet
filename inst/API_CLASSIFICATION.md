@@ -6,14 +6,14 @@ and regenerate with `Rscript tools/api_inventory.R`.
 
 | Class | Exports | Meaning |
 |---|---:|---|
-| Core | 123 | Simulation, the estimation bridge, the {K} framework, diagnostics and causal tools. |
-| Visualization | 50 | Plots, plot themes and palettes, and exporters that feed animation or dashboards. |
+| Core | 129 | Simulation, the estimation bridge, the {K} framework, diagnostics and causal tools. |
+| Visualization | 51 | Plots, plot themes and palettes, and exporters that feed animation or dashboards. |
 | Teaching | 14 | Classroom and strategy-game workflows and teaching presets. |
 | Legacy (deprecated wrappers) | 21 | Superseded names kept as wrappers; each warns once per session and forwards to its replacement (see `?searchnet-naming`). |
 | Advanced / internal candidates | 1 | Exported but undocumented or documented as internal; candidates to stop exporting in a future minor release. |
-| **Total** | **209** | |
+| **Total** | **216** | |
 
-## Core (123)
+## Core (129)
 
 | Function | Area | Title | Help topic |
 |---|---|---|---|
@@ -48,7 +48,7 @@ and regenerate with `Rscript tools/api_inventory.R`.
 | `searchnet_synth` | causal | Run Synthetic Control on searchnet simulation | `searchnet_synth` |
 | `boundary_screen` | diagnostics | Screen Degree-Threshold Effects for Structural Unestimability | `boundary_screen` |
 | `gof_battery` | diagnostics | Five-Statistic Goodness-of-Fit Battery for a Bipartite SAOM | `gof_battery` |
-| `nk_verify_reduction` | diagnostics | Verify the NK reduction against an independent landscape | `nk_verify_reduction` |
+| `nk_verify_reduction` | diagnostics | Check an NK landscape's encoding and, optionally, its reading by the engine | `nk_verify_reduction` |
 | `rate_ladder` | diagnostics | Fit a Model Across the Rate Functions RSiena Offers | `rate_ladder` |
 | `saomnk_assent` | diagnostics | Specify a confirmation (assent) rule | `saomnk_assent` |
 | `saomnk_confirm` | diagnostics | Apply the confirmation step to a simulated environment | `saomnk_confirm` |
@@ -122,6 +122,12 @@ and regenerate with `Rscript tools/api_inventory.R`.
 | `SaoMNKexperiments` | simulation | R6 Class for Monte Carlo Experiment Batches | `SaoMNKexperiments` |
 | `SaomNkRSienaBiEnv` | simulation | Extended R6 Class for SAOM-NK Simulations | `SaomNkRSienaBiEnv` |
 | `searchnet_actor_landscape` | simulation | The whole landscape of one actor, for small N | `searchnet_actor_landscape` |
+| `searchnet_composition` | simulation | RSiena Composition Change for Actors Who Enter or Leave | `searchnet_composition` |
+| `searchnet_filmstrip` | simulation | A filmstrip of a stored run | `searchnet_filmstrip` |
+| `searchnet_floor_identification` | simulation | Can an Estimated Floor Be Identified From These Data? | `searchnet_floor_identification` |
+| `searchnet_floor_power` | simulation | Power and Identification of an Estimated Floor, by Observed Drops | `searchnet_floor_power` |
+| `searchnet_frame` | simulation | One frame of a stored run | `searchnet_frame` |
+| `searchnet_frames_prepare` | simulation | Prepare a stored run for frames, filmstrips and animations | `searchnet_frames_prepare` |
 | `searchnet_new_analysis` | simulation | Create a Reproducible SAOM-NK Analysis Skeleton | `searchnet_new_analysis` |
 | `track_entry_decisions` | simulation | Track competitive entry/exit decisions during SAOM-NK simulation | `track_entry_decisions` |
 | `rosetta_classes` | translation registry | Effect classes of the SAOM-NK objective | `rosetta_classes` |
@@ -141,7 +147,7 @@ and regenerate with `Rscript tools/api_inventory.R`.
 | `rosetta_translate` | translation registry | Translate a model into the classes of the SAOM-NK objective | `rosetta_translate` |
 | `rosetta_validate` | translation registry | Validate the translation registry | `rosetta_validate` |
 
-## Visualization (50)
+## Visualization (51)
 
 | Function | Title | Help topic |
 |---|---|---|
@@ -181,6 +187,7 @@ and regenerate with `Rscript tools/api_inventory.R`.
 | `scale_color_searchnet` | searchnet Color and Fill Scales | `scale_color_searchnet` |
 | `scale_colour_searchnet` | searchnet Color and Fill Scales | `scale_color_searchnet` |
 | `scale_fill_searchnet` | searchnet Color and Fill Scales | `scale_color_searchnet` |
+| `searchnet_animate` | Animate a stored run as a GIF | `searchnet_animate` |
 | `searchnet_causal_plot` | Plot causal inference results from searchnet | `searchnet_causal_plot` |
 | `searchnet_export_all` | Export full simulation results for manim visualization | `searchnet_export_all` |
 | `searchnet_export_for_manim` | Export simulation results in dashboard-scene CSV formats | `searchnet_export_for_manim` |
@@ -247,7 +254,7 @@ and regenerate with `Rscript tools/api_inventory.R`.
 |---|---|---|
 | `SaomNkRSienaBiEnv_base` | Base R6 Class for SAOM-NK Bipartite Search Environments | `SaomNkRSienaBiEnv_base` |
 
-## Registered S3 methods (36)
+## Registered S3 methods (38)
 
 Methods for the classes the functions above return; not counted above.
 
@@ -281,9 +288,11 @@ Methods for the classes the functions above return; not counted above.
 - `print(<summary.searchnet_recovery>)`
 - `plot(<searchnet_recovery>)`
 - `print(<searchnet_degree_bounds>)`
+- `print(<searchnet_floor_identification>)`
 - `print(<searchnet_lean_spec>)`
 - `print(<rosetta_entry>)`
 - `print(<rosetta_validation>)`
 - `print(<rosetta_spec>)`
 - `print(<rosetta_translation>)`
 - `print(<rosetta_lean>)`
+- `print(<searchnet_frames>)`

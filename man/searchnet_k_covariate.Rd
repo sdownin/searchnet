@@ -18,7 +18,8 @@ searchnet_k_covariate(
 \code{"epistasis_strength"} (component level).}
 }
 \value{
-A numeric matrix, nodes by periods, with dimnames.
+A numeric matrix, nodes by periods, with dimnames. An actor absent
+in a period (composition change) is \code{NA} there.
 }
 \description{
 Reshapes one column of \code{\link{searchnet_k_readings}} into an

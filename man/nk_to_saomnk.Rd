@@ -9,9 +9,9 @@ nk_to_saomnk(landscape, M = 1L)
 \arguments{
 \item{landscape}{An \code{"nk_landscape"} object.}
 
-\item{M}{Integer. Number of actors to place on the landscape. \code{M = 1}
-gives the exact NK reduction; \code{M > 1} embeds the same landscape in a
-multi-actor SAOM-NK search (the generalization direction).}
+\item{M}{Integer. Number of actors. \code{M = 1} is the reduction setting;
+\code{M > 1} uses the same influence pattern in a multi-actor SAOM-NK
+search (the generalization direction).}
 }
 \value{
 A list with components \code{env_params} (arguments for
@@ -20,10 +20,13 @@ A list with components \code{env_params} (arguments for
 \code{landscape} (the source object).
 }
 \description{
-Emits the environment and structure-model settings that make a
-single-actor SAOM-NK environment search the supplied NK landscape.  This is
-the constructive content of the Reduction property (Property 1): NK is the
-\eqn{M = 1}, \eqn{\beta \to \infty} special case of SAOM-NK.
+Emits environment and structure-model settings matching the supplied NK
+landscape's size and influence pattern (Property 1: NK is the
+\eqn{M = 1}, \eqn{\beta \to \infty} special case of SAOM-NK).  The payoff
+tables are not transferred: an environment built from these settings draws
+its own tables in \code{compute_fitness_landscape()}.  To evaluate this
+landscape itself through the engine, see
+\code{nk_verify_reduction(engine = TRUE)}.
 }
 \examples{
 nk <- nk_landscape(N = 8, K = 2, seed = 42)

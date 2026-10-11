@@ -14,6 +14,7 @@ searchnet_coevolve_data(
   architecture_lag = TRUE,
   names = .SEARCHNET_COEV_NAMES,
   allow_only = FALSE,
+  composition = NULL,
   verbose = TRUE
 )
 }
@@ -54,6 +55,17 @@ them, and a mismatch fails silently in RSiena.}
 \item{allow_only}{Logical, passed to \code{sienaDependent} for the behavior
 DV as \code{allowOnly}. \code{FALSE} lets the simulation move behavior in
 both directions even when the observed panel only ever increases.}
+
+\item{composition}{Actors who enter or leave. \code{NULL} (default) uses the
+composition change stored in \code{bipartite} when it is a
+\code{searchnet_bipartite} object built with \code{entry}, \code{exit} or
+\code{presence} (see \code{\link{searchnet_composition}}), and none
+otherwise; an object from \code{\link{searchnet_composition}} is used as
+given (its node set set to the actors); \code{FALSE} adds none, in which
+case the \code{NA} rows of absent actors are treated by RSiena as missing
+ties. With a composition change, RSiena estimates by unconditional method
+of moments. A \code{behavior} or varying covariate for an absent
+actor-wave should be \code{NA}.}
 
 \item{verbose}{Logical. Report the assembled dimensions and node sets.}
 }

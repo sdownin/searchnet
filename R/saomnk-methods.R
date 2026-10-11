@@ -96,7 +96,9 @@ print.saomnk_model <- function(x, ...) {
 
   b <- .searchnet_model_bounds(x)
   if (!is.null(b)) {
-    cat("Degree bounds (fixed modeling assumptions, NOT estimated):\n")
+    cat(if (isTRUE(b$estimate_floor))
+          "Degree bounds (actor floor ESTIMATED; any other bound fixed):\n"
+        else "Degree bounds (fixed modeling assumptions, NOT estimated):\n")
     cat(paste0("  ", .searchnet_bounds_lines(b), collapse = "\n"), "\n", sep = "")
   }
 

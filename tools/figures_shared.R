@@ -269,24 +269,36 @@ fs_fig_nk_validation <- function(base_size = 11, compact = FALSE) {
     facet_wrap(~ K, nrow = 1) +
     scale_color_manual(values = k_cols, guide = "none") +
     labs(title = "Adaptive walks stop at local peaks",
-         subtitle = paste0("nk_walk(type = \"steepest\") from 30 random starts, N = 12;",
-                           if (compact) "\n" else " ", "dots mark the peak reached"),
+         subtitle = paste0("nk_walk(type = \"steepest\"), random-neighbor landscapes, N = 12;",
+                           "\n30 random starts (set.seed(11)); dots mark the peak reached"),
          x = "Step", y = "Fitness") +
+    scale_x_continuous(breaks = function(lim)
+      seq(0, floor(lim[2]), by = max(1, ceiling(floor(lim[2]) / 5)))) +
     fs_theme(base_size)
 
+  n_land <- 20
   sweep <- nk_sweep_K(N = N3, K_values = c(0, 1, 2, 3, 4, 6, 8, 11),
-                      n_landscapes = 4, n_walks = 5, model = "random", seed = 2026)
+                      n_landscapes = n_land, n_walks = 5, model = "random", seed = 2026)
   opt_col <- grep("optima", names(sweep), value = TRUE)[1]
   sweep$n_opt <- sweep[[opt_col]]
   ref_full <- 2^N3 / (N3 + 1)   # expected local optima in the fully random case K = N - 1
+  ## What the subtitle reports: the M = 1 engine check of nk_verify_reduction()
+  ## on a random-neighbor landscape (the model the panels use). The engine's
+  ## compute_formal_utility() (beta_F only) is evaluated at every configuration
+  ## of the injected NK landscape and compared with its NK fitness; the
+  ## engine-driven steepest walk is compared with nk_walk(). It does not test
+  ## the engine's own landscape generator or the RSiena ministep path.
   red <- NULL
-  fs_quiet(red <- nk_verify_reduction(N = 10, K = 3, seed = 42))
+  fs_quiet(red <- nk_verify_reduction(N = 10, K = 3, model = "random", seed = 42,
+                                      engine = TRUE))
+  stopifnot(isTRUE(red$passed))
+  red_max <- format(signif(red$engine_max_difference, 2))
   sub_sweep <- if (!compact) {
-    sprintf("nk_sweep_K(): mean local optima, 4 landscapes per K\nnk_verify_reduction(N = 10, K = 3): max |NK - SAOM-NK|\n= %s over %d configurations",
-            format(signif(red$max_difference, 2)), red$n_configs)
+    sprintf("nk_sweep_K(): mean of %d random-neighbor landscapes per K\nnk_verify_reduction(N = 10, K = 3, model = \"random\",\nengine = TRUE): max |engine utility (M = 1) - NK fitness|\n= %s over %d configurations",
+            n_land, red_max, red$n_configs)
   } else {
-    sprintf("nk_sweep_K(): mean local optima,\n4 landscapes per K\nnk_verify_reduction(N = 10, K = 3):\nmax |NK - SAOM-NK| = %s over %d\nconfigurations",
-            format(signif(red$max_difference, 2)), red$n_configs)
+    sprintf("nk_sweep_K(): mean of %d\nrandom-neighbor landscapes per K\nnk_verify_reduction(N = 10, K = 3,\nmodel = \"random\", engine = TRUE):\nmax |engine utility (M = 1) - NK fitness|\n= %s over %d configurations",
+            n_land, red_max, red$n_configs)
   }
   p_sweep <- ggplot(sweep, aes(K, n_opt)) +
     geom_hline(aes(yintercept = ref_full,
@@ -312,7 +324,11 @@ fs_fig_nk_validation <- function(base_size = 11, compact = FALSE) {
     walk_peaks = aggregate(fitness ~ K, ends, function(x) length(unique(round(x, 12)))),
     walk_steps = aggregate(step ~ K, ends, mean),
     sweep = sweep[, c("K", "n_opt")], ref_full_random = ref_full,
-    reduction = list(max_difference = red$max_difference, n_configs = red$n_configs))
+    n_landscapes = n_land,
+    reduction = list(encoding_max_difference = red$encoding_max_difference,
+                     engine_max_difference = red$engine_max_difference,
+                     engine_walk_identical = red$engine_walk_identical,
+                     n_configs = red$n_configs))
   nkfig
 }
 

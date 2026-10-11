@@ -10,7 +10,7 @@ nk_local_optima(landscape, strict = FALSE)
 \item{landscape}{An \code{"nk_landscape"} object.}
 
 \item{strict}{Logical. If \code{TRUE}, require strictly greater fitness than
-every neighbour. Default \code{FALSE} (>=), matching the standard
+every neighbor. Default \code{FALSE} (>=), matching the standard
 convention.}
 }
 \value{

@@ -11,10 +11,10 @@ nk_dependencies(N, K, model = c("adjacent", "random", "block"))
 
 \item{K}{Integer. Number of epistatic partners per locus, \code{0 <= K <= N-1}.}
 
-\item{model}{Character. Neighbourhood topology:
+\item{model}{Character. Neighborhood topology:
 \describe{
 \item{\code{"adjacent"}}{Ring topology: partners are the nearest loci on
-a circle (Kauffman's "neighbourhood" model). Deterministic.}
+a circle (Kauffman's "neighborhood" model). Deterministic.}
 \item{\code{"random"}}{Partners drawn uniformly without replacement from
 the other loci (Kauffman's "random" model).}
 \item{\code{"block"}}{Near-decomposable: loci are partitioned into blocks

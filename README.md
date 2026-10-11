@@ -38,13 +38,13 @@ All six actors move at once. The same run with every actor on one shared landsca
 *All six actors on one shared landscape (same run as above: 6 actors, 8 components, environment seed 42, run seed 12345). The grid is the objective a new actor with the same parameters would get from each portfolio given all six actors' current ties. Each actor's own landscape differs from it only through that actor's own holdings (here by at most 1.6 on a range of about 12, and by 0.2 per held component at the actor's own cell); the trajectories on the left are each actor's own objective. Rendered by [`tools/make_all_actors_gif.R`](tools/make_all_actors_gif.R) `--shared=entrant` from [`inst/manim/scene_all_actors_landscape.py`](inst/manim/scene_all_actors_landscape.py).*
 
 > [!WARNING]
-> **Development status: experimental pre-release (v0.17.x).**
+> **Development status: experimental pre-release (v0.18.x).**
 > This is a research release of a new package: the API is still
 > evolving, breaking changes may occur between 0.x versions, and bugs are
 > to be expected. The companion methods paper has not yet been
 > peer-reviewed; results should be treated accordingly.
 > For reproducibility, install a pinned tag rather than the moving branch:
-> `devtools::install_github("sdownin/searchnet@v0.17.0")`.
+> `devtools::install_github("sdownin/searchnet@v0.18.0")`.
 > **v0.8.3 and earlier:** `saomnk_model()` simulations that declared
 > `influence_weight`, `cycle4`, `XWX`, `X`, `inPopX`, `outActX` or
 > `homXOutAct` did not simulate the declared coefficient (estimation via
@@ -335,13 +335,14 @@ Conventional Kauffman NK models, self-contained and independent of RSiena — us
 - `nk_walk()` — adaptive walks: `"steepest"`, `"greedy"`, `"random"`
 - `nk_local_optima()` — exhaustive peak enumeration (about 2^N/(N+1) peaks in the fully random case K = N − 1)
 - `nk_sweep_K()` — canonical ruggedness sweep across K
-- `nk_to_saomnk()` / `nk_verify_reduction()` — bridge to the SAOM engine; the constructive form of Property 1 (NK is the M = 1, beta -> infinity case of SAOM-NK)
+- `nk_to_saomnk()`: single-actor SAOM-NK settings matching an NK landscape's size and influence pattern; the payoff tables are not transferred (Property 1: NK is the M = 1, beta -> infinity case of SAOM-NK)
+- `nk_verify_reduction()`: recomputes fitness from the per-locus tables with a separately coded bit order (an encoding check of `nk_landscape()`); with `engine = TRUE` it also evaluates the landscape through the engine's M = 1 utility and steepest-ascent choices. It does not test the engine's own landscape generator or the RSiena ministep path
 
 ```r
-nk <- nk_landscape(N = 10, K = 3, seed = 42)
-nrow(nk_local_optima(nk))          # ruggedness rises with K
-nk_walk(nk, start = 0)             # classic adaptive walk
-nk_verify_reduction(N = 10, K = 3) # independent check of the reduction
+nk <- nk_landscape(N = 10, K = 3, model = "random", seed = 42)
+nrow(nk_local_optima(nk))          # local optima of this one landscape
+nk_walk(nk, start = 0)             # classic adaptive walk from configuration 0
+nk_verify_reduction(N = 10, K = 3, model = "random", seed = 42, engine = TRUE)
 ```
 
 ### Translation Registry (Rosetta)
@@ -402,7 +403,7 @@ searchnet/
 │   ├── scene_landscape_3d.py   # 3D fitness landscape rendering
 │   └── scene_shock.py          # Parametric shock animation
 ├── inst/proofs/                # Formal proofs (NK⊂SAOM-NK equivalence, online appendix)
-├── tests/testthat/             # 1088 tests (82 test files)
+├── tests/testthat/             # 1117 tests (84 test files)
 ├── man/                        # Generated documentation
 └── docs/                       # Strategy documents
 ```
@@ -412,7 +413,7 @@ searchnet/
 ```r
 # Run the full test suite
 testthat::test_dir("tests/testthat")
-# v0.17.0: 82 files, 1088 tests, 8431 expectations, 0 failures, 0 errors, 5 skips (RSiena 1.5.0 and 1.6.6)
+# v0.18.0: 84 files, 1117 tests, 8628 expectations, 0 failures, 0 errors, 5 skips (RSiena 1.5.0 and 1.6.6)
 ```
 
 Tests cover initialization, simulation execution, chain statistics, K-4 degree computation (with canonical network validation), shock processing, export pipeline, formal utility decomposition, McFadden choice probabilities, NK equivalence verification (Property 1), DGP validation, reproducibility, and edge cases.
@@ -525,17 +526,20 @@ Key results, numbered as Properties 1-7 in `inst/proofs/PROOF_TABLE.md` (proofs 
 - **Property 6 (Two-layer integrability)**: when an actor-actor relation co-evolves with the actor-component matrix, the two-layer process has an exact potential if and only if the two cross-layer coupling coefficients are equal (theta_AB = theta_BA; sufficiency needs the own-term hypothesis M2); machine-checked in the Lean library (`PROOF_TABLE.md` Part M)
 - **Property 7 (Creation/endowment boundary)**: with separate creation and endowment functions an exact potential exists if and only if they have equal change statistics on every move; a constant wedge w gives a four-step cycle sum of exactly 2w (`PROOF_TABLE.md` Part N)
 
-The engine includes `verify_nk_equivalence()` for computational verification of Property 1, and `verify_brock_durlauf_reduction()` for empirical verification of Property 5.
+The engine includes `verify_nk_equivalence()`, a consistency check of its stored NK landscape array (Property 1; see also `nk_verify_reduction(engine = TRUE)`), and `verify_brock_durlauf_reduction()` for empirical verification of Property 5.
 
 ![Classical NK behavior reproduced: adaptive walks on N = 12 landscapes, and local-optimum counts rising with K](man/figures/readme-nk-validation.png)
 
 *The classical NK module reproduces the textbook results. Left: steepest-ascent
-walks (`nk_walk()`) from 30 random starts on N = 12 landscapes; at K = 0 every
-walk reaches the single peak, at higher K walks are shorter and stop at
-different local peaks. Right: mean local-optimum count from `nk_sweep_K()`
-against K, with the 2^N/(N+1) count of the fully random case (K = N − 1); the subtitle reports
-`nk_verify_reduction()`. Generated by `tools/make_readme_figures.R` (landscape
-seeds 2026 + K, sweep seed 2026).*
+walks (`nk_walk()`) from 30 random starts (start seed 11) on N = 12
+random-neighbor landscapes; at K = 0 every walk reaches the single peak, at
+higher K walks are shorter and stop at different local peaks. Right: mean
+local-optimum count over 20 random-neighbor landscapes per K from
+`nk_sweep_K()`, with the 2^N/(N+1) count of the fully random case (K = N − 1).
+The subtitle reports `nk_verify_reduction(engine = TRUE)`: the engine's
+single-actor utility evaluated on an N = 10, K = 3 NK landscape, compared with
+its NK fitness at every configuration. Generated by `tools/make_readme_figures.R`
+(landscape seeds 2026 + K, sweep seed 2026).*
 
 ## Vignettes
 
@@ -564,6 +568,7 @@ history jumps from v0.4.1 to v0.7.0 — NEWS.md records why.
 
 | Version | Highlights |
 |---|---|
+| **v0.18.0** | Actors who enter or leave (RSiena composition change through the observed-data layer and the recovery harness); an estimated floor (cost of dropping the last tie) with an identification helper and power study; `nk_verify_reduction()` now a real encoding and engine check. Tested with RSiena 1.5.0 and 1.6.6. Suite: 84 files, 1117 tests, 0 failures, 0 errors. |
 | **v0.17.0** | Lighter dependencies (10 plotting/reporting packages move to Suggests; Imports 25 to 13) and a 4.8 MB source tarball (was 12.8 MB). No change to simulated results. Suite: 82 files, 1088 tests, 0 failures, 0 errors. |
 | **v0.16.0** | `searchnet_frame()`, `searchnet_filmstrip()` and `searchnet_animate()`: frames, filmstrips (grid, multipage PDF, PNGs) and GIFs of any stored run at chosen ministeps, in pure R. No change to simulated results. Suite: 81 files, 1083 tests, 0 failures, 0 errors. |
 | **v0.15.1** | The treated-versus-control risk-taking plot is internal under a generic name; `searchnet_plot_exploration()` view renamed `type = "treatment_risk"`. No change to simulated results. Suite: 80 files, 1074 tests, 0 failures, 0 errors. |
@@ -610,7 +615,7 @@ line and are exercised by the v0.12.2 test suite.
   title  = {searchnet: Network-Embedded Search Simulation Engine},
   author = {Stephen Downing},
   year   = {2026},
-  note   = {R package version 0.17.0},
+  note   = {R package version 0.18.0},
   url    = {https://github.com/sdownin/searchnet}
 }
 ```

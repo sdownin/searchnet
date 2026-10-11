@@ -44,7 +44,9 @@ head(long)
 `searchnet_bipartite_from_long()` builds the array. A tie is a summed weight
 above `threshold`; with `weight = NULL` any record is a tie. Passing `actors`
 fixes the universe, so an actor with no records in a period, or none at all,
-keeps a row of zeros and composition is stable across waves.
+keeps a row of zeros and composition is stable across waves. A row of zeros
+says the actor was there and held nothing; for an actor that did not yet exist
+or had closed, use section 6 instead.
 
 ```{r build}
 obs <- searchnet_bipartite_from_long(
@@ -127,7 +129,113 @@ dat <- searchnet_coevolve_data(
 class(dat)
 ```
 
-## 6. A project skeleton
+## 6. Actors who enter or leave
+
+Panels lose actors (a firm closes, a developer stops contributing) and gain
+them. Coded as rows of zeros, a closure reads as an actor dropping every tie,
+and an entry as an actor building a portfolio from nothing, and the estimator
+models both as tie changes. RSiena's alternative is an exogenous composition
+change (Huisman and Snijders 2003): an actor is active only while present,
+and its arrival and departure are not part of the modeled change.
+
+Give each actor's `entry` and `exit` in the units of the period column.
+Fractional times fall within a period: below, `actor_03` closes halfway
+between periods 2 and 3, and `actor_10` enters halfway between periods 1
+and 2. Their records outside those intervals are removed first, because a
+record for an absent actor-period is an error rather than a silent drop.
+
+```{r composition}
+long2 <- long[!(long$actor == "actor_03" & long$period > 2) &
+              !(long$actor == "actor_10" & long$period < 2), ]
+obs2 <- searchnet_bipartite_from_long(
+  long2, actor = "actor", component = "component", period = "period",
+  weight = "weight", threshold = 0.1,
+  exit = c(actor_03 = 2.5), entry = c(actor_10 = 1.5))
+obs2
+obs2$B["actor_03", 1:3, ]
+obs2$composition$intervals[c("actor_03", "actor_10")]
+```
+
+Absent actor-waves are `NA` in `B`, the coding `RSiena::sienaDependent()`
+expects with a composition change. The intervals are kept in RSiena wave time
+(wave 1 is time 1). A `presence` matrix (actor by period, `TRUE` when
+observed) is the alternative when only the waves are known, and allows an
+actor to leave and return.
+
+The {K} readings skip an absent actor and its ties in that period, so
+`n_actors` and `density` refer to the actors present, and `tie_jaccard`
+compares only actors present at both waves:
+
+```{r composition-k}
+k2 <- searchnet_k_readings(obs2)
+attr(k2, "summary")[, c("period", "n_actors", "ties", "density", "tie_jaccard")]
+```
+
+`searchnet_composition(obs2)` returns RSiena's composition-change object, and
+`searchnet_coevolve_data()` adds it on its own when given `obs2`. With a
+composition change, RSiena estimates by unconditional method of moments.
+
+```{r composition-coevolve, eval = requireNamespace("RSiena", quietly = TRUE)}
+dat2 <- searchnet_coevolve_data(bipartite = obs2, component = arch,
+                                verbose = FALSE)
+length(dat2$compositionChange)
+```
+
+### What ignoring it costs
+
+`searchnet_recovery(composition = )` plants leavers and joiners in simulated
+panels. The run below plants a 20% leaver share per period (M = 30, N = 12,
+3 waves, 100 replications, planted rate 5, density -1.5, inPop 0.10) and
+estimates the same panels twice: with the composition change, and the naive
+way, with leavers coded as rows of zeros. It takes several minutes, so the
+results were computed by `tools/make_composition_vignette_data.R` with exactly
+this code, with the criterion written before the run, and are loaded here.
+
+```{r composition-recovery-run, eval = FALSE}
+design <- list(
+  effects_spec = c("density", "inPop"),
+  theta_true   = c(rate = 5, density = -1.5, inPop = 0.10),
+  M = 30L, N = 12L, waves = 3L, reps = 100L, nbrNodes = 1L, seed = 20261011L,
+  n3 = 500L, nsub = 4L, init_density = 0.2,
+  composition = list(leave = 0.2, enter = 0),
+  criterion = list(max_abs_bias = c(density = 0.10, inPop = 0.03),
+                   min_coverage = 0.90, min_converged_share = 0.90))
+with_comp <- do.call(searchnet_recovery,
+                     c(design, list(estimate_with_composition = TRUE)))
+naive     <- do.call(searchnet_recovery,
+                     c(design, list(estimate_with_composition = FALSE)))
+```
+
+```{r composition-recovery-print}
+path <- system.file("extdata", "searchnet_composition_recovery.rds",
+                    package = "searchnet")
+if (!nzchar(path))  # building from a source tree without an installed copy
+  path <- file.path("..", "inst", "extdata",
+                    "searchnet_composition_recovery.rds")
+stored <- readRDS(path)
+stored$with_composition
+stored$naive
+```
+
+All 100 replications converged in both arms. With the composition change,
+the planted values come back within the stated criterion (density bias 0.05,
+inPop bias -0.02, every 95% interval covering the planted value), and
+those small biases match what the same design gives with no leavers at all
+(`vignette("searchnet-recovery")`). Read the naive way, the same panels give a
+density estimate about 0.22 lower (paired over replications, Monte Carlo SE
+0.01), outside the criterion, and a period-2 rate of 4.1 against the planted
+5 with 72% coverage: the leavers' dropped ties inflate change in the period
+they leave, and their empty rows dilute it afterwards. The popularity effect
+moved little in this design (paired difference -0.007), so a stable focal
+estimate under the naive reading is not evidence that the baseline
+parameters are right.
+
+These results hold at this design (20% leavers per period, no joiners,
+M = 30, N = 12, three waves) and nothing more. Run
+`searchnet_recovery(composition = )` at your own design, with and without
+`estimate_with_composition`, before choosing how to treat exits.
+
+## 7. A project skeleton
 
 `searchnet_new_analysis("my-analysis")` writes a short, reproducible project
 that runs these steps in order on a synthetic example: setup and a version

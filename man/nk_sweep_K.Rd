@@ -22,14 +22,20 @@ nk_sweep_K(
 
 \item{n_walks}{Integer. Adaptive walks per landscape (random starts).}
 
-\item{model}{Character. Neighbourhood topology.}
+\item{model}{Character. Neighborhood topology.}
 
 \item{seed}{Integer or \code{NULL}.}
 }
 \value{
-A \code{data.frame} with one row per \eqn{K}, containing mean local
-optima count, mean walk length, mean terminal fitness, and the global
-optimum fitness.
+A \code{data.frame} with one row per \eqn{K} and columns \code{N},
+\code{K}, \code{n_optima} (mean local-optimum count over the
+landscapes), \code{expected_optima} (the fully random expectation
+\eqn{2^N / (N + 1)}, given only in the row with \eqn{K = N - 1} and
+\code{NA} otherwise, because that expectation holds only in the fully
+random case),
+\code{global_fitness} (mean global-optimum fitness),
+\code{mean_walk_steps}, and \code{mean_terminal_fitness} (steepest-ascent
+walks from random starts).
 }
 \description{
 Replicates the canonical NK ruggedness experiment: as \eqn{K} rises, the

@@ -44,7 +44,7 @@ test_that("influence matrix has K+1 dependencies per locus", {
   }
 })
 
-test_that("all neighbourhood models produce valid landscapes", {
+test_that("all neighborhood models produce valid landscapes", {
   for (m in c("adjacent", "random", "block")) {
     nk <- nk_landscape(N = 9, K = 2, model = m, seed = 3)
     expect_s3_class(nk, "nk_landscape")
@@ -86,10 +86,86 @@ test_that("nk_fitness accepts codes and bit vectors", {
   expect_length(nk_fitness(nk), 2^6)
 })
 
-test_that("nk_verify_reduction passes", {
-  res <- nk_verify_reduction(N = 9, K = 3, seed = 42)
+test_that("nk_verify_reduction encoding check passes for every model", {
+  for (m in c("adjacent", "random", "block")) {
+    res <- nk_verify_reduction(N = 9, K = 3, model = m, seed = 42,
+                               verbose = FALSE)
+    expect_true(res$passed, info = m)
+    expect_identical(res$model, m)
+    expect_lt(res$encoding_max_difference, 1e-12)
+    expect_identical(res$config_mismatches, 0L)
+  }
+})
+
+## The encoding check must be able to fail. Rebuild a landscape the way
+## nk_landscape() does, but with a deliberately wrong bit order, and require
+## the check to catch it. The earlier check compared the landscape's
+## contributions with themselves and could not.
+corrupt_nk <- function(nk, configs, weights_rev = FALSE) {
+  bad <- nk
+  bad$configs <- configs
+  for (i in seq_len(nk$N)) {
+    di <- nk$dependencies[[i]]
+    bw <- 2^(seq_along(di) - 1)
+    if (weights_rev) bw <- rev(bw)
+    pat <- as.integer(configs[, di, drop = FALSE] %*% bw)
+    bad$contributions[, i] <- nk$tables[[i]][pat + 1L]
+  }
+  bad$fitness <- rowMeans(bad$contributions)
+  bad
+}
+
+test_that("nk_verify_reduction detects a reversed (LSB-first) bit order", {
+  nk <- nk_landscape(N = 8, K = 3, model = "random", seed = 5)
+  bad <- corrupt_nk(nk, nk$configs[, 8:1])
+  res <- nk_verify_reduction(landscape = bad, verbose = FALSE)
+  expect_false(res$passed)
+  expect_gt(res$encoding_max_difference, 1e-3)
+  expect_gt(res$config_mismatches, 0L)
+})
+
+test_that("nk_verify_reduction detects a misordered table key", {
+  nk <- nk_landscape(N = 8, K = 3, model = "random", seed = 5)
+  bad <- corrupt_nk(nk, nk$configs, weights_rev = TRUE)
+  res <- nk_verify_reduction(landscape = bad, verbose = FALSE)
+  expect_false(res$passed)
+  expect_identical(res$config_mismatches, 0L)   # configs are right ...
+  expect_gt(res$encoding_max_difference, 1e-3) # ... the fitness is not
+})
+
+test_that("nk_verify_reduction engine check: utility and walk match NK", {
+  res <- nk_verify_reduction(N = 8, K = 3, model = "random", seed = 42,
+                             engine = TRUE, verbose = FALSE)
   expect_true(res$passed)
-  expect_lt(res$max_difference, 1e-12)
+  expect_lt(res$engine_max_difference, 1e-12)
+  expect_true(res$engine_walk_identical)
+  expect_gte(res$engine_walk_steps, 1L)
+})
+
+test_that("nk_verify_reduction engine check fails on a corrupted landscape", {
+  nk <- nk_landscape(N = 6, K = 2, model = "random", seed = 9)
+  bad <- corrupt_nk(nk, nk$configs[, 6:1])
+  res <- nk_verify_reduction(landscape = bad, engine = TRUE, verbose = FALSE)
+  expect_false(res$passed)
+})
+
+test_that("nk_walk reports is_local_optimum from the terminal state", {
+  nk <- nk_landscape(N = 10, K = 3, seed = 7)
+  full <- nk_walk(nk, start = 0, type = "steepest")
+  expect_true(full$is_local_optimum)
+  expect_gte(full$steps, 2L)
+  cut <- nk_walk(nk, start = 0, type = "steepest", max_steps = 1L)
+  expect_identical(cut$steps, 1L)
+  expect_false(cut$is_local_optimum)
+  expect_identical(cut$terminal, cut$path[length(cut$path)])
+  expect_identical(cut$path, full$path[1:2])
+})
+
+test_that("nk_sweep_K gives the 2^N/(N+1) reference only at K = N - 1", {
+  sw <- nk_sweep_K(N = 6, K_values = c(0, 2, 5), n_landscapes = 2,
+                   n_walks = 2, seed = 1)
+  expect_true(all(is.na(sw$expected_optima[sw$K < 5])))
+  expect_equal(sw$expected_optima[sw$K == 5], 2^6 / 7)
 })
 
 test_that("nk_to_saomnk emits a usable specification", {

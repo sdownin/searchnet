@@ -72,6 +72,35 @@
 #' waves. Without them the universe is the observed ids (factor levels for a
 #' factor column, otherwise sorted unique values).
 #'
+#' @section Actors who enter or leave:
+#' A row of zeros says the actor was present and held nothing. For an actor
+#' that did not yet exist, or had closed, that is wrong: an exit then reads as
+#' the actor dropping every tie and an entry as the actor creating a portfolio
+#' from nothing. Give \code{entry} and \code{exit} times, or a
+#' \code{presence} matrix, and the panel carries an exogenous composition
+#' change instead (Huisman and Snijders 2003): absent actor-waves are coded
+#' \code{NA} in \code{B}, which is what \code{RSiena::sienaDependent()}
+#' expects with a composition change, the intervals are stored in
+#' \code{$composition}, \code{\link{searchnet_composition}} turns them into
+#' RSiena's object, and \code{\link{searchnet_coevolve_data}} adds that object
+#' automatically.
+#'
+#' Times are in the units of the \code{period} column and may be fractional:
+#' with yearly periods, \code{exit = 2003.5} means the actor closed halfway
+#' between the 2003 and 2004 waves, so it is observed in 2003 and absent from
+#' 2004. Intervals are closed, so an actor with \code{exit = 2003} is observed
+#' in 2003. A missing entry means present from the first period, a missing
+#' exit present to the last. With non-numeric periods, times must be period
+#' labels. \code{presence} (actor by period, \code{TRUE} when observed) allows
+#' an actor to leave and return; without timing information, an actor is
+#' taken to enter halfway between its last unobserved wave and its first
+#' observed one, and to leave halfway between its last observed wave and the
+#' next. Give \code{entry} and \code{exit} when the timing is known.
+#' A row in \code{data} for an actor-period outside the actor's presence is an
+#' error, not a silent drop. Only actors can enter or leave: RSiena does not
+#' support a composition change on the component node set of a bipartite
+#' network.
+#'
 #' @param data A data frame in long format.
 #' @param actor,component Names of the actor-id and component-id columns.
 #' @param period Optional name of the period (wave) column. \code{NULL} gives a
@@ -82,6 +111,16 @@
 #'   \code{weight > threshold}. Ignored when \code{weight} is \code{NULL}.
 #' @param actors,components,periods Optional vectors fixing the universe and
 #'   order of actors, components and periods.
+#' @param entry,exit Optional entry and exit times, one per actor, in the
+#'   units of \code{period} (fractional values fall within a period): the name
+#'   of a column of \code{data} (constant within an actor), a two-column data
+#'   frame (actor id, time), or a vector named by actor id. Actors not listed,
+#'   or with \code{NA}, are present from the first period or to the last.
+#'   Requires \code{period}.
+#' @param presence Optional alternative to \code{entry}/\code{exit}: a logical
+#'   actor by period matrix, \code{TRUE} where the actor is observed, with
+#'   actor ids as rownames (or one row per actor in universe order) and
+#'   optionally periods as colnames. Allows re-entry.
 #'
 #' @return An object of class \code{"searchnet_bipartite"}: a list with
 #'   \describe{
@@ -92,7 +131,14 @@
 #'       vectors, in row and column order;}
 #'     \item{\code{periods}}{the periods in slice order, in their original type
 #'       (\code{NULL} without a period column);}
-#'     \item{\code{weighted}, \code{threshold}}{how ties were defined.}
+#'     \item{\code{weighted}, \code{threshold}}{how ties were defined;}
+#'     \item{\code{composition}}{\code{NULL}, or with \code{entry},
+#'       \code{exit} or \code{presence} a list with \code{intervals} (per
+#'       actor, closed intervals of presence in RSiena wave time, wave 1 = 1),
+#'       \code{presence} (actor by period logical), \code{entry} and
+#'       \code{exit} (wave time; \code{NULL} when built from
+#'       \code{presence}) and \code{source}. Absent actor-waves are
+#'       \code{NA} in \code{B}.}
 #'   }
 #'
 #' @seealso \code{\link{searchnet_k_readings}},
@@ -108,10 +154,18 @@
 #'                                      actors = c("a1", "a2", "a3", "a4"))
 #' obs
 #' obs$B[, , "2"]
+#'
+#' ## a3 closes halfway through period 2: absent (NA) at wave 3, not a row of
+#' ## zeros that would read as a3 dropping its tie
+#' obs2 <- searchnet_bipartite_from_long(long, "actor", "component", "period",
+#'                                       exit = c(a3 = 2.5))
+#' obs2$B["a3", , ]
+#' obs2$composition$presence
 searchnet_bipartite_from_long <- function(data, actor, component, period = NULL,
                                           weight = NULL, threshold = 0,
                                           actors = NULL, components = NULL,
-                                          periods = NULL) {
+                                          periods = NULL, entry = NULL,
+                                          exit = NULL, presence = NULL) {
   fn <- "searchnet_bipartite_from_long()"
   if (!is.data.frame(data))
     stop("`data` must be a data frame in long format; got ", class(data)[1L],
@@ -208,13 +262,34 @@ searchnet_bipartite_from_long <- function(data, actor, component, period = NULL,
     }
   }
   dimnames(B) <- list(act_u, cmp_u, per_u)
+
+  ## ---- composition change: absent actor-waves become NA -------------------
+  comp <- NULL
+  if (!is.null(entry) || !is.null(exit) || !is.null(presence)) {
+    if (is.null(period))
+      stop("`entry`, `exit` and `presence` need a `period` column: a ",
+           "composition change is defined over waves.", call. = FALSE)
+    comp <- .comp_build(entry, exit, presence, data, actor, act_u, periods,
+                        per_u)
+    absent <- aperm(array(rep(!comp$presence, each = N), c(N, M, W)),
+                    c(2L, 1L, 3L))
+    clash <- which(absent & B == 1L, arr.ind = TRUE)
+    if (nrow(clash))
+      stop(nrow(clash), " tie(s) in `data` fall in a period where the actor ",
+           "is absent, e.g. actor '", act_u[clash[1L, 1L]], "' in period '",
+           per_u[clash[1L, 3L]], "'. Check the entry and exit times against ",
+           "the records.", call. = FALSE)
+    B[absent] <- NA_integer_
+  }
+
   if (is.null(period)) {
     B <- B[, , 1L, drop = TRUE]
     if (!is.matrix(B)) B <- matrix(B, M, N, dimnames = list(act_u, cmp_u))
     periods <- NULL
   }
   structure(list(B = B, actors = act_u, components = cmp_u, periods = periods,
-                 weighted = !is.null(weight), threshold = threshold),
+                 weighted = !is.null(weight), threshold = threshold,
+                 composition = comp),
             class = "searchnet_bipartite")
 }
 
@@ -226,11 +301,24 @@ print.searchnet_bipartite <- function(x, ...) {
               dim(B)[1L], dim(B)[2L], W, if (W == 1L) "" else "s"))
   cat("Ties: ", if (x$weighted) sprintf("summed weight > %s", format(x$threshold))
                 else "presence of a row", "\n", sep = "")
-  ties <- if (W == 1L) sum(B) else apply(B, 3L, sum)
-  dens <- ties / (dim(B)[1L] * dim(B)[2L])
+  ties <- if (W == 1L) sum(B) else apply(B, 3L, sum, na.rm = TRUE)
+  comp <- x$composition
+  present <- if (is.null(comp)) rep(dim(B)[1L], W)
+             else as.integer(colSums(comp$presence))
+  dens <- ties / (present * dim(B)[2L])
   lab <- if (is.null(x$periods)) "" else as.character(x$periods)
   tab <- data.frame(period = lab, ties = as.integer(ties),
                     density = round(dens, 3))
+  if (!is.null(comp)) {
+    P <- comp$presence
+    tab$present <- present
+    tab$entered <- c(0L, as.integer(colSums(P[, -1L, drop = FALSE] &
+                                              !P[, -W, drop = FALSE])))
+    tab$left <- c(0L, as.integer(colSums(!P[, -1L, drop = FALSE] &
+                                           P[, -W, drop = FALSE])))
+    cat("Composition change: absent actor-waves are NA; density is over ",
+        "present actors\n", sep = "")
+  }
   print(tab, row.names = FALSE)
   invisible(x)
 }
@@ -243,8 +331,10 @@ print.searchnet_bipartite <- function(x, ...) {
 ## Coerce the accepted inputs to a 3-d 0/1 integer array with ids and periods.
 .obs_as_k_input <- function(B) {
   periods <- NULL
+  presence <- NULL
   if (inherits(B, "searchnet_bipartite")) {
     periods <- B$periods
+    if (!is.null(B$composition)) presence <- B$composition$presence
     B <- B$B
   } else if (is.data.frame(B)) {
     stop("`B` is a data frame. Build the array from long data first with ",
@@ -267,9 +357,22 @@ print.searchnet_bipartite <- function(x, ...) {
   if (is.logical(B)) storage.mode(B) <- "integer"
   if (!is.numeric(B))
     stop("`B` must be numeric 0/1.", call. = FALSE)
-  if (anyNA(B))
-    stop("`B` contains NA. {K} readings need a complete matrix; resolve ",
-         "missing ties before reading the dimensions.", call. = FALSE)
+  ## Absent actors: rows that are entirely NA in a wave (or the stored
+  ## presence of a composition change). Any other NA is a missing tie.
+  na_row <- apply(is.na(B), c(1L, 3L), all)
+  if (is.null(presence)) presence <- !na_row
+  presence <- matrix(as.logical(presence), nrow(presence), ncol(presence))
+  if (!identical(dim(presence), dim(na_row)))
+    stop("The stored presence does not match the dimensions of `B`.",
+         call. = FALSE)
+  pres_cells <- aperm(array(rep(presence, each = dim(B)[2L]),
+                            c(dim(B)[2L], dim(B)[1L], dim(B)[3L])),
+                      c(2L, 1L, 3L))
+  if (any(is.na(B) & pres_cells))
+    stop("`B` contains NA for a present actor. {K} readings need complete ",
+         "rows; resolve missing ties before reading the dimensions (an ",
+         "actor absent in a wave is a row that is entirely NA).", call. = FALSE)
+  B[!pres_cells] <- 0
   if (any(B != 0 & B != 1))
     stop("`B` must be 0/1. For valued data, threshold it with ",
          "searchnet_bipartite_from_long(weight = , threshold = ).", call. = FALSE)
@@ -283,7 +386,8 @@ print.searchnet_bipartite <- function(x, ...) {
   }
   if (length(periods) != W) periods <- seq_len(W)
   storage.mode(B) <- "integer"
-  list(B = B, actors = act, components = cmp, periods = periods)
+  list(B = B, actors = act, components = cmp, periods = periods,
+       presence = presence)
 }
 
 ## Jaccard overlap of row portfolios, averaged over pairs with a non-empty
@@ -325,6 +429,17 @@ print.searchnet_bipartite <- function(x, ...) {
 #' (I3) \eqn{\sum_i K_{AC}(K_{AC}-1)} = total Epistasis strength.
 #' The identities hold for strengths, not for the partner-count degrees.
 #'
+#' @section Actors who enter or leave:
+#' An actor absent in a wave (a composition change built with
+#' \code{entry}, \code{exit} or \code{presence} in
+#' \code{\link{searchnet_bipartite_from_long}}, or, for a bare array, a row
+#' that is entirely \code{NA} in that wave) is skipped together with its ties:
+#' it gets no row for that period, it is not counted in any component's
+#' Popularity or Epistasis, and \code{n_actors} and \code{density} in the
+#' summary refer to the actors present. \code{tie_jaccard} compares the tie
+#' sets of the actors present at both waves, so an entry or exit is not read
+#' as tie change. \code{NA} anywhere else in a row is an error.
+#'
 #' @param B An \eqn{M \times N}{M x N} 0/1 matrix, an
 #'   \eqn{M \times N \times W}{M x N x W} array, a list of \eqn{W} matrices, or
 #'   the result of \code{\link{searchnet_bipartite_from_long}}.
@@ -357,8 +472,13 @@ searchnet_k_readings <- function(B) {
   arr <- inp$B
   M <- dim(arr)[1L]; N <- dim(arr)[2L]; W <- dim(arr)[3L]
   rows <- vector("list", W); summ <- vector("list", W)
+  pres <- inp$presence
   for (w in seq_len(W)) {
-    b <- matrix(arr[, , w], M, N)
+    ## Absent actors (composition change) are skipped with their ties: they
+    ## get no row, and they are not counted among anyone's partners.
+    on <- which(pres[, w])
+    Mw <- length(on)
+    b <- matrix(arr[on, , w], Mw, N)
     S <- tcrossprod(b); P <- crossprod(b)
     k_ac <- as.integer(diag(S)); k_ca <- as.integer(diag(P))
     S0 <- S; diag(S0) <- 0L; P0 <- P; diag(P0) <- 0L
@@ -373,31 +493,34 @@ searchnet_k_readings <- function(B) {
       stop("Identity I2 failed in period ", w, ".", call. = FALSE)
     if (sum(as.numeric(k_ac) * (k_ac - 1)) != sum(as.numeric(e_str)))
       stop("Identity I3 failed in period ", w, ".", call. = FALSE)
-    if (any(k_aa > M - 1L) || any(k_cc > N - 1L))
+    if (any(k_aa > Mw - 1L) || any(k_cc > N - 1L))
       stop("A projection degree exceeds the number of other nodes in period ",
            w, ".", call. = FALSE)
 
     per <- inp$periods[w]
     rows[[w]] <- data.frame(
-      period = rep(per, M + N),
-      level  = rep(c("actor", "component"), c(M, N)),
-      id     = c(inp$actors, inp$components),
+      period = rep(per, Mw + N),
+      level  = rep(c("actor", "component"), c(Mw, N)),
+      id     = c(inp$actors[on], inp$components),
       K_AC   = c(k_ac, rep(NA_integer_, N)),
       K_AA   = c(k_aa, rep(NA_integer_, N)),
       sociality_strength = c(s_str, rep(NA_integer_, N)),
-      K_CA   = c(rep(NA_integer_, M), k_ca),
-      K_CC   = c(rep(NA_integer_, M), k_cc),
-      epistasis_strength = c(rep(NA_integer_, M), e_str),
+      K_CA   = c(rep(NA_integer_, Mw), k_ca),
+      K_CC   = c(rep(NA_integer_, Mw), k_cc),
+      epistasis_strength = c(rep(NA_integer_, Mw), e_str),
       stringsAsFactors = FALSE)
     tj <- NA_real_
     if (w > 1L) {
-      prev <- arr[, , w - 1L]; cur <- arr[, , w]
+      ## Tie stability over the actors present at both waves, so an entry or
+      ## an exit is not counted as tie change.
+      both <- pres[, w - 1L] & pres[, w]
+      prev <- arr[both, , w - 1L]; cur <- arr[both, , w]
       u <- sum(prev | cur)
       tj <- if (u > 0) sum(prev & cur) / u else NA_real_
     }
     summ[[w]] <- data.frame(
-      period = per, n_actors = M, n_components = N, ties = ties,
-      density = ties / (M * N),
+      period = per, n_actors = Mw, n_components = N, ties = ties,
+      density = ties / (Mw * N),
       mean_K_AC = mean(k_ac), mean_K_CA = mean(k_ca),
       mean_K_AA = mean(k_aa), mean_K_CC = mean(k_cc),
       sociality_strength = sum(s_str), epistasis_strength = sum(e_str),
@@ -410,6 +533,7 @@ searchnet_k_readings <- function(B) {
   rownames(out) <- NULL
   s <- do.call(rbind, summ); rownames(s) <- NULL
   attr(out, "summary") <- s
+  attr(out, "ids") <- list(actor = inp$actors, component = inp$components)
   out
 }
 
@@ -434,7 +558,8 @@ searchnet_k_readings <- function(B) {
 #' @param dimension One of \code{"K_AC"}, \code{"K_AA"},
 #'   \code{"sociality_strength"} (actor level) or \code{"K_CA"}, \code{"K_CC"},
 #'   \code{"epistasis_strength"} (component level).
-#' @return A numeric matrix, nodes by periods, with dimnames.
+#' @return A numeric matrix, nodes by periods, with dimnames. An actor absent
+#'   in a period (composition change) is \code{NA} there.
 #' @export
 #' @examples
 #' set.seed(2)
@@ -451,7 +576,11 @@ searchnet_k_covariate <- function(readings, dimension = c("K_AC", "K_AA",
   lvl <- if (dimension %in% c("K_AC", "K_AA", "sociality_strength")) "actor"
          else "component"
   r <- readings[readings$level == lvl, , drop = FALSE]
-  ids <- unique(r$id); pers <- unique(r$period)
+  ## Universe order from the readings, so an actor absent from the first
+  ## period keeps its place; its absent periods are NA.
+  ids <- attr(readings, "ids")[[lvl]]
+  if (is.null(ids) || !all(r$id %in% ids)) ids <- unique(r$id)
+  pers <- unique(readings$period)
   out <- matrix(NA_real_, length(ids), length(pers),
                 dimnames = list(ids, as.character(pers)))
   out[cbind(match(r$id, ids), match(r$period, pers))] <- r[[dimension]]

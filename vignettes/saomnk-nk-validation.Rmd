@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
   message = FALSE,
   fig.width = 7,
   fig.height = 5,
-  dpi = 72  # keeps the 40-odd embedded figures inside the CRAN size guideline
+  dpi = 60  # keeps the 46 embedded figures inside the CRAN size guideline
 )
 has_graph_pkgs <- all(vapply(c("ggraph", "gridExtra", "reshape2"), requireNamespace,
                          logical(1), quietly = TRUE))  # network snapshot panels

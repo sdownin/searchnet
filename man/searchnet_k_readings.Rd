@@ -53,6 +53,19 @@ asserted for every period, and the function errors if any fails:
 (I3) \eqn{\sum_i K_{AC}(K_{AC}-1)} = total Epistasis strength.
 The identities hold for strengths, not for the partner-count degrees.
 }
+\section{Actors who enter or leave}{
+
+An actor absent in a wave (a composition change built with
+\code{entry}, \code{exit} or \code{presence} in
+\code{\link{searchnet_bipartite_from_long}}, or, for a bare array, a row
+that is entirely \code{NA} in that wave) is skipped together with its ties:
+it gets no row for that period, it is not counted in any component's
+Popularity or Epistasis, and \code{n_actors} and \code{density} in the
+summary refer to the actors present. \code{tie_jaccard} compares the tie
+sets of the actors present at both waves, so an entry or exit is not read
+as tie change. \code{NA} anywhere else in a row is an error.
+}
+
 \examples{
 set.seed(1)
 B <- array(rbinom(6 * 5 * 3, 1, 0.3), dim = c(6, 5, 3))

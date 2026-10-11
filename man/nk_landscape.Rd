@@ -14,7 +14,7 @@ use to \code{N <= 20} (\eqn{2^{20} \approx} 1M configurations).}
 \code{K = 0} gives a smooth, single-peaked landscape; \code{K = N-1}
 gives a maximally rugged (effectively random) landscape.}
 
-\item{model}{Character. Neighbourhood topology; see
+\item{model}{Character. Neighborhood topology; see
 \code{\link{nk_dependencies}}.}
 
 \item{seed}{Integer or \code{NULL}. Random seed for reproducibility.}
@@ -30,7 +30,12 @@ code \code{code}.}
 contributions, rows in code order.}
 \item{\code{configs}}{Matrix \eqn{2^N \times N} of configuration bits,
 rows in code order.}
-\item{\code{dependencies}}{List of epistatic neighbourhoods.}
+\item{\code{dependencies}}{List of epistatic neighborhoods.}
+\item{\code{tables}}{List of per-locus payoff tables. Element \code{i}
+has length \eqn{2^{K_i + 1}}, where \eqn{K_i + 1} is the size of
+\code{dependencies[[i]]}; entry \code{p + 1} is \eqn{f_i} for the
+neighborhood pattern with key \eqn{p = \sum_k b_{d_k} 2^{k-1}},
+\eqn{d_k} the \eqn{k}-th element of \code{dependencies[[i]]}.}
 \item{\code{influence_matrix}}{\eqn{N \times N} binary matrix;
 \code{[i, j] = 1} iff locus \code{j} influences contribution
 \code{f_i}. Diagonal is 1.}
@@ -40,7 +45,7 @@ rows in code order.}
 Constructs a Kauffman NK landscape by exhaustive enumeration of all
 \eqn{2^N} configurations.  Each locus \eqn{i} contributes
 \eqn{f_i(b_i, b_{\Omega(i)})}, drawn i.i.d. \eqn{U(0,1)} for every
-distinct pattern of its epistatic neighbourhood; total fitness is the
+distinct pattern of its epistatic neighborhood; total fitness is the
 mean of the \eqn{N} contributions.
 }
 \examples{

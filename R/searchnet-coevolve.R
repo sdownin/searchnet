@@ -278,6 +278,16 @@
 #' @param allow_only Logical, passed to \code{sienaDependent} for the behavior
 #'   DV as \code{allowOnly}. \code{FALSE} lets the simulation move behavior in
 #'   both directions even when the observed panel only ever increases.
+#' @param composition Actors who enter or leave. \code{NULL} (default) uses the
+#'   composition change stored in \code{bipartite} when it is a
+#'   \code{searchnet_bipartite} object built with \code{entry}, \code{exit} or
+#'   \code{presence} (see \code{\link{searchnet_composition}}), and none
+#'   otherwise; an object from \code{\link{searchnet_composition}} is used as
+#'   given (its node set set to the actors); \code{FALSE} adds none, in which
+#'   case the \code{NA} rows of absent actors are treated by RSiena as missing
+#'   ties. With a composition change, RSiena estimates by unconditional method
+#'   of moments. A \code{behavior} or varying covariate for an absent
+#'   actor-wave should be \code{NA}.
 #' @param verbose Logical. Report the assembled dimensions and node sets.
 #'
 #' @return A \code{siena} data object, with attribute \code{"searchnet_coev"}
@@ -309,6 +319,7 @@ searchnet_coevolve_data <- function(bipartite,
                                     architecture_lag = TRUE,
                                     names            = .SEARCHNET_COEV_NAMES,
                                     allow_only       = FALSE,
+                                    composition      = NULL,
                                     verbose          = TRUE) {
 
   if (!requireNamespace("RSiena", quietly = TRUE))
@@ -320,6 +331,23 @@ searchnet_coevolve_data <- function(bipartite,
     stop("Dependent-variable names must be distinct; got: ",
          paste(sprintf("%s = '%s'", base::names(nm), nm), collapse = ", "),
          ".", call. = FALSE)
+
+  ## Composition change on the ACTORS node set: taken from the observed
+  ## object by default, or supplied, or switched off with FALSE.
+  comp_obj <- NULL
+  if (is.null(composition)) {
+    if (inherits(bipartite, "searchnet_bipartite") &&
+        !is.null(bipartite$composition))
+      comp_obj <- searchnet_composition(
+        bipartite, nodeSet = .SEARCHNET_COEV_NODESETS[["actors"]])
+  } else if (inherits(composition, "compositionChange")) {
+    comp_obj <- composition
+    attr(comp_obj, "nodeSet") <- .SEARCHNET_COEV_NODESETS[["actors"]]
+  } else if (!isFALSE(composition)) {
+    stop("`composition` must be NULL (use the one stored in `bipartite`), ",
+         "FALSE (none), or an object from searchnet_composition().",
+         call. = FALSE)
+  }
 
   bip <- .searchnet_as_wave_array(bipartite, "bipartite")
   cmp <- .searchnet_as_wave_array(component, "component")
@@ -466,6 +494,16 @@ searchnet_coevolve_data <- function(bipartite,
       lag_arr, nodeSets = c(ns[["components"]], ns[["components"]]))
   }
 
+  if (!is.null(comp_obj)) {
+    if (length(comp_obj) != M)
+      stop("The composition change has ", length(comp_obj), " actors but ",
+           "`bipartite` has ", M, ".", call. = FALSE)
+    if ("composition" %in% base::names(args))
+      stop("A covariate named 'composition' already exists; rename it.",
+           call. = FALSE)
+    args[["composition"]] <- comp_obj
+  }
+
   args$nodeSets <- list(actorSet, compSet)
 
   dat <- do.call(RSiena::sienaDataCreate, args)
@@ -475,6 +513,7 @@ searchnet_coevolve_data <- function(bipartite,
     lag_name = lag_name,
     M = M, N = N, W = W,
     has_behavior  = !is.null(behavior),
+    has_composition = !is.null(comp_obj),
     has_covariate = !is.null(actor_covars) || !is.null(component_covars) ||
       !is.null(behavior)
   )
@@ -491,6 +530,12 @@ searchnet_coevolve_data <- function(bipartite,
     if (!is.null(behavior))
       cat(sprintf("  DV behavior    : '%s'   (%d x %d, on ACTORS)\n",
                   nm[["behavior"]], M, W))
+    if (!is.null(comp_obj)) {
+      ev <- attr(dat$compositionChange[[1L]], "events")
+      cat(sprintf(paste0("  composition     : ACTORS enter or leave (%d join, ",
+                         "%d leave events); estimation is unconditional\n"),
+                  sum(ev$event == "join"), sum(ev$event == "leave")))
+    }
     if (!is.na(lag_name))
       cat(sprintf("  dyadic covar    : '%s'  (lagged architecture; unlocks XWX,\n",
                   lag_name),

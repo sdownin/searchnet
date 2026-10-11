@@ -32,7 +32,9 @@ searchnet_recovery(
   keep_panels = FALSE,
   verbose = FALSE,
   degree_bounds = NULL,
-  estimate_with_bounds = TRUE
+  estimate_with_bounds = TRUE,
+  composition = NULL,
+  estimate_with_composition = TRUE
 )
 
 \method{print}{searchnet_recovery}(x, digits = 3, ...)
@@ -118,13 +120,40 @@ uses RSiena's \code{MaxDegree} for an actor cap and fixed penalty effects
 for floors and component caps; the wave-1 draw is brought within the
 bounds (seeded: ties above a cap dropped, then ties below a floor added);
 and every wave is gated. The penalty effects are not part of
-\code{theta_true} or of the estimates. Default \code{NULL}.}
+\code{theta_true} or of the estimates. Default \code{NULL}.
+
+With an ESTIMATED floor (\code{searchnet_degree_bounds(actor = c(min = 1),
+  estimate_floor = TRUE)}), \code{outIso} is a parameter: \code{theta_true}
+must give its planted value as \code{outIso}, wave 1 starts with every
+actor holding a component, later waves may reach degree 0, and each panel
+is estimated with \code{outIso} free (starting at \code{floor_start}).
+Each replication records \code{floor_drops}, the observed transitions to
+degree 0 (\code{\link{searchnet_floor_identification}}); a panel with
+none is filed as \code{"non_identified"} and not estimated, because only a
+bound could be reported. \code{\link{searchnet_floor_power}} summarizes
+recovery by that count.}
 
 \item{estimate_with_bounds}{Logical. With \code{degree_bounds}, estimate
 each panel under the same bounds (\code{TRUE}, default: data checked,
 penalty effects fixed, \code{MaxDegree} set; method of moments only) or
 ignoring them (\code{FALSE}), which measures the cost of omitting a bound
 that generated the data.}
+
+\item{composition}{Optional design of actors who enter or leave:
+\code{list(leave = , enter = )}, shares per period. In each period a
+share \code{leave} of the actors present at its start leaves at a uniform
+time within it, and \code{round(enter * M)} actors from a pool absent at
+wave 1 join at a uniform time within it. Each period is simulated with an
+RSiena composition change, so a leaver stops changing ties when it leaves
+and a joiner starts with no ties; absent actor-waves are \code{NA} in the
+panel. Cannot be combined with \code{degree_bounds}. Default \code{NULL}.}
+
+\item{estimate_with_composition}{Logical. With \code{composition}, estimate
+each panel with the composition change (\code{TRUE}, default) or the
+naive way (\code{FALSE}): absent actor-waves read as rows of zeros and no
+composition change, so a leaver appears to drop all its ties and a joiner
+to create its portfolio. Comparing the two runs at the same \code{seed}
+measures the bias of the naive reading.}
 
 \item{x}{A \code{"searchnet_recovery"} object.}
 
@@ -219,6 +248,17 @@ standard error equal to the mean estimated SE at the planted values, and
 ignores that the SE itself changes with \eqn{\theta}. It is the smallest
 effect the design would detect with probability \code{power} at level
 \code{alpha} under that approximation. Report it with every null.
+}
+
+\section{Actors who enter or leave}{
+
+With \code{composition}, the planted panels have joiners and leavers
+(Huisman and Snijders 2003), generated as described under that argument
+with seeds derived from \code{seed}, so two runs that differ only in
+\code{estimate_with_composition} estimate the same panels. Estimation with
+a composition change is unconditional method of moments, as it is here for
+every replication. See \code{\link{searchnet_composition}} for the observed
+data route.
 }
 
 \section{Null mode (size check)}{

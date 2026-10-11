@@ -386,6 +386,8 @@ export(searchnet_bipartite_from_long)
 export(searchnet_k_readings)
 export(searchnet_k_covariate)
 S3method(print, searchnet_bipartite)
+# Actors who enter or leave: RSiena composition change (R/searchnet-composition.R).
+export(searchnet_composition)
 
 # Moment gate: does a simulated world reproduce the observed moments, judged by
 # the simulated mean (R/searchnet-moment-gate.R).
@@ -415,6 +417,9 @@ export(searchnet_degree_bounds)
 export(searchnet_check_degree_bounds)
 export(searchnet_portfolio_infeasible)
 S3method(print, searchnet_degree_bounds)
+export(searchnet_floor_identification)
+S3method(print, searchnet_floor_identification)
+export(searchnet_floor_power)
 
 # ---------------------------------------------------------------------------
 # Formal verification with Lean 4 (lean-tools.R, lean-export.R; inst/lean)

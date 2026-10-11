@@ -37,6 +37,11 @@
 ## it is not pulled back (the indicator does not change while the indegree
 ## stays above the threshold). Starting states are therefore checked.
 ##
+## An actor floor of 1 can instead be ESTIMATED (estimate_floor = TRUE): outIso
+## enters free, measures the cost of dropping the last tie relative to the
+## other effects, and is no longer enforced as a constraint. A floor k > 1 is
+## refused as not identified (see searchnet_degree_bounds()).
+##
 ## Non-implementations (RSiena 1.5.0 offers no statistic, so no bound is
 ## faked): a component floor above 3 (no `in4Plus`, and no indegree analogue
 ## of `outTrunc`), a component cap above 2, and any `MaxDegree` for indegrees
@@ -92,16 +97,22 @@
 }
 
 ## The effects table behind a set of bounds.
-.searchnet_bound_effects_table <- function(actor, component, penalty) {
+.searchnet_bound_effects_table <- function(actor, component, penalty,
+                                           estimate_floor = FALSE,
+                                           floor_start = NA_real_) {
   rows <- list()
-  add <- function(side, shortName, theta, internal_parameter, role)
+  add <- function(side, shortName, theta, internal_parameter, role, fix = TRUE)
     rows[[length(rows) + 1L]] <<- data.frame(
       side = side, shortName = shortName, theta = theta,
-      internal_parameter = internal_parameter, role = role,
+      internal_parameter = internal_parameter, role = role, fix = fix,
       stringsAsFactors = FALSE)
   amin <- actor[["min"]]
   if (!is.na(amin)) {
-    if (amin == 1) {
+    if (amin == 1 && isTRUE(estimate_floor)) {
+      add("actor", "outIso", floor_start, NA_real_,
+          "actor floor 1 (cost of dropping the last tie; starting value)",
+          fix = FALSE)
+    } else if (amin == 1) {
       add("actor", "outIso", -penalty, NA_real_, "actor floor 1 (out-isolate penalty)")
     } else {
       add("actor", "outTrunc", penalty, amin,
@@ -126,9 +137,28 @@
   if (!length(rows))
     return(data.frame(side = character(0), shortName = character(0),
                       theta = numeric(0), internal_parameter = numeric(0),
-                      role = character(0), stringsAsFactors = FALSE))
+                      role = character(0), fix = logical(0),
+                      stringsAsFactors = FALSE))
   do.call(rbind, rows)
 }
+
+## Whether an effects-table row is fixed (tables built before the estimated
+## floor existed have no `fix` column: every row was fixed).
+.searchnet_bound_row_fixed <- function(effects, i)
+  is.null(effects$fix) || !isFALSE(effects$fix[i])
+
+## The bounds that hold as constraints. An ESTIMATED floor is a parameter, not
+## a constraint: an actor may reach degree 0 (that is what identifies it), so
+## it is left out of every check, gate, repair and infeasibility flag.
+.searchnet_bounds_enforced <- function(b) {
+  if (is.null(b) || !isTRUE(b$estimate_floor)) return(b)
+  b$actor[["min"]] <- NA_real_
+  b
+}
+
+.searchnet_not_identified <- function(msg)
+  stop(structure(class = c("searchnet_not_identified", "error", "condition"),
+                 list(message = msg, call = NULL)))
 
 #' Degree Bounds for a SAOM-NK Model
 #'
@@ -173,6 +203,35 @@
 #' \code{"searchnet_not_implemented"} error. That is a statement about the
 #' software, not about the world.
 #'
+#' @section An estimated floor (\code{estimate_floor = TRUE}):
+#' With \code{estimate_floor = TRUE} the actor floor of 1 is no longer a
+#' constraint. \code{outIso} enters as a free evaluation effect, starting at
+#' \code{floor_start}, and its estimate measures the cost of dropping the last
+#' tie: how much less an actor values holding nothing than the other effects
+#' in the model predict. It is a reluctance RELATIVE to those other effects,
+#' not an absolute quantity, and it changes when they change. Because an
+#' evaluation effect values states, it is informed by observed transitions
+#' into degree 0 (last-tie drops) and out of it (a first tie after holding
+#' none); when every actor holds a component at the start, that information
+#' comes from observed last-tie drops and what follows them. Call
+#' \code{\link{searchnet_floor_identification}} before estimating: with no
+#' observed transition to degree 0 the coefficient is not identified, and only
+#' a bound can be reported.
+#'
+#' Degree 0 is then allowed in observed and simulated states: the floor is
+#' left out of \code{\link{searchnet_check_degree_bounds}}, the simulation
+#' gates, the start-state repair and
+#' \code{\link{searchnet_portfolio_infeasible}}. Every other bound stays fixed.
+#'
+#' A floor \eqn{k > 1} cannot be estimated and is refused with an error of
+#' class \code{"searchnet_not_identified"}: its only carrier,
+#' \code{outTrunc(k)}, has the same change statistic for every drop by an
+#' actor holding \eqn{k} or fewer components, so a free coefficient measures
+#' how much more the first \eqn{k} ties are worth than later ones, not the
+#' cost of crossing the floor; RSiena offers no outdegree indicator above
+#' \code{outIso} (\code{outMore(k)} is the tie count minus
+#' \code{outTrunc(k)}).
+#'
 #' @section Maximum likelihood:
 #' Estimation under bounds uses the method of moments. RSiena 1.5.0 warns
 #' "maxlike and MaxDegree are incompatible", and an ML fit of a bipartite
@@ -191,6 +250,16 @@
 #'   components listed; \code{TRUE} adds randomly chosen ties (seeded from the
 #'   run seed) until every floor holds, and says so. A start above a cap is
 #'   never repaired.
+#' @param estimate_floor Logical. \code{FALSE} (default) keeps the actor floor
+#'   a fixed penalty. \code{TRUE} turns an actor floor of 1 into a FREE
+#'   \code{outIso} evaluation effect: the cost of dropping the last tie,
+#'   estimated rather than assumed (see the section on an estimated floor).
+#'   Requires \code{actor = c(min = 1)}; a floor above 1 is refused as not
+#'   identified.
+#' @param floor_start Number: the starting value of the estimated
+#'   \code{outIso} coefficient in estimation, and its value when a model built
+#'   from these bounds is simulated. Default -2. Used only with
+#'   \code{estimate_floor = TRUE}.
 #' @return An object of class \code{"searchnet_degree_bounds"}.
 #' @seealso \code{\link{searchnet_check_degree_bounds}},
 #'   \code{\link{searchnet_portfolio_infeasible}}
@@ -201,7 +270,9 @@
 #' mod <- saomnk_model(density = -1, degree_bounds = b)
 searchnet_degree_bounds <- function(actor = NULL, component = NULL,
                                     bound_penalty = .SEARCHNET_BOUND_PENALTY,
-                                    repair_initial = FALSE) {
+                                    repair_initial = FALSE,
+                                    estimate_floor = FALSE,
+                                    floor_start = -2) {
   if (!is.numeric(bound_penalty) || length(bound_penalty) != 1L ||
       !is.finite(bound_penalty) || bound_penalty <= 0)
     stop("`bound_penalty` must be a single positive number.", call. = FALSE)
@@ -228,9 +299,35 @@ searchnet_degree_bounds <- function(actor = NULL, component = NULL,
       "effects stop at in3Plus, which can carry a cap of at most 2. No component ",
       "cap above 2 is offered; this says nothing about the world."),
       as.integer(cmp[["max"]])))
+  if (!is.logical(estimate_floor) || length(estimate_floor) != 1L || is.na(estimate_floor))
+    stop("`estimate_floor` must be TRUE or FALSE.", call. = FALSE)
+  if (isTRUE(estimate_floor)) {
+    if (!is.numeric(floor_start) || length(floor_start) != 1L || !is.finite(floor_start))
+      stop("`floor_start` must be a single finite number.", call. = FALSE)
+    if (is.na(a[["min"]]))
+      stop(paste0("`estimate_floor = TRUE` needs an actor floor to estimate: ",
+                  "actor = c(min = 1)."), call. = FALSE)
+    if (a[["min"]] > 1) {
+      k <- as.integer(a[["min"]])
+      .searchnet_not_identified(sprintf(paste0(
+        "An ESTIMATED actor floor of %d is not identified as a floor. RSiena offers ",
+        "no outdegree indicator above outIso (outMore(k) is the tie count minus ",
+        "outTrunc(k)), so the only carrier is outTrunc(%d), whose change statistic ",
+        "is the same for EVERY drop by an actor holding %d or fewer components. A ",
+        "free coefficient therefore measures how much more an actor's first %d ties ",
+        "are worth than later ones, informed by all drops at or below %d against ",
+        "drops above it, and cannot be read as the cost of crossing the floor. Keep ",
+        "the floor fixed (estimate_floor = FALSE), or estimate a floor of 1."),
+        k, k, k, k, k))
+    }
+  }
   out <- list(actor = a, component = cmp, penalty = as.numeric(bound_penalty),
-              repair_initial = repair_initial)
-  out$effects <- .searchnet_bound_effects_table(a, cmp, out$penalty)
+              repair_initial = repair_initial,
+              estimate_floor = isTRUE(estimate_floor),
+              floor_start = if (isTRUE(estimate_floor)) as.numeric(floor_start)
+                            else NA_real_)
+  out$effects <- .searchnet_bound_effects_table(a, cmp, out$penalty,
+                                                out$estimate_floor, out$floor_start)
   class(out) <- "searchnet_degree_bounds"
   out
 }
@@ -290,9 +387,20 @@ print.searchnet_degree_bounds <- function(x, ...) {
                           as.integer(b$actor[["max"]])))
   for (i in seq_len(nrow(b$effects))) {
     e <- b$effects[i, ]
-    out <- c(out, sprintf("%-10s theta = %+g, FIXED: %s", e$shortName, e$theta, e$role))
+    out <- c(out, if (.searchnet_bound_row_fixed(b$effects, i))
+      sprintf("%-10s theta = %+g, FIXED: %s", e$shortName, e$theta, e$role)
+    else
+      sprintf("%-10s theta = %+g, ESTIMATED (free): %s", e$shortName, e$theta, e$role))
   }
-  c(out, paste0("These are fixed modeling assumptions, not estimated parameters. ",
+  if (isTRUE(b$estimate_floor))
+    out <- c(out, paste0(
+      "The actor floor is ESTIMATED, not assumed: outIso measures the cost of ",
+      "dropping the last tie relative to the other effects in the model, ",
+      "identified only from observed transitions to and from degree 0 (see ",
+      "searchnet_floor_identification()). Degree 0 is allowed."))
+  c(out, paste0(if (isTRUE(b$estimate_floor))
+                  "Every other bound is a fixed modeling assumption. "
+                else "These are fixed modeling assumptions, not estimated parameters. ",
                 "Initial state below a floor: ",
                 if (isTRUE(b$repair_initial)) "repaired (seeded random additions)."
                 else "error (repair_initial = FALSE)."))
@@ -322,7 +430,8 @@ print.searchnet_degree_bounds <- function(x, ...) {
            call. = FALSE)
     for (i in seq_len(nrow(b$effects))) {
       e <- list(effect = b$effects$shortName[i], parameter = b$effects$theta[i],
-                dv_name = dv_name, fix = TRUE, bound = TRUE)
+                dv_name = dv_name, fix = .searchnet_bound_row_fixed(b$effects, i),
+                bound = TRUE)
       if (!is.na(b$effects$internal_parameter[i]))
         e$internal_parameter <- b$effects$internal_parameter[i]
       effs[[length(effs) + 1L]] <- e
@@ -388,14 +497,16 @@ print.searchnet_degree_bounds <- function(x, ...) {
       call = NULL)))
 }
 
-## Include the penalty effects in a sienaEffects object, fixed, untested.
+## Include the penalty effects in a sienaEffects object, fixed, untested. An
+## estimated floor (estimate_floor = TRUE) enters free, at its starting value.
 .searchnet_apply_bound_effects <- function(eff, b, dv_name) {
   if (is.null(b) || !nrow(b$effects)) return(eff)
   for (i in seq_len(nrow(b$effects))) {
     sn <- b$effects$shortName[i]
+    fx <- .searchnet_bound_row_fixed(b$effects, i)
     args <- list(eff, shortName = sn, character = TRUE, name = dv_name,
                  type = "eval", initialValue = b$effects$theta[i],
-                 fix = TRUE, test = FALSE, include = TRUE)
+                 fix = fx, test = FALSE, include = TRUE)
     ip <- b$effects$internal_parameter[i]
     if (!is.na(ip)) args$parameter <- ip
     row_ok <- any(eff$name == dv_name & eff$shortName == sn & eff$type == "eval")
@@ -407,7 +518,7 @@ print.searchnet_degree_bounds <- function(x, ...) {
     utils::capture.output(eff <- do.call(RSiena::setEffect, args))
     r <- which(eff$name == dv_name & eff$shortName == sn & eff$type == "eval" &
                  eff$include)
-    if (length(r) != 1L || !isTRUE(eff$fix[r]) ||
+    if (length(r) != 1L || !identical(isTRUE(eff$fix[r]), fx) ||
         !isTRUE(all.equal(eff$initialValue[r], b$effects$theta[i])) ||
         (!is.na(ip) && !isTRUE(eff$parm[r] == ip)))
       stop(sprintf("searchnet: the degree-bound effect '%s' was not set as requested.",
@@ -454,6 +565,7 @@ print.searchnet_degree_bounds <- function(x, ...) {
 
 ## One row per violation: side, id, wave, degree, bound, kind.
 .searchnet_bounds_violations <- function(arr, b) {
+  b <- .searchnet_bounds_enforced(b)
   rows <- list()
   for (w in seq_len(dim(arr)[3])) {
     B <- arr[, , w, drop = FALSE]
@@ -540,6 +652,7 @@ searchnet_check_degree_bounds <- function(x, bounds) {
 ## ---------------------------------------------------------------------------
 ## Adds seeded random ties until every floor holds, never breaking a cap.
 .searchnet_bounds_repair <- function(B, b, seed) {
+  b <- .searchnet_bounds_enforced(b)
   M <- nrow(B); N <- ncol(B)
   amax <- if (is.na(b$actor[["max"]])) Inf else b$actor[["max"]]
   cmax <- if (is.na(b$component[["max"]])) Inf else b$component[["max"]]
@@ -619,6 +732,7 @@ searchnet_check_degree_bounds <- function(x, bounds) {
 .searchnet_bounds_chain_gate <- function(B0, frame, b, where,
                                          dv = "self$bipartite_rsienaDV") {
   if (is.null(b) || !nrow(frame)) return(invisible(TRUE))
+  b <- .searchnet_bounds_enforced(b)
   N <- ncol(B0)
   stab <- as.logical(frame$stability)
   from <- as.numeric(frame$id_from) + 1
@@ -676,6 +790,7 @@ searchnet_portfolio_infeasible <- function(portfolios, degree_bounds,
   b <- if (inherits(degree_bounds, "saomnk_model"))
     .searchnet_model_bounds(degree_bounds)
   else .searchnet_as_degree_bounds(degree_bounds)
+  b <- .searchnet_bounds_enforced(b)
   P <- if (is.null(dim(portfolios))) matrix(portfolios, nrow = 1L) else as.matrix(portfolios)
   K <- nrow(P)
   reason <- rep("", K)

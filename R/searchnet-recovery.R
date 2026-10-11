@@ -79,7 +79,8 @@
 ## ---------------------------------------------------------------------------
 ## RSiena data and effects
 ## ---------------------------------------------------------------------------
-.recovery_data <- function(waves_list, covariates, M, N, allowOnly = TRUE) {
+.recovery_data <- function(waves_list, covariates, M, N, allowOnly = TRUE,
+                           intervals = NULL) {
   W <- length(waves_list)
   arr <- array(unlist(lapply(waves_list, as.numeric)), dim = c(M, N, W))
   bip <- RSiena::sienaDependent(arr, type = "bipartite",
@@ -90,6 +91,10 @@
   for (nm in names(covariates))
     args[[nm]] <- RSiena::coCovar(as.numeric(covariates[[nm]]),
                                   nodeSet = "ACTORS")
+  ## Actors who enter or leave: an exogenous composition change on ACTORS.
+  if (!is.null(intervals))
+    args[["composition"]] <- RSiena::sienaCompositionChange(
+      unname(intervals), nodeSet = "ACTORS", option = 1L)
   args$nodeSets <- list(RSiena::sienaNodeSet(M, "ACTORS"),
                         RSiena::sienaNodeSet(N, "COMPONENTS"))
   do.call(RSiena::sienaDataCreate, args)
@@ -135,6 +140,10 @@
     if (eff$type[r] == "rate" && eff$shortName[r] == "Rate") return("rate")
     if (eff$type[r] == "eval" && eff$shortName[r] %in% bound_names &&
         isTRUE(eff$fix[r])) return(paste0("bound:", eff$shortName[r]))
+    ## An estimated floor (estimate_floor = TRUE) is a free parameter with a
+    ## planted value, labeled by its shortName like any other effect.
+    if (eff$type[r] == "eval" && eff$shortName[r] == "outIso" &&
+        isTRUE(bounds$estimate_floor) && !isTRUE(eff$fix[r])) return("outIso")
     hit <- which(spec$shortName == eff$shortName[r] & spec$type == eff$type[r] &
                    spec$interaction1 == eff$interaction1[r])
     if (length(hit) != 1L) return(NA_character_)
@@ -149,10 +158,78 @@
 }
 
 ## ---------------------------------------------------------------------------
+## Composition design: actors who enter or leave
+## ---------------------------------------------------------------------------
+## `composition` is list(leave = , enter = ): per period, a share `leave` of
+## the actors present at the start of the period leaves at a uniform time
+## inside it, and round(enter * M) actors from a pool absent at wave 1 join at
+## a uniform time inside it. Times are RSiena wave time (wave 1 = 1), kept
+## away from the integers so no event coincides with an observation.
+.recovery_check_composition <- function(composition, M, waves) {
+  if (is.null(composition)) return(NULL)
+  if (!is.list(composition) || is.null(names(composition)) ||
+      any(!names(composition) %in% c("leave", "enter")))
+    stop("`composition` must be a list with elements `leave` and/or `enter` ",
+         "(shares per period).", call. = FALSE)
+  out <- list(leave = 0, enter = 0)
+  out[names(composition)] <- composition
+  for (k in names(out)) {
+    v <- out[[k]]
+    if (!is.numeric(v) || length(v) != 1L || is.na(v) || v < 0 || v >= 1)
+      stop("`composition$", k, "` must be a share in [0, 1).", call. = FALSE)
+  }
+  pool <- round(out$enter * M) * (waves - 1L)
+  if (M - pool < 2L)
+    stop("`composition$enter` leaves fewer than two actors present at wave ",
+         "1 (", M - pool, " of ", M, ").", call. = FALSE)
+  if (out$leave == 0 && out$enter == 0)
+    stop("`composition` plants no entry and no exit; leave it NULL.",
+         call. = FALSE)
+  out
+}
+
+.recovery_composition_plan <- function(comp, M, waves, seed, rep) {
+  .with_local_seed(.searchnet_seed(seed, "recovery:composition", rep), {
+    entry <- rep(1, M); exit <- rep(as.numeric(waves), M)
+    n_enter <- round(comp$enter * M)
+    if (n_enter > 0L) {
+      pool <- sample.int(M, n_enter * (waves - 1L))
+      for (w in seq_len(waves - 1L)) {
+        j <- pool[(w - 1L) * n_enter + seq_len(n_enter)]
+        entry[j] <- w + stats::runif(n_enter, 0.05, 0.95)
+      }
+    }
+    if (comp$leave > 0) {
+      for (w in seq_len(waves - 1L)) {
+        present <- which(entry <= w & exit >= waves)
+        n_leave <- round(comp$leave * length(present))
+        n_leave <- min(n_leave, length(present) - 2L)
+        if (n_leave > 0L) {
+          j <- present[sample.int(length(present), n_leave)]
+          exit[j] <- w + stats::runif(n_leave, 0.05, 0.95)
+        }
+      }
+    }
+    list(entry = entry, exit = exit,
+         intervals = lapply(seq_len(M), function(i) c(entry[i], exit[i])))
+  })
+}
+
+## Actor x wave presence of a plan (closed intervals).
+.recovery_plan_presence <- function(plan, waves)
+  vapply(seq_len(waves), function(w) plan$entry <= w & plan$exit >= w,
+         logical(length(plan$entry)))
+
+## ---------------------------------------------------------------------------
 ## Simulation of one planted panel
 ## ---------------------------------------------------------------------------
 .recovery_simulate_panel <- function(spec, theta, M, N, waves, init_density,
-                                     covariates, seed, rep, bounds = NULL) {
+                                     covariates, seed, rep, bounds = NULL,
+                                     plan = NULL) {
+  if (!is.null(plan))
+    return(.recovery_simulate_panel_comp(spec, theta, M, N, waves,
+                                         init_density, covariates, seed, rep,
+                                         plan))
   B <- .with_local_seed(.searchnet_seed(seed, "recovery:init", rep),
                         matrix(stats::rbinom(M * N, 1L, init_density), M, N))
   ## Under degree bounds the wave-1 draw is brought within them (seeded): ties
@@ -193,6 +270,53 @@
   panel
 }
 
+## The same route with actors entering and leaving. Each period is simulated
+## on the actors active at some time in it (present at its start, or joining
+## during it), with RSiena's composition change carrying the within-period
+## entry and exit times, so a leaver stops changing ties when it leaves and a
+## joiner starts from an empty portfolio when it joins. Absent actor-waves are
+## NA in the returned panel.
+.recovery_simulate_panel_comp <- function(spec, theta, M, N, waves,
+                                          init_density, covariates, seed, rep,
+                                          plan) {
+  B <- .with_local_seed(.searchnet_seed(seed, "recovery:init", rep),
+                        matrix(stats::rbinom(M * N, 1L, init_density), M, N))
+  B <- B * 1.0
+  B[plan$entry > 1, ] <- NA
+  panel <- list(B)
+  for (w in 2:waves) {
+    p <- w - 1L
+    rel <- which(plan$entry < p + 1 & plan$exit > p)
+    lo <- pmax(plan$entry[rel], p) - p + 1
+    hi <- pmin(plan$exit[rel], p + 1) - p + 1
+    mini <- lapply(seq_along(rel), function(k) c(lo[k], hi[k]))
+    B1 <- B[rel, , drop = FALSE]
+    B2 <- B1
+    B2[hi < 2, ] <- NA
+    Mr <- length(rel)
+    cov_sub <- lapply(covariates, function(v) v[rel])
+    dat <- .recovery_data(list(B1, B2), cov_sub, Mr, N, allowOnly = FALSE,
+                          intervals = mini)
+    eff <- .recovery_effects(dat, spec)
+    lab <- attr(eff, "recovery_labels")
+    th <- unname(theta[lab])
+    bound <- max(50, ceiling(2 * max(abs(th))) + 1)
+    alg <- RSiena::sienaAlgorithmCreate(
+      projname = NULL, simOnly = TRUE, cond = FALSE, nsub = 0, n3 = 2,
+      seed = .searchnet_seed(seed, "recovery:sim", rep, w), silent = TRUE)
+    fit <- NULL
+    utils::capture.output(fit <- RSiena::siena07(
+      alg, data = dat, effects = eff, thetaValues = rbind(th, th),
+      thetaBound = bound, batch = TRUE, silent = TRUE, returnDeps = TRUE))
+    E <- .searchnet_sims_bipartite(fit$sims[[1L]], Mr, N, dv = .RECOVERY_DV)
+    B <- matrix(NA_real_, M, N)
+    B[rel, ] <- E
+    B[!(plan$entry <= w & plan$exit >= w), ] <- NA
+    panel[[w]] <- B
+  }
+  panel
+}
+
 ## Wave 1 within the bounds: trim ties above a cap, then add ties below a
 ## floor, both seeded; stop if the bounds cannot be met at this density.
 .recovery_bounded_start <- function(B, b, seed, rep) {
@@ -209,6 +333,10 @@
     }
     B
   })
+  ## An estimated floor is not a constraint in later waves, but the planted
+  ## process starts with every actor holding a component, so that what
+  ## identifies it is observed last-tie drops (searchnet-floor.R).
+  if (isTRUE(b$estimate_floor)) b$estimate_floor <- FALSE
   B <- .searchnet_bounds_repair(B, b, .searchnet_seed(seed, "recovery:bounds_fill", rep))
   v <- .searchnet_bounds_violations(array(B, c(dim(B), 1L)), b)
   if (nrow(v))
@@ -222,11 +350,17 @@
 ## ---------------------------------------------------------------------------
 .recovery_estimate <- function(panel, spec, covariates, M, N, est_seed,
                                n3, nsub, nbrNodes, algorithm_args,
-                               bounds = NULL) {
+                               bounds = NULL, intervals = NULL) {
   ## Estimation under bounds: the panel must satisfy them, the penalty effects
   ## are entered fixed, and the actor cap is MaxDegree (method of moments).
   if (!is.null(bounds)) searchnet_check_degree_bounds(panel, bounds)
-  dat <- .recovery_data(panel, covariates, M, N, allowOnly = TRUE)
+  ## Without a composition change, absent actors are read the naive way: a
+  ## row of zeros, so an exit looks like dropping every tie and an entry like
+  ## creating a portfolio from nothing.
+  if (is.null(intervals))
+    panel <- lapply(panel, function(b) { b[is.na(b)] <- 0; b })
+  dat <- .recovery_data(panel, covariates, M, N, allowOnly = TRUE,
+                        intervals = intervals)
   eff <- .recovery_effects(dat, spec, bounds)
   alg <- do.call(RSiena::sienaAlgorithmCreate, .searchnet_bounds_algorithm_args(
     utils::modifyList(list(
@@ -411,6 +545,15 @@
 #' effect the design would detect with probability \code{power} at level
 #' \code{alpha} under that approximation. Report it with every null.
 #'
+#' @section Actors who enter or leave:
+#' With \code{composition}, the planted panels have joiners and leavers
+#' (Huisman and Snijders 2003), generated as described under that argument
+#' with seeds derived from \code{seed}, so two runs that differ only in
+#' \code{estimate_with_composition} estimate the same panels. Estimation with
+#' a composition change is unconditional method of moments, as it is here for
+#' every replication. See \code{\link{searchnet_composition}} for the observed
+#' data route.
+#'
 #' @section Null mode (size check):
 #' With \code{null = TRUE} and a single \code{focal} effect, the focal planted
 #' value is replaced by 0 before simulating. Its \code{rejection} column is then
@@ -482,11 +625,36 @@
 #'   bounds (seeded: ties above a cap dropped, then ties below a floor added);
 #'   and every wave is gated. The penalty effects are not part of
 #'   \code{theta_true} or of the estimates. Default \code{NULL}.
+#'
+#'   With an ESTIMATED floor (\code{searchnet_degree_bounds(actor = c(min = 1),
+#'   estimate_floor = TRUE)}), \code{outIso} is a parameter: \code{theta_true}
+#'   must give its planted value as \code{outIso}, wave 1 starts with every
+#'   actor holding a component, later waves may reach degree 0, and each panel
+#'   is estimated with \code{outIso} free (starting at \code{floor_start}).
+#'   Each replication records \code{floor_drops}, the observed transitions to
+#'   degree 0 (\code{\link{searchnet_floor_identification}}); a panel with
+#'   none is filed as \code{"non_identified"} and not estimated, because only a
+#'   bound could be reported. \code{\link{searchnet_floor_power}} summarizes
+#'   recovery by that count.
 #' @param estimate_with_bounds Logical. With \code{degree_bounds}, estimate
 #'   each panel under the same bounds (\code{TRUE}, default: data checked,
 #'   penalty effects fixed, \code{MaxDegree} set; method of moments only) or
 #'   ignoring them (\code{FALSE}), which measures the cost of omitting a bound
 #'   that generated the data.
+#' @param composition Optional design of actors who enter or leave:
+#'   \code{list(leave = , enter = )}, shares per period. In each period a
+#'   share \code{leave} of the actors present at its start leaves at a uniform
+#'   time within it, and \code{round(enter * M)} actors from a pool absent at
+#'   wave 1 join at a uniform time within it. Each period is simulated with an
+#'   RSiena composition change, so a leaver stops changing ties when it leaves
+#'   and a joiner starts with no ties; absent actor-waves are \code{NA} in the
+#'   panel. Cannot be combined with \code{degree_bounds}. Default \code{NULL}.
+#' @param estimate_with_composition Logical. With \code{composition}, estimate
+#'   each panel with the composition change (\code{TRUE}, default) or the
+#'   naive way (\code{FALSE}): absent actor-waves read as rows of zeros and no
+#'   composition change, so a leaver appears to drop all its ties and a joiner
+#'   to create its portfolio. Comparing the two runs at the same \code{seed}
+#'   measures the bias of the naive reading.
 #'
 #' @return An object of class \code{"searchnet_recovery"}: a list with
 #'   \code{table} (one row per parameter: \code{effect}, \code{true},
@@ -518,7 +686,9 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
                                conv_threshold = 0.25, algorithm_args = list(),
                                keep_panels = FALSE, verbose = FALSE,
                                degree_bounds = NULL,
-                               estimate_with_bounds = TRUE) {
+                               estimate_with_bounds = TRUE,
+                               composition = NULL,
+                               estimate_with_composition = TRUE) {
   cl <- match.call()
   t_start <- proc.time()[["elapsed"]]
 
@@ -538,7 +708,11 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
   spec <- .recovery_parse_spec(effects_spec)
   if (!is.numeric(theta_true) || is.null(names(theta_true)))
     stop("`theta_true` must be a named numeric vector.", call. = FALSE)
-  need <- c("rate", spec$label)
+  ## An estimated floor adds one planted, estimated parameter: outIso.
+  bounds <- .searchnet_as_degree_bounds(degree_bounds)
+  est_floor <- isTRUE(bounds$estimate_floor)
+  floor_lab <- if (est_floor) "outIso" else character(0)
+  need <- c("rate", spec$label, floor_lab)
   miss <- setdiff(need, names(theta_true))
   if (length(miss))
     stop("`theta_true` lacks planted value(s) for: ",
@@ -554,7 +728,7 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
   if (theta_true[["rate"]] <= 0)
     stop("`theta_true[\"rate\"]` must be positive.", call. = FALSE)
   if (!is.null(focal)) {
-    bad <- setdiff(focal, spec$label)
+    bad <- setdiff(focal, c(spec$label, floor_lab))
     if (length(bad))
       stop("`focal` names effect(s) not in `effects_spec`: ",
            paste(bad, collapse = ", "), ".", call. = FALSE)
@@ -584,7 +758,6 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
          ": the harness derives per-replication seeds from `seed`.",
          call. = FALSE)
 
-  bounds <- .searchnet_as_degree_bounds(degree_bounds)
   if (!is.logical(estimate_with_bounds) || length(estimate_with_bounds) != 1L ||
       is.na(estimate_with_bounds))
     stop("`estimate_with_bounds` must be TRUE or FALSE.", call. = FALSE)
@@ -602,7 +775,22 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
   .searchnet_bounds_refuse_ml(est_bounds, algorithm_args$maxlike,
                               "searchnet_recovery()")
 
-  assessed <- if (is.null(focal)) spec$label else focal
+  comp <- .recovery_check_composition(composition, M, waves)
+  if (!is.logical(estimate_with_composition) ||
+      length(estimate_with_composition) != 1L || is.na(estimate_with_composition))
+    stop("`estimate_with_composition` must be TRUE or FALSE.", call. = FALSE)
+  if (!is.null(comp) && !is.null(bounds))
+    stop("`composition` cannot be combined with `degree_bounds`.", call. = FALSE)
+  if (!is.null(comp) && isTRUE(algorithm_args$maxlike))
+    stop("`composition` is estimated by method of moments here; drop ",
+         "`maxlike` from `algorithm_args`.", call. = FALSE)
+
+  ## outIso is estimated only when the panel is fitted under the bounds.
+  fit_floor <- est_floor && !is.null(est_bounds)
+  if (est_floor && !fit_floor && "outIso" %in% focal)
+    stop("`focal` names outIso, which is not estimated with ",
+         "estimate_with_bounds = FALSE.", call. = FALSE)
+  assessed <- if (is.null(focal)) c(spec$label, if (fit_floor) floor_lab) else focal
 
   ## ---- pre-flight: every requested effect must exist for this data shape ---
   ## Done once, outside the replication loop, so an unavailable effect is an
@@ -618,19 +806,37 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
   panels   <- if (keep_panels) vector("list", reps) else NULL
   for (r in seq_len(reps)) {
     status <- NA_character_; msg <- ""; tcm <- NA_real_; est <- NULL
+    plan <- if (is.null(comp)) NULL
+            else .recovery_composition_plan(comp, M, waves, seed, r)
     panel <- tryCatch(
       .recovery_simulate_panel(spec, theta_true, M, N, waves, init_density,
-                               covariates, seed, r, bounds = bounds),
+                               covariates, seed, r, bounds = bounds,
+                               plan = plan),
       error = function(e) e)
+    if (!is.null(plan) && !inherits(panel, "error"))
+      attr(panel, "composition") <- plan
+    drops <- NA_integer_
+    if (!inherits(panel, "error") && est_floor)
+      drops <- searchnet_floor_identification(panel)$totals[["to_zero"]]
     if (inherits(panel, "error")) {
       status <- "error_simulation"; msg <- conditionMessage(panel)
+    } else if (fit_floor && drops == 0L) {
+      ## No observed last-tie drop: the floor is not identified (only a bound
+      ## could be reported), which is not a null. Not estimated.
+      if (keep_panels) panels[[r]] <- panel
+      status <- "non_identified"
+      msg <- paste0("estimated floor: no observed transition to degree 0, so ",
+                    "outIso is not identified (only a bound); not estimated")
     } else {
       if (keep_panels) panels[[r]] <- panel
       est <- tryCatch(
         .recovery_estimate(panel, spec, covariates, M, N,
                            .searchnet_seed(seed, "recovery:est", r),
                            n3, nsub, nbrNodes, algorithm_args,
-                           bounds = est_bounds),
+                           bounds = est_bounds,
+                           intervals = if (!is.null(plan) &&
+                                           isTRUE(estimate_with_composition))
+                                         plan$intervals),
         error = function(e) e)
       if (inherits(est, "error")) {
         status <- "error_estimation"; msg <- conditionMessage(est); est <- NULL
@@ -643,6 +849,7 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
     }
     rep_rows[[r]] <- data.frame(rep = r, status = status, tconv_max = tcm,
                                 message = msg, stringsAsFactors = FALSE)
+    if (est_floor) rep_rows[[r]]$floor_drops <- as.integer(drops)
     if (!is.null(est))
       est_rows[[r]] <- data.frame(rep = r, status = status,
                                   effect = est$effect, estimate = est$estimate,
@@ -662,7 +869,7 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
   ## Truth per estimated parameter: one rate per period.
   truth <- c(stats::setNames(rep(theta_true[["rate"]], waves - 1L),
                              sprintf("rate (period %d)", seq_len(waves - 1L))),
-             theta_true[spec$label])
+             theta_true[c(spec$label, if (fit_floor) floor_lab)])
   conv <- est_df[est_df$status == "converged", , drop = FALSE]
   tab <- .recovery_table(conv, truth, alpha, power, ci_level)
   rownames(tab) <- NULL
@@ -685,7 +892,10 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
                     cond = FALSE, null = isTRUE(null), focal = focal,
                     algorithm_args = algorithm_args,
                     degree_bounds = bounds,
-                    estimate_with_bounds = !is.null(est_bounds)),
+                    estimate_with_bounds = !is.null(est_bounds),
+                    composition = comp,
+                    estimate_with_composition =
+                      !is.null(comp) && isTRUE(estimate_with_composition)),
     panels = panels,
     elapsed = proc.time()[["elapsed"]] - t_start,
     provenance = .searchnet_provenance(seed = seed, call = cl))
@@ -706,10 +916,20 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
   if (!is.null(b))
     out <- paste0(out, sprintf(paste0(
       "
-  Degree bounds in the DGP: actor %s; component %s (fixed, not estimated). ",
+  Degree bounds in the DGP: actor %s; component %s (%s). ",
       "Estimated %s the bounds."),
       .searchnet_bounds_fmt(b$actor), .searchnet_bounds_fmt(b$component),
+      if (isTRUE(b$estimate_floor))
+        "actor floor ESTIMATED as outIso, planted in theta_true; any other bound fixed"
+      else "fixed, not estimated",
       if (isTRUE(s$estimate_with_bounds)) "WITH" else "WITHOUT"))
+  cmp <- s$composition
+  if (!is.null(cmp))
+    out <- paste0(out, sprintf(paste0(
+      "\n  Composition in the DGP: leave share %g, enter share %g per period. ",
+      "Estimated %s."), cmp$leave, cmp$enter,
+      if (isTRUE(s$estimate_with_composition)) "WITH the composition change"
+      else "WITHOUT it (absent actors read as rows of zeros)"))
   out
 }
 
@@ -730,6 +950,14 @@ print.searchnet_recovery <- function(x, digits = 3, ...) {
               if (s$null) "null (size) check" else "recovery",
               s$reps))
   cat(sprintf("  replications: %s\n", .recovery_status_line(x)))
+  if (!is.null(x$reps$floor_drops) && any(!is.na(x$reps$floor_drops)))
+    cat(sprintf(paste0("  estimated floor: observed last-tie drops per rep, median %g ",
+                       "(range %g-%g); %d rep(s) with none (non-identified; see ",
+                       "searchnet_floor_power())\n"),
+                stats::median(x$reps$floor_drops, na.rm = TRUE),
+                min(x$reps$floor_drops, na.rm = TRUE),
+                max(x$reps$floor_drops, na.rm = TRUE),
+                sum(x$reps$floor_drops == 0L, na.rm = TRUE)))
   cat(sprintf("  summaries use the %d converged replication(s) (tconv.max < %g)\n\n",
               x$n_converged, s$conv_threshold))
   tab <- x$table[, c("effect", "true", "mean_est", "bias", "rmse",

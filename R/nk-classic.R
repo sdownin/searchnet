@@ -8,12 +8,16 @@
 #      users can run classical experiments (adaptive walks, local-optima
 #      counts, ruggedness sweeps) directly in searchnet.
 #
-#   2. Serve as an EXTERNAL reference implementation against which the
-#      SAOM-NK reduction (Property 1) can be verified.  The environment
-#      method `verify_nk_equivalence()` checks SAOM-NK's landscape array for
-#      internal consistency; `nk_verify_reduction()` here is stronger: it
-#      builds a Kauffman landscape from scratch and confirms that a
-#      single-actor, greedy SAOM-NK environment reproduces it exactly.
+#   2. Serve as an EXTERNAL reference landscape for the SAOM-NK reduction
+#      (Property 1).  `nk_verify_reduction()` checks this module's encoding
+#      (fitness recomputed from the stored per-locus tables with an
+#      independently coded bit order) and, with `engine = TRUE`, evaluates the
+#      same landscape through the engine's utility methods for one actor.  It
+#      does not exercise the engine's own landscape generator
+#      (compute_fitness_landscape(), which draws its own tables) or the RSiena
+#      ministep path (which refuses M = 1).  The environment method
+#      `verify_nk_equivalence()` is a consistency check of the engine's
+#      stored landscape array.
 #
 # Encoding convention (consistent throughout, and with the engine):
 #   A configuration is a binary vector b = (b_1, ..., b_N).
@@ -21,12 +25,12 @@
 #   most significant bit.  Landscapes store fitness indexed by code + 1.
 #
 # Adapted from the reference script _star_poc/standalone_nk.R, whose
-# vectorised bit-code construction is retained here.
+# vectorized bit-code construction is retained here.
 ################################################################################
 
 
 # ==============================================================================
-# Epistatic neighbourhood construction
+# Epistatic neighborhood construction
 # ==============================================================================
 
 #' Epistatic dependencies for an NK landscape
@@ -36,10 +40,10 @@
 #'
 #' @param N Integer. Number of loci (components).
 #' @param K Integer. Number of epistatic partners per locus, \code{0 <= K <= N-1}.
-#' @param model Character. Neighbourhood topology:
+#' @param model Character. Neighborhood topology:
 #'   \describe{
 #'     \item{\code{"adjacent"}}{Ring topology: partners are the nearest loci on
-#'       a circle (Kauffman's "neighbourhood" model). Deterministic.}
+#'       a circle (Kauffman's "neighborhood" model). Deterministic.}
 #'     \item{\code{"random"}}{Partners drawn uniformly without replacement from
 #'       the other loci (Kauffman's "random" model).}
 #'     \item{\code{"block"}}{Near-decomposable: loci are partitioned into blocks
@@ -103,7 +107,7 @@ nk_dependencies <- function(N, K, model = c("adjacent", "random", "block")) {
 #' Constructs a Kauffman NK landscape by exhaustive enumeration of all
 #' \eqn{2^N} configurations.  Each locus \eqn{i} contributes
 #' \eqn{f_i(b_i, b_{\Omega(i)})}, drawn i.i.d. \eqn{U(0,1)} for every
-#' distinct pattern of its epistatic neighbourhood; total fitness is the
+#' distinct pattern of its epistatic neighborhood; total fitness is the
 #' mean of the \eqn{N} contributions.
 #'
 #' @param N Integer. Number of loci. Exhaustive enumeration limits practical
@@ -111,7 +115,7 @@ nk_dependencies <- function(N, K, model = c("adjacent", "random", "block")) {
 #' @param K Integer. Epistatic partners per locus, \code{0 <= K <= N-1}.
 #'   \code{K = 0} gives a smooth, single-peaked landscape; \code{K = N-1}
 #'   gives a maximally rugged (effectively random) landscape.
-#' @param model Character. Neighbourhood topology; see
+#' @param model Character. Neighborhood topology; see
 #'   \code{\link{nk_dependencies}}.
 #' @param seed Integer or \code{NULL}. Random seed for reproducibility.
 #'
@@ -125,7 +129,12 @@ nk_dependencies <- function(N, K, model = c("adjacent", "random", "block")) {
 #'       contributions, rows in code order.}
 #'     \item{\code{configs}}{Matrix \eqn{2^N \times N} of configuration bits,
 #'       rows in code order.}
-#'     \item{\code{dependencies}}{List of epistatic neighbourhoods.}
+#'     \item{\code{dependencies}}{List of epistatic neighborhoods.}
+#'     \item{\code{tables}}{List of per-locus payoff tables. Element \code{i}
+#'       has length \eqn{2^{K_i + 1}}, where \eqn{K_i + 1} is the size of
+#'       \code{dependencies[[i]]}; entry \code{p + 1} is \eqn{f_i} for the
+#'       neighborhood pattern with key \eqn{p = \sum_k b_{d_k} 2^{k-1}},
+#'       \eqn{d_k} the \eqn{k}-th element of \code{dependencies[[i]]}.}
 #'     \item{\code{influence_matrix}}{\eqn{N \times N} binary matrix;
 #'       \code{[i, j] = 1} iff locus \code{j} influences contribution
 #'       \code{f_i}. Diagonal is 1.}
@@ -171,11 +180,13 @@ nk_landscape <- function(N, K,
 
   # Per-locus contributions: f_i depends only on the bits in deps[[i]].
   contributions <- matrix(0, nrow = n_conf, ncol = N)
+  tables <- vector("list", N)
   for (i in seq_len(N)) {
     di <- deps[[i]]
     bw <- 2^(seq_along(di) - 1)
     pat <- as.integer(configs[, di, drop = FALSE] %*% bw)  # 0 .. 2^|di| - 1
     tab <- stats::runif(2^length(di))
+    tables[[i]] <- tab
     contributions[, i] <- tab[pat + 1L]
   }
 
@@ -191,6 +202,7 @@ nk_landscape <- function(N, K,
     contributions = contributions,
     configs = configs,
     dependencies = deps,
+    tables = tables,
     influence_matrix = E
   ), class = "nk_landscape")
 }
@@ -300,7 +312,7 @@ nk_fitness <- function(landscape, config = NULL) {
 #'
 #' @param landscape An \code{"nk_landscape"} object.
 #' @param strict Logical. If \code{TRUE}, require strictly greater fitness than
-#'   every neighbour. Default \code{FALSE} (>=), matching the standard
+#'   every neighbor. Default \code{FALSE} (>=), matching the standard
 #'   convention.
 #'
 #' @return A \code{data.frame} with columns \code{code}, \code{fitness}, and
@@ -342,23 +354,26 @@ nk_local_optima <- function(landscape, strict = FALSE) {
 #' Adaptive walk on an NK landscape
 #'
 #' Performs a classical local search from a starting configuration, moving
-#' among Hamming-1 neighbours until a local optimum is reached.
+#' among Hamming-1 neighbors until a local optimum is reached.
 #'
 #' @param landscape An \code{"nk_landscape"} object.
 #' @param start Integer code, binary vector, or \code{NULL} for a random start.
 #' @param type Character. Search rule:
 #'   \describe{
-#'     \item{\code{"steepest"}}{Move to the best improving neighbour
+#'     \item{\code{"steepest"}}{Move to the best improving neighbor
 #'       (steepest-ascent hill climbing). The standard NK adaptive walk.}
-#'     \item{\code{"greedy"}}{Move to the first improving neighbour found,
+#'     \item{\code{"greedy"}}{Move to the first improving neighbor found,
 #'       scanning loci in random order (random-ascent).}
-#'     \item{\code{"random"}}{Move to a randomly chosen improving neighbour.}
+#'     \item{\code{"random"}}{Move to a randomly chosen improving neighbor.}
 #'   }
-#' @param max_steps Integer. Safety cap on iterations.
+#' @param max_steps Integer. Safety cap on the number of moves.
 #'
 #' @return An object of class \code{"nk_walk"}: a list with \code{path}
-#'   (integer codes visited), \code{fitness} (fitness at each step),
-#'   \code{terminal} (final code), \code{steps}, and \code{is_local_optimum}.
+#'   (integer codes visited, start and terminal included), \code{fitness}
+#'   (fitness at each step), \code{terminal} (final code), \code{steps}
+#'   (moves made), and \code{is_local_optimum} (\code{TRUE} when the terminal
+#'   configuration has no strictly improving neighbor; \code{FALSE} when the
+#'   walk stopped at \code{max_steps} first).
 #'
 #' @examples
 #' nk <- nk_landscape(N = 10, K = 3, seed = 7)
@@ -383,32 +398,38 @@ nk_walk <- function(landscape, start = NULL,
     as.integer(start)
   }
 
-  path <- integer(0)
-  fpath <- numeric(0)
-  for (s in seq_len(max_steps)) {
-    path <- c(path, cur)
-    fpath <- c(fpath, fit[cur + 1L])
-
-    nbrs <- vapply(seq_len(N), function(j) bitwXor(cur, as.integer(2^(N - j))),
+  improving_nbrs <- function(code) {
+    nbrs <- vapply(seq_len(N), function(j) bitwXor(code, as.integer(2^(N - j))),
                    integer(1))
     nf <- fit[nbrs + 1L]
-    improving <- which(nf > fit[cur + 1L])
-    if (length(improving) == 0L) break
-
-    nxt <- switch(type,
-      steepest = nbrs[improving[which.max(nf[improving])]],
-      greedy   = nbrs[improving[sample.int(length(improving), 1L)][1L]],
-      random   = nbrs[improving[sample.int(length(improving), 1L)]]
-    )
-    cur <- nxt
+    improving <- which(nf > fit[code + 1L])
+    list(nbrs = nbrs, nf = nf, improving = improving)
   }
 
+  path <- cur
+  fpath <- fit[cur + 1L]
+  for (s in seq_len(max_steps)) {
+    nb <- improving_nbrs(cur)
+    if (length(nb$improving) == 0L) break
+    improving <- nb$improving
+    nxt <- switch(type,
+      steepest = nb$nbrs[improving[which.max(nb$nf[improving])]],
+      greedy   = nb$nbrs[improving[sample.int(length(improving), 1L)][1L]],
+      random   = nb$nbrs[improving[sample.int(length(improving), 1L)]]
+    )
+    cur <- nxt
+    path <- c(path, cur)
+    fpath <- c(fpath, fit[cur + 1L])
+  }
+
+  ## Computed, not assumed: a walk cut off by max_steps can end on a
+  ## configuration that still has an improving neighbor.
   structure(list(
     path = path,
     fitness = fpath,
     terminal = cur,
     steps = length(path) - 1L,
-    is_local_optimum = TRUE,
+    is_local_optimum = length(improving_nbrs(cur)$improving) == 0L,
     type = type
   ), class = "nk_walk")
 }
@@ -438,12 +459,18 @@ print.nk_walk <- function(x, ...) {
 #' @param K_values Integer vector of \eqn{K} levels to sweep.
 #' @param n_landscapes Integer. Replicate landscapes per \eqn{K}.
 #' @param n_walks Integer. Adaptive walks per landscape (random starts).
-#' @param model Character. Neighbourhood topology.
+#' @param model Character. Neighborhood topology.
 #' @param seed Integer or \code{NULL}.
 #'
-#' @return A \code{data.frame} with one row per \eqn{K}, containing mean local
-#'   optima count, mean walk length, mean terminal fitness, and the global
-#'   optimum fitness.
+#' @return A \code{data.frame} with one row per \eqn{K} and columns \code{N},
+#'   \code{K}, \code{n_optima} (mean local-optimum count over the
+#'   landscapes), \code{expected_optima} (the fully random expectation
+#'   \eqn{2^N / (N + 1)}, given only in the row with \eqn{K = N - 1} and
+#'   \code{NA} otherwise, because that expectation holds only in the fully
+#'   random case),
+#'   \code{global_fitness} (mean global-optimum fitness),
+#'   \code{mean_walk_steps}, and \code{mean_terminal_fitness} (steepest-ascent
+#'   walks from random starts).
 #'
 #' @examples
 #' \donttest{
@@ -475,7 +502,7 @@ nk_sweep_K <- function(N = 12, K_values = 0:(N - 1),
     data.frame(
       N = N, K = k,
       n_optima = mean(d$n_optima),
-      expected_optima = 2^N / (k + 1),
+      expected_optima = if (k == N - 1) 2^N / (N + 1) else NA_real_,
       global_fitness = mean(d$global_fitness),
       mean_walk_steps = mean(d$mean_walk_steps),
       mean_terminal_fitness = mean(d$mean_terminal_fitness)
@@ -491,15 +518,18 @@ nk_sweep_K <- function(N = 12, K_values = 0:(N - 1),
 
 #' Convert a classic NK landscape to a SAOM-NK configuration
 #'
-#' Emits the environment and structure-model settings that make a
-#' single-actor SAOM-NK environment search the supplied NK landscape.  This is
-#' the constructive content of the Reduction property (Property 1): NK is the
-#' \eqn{M = 1}, \eqn{\beta \to \infty} special case of SAOM-NK.
+#' Emits environment and structure-model settings matching the supplied NK
+#' landscape's size and influence pattern (Property 1: NK is the
+#' \eqn{M = 1}, \eqn{\beta \to \infty} special case of SAOM-NK).  The payoff
+#' tables are not transferred: an environment built from these settings draws
+#' its own tables in \code{compute_fitness_landscape()}.  To evaluate this
+#' landscape itself through the engine, see
+#' \code{nk_verify_reduction(engine = TRUE)}.
 #'
 #' @param landscape An \code{"nk_landscape"} object.
-#' @param M Integer. Number of actors to place on the landscape. \code{M = 1}
-#'   gives the exact NK reduction; \code{M > 1} embeds the same landscape in a
-#'   multi-actor SAOM-NK search (the generalization direction).
+#' @param M Integer. Number of actors. \code{M = 1} is the reduction setting;
+#'   \code{M > 1} uses the same influence pattern in a multi-actor SAOM-NK
+#'   search (the generalization direction).
 #'
 #' @return A list with components \code{env_params} (arguments for
 #'   \code{\link{saomnk_env}}), \code{model_params} (arguments for
@@ -533,60 +563,200 @@ nk_to_saomnk <- function(landscape, M = 1L) {
 }
 
 
-#' Verify the NK reduction against an independent landscape
+#' Check an NK landscape's encoding and, optionally, its reading by the engine
 #'
-#' Builds a classic NK landscape from scratch and confirms that the fitness
-#' values implied by the NK construction match those recovered from the
-#' contribution table by an independent route.  This is a stronger check than
-#' the environment method \code{verify_nk_equivalence()}, which validates the
-#' engine's landscape array for internal consistency only.
+#' Two checks with separately reported results.
 #'
-#' The test exploits the defining NK property: contribution \eqn{f_i} depends
-#' only on the loci in \eqn{\Omega(i)}, so any two configurations sharing the
-#' same neighbourhood pattern must carry identical \eqn{f_i}.  A violation
-#' indicates an indexing or endianness error in landscape construction.
+#' \strong{Encoding check (always run).} Recomputes the fitness of every
+#' configuration from the per-locus payoff tables (\code{landscape$tables})
+#' with a separately coded bit order: the bits of each configuration are read
+#' from its integer code with \code{bitwAnd()} and \code{bitwShiftR()}
+#' (\eqn{b_1} the most significant bit), not taken from
+#' \code{landscape$configs}, and each locus's table key is assembled with
+#' \code{bitwShiftL()} and \code{bitwOr()} rather than by a matrix product.
+#' The result is compared with \code{landscape$fitness}, and
+#' \code{landscape$configs} is compared bit by bit with the decoded bits. An
+#' endianness error, a permuted bit order, or a table key built in a
+#' different order shows up as a non-zero difference. This is a
+#' self-consistency check of \code{nk_landscape()} and the package's encoding
+#' convention; it does not involve the SAOM-NK engine.
 #'
-#' @param N Integer. Number of loci.
-#' @param K Integer. Epistatic partners per locus.
-#' @param model Character. Neighbourhood topology.
-#' @param seed Integer or \code{NULL}.
+#' \strong{Engine check (\code{engine = TRUE}).} Places the same landscape in
+#' a single-actor \code{SaomNkRSienaBiEnv}: the configurations, per-locus
+#' contributions and fitness are written into the environment's
+#' \code{fitness_landscape} array in the engine's row order (the
+#' \code{expand.grid()} order produced by \code{compute_fitness_landscape()},
+#' first bit least significant), with the landscape's influence matrix as
+#' \code{component_1_coDyadCovar}. For every configuration the engine's
+#' \code{compute_formal_utility()}, with only \eqn{\beta_F = 1} (all network
+#' and cost weights 0, as in the reduction conditions), is compared with the
+#' NK fitness. A steepest-ascent walk driven by the engine's
+#' \code{compute_choice_probabilities()} utility changes is then compared
+#' step by step with \code{nk_walk(type = "steepest")} from the same start.
+#' This exercises the engine's reading of a stored landscape and its choice
+#' utilities. It does not exercise \code{compute_fitness_landscape()}, which
+#' draws its own payoff tables and cannot take these, and it does not run the
+#' RSiena ministep simulation, which refuses \eqn{M = 1}.
+#'
+#' Other checks of Property 1: the environment method
+#' \code{verify_nk_equivalence()} checks that the engine's stored landscape
+#' array is internally consistent (configurations sharing a masked code carry
+#' the same contribution, and fitness is their mean); Lemmas 1 and 2 (proof
+#' table C6 and C8) prove payoff and dynamic equivalence analytically.
+#'
+#' @param N Integer. Number of loci (ignored when \code{landscape} is given).
+#' @param K Integer. Epistatic partners per locus (ignored when
+#'   \code{landscape} is given).
+#' @param model Character. Neighborhood topology; see
+#'   \code{\link{nk_dependencies}}. Default \code{"adjacent"}, as in
+#'   \code{\link{nk_landscape}}.
+#' @param seed Integer or \code{NULL}. Seed for the landscape.
 #' @param tolerance Numeric. Maximum permitted absolute difference.
+#' @param engine Logical. Also run the engine check (default \code{FALSE}).
+#'   Requires \code{N <= 12}.
+#' @param walk_start Integer code at which the engine-driven walk starts
+#'   (default 0).
+#' @param landscape An \code{"nk_landscape"} object to check instead of
+#'   building one from \code{N}, \code{K}, \code{model} and \code{seed}.
+#' @param verbose Logical. Print a summary (default \code{TRUE}).
 #'
-#' @return Invisibly, a list with \code{max_difference}, \code{n_configs}, and
-#'   \code{passed}. Prints a summary.
+#' @return Invisibly, a list with \code{encoding_max_difference} (maximum
+#'   absolute difference between stored fitness and fitness recomputed from
+#'   the tables), \code{config_mismatches} (bits of \code{landscape$configs}
+#'   that disagree with the decoded codes), \code{n_configs}, \code{model},
+#'   and \code{passed}. With \code{engine = TRUE} also
+#'   \code{engine_max_difference} (maximum absolute difference between the
+#'   engine's formal utility and the NK fitness over all configurations),
+#'   \code{engine_walk_identical} (whether the engine-driven and
+#'   \code{nk_walk()} paths coincide), and \code{engine_walk_steps}; then
+#'   \code{passed} requires both checks to pass.
 #'
 #' @examples
-#' nk_verify_reduction(N = 10, K = 3, seed = 42)
+#' nk_verify_reduction(N = 10, K = 3, model = "random", seed = 42)
+#' \donttest{
+#' nk_verify_reduction(N = 8, K = 3, model = "random", seed = 42, engine = TRUE)
+#' }
 #'
+#' @seealso \code{\link{nk_landscape}}, \code{\link{nk_to_saomnk}}
 #' @export
 nk_verify_reduction <- function(N = 10, K = 3,
                                 model = c("adjacent", "random", "block"),
-                                seed = NULL, tolerance = 1e-12) {
-  model <- match.arg(model)
-  nk <- nk_landscape(N, K, model = model, seed = seed)
+                                seed = NULL, tolerance = 1e-12,
+                                engine = FALSE, walk_start = 0L,
+                                landscape = NULL, verbose = TRUE) {
+  if (is.null(landscape)) {
+    model <- match.arg(model)
+    nk <- nk_landscape(N, K, model = model, seed = seed)
+  } else {
+    stopifnot(inherits(landscape, "nk_landscape"))
+    nk <- landscape
+  }
+  if (is.null(nk$tables)) {
+    stop("landscape has no per-locus payoff tables ($tables); ",
+         "rebuild it with the current nk_landscape().")
+  }
+  N <- nk$N
+  n_conf <- 2L^N
+  codes <- seq_len(n_conf) - 1L
 
-  # Independent reconstruction: rebuild each locus's payoff table keyed by the
-  # neighbourhood code, then recompute fitness as the mean of look-ups.
-  recon <- numeric(length(nk$fitness))
+  ## --- Encoding check -------------------------------------------------------
+  ## Bit j of a code, b_1 most significant, read with integer bit operations.
+  bit_of <- function(j) bitwAnd(bitwShiftR(codes, N - j), 1L)
+  bits <- vapply(seq_len(N), bit_of, integer(n_conf))
+  if (n_conf == 1L) bits <- matrix(bits, nrow = 1L)
+  config_mismatches <- sum(bits != nk$configs)
+
+  recon <- numeric(n_conf)
   for (i in seq_len(N)) {
     di <- nk$dependencies[[i]]
-    bw <- 2^(seq_along(di) - 1)
-    codes <- as.integer(nk$configs[, di, drop = FALSE] %*% bw)
-    first <- match(codes, codes)          # first config index per pattern
-    recon <- recon + nk$contributions[cbind(first, i)]
+    key <- integer(n_conf)
+    for (k in seq_along(di)) {
+      key <- bitwOr(key, bitwShiftL(bit_of(di[k]), k - 1L))
+    }
+    recon <- recon + nk$tables[[i]][key + 1L]
   }
   recon <- recon / N
+  enc_diff <- max(abs(recon - nk$fitness))
+  enc_pass <- enc_diff <= tolerance && config_mismatches == 0L
 
-  max_diff <- max(abs(recon - nk$fitness))
-  passed <- max_diff <= tolerance
+  out <- list(encoding_max_difference = enc_diff,
+              config_mismatches = config_mismatches,
+              n_configs = n_conf,
+              model = nk$model,
+              passed = enc_pass)
 
-  cat(sprintf("NK reduction check: N=%d, K=%d, model=\"%s\"\n", N, K, model))
-  cat(sprintf("  configurations   : %s\n",
-              format(length(nk$fitness), big.mark = ",")))
-  cat(sprintf("  max |difference| : %.2e\n", max_diff))
-  cat(sprintf("  result           : %s\n", if (passed) "PASS" else "FAIL"))
+  ## --- Engine check ---------------------------------------------------------
+  if (isTRUE(engine)) {
+    if (N > 12) stop("engine = TRUE requires N <= 12 (exhaustive evaluation).")
+    env <- SaomNkRSienaBiEnv$new(list(
+      M = 1L, N = N, BI_PROB = 0.5,
+      rand_seed = if (is.null(nk$seed)) 1L else nk$seed,
+      name = "_nk_verify_", dir_output = tempdir()))
+    E <- unname(nk$influence_matrix)
+    env$component_1_coDyadCovar <- E
 
-  invisible(list(max_difference = max_diff,
-                 n_configs = length(nk$fitness),
-                 passed = passed))
+    ## Engine row order: row r holds the configuration whose bits satisfy
+    ## sum(b * 2^(0:(N-1))) == r - 1 (expand.grid, first bit fastest).
+    eng_bits <- vapply(seq_len(N), function(j)
+      bitwAnd(bitwShiftR(codes, j - 1L), 1L), integer(n_conf))
+    if (n_conf == 1L) eng_bits <- matrix(eng_bits, nrow = 1L)
+    grid <- as.matrix(expand.grid(rep(list(0:1), N)))
+    if (!all(grid == eng_bits)) {
+      stop("internal: engine row order does not match expand.grid().")
+    }
+    nk_code_of_row <- as.integer(eng_bits %*% 2^((N - 1):0))
+    is_peak <- as.numeric(nk_code_of_row %in% nk_local_optima(nk)$code)
+    arr <- array(0, dim = c(1L, n_conf, 2L * N + 2L))
+    arr[1, , seq_len(N)] <- eng_bits
+    arr[1, , N + seq_len(N)] <- nk$contributions[nk_code_of_row + 1L, ]
+    arr[1, , 2L * N + 1L] <- nk$fitness[nk_code_of_row + 1L]
+    arr[1, , 2L * N + 2L] <- is_peak
+    env$fitness_landscape <- arr
+
+    only_F <- list(beta_F = 1, beta_s = 0, beta_w = 0, beta_h = 0,
+                   beta_cong = 0, beta_disp = 0, beta_comp = 0,
+                   beta_clos = 0, beta_riv = 0, beta_leg = 0)
+    eng_u <- vapply(codes, function(cc) {
+      env$bipartite_matrix[1, ] <- nk$configs[cc + 1L, ]
+      do.call(env$compute_formal_utility, c(list(actor_id = 1L), only_F))$nk_fitness
+    }, numeric(1))
+    eng_diff <- max(abs(eng_u - nk$fitness))
+
+    ## Engine-driven steepest ascent: move to the flip with the largest
+    ## positive utility change, stop when none is positive.
+    cur <- as.integer(walk_start)
+    eng_path <- cur
+    for (s in seq_len(n_conf)) {
+      env$bipartite_matrix[1, ] <- nk$configs[cur + 1L, ]
+      du <- do.call(env$compute_choice_probabilities,
+                    c(list(beta = 1), only_F))[[1]]$delta_u
+      if (!any(du > 0)) break
+      j <- which.max(du)
+      cur <- bitwXor(cur, as.integer(2^(N - j)))
+      eng_path <- c(eng_path, cur)
+    }
+    nk_path <- nk_walk(nk, start = as.integer(walk_start), type = "steepest")$path
+    walk_same <- identical(as.integer(eng_path), as.integer(nk_path))
+
+    out$engine_max_difference <- eng_diff
+    out$engine_walk_identical <- walk_same
+    out$engine_walk_steps <- length(eng_path) - 1L
+    out$passed <- enc_pass && eng_diff <= tolerance && walk_same
+  }
+
+  if (verbose) {
+    cat(sprintf("NK landscape check: N=%d, K=%d, model=\"%s\", %s configurations\n",
+                N, nk$K, nk$model, format(n_conf, big.mark = ",")))
+    cat(sprintf("  encoding: max |fitness - table recomputation| = %.2e, config bit mismatches = %d\n",
+                enc_diff, config_mismatches))
+    if (isTRUE(engine)) {
+      cat(sprintf("  engine  : max |formal utility (beta_F only, M = 1) - NK fitness| = %.2e\n",
+                  out$engine_max_difference))
+      cat(sprintf("  engine  : steepest walk from code %d, %d steps, path %s nk_walk()\n",
+                  as.integer(walk_start), out$engine_walk_steps,
+                  if (out$engine_walk_identical) "identical to" else "DIFFERS from"))
+    }
+    cat(sprintf("  result  : %s\n", if (out$passed) "PASS" else "FAIL"))
+  }
+  invisible(out)
 }

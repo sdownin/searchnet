@@ -57,8 +57,11 @@
   }
   chg <- NA_real_; tj <- NA_real_
   if (T_ >= 2L) {
-    chg <- mean(vapply(2:T_, function(w)
-      sum(arr[, , w] != arr[, , w - 1L]) / (M * N), numeric(1)))
+    ## Over actors present at both waves (an absent actor is an all-NA row).
+    chg <- mean(vapply(2:T_, function(w) {
+      both <- !apply(is.na(arr[, , c(w - 1L, w), drop = FALSE]), 1L, any)
+      sum(arr[both, , w] != arr[both, , w - 1L]) / (sum(both) * N)
+    }, numeric(1)))
     tj <- mean(s$tie_jaccard[2:T_], na.rm = TRUE)
     if (is.nan(tj)) tj <- NA_real_
   }

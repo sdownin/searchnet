@@ -18,23 +18,26 @@ nk_walk(
 
 \item{type}{Character. Search rule:
 \describe{
-\item{\code{"steepest"}}{Move to the best improving neighbour
+\item{\code{"steepest"}}{Move to the best improving neighbor
 (steepest-ascent hill climbing). The standard NK adaptive walk.}
-\item{\code{"greedy"}}{Move to the first improving neighbour found,
+\item{\code{"greedy"}}{Move to the first improving neighbor found,
 scanning loci in random order (random-ascent).}
-\item{\code{"random"}}{Move to a randomly chosen improving neighbour.}
+\item{\code{"random"}}{Move to a randomly chosen improving neighbor.}
 }}
 
-\item{max_steps}{Integer. Safety cap on iterations.}
+\item{max_steps}{Integer. Safety cap on the number of moves.}
 }
 \value{
 An object of class \code{"nk_walk"}: a list with \code{path}
-(integer codes visited), \code{fitness} (fitness at each step),
-\code{terminal} (final code), \code{steps}, and \code{is_local_optimum}.
+(integer codes visited, start and terminal included), \code{fitness}
+(fitness at each step), \code{terminal} (final code), \code{steps}
+(moves made), and \code{is_local_optimum} (\code{TRUE} when the terminal
+configuration has no strictly improving neighbor; \code{FALSE} when the
+walk stopped at \code{max_steps} first).
 }
 \description{
 Performs a classical local search from a starting configuration, moving
-among Hamming-1 neighbours until a local optimum is reached.
+among Hamming-1 neighbors until a local optimum is reached.
 }
 \examples{
 nk <- nk_landscape(N = 10, K = 3, seed = 7)

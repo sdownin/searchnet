@@ -1,3 +1,17 @@
+# searchnet 0.18.0
+
+Released 2026-10-11. Tested with RSiena 1.5.0 and 1.6.6: 84 files, 1117 tests, 0 failures, 0 errors under each. `R CMD check --as-cran` (clean build, RSiena 1.6.6): 0 errors, 0 warnings. Simulated results for existing models are unchanged.
+
+## New
+
+* **Actors who enter or leave.** `searchnet_bipartite_from_long()` takes `entry`/`exit` or `presence` and codes absent actor-waves as NA; `searchnet_composition()` returns RSiena's composition change, which `searchnet_coevolve_data()` adds automatically; `searchnet_k_readings()` and the moment gate skip absent actors. An exit exactly at an intermediate wave is passed as just after it, since RSiena otherwise keeps the actor for the whole next period. `searchnet_recovery(composition =)` measures the cost of reading exits as dropped ties: with 20% leavers per period, composition change recovers density (bias +0.05, coverage 1.00), rows of zeros bias it by -0.17. New vignette section "Actors who enter or leave".
+* **An estimated floor.** `searchnet_degree_bounds(estimate_floor = TRUE)` estimates an actor floor of 1 as the cost of dropping the last tie, relative to the other effects in the model; it is identified only from observed transitions to degree 0, and floors of 2 or more are refused as not identified. New `searchnet_floor_identification()` and `searchnet_floor_power()`; `searchnet_recovery()` reports designs with no observed drop as non-identified, never as a null. A stored power study gives the minimum detectable effect by number of observed drops (2.66 at 1-4 drops to 0.83 at 40 or more).
+
+## Fixed
+
+* `nk_verify_reduction()` previously compared an NK landscape with itself and could not fail. It now recomputes fitness from the per-locus tables (new `nk_landscape()` field `tables`) with an independently coded bit order, and with `engine = TRUE` evaluates the landscape through the single-actor engine utility and steepest-ascent choices. Return fields are renamed (`encoding_max_difference`, `engine_max_difference`). The NK figure's subtitle reports the engine check, the sweep averages 20 landscapes per K, and the docs no longer claim more than is tested (`nk_to_saomnk()` emits parameters; it does not transfer payoff tables).
+* `nk_walk()` computes `is_local_optimum` (FALSE when `max_steps` ends the walk); `nk_sweep_K()`'s `expected_optima` is 2^N/(N+1) at K = N - 1 and NA otherwise.
+
 # searchnet 0.17.0
 
 Released 2026-10-11. Tested with RSiena 1.5.0 and 1.6.6: 82 files, 1088 tests, 0 failures, 0 errors under each. `R CMD check --as-cran` (clean build, RSiena 1.6.6): 0 errors, 0 warnings. No change to simulated results.

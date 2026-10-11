@@ -2,45 +2,105 @@
 % Please edit documentation in R/nk-classic.R
 \name{nk_verify_reduction}
 \alias{nk_verify_reduction}
-\title{Verify the NK reduction against an independent landscape}
+\title{Check an NK landscape's encoding and, optionally, its reading by the engine}
 \usage{
 nk_verify_reduction(
   N = 10,
   K = 3,
   model = c("adjacent", "random", "block"),
   seed = NULL,
-  tolerance = 1e-12
+  tolerance = 1e-12,
+  engine = FALSE,
+  walk_start = 0L,
+  landscape = NULL,
+  verbose = TRUE
 )
 }
 \arguments{
-\item{N}{Integer. Number of loci.}
+\item{N}{Integer. Number of loci (ignored when \code{landscape} is given).}
 
-\item{K}{Integer. Epistatic partners per locus.}
+\item{K}{Integer. Epistatic partners per locus (ignored when
+\code{landscape} is given).}
 
-\item{model}{Character. Neighbourhood topology.}
+\item{model}{Character. Neighborhood topology; see
+\code{\link{nk_dependencies}}. Default \code{"adjacent"}, as in
+\code{\link{nk_landscape}}.}
 
-\item{seed}{Integer or \code{NULL}.}
+\item{seed}{Integer or \code{NULL}. Seed for the landscape.}
 
 \item{tolerance}{Numeric. Maximum permitted absolute difference.}
+
+\item{engine}{Logical. Also run the engine check (default \code{FALSE}).
+Requires \code{N <= 12}.}
+
+\item{walk_start}{Integer code at which the engine-driven walk starts
+(default 0).}
+
+\item{landscape}{An \code{"nk_landscape"} object to check instead of
+building one from \code{N}, \code{K}, \code{model} and \code{seed}.}
+
+\item{verbose}{Logical. Print a summary (default \code{TRUE}).}
 }
 \value{
-Invisibly, a list with \code{max_difference}, \code{n_configs}, and
-\code{passed}. Prints a summary.
+Invisibly, a list with \code{encoding_max_difference} (maximum
+absolute difference between stored fitness and fitness recomputed from
+the tables), \code{config_mismatches} (bits of \code{landscape$configs}
+that disagree with the decoded codes), \code{n_configs}, \code{model},
+and \code{passed}. With \code{engine = TRUE} also
+\code{engine_max_difference} (maximum absolute difference between the
+engine's formal utility and the NK fitness over all configurations),
+\code{engine_walk_identical} (whether the engine-driven and
+\code{nk_walk()} paths coincide), and \code{engine_walk_steps}; then
+\code{passed} requires both checks to pass.
 }
 \description{
-Builds a classic NK landscape from scratch and confirms that the fitness
-values implied by the NK construction match those recovered from the
-contribution table by an independent route.  This is a stronger check than
-the environment method \code{verify_nk_equivalence()}, which validates the
-engine's landscape array for internal consistency only.
+Two checks with separately reported results.
 }
 \details{
-The test exploits the defining NK property: contribution \eqn{f_i} depends
-only on the loci in \eqn{\Omega(i)}, so any two configurations sharing the
-same neighbourhood pattern must carry identical \eqn{f_i}.  A violation
-indicates an indexing or endianness error in landscape construction.
+\strong{Encoding check (always run).} Recomputes the fitness of every
+configuration from the per-locus payoff tables (\code{landscape$tables})
+with a separately coded bit order: the bits of each configuration are read
+from its integer code with \code{bitwAnd()} and \code{bitwShiftR()}
+(\eqn{b_1} the most significant bit), not taken from
+\code{landscape$configs}, and each locus's table key is assembled with
+\code{bitwShiftL()} and \code{bitwOr()} rather than by a matrix product.
+The result is compared with \code{landscape$fitness}, and
+\code{landscape$configs} is compared bit by bit with the decoded bits. An
+endianness error, a permuted bit order, or a table key built in a
+different order shows up as a non-zero difference. This is a
+self-consistency check of \code{nk_landscape()} and the package's encoding
+convention; it does not involve the SAOM-NK engine.
+
+\strong{Engine check (\code{engine = TRUE}).} Places the same landscape in
+a single-actor \code{SaomNkRSienaBiEnv}: the configurations, per-locus
+contributions and fitness are written into the environment's
+\code{fitness_landscape} array in the engine's row order (the
+\code{expand.grid()} order produced by \code{compute_fitness_landscape()},
+first bit least significant), with the landscape's influence matrix as
+\code{component_1_coDyadCovar}. For every configuration the engine's
+\code{compute_formal_utility()}, with only \eqn{\beta_F = 1} (all network
+and cost weights 0, as in the reduction conditions), is compared with the
+NK fitness. A steepest-ascent walk driven by the engine's
+\code{compute_choice_probabilities()} utility changes is then compared
+step by step with \code{nk_walk(type = "steepest")} from the same start.
+This exercises the engine's reading of a stored landscape and its choice
+utilities. It does not exercise \code{compute_fitness_landscape()}, which
+draws its own payoff tables and cannot take these, and it does not run the
+RSiena ministep simulation, which refuses \eqn{M = 1}.
+
+Other checks of Property 1: the environment method
+\code{verify_nk_equivalence()} checks that the engine's stored landscape
+array is internally consistent (configurations sharing a masked code carry
+the same contribution, and fitness is their mean); Lemmas 1 and 2 (proof
+table C6 and C8) prove payoff and dynamic equivalence analytically.
 }
 \examples{
-nk_verify_reduction(N = 10, K = 3, seed = 42)
+nk_verify_reduction(N = 10, K = 3, model = "random", seed = 42)
+\donttest{
+nk_verify_reduction(N = 8, K = 3, model = "random", seed = 42, engine = TRUE)
+}
 
+}
+\seealso{
+\code{\link{nk_landscape}}, \code{\link{nk_to_saomnk}}
 }

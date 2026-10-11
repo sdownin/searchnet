@@ -27,6 +27,10 @@ that no actor may hold more than `max` components.
 In SAOM-NK a bound is a **fixed modeling assumption**. It holds in forward
 simulation and is imposed, unchanged, when the same model is estimated. It is
 never an estimated parameter, and searchnet never reports an estimate for it.
+The one exception is opt-in: an actor floor of 1 can instead be estimated as
+the cost of dropping the last tie (`estimate_floor = TRUE`, described in
+[its own section](#an-estimated-floor-the-cost-of-dropping-the-last-tie)
+below), and it is then no longer a bound.
 
 ## How each bound is carried in RSiena
 
@@ -237,3 +241,139 @@ merely less efficient: the estimator has to explain, through the remaining
 effects, why actors at one component never drop it, and the effects it uses
 for that absorb the bound. Which effects absorb it, and by how much, is
 specific to this design.
+
+## An estimated floor: the cost of dropping the last tie
+
+A floor of 1 can be read two ways. As a definition (an actor exists only
+while it holds something), it is a fixed assumption, as above. As a
+behavior (actors are reluctant to drop their last component, but sometimes
+do), it is a parameter to estimate. `estimate_floor = TRUE` takes the second
+reading for a floor of 1:
+
+```{r estimated-declare}
+b_est <- searchnet_degree_bounds(actor = c(min = 1), estimate_floor = TRUE,
+                                 floor_start = -2)
+b_est
+```
+
+`outIso` then enters as a free evaluation effect. Its estimate is the cost of
+dropping the last tie **relative to the other effects in the model**: how much
+less an actor values holding nothing than those effects predict. It is not an
+absolute quantity, and it moves when the rest of the specification moves.
+Degree 0 is now allowed, so the floor drops out of the data check, the
+simulation gates, the start-state repair and the infeasibility flags; any
+other bound stays fixed.
+
+A floor above 1 cannot be estimated this way. Its only carrier,
+`outTrunc(k)`, has the same change statistic for every drop by an actor
+holding `k` or fewer components, so a free coefficient measures how much more
+the first `k` ties are worth than later ones, not the cost of crossing the
+floor, and RSiena offers no outdegree indicator above `outIso`. searchnet
+refuses it with an error of class `"searchnet_not_identified"`.
+
+### Identification comes only from observed drops to degree 0
+
+The method-of-moments target for `outIso` is the number of actors holding
+nothing at the end of each period. If no actor is ever observed at degree 0,
+the data say only that the cost is large, not how large: the estimate is not
+identified and **only a bound can be reported**. That is a non-identification,
+not a null. `searchnet_floor_identification()` counts the observed
+transitions per wave and says which case applies:
+
+```{r estimated-id}
+B1 <- matrix(c(1, 0, 0,
+               0, 1, 1,
+               1, 1, 0), 3, 3, byrow = TRUE)
+B2 <- B1; B2[1, 1] <- 0          # actor 1 drops its last component
+searchnet_floor_identification(list(B1, B2))
+searchnet_floor_identification(list(B1, B1))
+```
+
+The counts are net changes between waves: an actor that dropped its last
+component and took another between two observations is not seen.
+
+### Evidence: power and identification by the number of observed drops
+
+**What this section shows, and what it does not.** It shows recovery of a
+planted `outIso` at one family of designs: N = 8 components, 3 waves, a basic
+rate of 3 per period, `density = -1` as the only other effect, wave 1 a
+Bernoulli draw at density 0.2 with every actor brought to at least one
+component, and 100 replications per cell. The planted `outIso` is 0, -1, -2 or
+-4, and the number of actors M is 15, 30, 60 or 120; together they move how
+many last-tie drops a panel shows. Every panel is estimated with `outIso`
+free (starting at -2) by unconditional method of moments (`n3 = 500`,
+`nsub = 4`, `nbrNodes = 1`). A panel with no observed drop to degree 0 is
+filed as non-identified and not estimated. Nothing is shown about other
+effects, sizes or densities.
+
+The results come from `tools/make_floor_power_vignette_data.R` (about 40
+minutes on one core under RSiena 1.5.0), which fixed the design and the
+reading before the run, and are stored in
+`inst/extdata/searchnet_floor_power.rds`. Each cell is the code below:
+
+```{r estimated-heavy, eval = FALSE}
+b <- searchnet_degree_bounds(actor = c(min = 1), estimate_floor = TRUE,
+                             floor_start = -2)
+rec <- searchnet_recovery("density",
+                          theta_true = c(rate = 3, density = -1, outIso = -2),
+                          reps = 100, M = 60, N = 8, waves = 3,
+                          n3 = 500, nsub = 4, nbrNodes = 1,
+                          init_density = 0.2, degree_bounds = b, seed = 20261022)
+searchnet_floor_power(rec)
+```
+
+```{r estimated-load}
+fpath <- system.file("extdata", "searchnet_floor_power.rds", package = "searchnet")
+if (!nzchar(fpath))
+  fpath <- file.path("..", "inst", "extdata", "searchnet_floor_power.rds")
+fp <- readRDS(fpath)
+```
+
+Per design cell: the median number of observed last-tie drops per panel, how
+many panels had none (non-identified), and recovery over the converged ones.
+
+```{r estimated-cells}
+cells <- fp$by_cell
+cells[] <- lapply(cells, function(v) if (is.numeric(v)) round(v, 3) else v)
+cells[, c("outIso", "M", "median_drops", "n_non_identified", "n_converged",
+          "bias", "coverage", "rejection", "mde")]
+```
+
+The minimum detectable effect by the observed count of drops, pooled over the
+planted values (`mde` is `(z_0.975 + z_0.80)` times the mean standard error):
+
+```{r estimated-mde}
+mde <- fp$by_count[, c("drops", "drops_mean", "n_reps", "n_non_identified",
+                       "n_converged", "mean_se", "mde")]
+mde[] <- lapply(mde, function(v) if (is.numeric(v)) round(v, 2) else v)
+mde
+```
+
+```{r estimated-mde-plot, fig.width = 6, fig.height = 3.6, fig.alt = "Minimum detectable outIso coefficient falling as the number of observed last-tie drops per panel rises"}
+ok <- is.finite(fp$by_count$mde)
+plot(fp$by_count$drops_mean[ok], fp$by_count$mde[ok], log = "x", type = "b",
+     pch = 19, xlab = "observed last-tie drops per panel (bin mean, log scale)",
+     ylab = "MDE of outIso (logit scale)", ylim = c(0, max(fp$by_count$mde[ok])),
+     las = 1)
+```
+
+**Reading.** Four results, each conditional on this design.
+
+* **Panels with no observed drop are common when the cost is large and the
+  panel is small,** and they are counted as non-identified rather than
+  dropped or read as nulls: 92 of 100 panels at `outIso = -4` with 15
+  actors, 28 of 100 even with 120 actors.
+* **Precision is governed by the count of drops.** The MDE falls from about
+  2.7 with 1 to 4 observed drops to about 1.8 with 5 to 9, 1.4 with 10 to
+  19, 1.0 with 20 to 39 and 0.8 with 40 or more. With fewer than 5 drops only
+  a reluctance near 3 on the logit scale would be detected reliably.
+* **Size is controlled.** With nothing planted (`outIso = 0`), rejection of
+  `outIso = 0` stays between 0 and 0.06 in every cell.
+* **Recovery is close where few panels are non-identified, and biased toward
+  zero where many are.** At `outIso = -4` with 15 or 30 actors the converged
+  panels are the minority that happened to show drops, and their estimates
+  are less negative than the planted value (bias +2.5 and +1.4). That is
+  selection on the outcome that identifies the parameter, not an estimator
+  failure; the same selection makes the bias and coverage columns of
+  `searchnet_floor_power()` conditional summaries, to be read with that in
+  mind. Report the share of non-identified panels with any estimate.

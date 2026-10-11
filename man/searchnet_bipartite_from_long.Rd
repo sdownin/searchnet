@@ -13,7 +13,10 @@ searchnet_bipartite_from_long(
   threshold = 0,
   actors = NULL,
   components = NULL,
-  periods = NULL
+  periods = NULL,
+  entry = NULL,
+  exit = NULL,
+  presence = NULL
 )
 }
 \arguments{
@@ -32,6 +35,18 @@ presence of a row is a tie.}
 
 \item{actors, components, periods}{Optional vectors fixing the universe and
 order of actors, components and periods.}
+
+\item{entry, exit}{Optional entry and exit times, one per actor, in the
+units of \code{period} (fractional values fall within a period): the name
+of a column of \code{data} (constant within an actor), a two-column data
+frame (actor id, time), or a vector named by actor id. Actors not listed,
+or with \code{NA}, are present from the first period or to the last.
+Requires \code{period}.}
+
+\item{presence}{Optional alternative to \code{entry}/\code{exit}: a logical
+actor by period matrix, \code{TRUE} where the actor is observed, with
+actor ids as rownames (or one row per actor in universe order) and
+optionally periods as colnames. Allows re-entry.}
 }
 \value{
 An object of class \code{"searchnet_bipartite"}: a list with
@@ -43,7 +58,14 @@ with dimnames (or an \eqn{M \times N}{M x N} matrix when
 vectors, in row and column order;}
 \item{\code{periods}}{the periods in slice order, in their original type
 (\code{NULL} without a period column);}
-\item{\code{weighted}, \code{threshold}}{how ties were defined.}
+\item{\code{weighted}, \code{threshold}}{how ties were defined;}
+\item{\code{composition}}{\code{NULL}, or with \code{entry},
+\code{exit} or \code{presence} a list with \code{intervals} (per
+actor, closed intervals of presence in RSiena wave time, wave 1 = 1),
+\code{presence} (actor by period logical), \code{entry} and
+\code{exit} (wave time; \code{NULL} when built from
+\code{presence}) and \code{source}. Absent actor-waves are
+\code{NA} in \code{B}.}
 }
 }
 \description{
@@ -66,6 +88,37 @@ absent in some period, gets a row of zeros, so composition is stable across
 waves. Without them the universe is the observed ids (factor levels for a
 factor column, otherwise sorted unique values).
 }
+\section{Actors who enter or leave}{
+
+A row of zeros says the actor was present and held nothing. For an actor
+that did not yet exist, or had closed, that is wrong: an exit then reads as
+the actor dropping every tie and an entry as the actor creating a portfolio
+from nothing. Give \code{entry} and \code{exit} times, or a
+\code{presence} matrix, and the panel carries an exogenous composition
+change instead (Huisman and Snijders 2003): absent actor-waves are coded
+\code{NA} in \code{B}, which is what \code{RSiena::sienaDependent()}
+expects with a composition change, the intervals are stored in
+\code{$composition}, \code{\link{searchnet_composition}} turns them into
+RSiena's object, and \code{\link{searchnet_coevolve_data}} adds that object
+automatically.
+
+Times are in the units of the \code{period} column and may be fractional:
+with yearly periods, \code{exit = 2003.5} means the actor closed halfway
+between the 2003 and 2004 waves, so it is observed in 2003 and absent from
+2004. Intervals are closed, so an actor with \code{exit = 2003} is observed
+in 2003. A missing entry means present from the first period, a missing
+exit present to the last. With non-numeric periods, times must be period
+labels. \code{presence} (actor by period, \code{TRUE} when observed) allows
+an actor to leave and return; without timing information, an actor is
+taken to enter halfway between its last unobserved wave and its first
+observed one, and to leave halfway between its last observed wave and the
+next. Give \code{entry} and \code{exit} when the timing is known.
+A row in \code{data} for an actor-period outside the actor's presence is an
+error, not a silent drop. Only actors can enter or leave: RSiena does not
+support a composition change on the component node set of a bipartite
+network.
+}
+
 \examples{
 long <- data.frame(
   actor     = c("a1", "a1", "a2", "a3", "a1", "a2", "a2"),
@@ -76,6 +129,13 @@ obs <- searchnet_bipartite_from_long(long, "actor", "component", "period",
                                      actors = c("a1", "a2", "a3", "a4"))
 obs
 obs$B[, , "2"]
+
+## a3 closes halfway through period 2: absent (NA) at wave 3, not a row of
+## zeros that would read as a3 dropping its tie
+obs2 <- searchnet_bipartite_from_long(long, "actor", "component", "period",
+                                      exit = c(a3 = 2.5))
+obs2$B["a3", , ]
+obs2$composition$presence
 }
 \seealso{
 \code{\link{searchnet_k_readings}},
