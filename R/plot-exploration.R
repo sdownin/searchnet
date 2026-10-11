@@ -795,7 +795,7 @@
   metrics_df <- bind_rows(metrics_list) %>%
     mutate(
       strategy = factor(actor_strat[actor_id], levels = c("0", "100")),
-      strategy_label = ifelse(strategy == "0", "Control (0)", "Subsidized (100)")
+      strategy_label = ifelse(strategy == "0", "Control (0)", "Treated (100)")
     )
 
   # Apply thinning
@@ -926,12 +926,12 @@
     scale_color_manual(
       name = "Strategy Group",
       values = c("Control (0)" = "#0072B2",
-                 "Subsidized (100)" = "#D55E00")
+                 "Treated (100)" = "#D55E00")
     ) +
     scale_fill_manual(
       name = "Strategy Group",
       values = c("Control (0)" = "#0072B2",
-                 "Subsidized (100)" = "#D55E00"),
+                 "Treated (100)" = "#D55E00"),
       guide = "none"
     ) +
     scale_linetype_manual(
@@ -1015,8 +1015,8 @@
                    "Exploration" = "#D55E00")
       ) +
       labs(
-        title = "Strategy Differential (Subsidized - Control)",
-        subtitle = "Positive values indicate subsidized actors have higher proportion",
+        title = "Strategy Differential (Treated - Control)",
+        subtitle = "Positive values indicate treated actors have higher proportion",
         x = "Simulation Step",
         y = "Difference in Proportion"
       ) +
@@ -1055,7 +1055,7 @@
   # Prepare data
   plot_data <- metrics_df %>%
     mutate(
-      strategy_label = ifelse(strategy == "0", "Control (0)", "Subsidized (100)")
+      strategy_label = ifelse(strategy == "0", "Control (0)", "Treated (100)")
     ) %>%
     select(chain_step_id, actor_id, strategy_label,
            Exploitation = prop_exploitation,
@@ -1501,10 +1501,13 @@
 }
 
 
-# ---- plot_subsidized_risk_taking ---------------------------------------------
+# ---- plot_treated_risk_taking ------------------------------------------------
 
-#' @export
-saomnk_plot_subsidized_risk_taking <- function(
+## Internal. Risk-taking score over chain steps for the treated group
+## (strategy "100") and the control group (strategy "0"), with an optional
+## shock marker. The standalone form of env$plot_treated_risk_taking().
+#' @noRd
+plot_treated_risk_taking <- function(
     env,
     metrics_df = NULL,
     shock_time = NULL,
@@ -1512,7 +1515,7 @@ saomnk_plot_subsidized_risk_taking <- function(
     line_size = 2,
     point_alpha = 0.3
 ) {
-  .searchnet_require_path(env, "saomnk_plot_subsidized_risk_taking()")
+  .searchnet_require_path(env, "plot_treated_risk_taking()")
 
   if (is.null(metrics_df)) {
     metrics_df <- env$calculate_explore_exploit_risk_adjusted()
@@ -1520,12 +1523,12 @@ saomnk_plot_subsidized_risk_taking <- function(
 
   plot_data <- metrics_df %>%
     mutate(
-      post_subsidy = ifelse(!is.null(shock_time),
+      post_shock = ifelse(!is.null(shock_time),
                             chain_step_id >= shock_time,
                             FALSE),
       strategy_label = case_when(
-        strategy == "0" ~ "Control (No Subsidy)",
-        strategy == "100" ~ "Treatment (Subsidized)",
+        strategy == "0" ~ "Control (Untreated)",
+        strategy == "100" ~ "Treated",
         TRUE ~ as.character(strategy)
       )
     )
@@ -1564,22 +1567,22 @@ saomnk_plot_subsidized_risk_taking <- function(
                  linetype = "dashed",
                  color = "gray50") +
       annotate("text", x = shock_time, y = 0.9,
-               label = "Subsidy\nShock",
+               label = "Shock",
                hjust = -0.1, size = 3)
   }
 
   p <- p +
     scale_color_manual(
-      values = c("Control (No Subsidy)" = "#0072B2",
-                 "Treatment (Subsidized)" = "#D55E00")
+      values = c("Control (Untreated)" = "#0072B2",
+                 "Treated" = "#D55E00")
     ) +
     scale_fill_manual(
-      values = c("Control (No Subsidy)" = "#0072B2",
-                 "Treatment (Subsidized)" = "#D55E00"),
+      values = c("Control (Untreated)" = "#0072B2",
+                 "Treated" = "#D55E00"),
       guide = "none"
     ) +
     labs(
-      title = "Firm Risk-Taking Behavior: Subsidized vs Control",
+      title = "Risk-Taking Behavior: Treated vs Control",
       subtitle = "Higher scores indicate more exploration of risky new activities",
       x = "Simulation Step",
       y = "Risk-Taking Score",
@@ -1635,8 +1638,8 @@ saomnk_plot_did_exploration <- function(
     scale_color_manual(values = c("Control" = "#0072B2",
                                   "Treated" = "#D55E00")) +
     labs(
-      title = "Difference-in-Differences: Subsidy Effect on Risk-Taking",
-      subtitle = "Comparing subsidized vs non-subsidized firms",
+      title = "Difference-in-Differences: Treatment Effect on Risk-Taking",
+      subtitle = "Comparing treated vs untreated actors",
       x = "Period",
       y = "Mean Risk-Taking Score"
     ) +
@@ -1646,10 +1649,10 @@ saomnk_plot_did_exploration <- function(
 }
 
 
-# ---- plot_exploration_exploitation_subsidies ---------------------------------
+# ---- searchnet_plot_exploration(type = "treatment_risk") ---------------------
 
 #' @noRd
-.searchnet_ee_risk_subsidies <- function(
+.searchnet_ee_treatment_risk <- function(
     env,
     metrics_df = NULL,
     show_points = FALSE,
@@ -1657,7 +1660,7 @@ saomnk_plot_did_exploration <- function(
     loess_span = 0.3,
     shock_time = NULL
 ) {
-  .searchnet_require_path(env, "searchnet_plot_exploration(type = 'risk_subsidies')")
+  .searchnet_require_path(env, "searchnet_plot_exploration(type = 'treatment_risk')")
 
   if (is.null(metrics_df)) {
     metrics_df <- env$calculate_explore_exploit_risk_adjusted()
@@ -1677,7 +1680,7 @@ saomnk_plot_did_exploration <- function(
       ),
       strategy_label = dplyr::case_when(
         strategy == "0" ~ "Control (0)",
-        strategy == "100" ~ "Subsidized (100)",
+        strategy == "100" ~ "Treated (100)",
         TRUE ~ paste("Strategy", strategy)
       ),
       activity_type = behavior_type
@@ -1732,7 +1735,7 @@ saomnk_plot_did_exploration <- function(
       geom_vline(xintercept = shock_time, linetype = "dashed",
                  color = "gray50", alpha = 0.7) +
       annotate("text", x = shock_time, y = 0.95,
-               label = "Subsidy", hjust = -0.1, size = 3,
+               label = "Shock", hjust = -0.1, size = 3,
                color = "gray40")
   }
 
@@ -1740,12 +1743,12 @@ saomnk_plot_did_exploration <- function(
     scale_color_manual(
       name = "Strategy Group",
       values = c("Control (0)" = "#0072B2",
-                 "Subsidized (100)" = "#D55E00")
+                 "Treated (100)" = "#D55E00")
     ) +
     scale_fill_manual(
       name = "Strategy Group",
       values = c("Control (0)" = "#0072B2",
-                 "Subsidized (100)" = "#D55E00"),
+                 "Treated (100)" = "#D55E00"),
       guide = "none"
     ) +
     scale_linetype_manual(
@@ -1754,7 +1757,7 @@ saomnk_plot_did_exploration <- function(
                  "Exploration" = "longdash")
     ) +
     labs(
-      title = "Risk-Adjusted Exploration vs Exploitation: Subsidies Impact",
+      title = "Risk-Adjusted Exploration vs Exploitation: Treatment Effect",
       subtitle = "Social logic constraints applied; moral licensing effect included",
       x = "Simulation Step",
       y = "Activity Intensity (Risk-Adjusted)"
@@ -1799,7 +1802,7 @@ saomnk_plot_exploration_risk_multiperiod <- function(
       shock_time <- min(env$theta_shocks[[shock_idx]]$chain_step_ids)
       shock_label <- ifelse(!is.null(env$theta_shocks[[shock_idx]]$label),
                             env$theta_shocks[[shock_idx]]$label,
-                            "Subsidy\nShock")
+                            "Shock")
     }
   }
 
@@ -1807,8 +1810,8 @@ saomnk_plot_exploration_risk_multiperiod <- function(
   plot_data <- metrics_df %>%
     dplyr::mutate(
       strategy_label = dplyr::case_when(
-        strategy == "0" ~ "Control (No Subsidy)",
-        strategy == "100" ~ "Treatment (Subsidized)",
+        strategy == "0" ~ "Control (Untreated)",
+        strategy == "100" ~ "Treated",
         TRUE ~ as.character(strategy)
       )
     )
@@ -1872,16 +1875,16 @@ saomnk_plot_exploration_risk_multiperiod <- function(
   # Format the plot
   p <- p +
     scale_color_manual(
-      values = c("Control (No Subsidy)" = "#0072B2",
-                 "Treatment (Subsidized)" = "#D55E00")
+      values = c("Control (Untreated)" = "#0072B2",
+                 "Treated" = "#D55E00")
     ) +
     scale_fill_manual(
-      values = c("Control (No Subsidy)" = "#0072B2",
-                 "Treatment (Subsidized)" = "#D55E00"),
+      values = c("Control (Untreated)" = "#0072B2",
+                 "Treated" = "#D55E00"),
       guide = "none"
     ) +
     labs(
-      title = "Firm Risk-Taking Behavior: Subsidized vs Control",
+      title = "Risk-Taking Behavior: Treated vs Control",
       subtitle = "Higher scores indicate more exploration of risky new activities",
       x = "Simulation Step",
       y = "Risk-Taking Score",
@@ -1960,8 +1963,8 @@ saomnk_plot_exploration_risk_did <- function(
     scale_color_manual(values = c("Control" = "#0072B2",
                                   "Treated" = "#D55E00")) +
     labs(
-      title = "Difference-in-Differences: Subsidy Effect on Risk-Taking",
-      subtitle = "Comparing subsidized vs non-subsidized firms",
+      title = "Difference-in-Differences: Treatment Effect on Risk-Taking",
+      subtitle = "Comparing treated vs untreated actors",
       x = "Period",
       y = "Mean Risk-Taking Score"
     ) +
@@ -2008,7 +2011,7 @@ saomnk_plot_exploration_event_study <- function(
   shock_idx <- which(sapply(env$theta_shocks, function(x) x$shock_on == 1))[1]
   shock_start <- min(env$theta_shocks[[shock_idx]]$chain_step_ids)
   shock_label <- ifelse(!is.null(env$theta_shocks[[shock_idx]]$label),
-                        env$theta_shocks[[shock_idx]]$label, "subsidy")
+                        env$theta_shocks[[shock_idx]]$label, "shock")
 
   # Create the plot matching K_AC style
   p <- ggplot(ed, aes(x = event.time, y = estimate)) +
@@ -2124,7 +2127,7 @@ saomnk_plot_exploration_did_combined <- function(
       # Add shock label
       annotate("text", x = max(metric_data$event.time) * 0.5,
                y = max(metric_data$conf.high) * 0.9,
-               label = "subsidy", vjust = 0, size = 2.7, color = 'black') +
+               label = "shock", vjust = 0, size = 2.7, color = 'black') +
 
       facet_wrap(~ stat_type) +
 

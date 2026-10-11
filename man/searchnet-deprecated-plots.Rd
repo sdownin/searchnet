@@ -9,7 +9,6 @@
 \alias{saomnk_plot_exploration_exploitation_faceted}
 \alias{saomnk_plot_exploration_exploitation_by_strategy}
 \alias{saomnk_plot_strategy_exploration_exploitation}
-\alias{saomnk_plot_exploration_exploitation_subsidies}
 \alias{saomnk_search_rsiena_multiwave_plot}
 \alias{saomnk_search_rsiena_multiwave_plot_K_4panel}
 \alias{saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary}
@@ -124,15 +123,6 @@ saomnk_plot_strategy_exploration_exploitation(
   show_points = TRUE,
   show_group_means = TRUE,
   group_line_size = 2
-)
-
-saomnk_plot_exploration_exploitation_subsidies(
-  env,
-  metrics_df = NULL,
-  show_points = FALSE,
-  show_se_ribbon = TRUE,
-  loess_span = 0.3,
-  shock_time = NULL
 )
 
 saomnk_search_rsiena_multiwave_plot(
@@ -297,7 +287,7 @@ saomnk_plot_K_AC_NEW_shocks(env, verbose = FALSE)
 \item{env}{A \code{SaomNkRSienaBiEnv} environment, passed on as the
 replacement's first argument.}
 
-\item{actor_ids, component_ids, wave_ids, thin_factor, thin_pct, thin_wave_factor, smooth_method, show_points, show_individuals, show_group_means, show_difference, loess_span, point_alpha, point_alpha_dimmer, line_alpha, group_line_size, se_ribbon, ylim, plot_return, plot_save, plot_file, plot_dir, time_window, show_trajectories, metrics_df, result, show_se_ribbon, shock_time, type, rolling_window, show_utility_points, show_strategy_means, append_plot, histogram_position, scale_utility, return_plot, show_legend, show_title, plot_periods, n, environ_params, structure_model, steps_per_actor, theta_shocks, conf_level, verbose}{Passed unchanged to the replacement; see its documentation.}
+\item{actor_ids, component_ids, wave_ids, thin_factor, thin_pct, thin_wave_factor, smooth_method, show_points, show_individuals, show_group_means, show_difference, loess_span, point_alpha, point_alpha_dimmer, line_alpha, group_line_size, se_ribbon, ylim, plot_return, plot_save, plot_file, plot_dir, time_window, show_trajectories, metrics_df, result, type, rolling_window, show_utility_points, show_strategy_means, append_plot, histogram_position, scale_utility, return_plot, show_legend, show_title, plot_periods, n, environ_params, structure_model, steps_per_actor, theta_shocks, conf_level, verbose}{Passed unchanged to the replacement; see its documentation.}
 }
 \value{
 The replacement's return value.
@@ -318,7 +308,6 @@ session emits a deprecation warning; later calls are silent.
    \code{saomnk_plot_exploration_exploitation_by_strategy()} \tab \code{searchnet_plot_exploration(type = "strategy_groups")} \cr
    \code{saomnk_plot_exploration_exploitation_faceted()} \tab \code{searchnet_plot_exploration(type = "strategy_facets")} \cr
    \code{saomnk_plot_strategy_exploration_exploitation()} \tab \code{searchnet_plot_exploration(type = "strategy_result")} \cr
-   \code{saomnk_plot_exploration_exploitation_subsidies()} \tab \code{searchnet_plot_exploration(type = "risk_subsidies")} \cr
    \code{saomnk_search_rsiena_multiwave_plot()} \tab \code{searchnet_plot_multiwave(what = "list")} \cr
    \code{saomnk_search_rsiena_multiwave_plot_K_4panel()} \tab \code{searchnet_plot_multiwave(what = "K_4panel")} \cr
    \code{saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary()} \tab \code{searchnet_plot_multiwave(what = "K_AA", by = "strategy")} \cr

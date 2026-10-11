@@ -7,7 +7,7 @@
 searchnet_plot_exploration(
   x,
   type = c("trajectory", "trajectory_density", "phase_space", "portfolio",
-    "strategy_groups", "strategy_facets", "strategy_result", "risk_subsidies"),
+    "strategy_groups", "strategy_facets", "strategy_result", "treatment_risk"),
   ...
 )
 }
@@ -19,7 +19,7 @@ searchnet_plot_exploration(
 \item{...}{Further arguments for the selected view, with the same names
 and defaults as the function it replaces (for example \code{actor_ids},
 \code{thin_factor}, \code{loess_span}, \code{plot_return}; \code{metrics_df} for
-\code{"strategy_facets"} and \code{"risk_subsidies"}; \code{result} for
+\code{"strategy_facets"} and \code{"treatment_risk"}; \code{result} for
 \code{"strategy_result"}; \code{time_window} for \code{"phase_space"}).}
 }
 \value{
@@ -39,11 +39,11 @@ selects which view of those shares is drawn.
    \code{"trajectory"} \tab Per-actor and strategy-mean shares over chain steps \tab \code{saomnk_plot_exploration_exploitation()} \cr
    \code{"trajectory_density"} \tab The same trajectories with a side density panel per activity type, styled like the utility plot \tab \code{saomnk_plot_exploration_exploitation_consistent()} \cr
    \code{"phase_space"} \tab Actor positions in the exploitation-by-exploration plane, faceted by strategy \tab \code{saomnk_plot_exploration_exploitation_phase()} \cr
-   \code{"portfolio"} \tab Activity-portfolio evolution with an optional subsidized-minus-control difference panel \tab \code{saomnk_plot_exploration_exploitation_improved()} \cr
+   \code{"portfolio"} \tab Activity-portfolio evolution with an optional treated-minus-control difference panel \tab \code{saomnk_plot_exploration_exploitation_improved()} \cr
    \code{"strategy_groups"} \tab Strategy-group means of both shares, computed from the run \tab \code{saomnk_plot_exploration_exploitation_by_strategy()} \cr
    \code{"strategy_facets"} \tab Activity type by strategy group in a facet grid, from a supplied \code{metrics_df} \tab \code{saomnk_plot_exploration_exploitation_faceted()} \cr
    \code{"strategy_result"} \tab Strategy-group means from a precomputed \code{result} (its \verb{$metrics}) \tab \code{saomnk_plot_strategy_exploration_exploitation()} \cr
-   \code{"risk_subsidies"} \tab Risk-adjusted exploration and exploitation under subsidies, with social-logic constraints \tab \code{saomnk_plot_exploration_exploitation_subsidies()} \cr
+   \code{"treatment_risk"} \tab Risk-adjusted exploration and exploitation of the treated group (strategy \code{"100"}) against the control group (strategy \code{"0"}), with social-logic constraints and an optional shock marker (\code{shock_time}) \tab (none) \cr
 }
 }
 \examples{

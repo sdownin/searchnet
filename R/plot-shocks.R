@@ -366,10 +366,10 @@ searchnet_plot_new_component_shocks <- function(env, verbose = FALSE) {
   all_zero <- all(Kdf_new$value == 0, na.rm = TRUE)
   if (all_zero && verbose) {
     cat("\nNote: All actors have zero connections to new components throughout the simulation.\n")
-    cat("This is expected if the subsidy effectively prevents exploration of new activities.\n")
+    cat("This is expected if the shock effectively prevents exploration of new activities.\n")
   }
 
-  # Create data for top panel (subsidy effect)
+  # Create data for top panel (shock effect)
   top_data <- Kdf_new %>%
     filter(strategy == "100") %>%
     group_by(chain_step_id) %>%
@@ -397,7 +397,7 @@ searchnet_plot_new_component_shocks <- function(env, verbose = FALSE) {
                color = "orange2", size = 0.8) +
     geom_hline(yintercept = 0, color = "black", size = 0.3) +
     annotate("text", x = 5, y = max(c(top_data$value, 0.1)) * 0.8,
-             label = "subsidy", hjust = 0, vjust = 1, size = 3) +
+             label = "shock", hjust = 0, vjust = 1, size = 3) +
     labs(title = "K_AC_NEW", x = "", y = "") +
     theme_searchnet() +
     theme(

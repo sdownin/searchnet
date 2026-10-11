@@ -55,7 +55,7 @@ Sharp RD in an \emph{actor characteristic} rather than in time.  Where
 variable "simulation step" (an interrupted-time-series design), this
 function compares actors just above versus just below a threshold on a
 running variable such as scope (\eqn{K_{AC}}), degree, or any actor
-covariate.  This is the design used for eligibility rules: subsidy
+covariate.  This is the design used for eligibility rules: program
 thresholds, grant paylines, size-based regulation, index inclusion.
 }
 \details{
@@ -79,7 +79,7 @@ deterministic; supply \code{treatment} and the estimator uses
 }
 \examples{
 \dontrun{
-# Subsidy available only to actors with scope >= 5
+# Treatment available only to actors with scope >= 5
 env <- saomnk_env(M = 40, N = 12, seed = 1)
 mod <- saomnk_model(density = -0.5, influence_matrix = saomnk_block_diagonal(12, 3))
 saomnk_run(env, mod, steps_per_actor = 30, seed = 42)

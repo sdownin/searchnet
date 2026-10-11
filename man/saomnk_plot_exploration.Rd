@@ -1,6 +1,5 @@
 % Generated manually for R CMD check compliance
 \name{saomnk_plot_exploration}
-\alias{saomnk_plot_subsidized_risk_taking}
 \alias{saomnk_plot_did_exploration}
 \alias{saomnk_plot_exploration_risk_multiperiod}
 \alias{saomnk_plot_exploration_risk_did}
@@ -9,7 +8,7 @@
 \title{Exploration Risk and Difference-in-Differences Plot Functions}
 \description{
 Plotting functions for risk-taking and difference-in-differences views of
-exploration in SAOM-NK simulations: subsidized risk-taking, DID exploration
+exploration in SAOM-NK simulations: DID exploration
 analysis, multiperiod risk, and event study plots. The exploration versus
 exploitation share plots are drawn by \code{\link{searchnet_plot_exploration}}.
 

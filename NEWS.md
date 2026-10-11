@@ -1,3 +1,9 @@
+# searchnet 0.15.1
+
+Released 2026-10-11. Tested with RSiena 1.5.0 and 1.6.6: 80 files, 1074 tests, 0 failures, 0 errors under each. No change to simulated results.
+
+* The treated-versus-control risk-taking plot is now internal (`plot_treated_risk_taking()`); its legacy wrapper is removed, the `searchnet_plot_exploration()` view is `type = "treatment_risk"`, and the matching `SaomNkRSienaBiEnv` methods and output columns carry generic names. No aliases are kept; seeded outputs are unchanged apart from labels.
+
 # searchnet 0.15.0
 
 Released 2026-10-11. Tested with RSiena 1.5.0 and 1.6.6: 79 files, 1072 tests, 0 failures, 0 errors under each. `R CMD check --as-cran` (clean build, RSiena 1.6.6): 0 errors, 0 warnings. Simulated results for existing models are unchanged.

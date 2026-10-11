@@ -44,7 +44,7 @@ All six actors move at once. The same run with every actor on one shared landsca
 > to be expected. The companion methods paper has not yet been
 > peer-reviewed; results should be treated accordingly.
 > For reproducibility, install a pinned tag rather than the moving branch:
-> `devtools::install_github("sdownin/searchnet@v0.15.0")`.
+> `devtools::install_github("sdownin/searchnet@v0.15.1")`.
 > **v0.8.3 and earlier:** `saomnk_model()` simulations that declared
 > `influence_weight`, `cycle4`, `XWX`, `X`, `inPopX`, `outActX` or
 > `homXOutAct` did not simulate the declared coefficient (estimation via
@@ -402,7 +402,7 @@ searchnet/
 │   ├── scene_landscape_3d.py   # 3D fitness landscape rendering
 │   └── scene_shock.py          # Parametric shock animation
 ├── inst/proofs/                # Formal proofs (NK⊂SAOM-NK equivalence, online appendix)
-├── tests/testthat/             # 1072 tests (79 test files)
+├── tests/testthat/             # 1074 tests (80 test files)
 ├── man/                        # Generated documentation
 └── docs/                       # Strategy documents
 ```
@@ -412,7 +412,7 @@ searchnet/
 ```r
 # Run the full test suite
 testthat::test_dir("tests/testthat")
-# v0.15.0: 79 files, 1072 tests, 8344 expectations, 0 failures, 0 errors, 5 skips (RSiena 1.5.0 and 1.6.6)
+# v0.15.1: 80 files, 1074 tests, 8354 expectations, 0 failures, 0 errors, 5 skips (RSiena 1.5.0 and 1.6.6)
 ```
 
 Tests cover initialization, simulation execution, chain statistics, K-4 degree computation (with canonical network validation), shock processing, export pipeline, formal utility decomposition, McFadden choice probabilities, NK equivalence verification (Property 1), DGP validation, reproducibility, and edge cases.
@@ -564,6 +564,7 @@ history jumps from v0.4.1 to v0.7.0 — NEWS.md records why.
 
 | Version | Highlights |
 |---|---|
+| **v0.15.1** | The treated-versus-control risk-taking plot is internal under a generic name; `searchnet_plot_exploration()` view renamed `type = "treatment_risk"`. No change to simulated results. Suite: 80 files, 1074 tests, 0 failures, 0 errors. |
 | **v0.15.0** | `searchnet_stationarity_check()` (per-run stationarity verdicts with a minimum detectable drift); `searchnet_new_analysis()` (gated project skeleton); choice probabilities respect degree bounds; API classification; several analysis helpers made internal under generic names. README: animated hero figure and a shared-landscape all-actors animation. Tested with RSiena 1.5.0 and 1.6.6. Suite: 79 files, 1072 tests, 0 failures, 0 errors. |
 | **v0.14.0** | Degree bounds (floors and caps held in simulation and estimation; `saomnk_model(degree_bounds = )`). `searchnet_moment_gate()` (simulated vs observed moments), `searchnet_placebo()` (real-time placebo) and `searchnet_shock_support_check()`. Landscape views for any W (`searchnet_move_compass()`, `searchnet_actor_landscape()`, new vignette). Plot consolidation with deprecation wrappers. Brock-Durlauf solver fixes. Faster chain processing with identical outputs. New README animations. Tested with RSiena 1.5.0 and 1.6.6. Suite: 75 files, 1048 tests, 0 failures, 0 errors. |
 | **v0.13.1** | Compatibility: works with RSiena 1.6.x, whose forward simulation began returning ministep chains as a sorted data frame (which stopped `saomnk_run()` at the path terminus gate). Tested with RSiena 1.5.0 and 1.6.6. No change to simulated results. Suite: 69 files, 963 tests, 0 failures, 0 errors under each. |
@@ -607,7 +608,7 @@ line and are exercised by the v0.12.2 test suite.
   title  = {searchnet: Network-Embedded Search Simulation Engine},
   author = {Stephen Downing},
   year   = {2026},
-  note   = {R package version 0.15.0},
+  note   = {R package version 0.15.1},
   url    = {https://github.com/sdownin/searchnet}
 }
 ```

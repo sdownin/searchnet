@@ -2490,10 +2490,10 @@ SaomNkRSienaBiEnv <- R6Class(
       all_zero <- all(Kdf_new$value == 0, na.rm = TRUE)
       if (all_zero && verbose) {
         cat("\nNote: All actors have zero connections to new components throughout the simulation.\n")
-        cat("This is expected if the subsidy effectively prevents exploration of new activities.\n")
+        cat("This is expected if the shock effectively prevents exploration of new activities.\n")
       }
       
-      # Create data for top panel (subsidy effect)
+      # Create data for top panel (shock effect)
       top_data <- Kdf_new %>%
         filter(strategy == "100") %>%  # Only show treated group
         group_by(chain_step_id) %>%
@@ -2525,7 +2525,7 @@ SaomNkRSienaBiEnv <- R6Class(
                    color = "orange2", size = 0.8) +
         geom_hline(yintercept = 0, color = "black", size = 0.3) +
         annotate("text", x = 5, y = max(c(top_data$value, 0.1)) * 0.8, 
-                 label = "subsidy", hjust = 0, vjust = 1, size = 3) +
+                 label = "shock", hjust = 0, vjust = 1, size = 3) +
         labs(title = "K_AC_NEW", x = "", y = "") +
         theme_searchnet() +
         theme(
@@ -11189,7 +11189,7 @@ SaomNkRSienaBiEnv <- R6Class(
     metrics_df <- bind_rows(metrics_list) %>%
       mutate(
         strategy = factor(actor_strat[actor_id], levels = c("0", "100")),
-        strategy_label = ifelse(strategy == "0", "Control (0)", "Subsidized (100)")
+        strategy_label = ifelse(strategy == "0", "Control (0)", "Treated (100)")
       )
     
     # Apply thinning
@@ -11320,12 +11320,12 @@ SaomNkRSienaBiEnv <- R6Class(
       scale_color_manual(
         name = "Strategy Group",
         values = c("Control (0)" = "#0072B2",      # Dark blue-gray
-                   "Subsidized (100)" = "#D55E00")  # Bright red
+                   "Treated (100)" = "#D55E00")  # Bright red
       ) +
       scale_fill_manual(
         name = "Strategy Group",
         values = c("Control (0)" = "#0072B2",
-                   "Subsidized (100)" = "#D55E00"),
+                   "Treated (100)" = "#D55E00"),
         guide = "none"
       ) +
       scale_linetype_manual(
@@ -11409,8 +11409,8 @@ SaomNkRSienaBiEnv <- R6Class(
                      "Exploration" = "#D55E00")
         ) +
         labs(
-          title = "Strategy Differential (Subsidized - Control)",
-          subtitle = "Positive values indicate subsidized actors have higher proportion",
+          title = "Strategy Differential (Treated - Control)",
+          subtitle = "Positive values indicate treated actors have higher proportion",
           x = "Simulation Step",
           y = "Difference in Proportion"
         ) +
@@ -11444,7 +11444,7 @@ SaomNkRSienaBiEnv <- R6Class(
     # Prepare data
     plot_data <- metrics_df %>%
       mutate(
-        strategy_label = ifelse(strategy == "0", "Control (0)", "Subsidized (100)")
+        strategy_label = ifelse(strategy == "0", "Control (0)", "Treated (100)")
       ) %>%
       select(chain_step_id, actor_id, strategy_label, 
              Exploitation = prop_exploitation, 
@@ -12040,7 +12040,7 @@ SaomNkRSienaBiEnv <- R6Class(
     return(metrics_enhanced)
   },
   
-  plot_subsidized_risk_taking = function(metrics_df = NULL, 
+  plot_treated_risk_taking = function(metrics_df = NULL, 
                                          shock_time = NULL, 
                                          show_se_ribbon = TRUE,
                                          line_size = 2,
@@ -12052,12 +12052,12 @@ SaomNkRSienaBiEnv <- R6Class(
     
     plot_data <- metrics_df %>%
       mutate(
-        post_subsidy = ifelse(!is.null(shock_time), 
+        post_shock = ifelse(!is.null(shock_time), 
                               chain_step_id >= shock_time, 
                               FALSE),
         strategy_label = case_when(
-          strategy == "0" ~ "Control (No Subsidy)",
-          strategy == "100" ~ "Treatment (Subsidized)",
+          strategy == "0" ~ "Control (Untreated)",
+          strategy == "100" ~ "Treated",
           TRUE ~ as.character(strategy)
         )
       )
@@ -12096,22 +12096,22 @@ SaomNkRSienaBiEnv <- R6Class(
                    linetype = "dashed", 
                    color = "gray50") +
         annotate("text", x = shock_time, y = 0.9, 
-                 label = "Subsidy\nShock", 
+                 label = "Shock", 
                  hjust = -0.1, size = 3)
     }
     
     p <- p +
       scale_color_manual(
-        values = c("Control (No Subsidy)" = "#0072B2",
-                   "Treatment (Subsidized)" = "#D55E00")
+        values = c("Control (Untreated)" = "#0072B2",
+                   "Treated" = "#D55E00")
       ) +
       scale_fill_manual(
-        values = c("Control (No Subsidy)" = "#0072B2",
-                   "Treatment (Subsidized)" = "#D55E00"),
+        values = c("Control (Untreated)" = "#0072B2",
+                   "Treated" = "#D55E00"),
         guide = "none"
       ) +
       labs(
-        title = "Firm Risk-Taking Behavior: Subsidized vs Control",
+        title = "Risk-Taking Behavior: Treated vs Control",
         subtitle = "Higher scores indicate more exploration of risky new activities",
         x = "Simulation Step",
         y = "Risk-Taking Score",
@@ -12158,8 +12158,8 @@ SaomNkRSienaBiEnv <- R6Class(
       scale_color_manual(values = c("Control" = "#0072B2", 
                                     "Treated" = "#D55E00")) +
       labs(
-        title = "Difference-in-Differences: Subsidy Effect on Risk-Taking",
-        subtitle = "Comparing subsidized vs non-subsidized firms",
+        title = "Difference-in-Differences: Treatment Effect on Risk-Taking",
+        subtitle = "Comparing treated vs untreated actors",
         x = "Period",
         y = "Mean Risk-Taking Score"
       ) +
@@ -12168,7 +12168,7 @@ SaomNkRSienaBiEnv <- R6Class(
     return(p)
   },
   
-  analyze_subsidies_risk_taking = function(shock_time = 50, 
+  analyze_treatment_risk_taking = function(shock_time = 50, 
                                            plot_save = FALSE,
                                            plot_dir = NULL) {
     
@@ -12186,7 +12186,7 @@ SaomNkRSienaBiEnv <- R6Class(
     }
     
     # Create visualizations
-    p1 <- self$plot_subsidized_risk_taking(metrics_adjusted, shock_time)
+    p1 <- self$plot_treated_risk_taking(metrics_adjusted, shock_time)
     p2 <- self$plot_did_exploration(metrics_adjusted, shock_time)
     
     # Summary statistics - use dplyr explicitly
@@ -12209,7 +12209,7 @@ SaomNkRSienaBiEnv <- R6Class(
       ) %>%
       dplyr::pull(did)
     
-    cat("\n=== SUBSIDIES AND RISK-TAKING ANALYSIS ===\n")
+    cat("\n=== TREATMENT AND RISK-TAKING ANALYSIS ===\n")
     cat("\nSummary Statistics by Strategy:\n")
     print(summary_stats)
     cat("\nDifference-in-Differences Estimate:", round(did_estimate, 4), "\n")
@@ -12219,9 +12219,9 @@ SaomNkRSienaBiEnv <- R6Class(
       if (!dir.exists(plot_dir)) {
         dir.create(plot_dir)
       }
-      ggsave(file.path(plot_dir, "subsidies_risk_taking_trajectories.png"), 
+      ggsave(file.path(plot_dir, "treatment_risk_taking_trajectories.png"), 
              p1, width = 10, height = 6, dpi = 300)
-      ggsave(file.path(plot_dir, "subsidies_did_analysis.png"), 
+      ggsave(file.path(plot_dir, "treatment_did_analysis.png"), 
              p2, width = 8, height = 6, dpi = 300)
       cat("\nPlots saved to:", plot_dir, "\n")
     }
@@ -12234,7 +12234,7 @@ SaomNkRSienaBiEnv <- R6Class(
     ))
   },
   
-  plot_exploration_exploitation_subsidies = function(metrics_df = NULL,
+  plot_exploration_exploitation_treatment_risk = function(metrics_df = NULL,
                                                      show_points = FALSE,
                                                      show_se_ribbon = TRUE,
                                                      loess_span = 0.3,
@@ -12258,7 +12258,7 @@ SaomNkRSienaBiEnv <- R6Class(
         ),
         strategy_label = dplyr::case_when(
           strategy == "0" ~ "Control (0)",
-          strategy == "100" ~ "Subsidized (100)",
+          strategy == "100" ~ "Treated (100)",
           TRUE ~ paste("Strategy", strategy)
         ),
         activity_type = behavior_type
@@ -12313,7 +12313,7 @@ SaomNkRSienaBiEnv <- R6Class(
         geom_vline(xintercept = shock_time, linetype = "dashed", 
                    color = "gray50", alpha = 0.7) +
         annotate("text", x = shock_time, y = 0.95, 
-                 label = "Subsidy", hjust = -0.1, size = 3, 
+                 label = "Shock", hjust = -0.1, size = 3, 
                  color = "gray40")
     }
     
@@ -12321,12 +12321,12 @@ SaomNkRSienaBiEnv <- R6Class(
       scale_color_manual(
         name = "Strategy Group",
         values = c("Control (0)" = "#0072B2",
-                   "Subsidized (100)" = "#D55E00")
+                   "Treated (100)" = "#D55E00")
       ) +
       scale_fill_manual(
         name = "Strategy Group",
         values = c("Control (0)" = "#0072B2",
-                   "Subsidized (100)" = "#D55E00"),
+                   "Treated (100)" = "#D55E00"),
         guide = "none"
       ) +
       scale_linetype_manual(
@@ -12335,7 +12335,7 @@ SaomNkRSienaBiEnv <- R6Class(
                    "Exploration" = "longdash")
       ) +
       labs(
-        title = "Risk-Adjusted Exploration vs Exploitation: Subsidies Impact",
+        title = "Risk-Adjusted Exploration vs Exploitation: Treatment Effect",
         subtitle = "Social logic constraints applied; moral licensing effect included",
         x = "Simulation Step",
         y = "Activity Intensity (Risk-Adjusted)"
@@ -12437,7 +12437,7 @@ SaomNkRSienaBiEnv <- R6Class(
         shock_time <- min(self$theta_shocks[[shock_idx]]$chain_step_ids)
         shock_label <- ifelse(!is.null(self$theta_shocks[[shock_idx]]$label), 
                               self$theta_shocks[[shock_idx]]$label, 
-                              "Subsidy\nShock")
+                              "Shock")
       }
     }
     
@@ -12445,8 +12445,8 @@ SaomNkRSienaBiEnv <- R6Class(
     plot_data <- metrics_df %>%
       dplyr::mutate(
         strategy_label = dplyr::case_when(
-          strategy == "0" ~ "Control (No Subsidy)",
-          strategy == "100" ~ "Treatment (Subsidized)",
+          strategy == "0" ~ "Control (Untreated)",
+          strategy == "100" ~ "Treated",
           TRUE ~ as.character(strategy)
         )
       )
@@ -12510,16 +12510,16 @@ SaomNkRSienaBiEnv <- R6Class(
     # Format the plot
     p <- p +
       scale_color_manual(
-        values = c("Control (No Subsidy)" = "#0072B2",
-                   "Treatment (Subsidized)" = "#D55E00")
+        values = c("Control (Untreated)" = "#0072B2",
+                   "Treated" = "#D55E00")
       ) +
       scale_fill_manual(
-        values = c("Control (No Subsidy)" = "#0072B2",
-                   "Treatment (Subsidized)" = "#D55E00"),
+        values = c("Control (Untreated)" = "#0072B2",
+                   "Treated" = "#D55E00"),
         guide = "none"
       ) +
       labs(
-        title = "Firm Risk-Taking Behavior: Subsidized vs Control",
+        title = "Risk-Taking Behavior: Treated vs Control",
         subtitle = "Higher scores indicate more exploration of risky new activities",
         x = "Simulation Step",
         y = "Risk-Taking Score",
@@ -12593,8 +12593,8 @@ SaomNkRSienaBiEnv <- R6Class(
       scale_color_manual(values = c("Control" = "#0072B2", 
                                     "Treated" = "#D55E00")) +
       labs(
-        title = "Difference-in-Differences: Subsidy Effect on Risk-Taking",
-        subtitle = "Comparing subsidized vs non-subsidized firms",
+        title = "Difference-in-Differences: Treatment Effect on Risk-Taking",
+        subtitle = "Comparing treated vs untreated actors",
         x = "Period",
         y = "Mean Risk-Taking Score"
       ) +
@@ -12629,7 +12629,7 @@ SaomNkRSienaBiEnv <- R6Class(
           start = min(self$theta_shocks[[shock_idx]]$chain_step_ids),
           label = ifelse(!is.null(self$theta_shocks[[shock_idx]]$label), 
                          self$theta_shocks[[shock_idx]]$label, 
-                         "subsidy")
+                         "shock")
         )
       }
     }
@@ -12753,7 +12753,7 @@ SaomNkRSienaBiEnv <- R6Class(
       geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
       facet_wrap(~ outcome, scales = "free_y", nrow = 2) +
       labs(
-        x = "Periods Relative to Subsidy Shock",
+        x = "Periods Relative to Shock",
         y = "Average Treatment Effect on Treated (ATT)"
       ) +
       theme_searchnet() +
@@ -12780,7 +12780,7 @@ SaomNkRSienaBiEnv <- R6Class(
     summary_stats <- analysis_data %>%
       dplyr::mutate(
         period = factor(ifelse(time_to_treat < 0, "Pre", "Post"), levels = c("Pre", "Post")),
-        treatment_group = ifelse(treated == 1, "Subsidized", "Control")
+        treatment_group = ifelse(treated == 1, "Treated", "Control")
       ) %>%
       dplyr::group_by(period, treatment_group) %>%
       dplyr::summarise(
@@ -12803,7 +12803,7 @@ SaomNkRSienaBiEnv <- R6Class(
       geom_line(size = 1.5) +
       geom_point(size = 3) +
       facet_wrap(~ metric, scales = "free_y") +
-      scale_color_manual(values = c("Control" = "#0072B2", "Subsidized" = "#D55E00")) +
+      scale_color_manual(values = c("Control" = "#0072B2", "Treated" = "#D55E00")) +
       labs(
         title = "Average Outcomes by Period and Treatment",
         x = "Period",
@@ -13406,11 +13406,11 @@ SaomNkRSienaBiEnv <- R6Class(
     
     if (!is.na(did_estimate)) {
       if (did_estimate < -0.001) {
-        cat("Interpretation: Subsidies REDUCE", metric, "by", sprintf("%.4f", abs(did_estimate)), "\n")
+        cat("Interpretation: Treatment REDUCES", metric, "by", sprintf("%.4f", abs(did_estimate)), "\n")
       } else if (did_estimate > 0.001) {
-        cat("Interpretation: Subsidies INCREASE", metric, "by", sprintf("%.4f", did_estimate), "\n")
+        cat("Interpretation: Treatment INCREASES", metric, "by", sprintf("%.4f", did_estimate), "\n")
       } else {
-        cat("Interpretation: No meaningful effect of subsidies on", metric, "\n")
+        cat("Interpretation: No meaningful treatment effect on", metric, "\n")
       }
     }
     
@@ -13709,11 +13709,11 @@ SaomNkRSienaBiEnv <- R6Class(
     
     if (!is.na(did_estimate)) {
       if (did_estimate < -0.001) {
-        cat("Interpretation: Subsidies REDUCE", metric, "by", sprintf("%.4f", abs(did_estimate)), "\n")
+        cat("Interpretation: Treatment REDUCES", metric, "by", sprintf("%.4f", abs(did_estimate)), "\n")
       } else if (did_estimate > 0.001) {
-        cat("Interpretation: Subsidies INCREASE", metric, "by", sprintf("%.4f", did_estimate), "\n")
+        cat("Interpretation: Treatment INCREASES", metric, "by", sprintf("%.4f", did_estimate), "\n")
       } else {
-        cat("Interpretation: No meaningful effect of subsidies on", metric, "\n")
+        cat("Interpretation: No meaningful treatment effect on", metric, "\n")
       }
     }
     
@@ -13970,7 +13970,7 @@ SaomNkRSienaBiEnv <- R6Class(
     shock_idx <- which(sapply(self$theta_shocks, function(x) x$shock_on == 1))[1]
     shock_start <- min(self$theta_shocks[[shock_idx]]$chain_step_ids)
     shock_label <- ifelse(!is.null(self$theta_shocks[[shock_idx]]$label), 
-                          self$theta_shocks[[shock_idx]]$label, "subsidy")
+                          self$theta_shocks[[shock_idx]]$label, "shock")
     
     # Create the plot matching K_AC style
     p <- ggplot(ed, aes(x = event.time, y = estimate)) +
@@ -14077,7 +14077,7 @@ SaomNkRSienaBiEnv <- R6Class(
         # Add shock label
         annotate("text", x = max(metric_data$event.time) * 0.5, 
                  y = max(metric_data$conf.high) * 0.9,
-                 label = "subsidy", vjust = 0, size = 2.7, color = 'black') +
+                 label = "shock", vjust = 0, size = 2.7, color = 'black') +
         
         facet_wrap(~ stat_type) +
         

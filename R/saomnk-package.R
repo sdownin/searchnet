@@ -21,7 +21,7 @@
 #'   \item{Bipartite Network}{M actors x N components, representing activity systems.}
 #'   \item{K4 Degree Distributions}{K_AA (social), K_AC (actor scope),
 #'     K_CA (component popularity), K_CC (epistasis).}
-#'   \item{Shocks}{Parameter perturbations for intervention analysis (subsidies, etc.).}
+#'   \item{Shocks}{Parameter perturbations for intervention analysis.}
 #'   \item{Multi-wave}{Dynamic strategy evolution across simulation periods.}
 #' }
 #'

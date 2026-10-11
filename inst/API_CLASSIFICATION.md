@@ -7,11 +7,11 @@ and regenerate with `Rscript tools/api_inventory.R`.
 | Class | Exports | Meaning |
 |---|---:|---|
 | Core | 123 | Simulation, the estimation bridge, the {K} framework, diagnostics and causal tools. |
-| Visualization | 51 | Plots, plot themes and palettes, and exporters that feed animation or dashboards. |
+| Visualization | 50 | Plots, plot themes and palettes, and exporters that feed animation or dashboards. |
 | Teaching | 14 | Classroom and strategy-game workflows and teaching presets. |
-| Legacy (deprecated wrappers) | 22 | Superseded names kept as wrappers; each warns once per session and forwards to its replacement (see `?searchnet-naming`). |
+| Legacy (deprecated wrappers) | 21 | Superseded names kept as wrappers; each warns once per session and forwards to its replacement (see `?searchnet-naming`). |
 | Advanced / internal candidates | 1 | Exported but undocumented or documented as internal; candidates to stop exporting in a future minor release. |
-| **Total** | **211** | |
+| **Total** | **209** | |
 
 ## Core (123)
 
@@ -141,7 +141,7 @@ and regenerate with `Rscript tools/api_inventory.R`.
 | `rosetta_translate` | translation registry | Translate a model into the classes of the SAOM-NK objective | `rosetta_translate` |
 | `rosetta_validate` | translation registry | Validate the translation registry | `rosetta_validate` |
 
-## Visualization (51)
+## Visualization (50)
 
 | Function | Title | Help topic |
 |---|---|---|
@@ -175,7 +175,6 @@ and regenerate with `Rscript tools/api_inventory.R`.
 | `saomnk_plot_snapshots` | Plot Network Snapshots | `saomnk_plot_snapshots` |
 | `saomnk_plot_snapshots_from_array` | Plot bipartite snapshots directly from the stored state array | `saomnk_plot_snapshots_from_array` |
 | `saomnk_plot_strategy_utility` | Plot average utility by strategy over the simulation chain | `saomnk_plot_strategy_utility` |
-| `saomnk_plot_subsidized_risk_taking` | Exploration Risk and Difference-in-Differences Plot Functions | `saomnk_plot_exploration` |
 | `saomnk_plot_utility` | Plot Utility Contributions | `saomnk_plot_utility` |
 | `saomnk_plot_utility_contributions` | Plot utility contributions with strategy coloring and optional experiment data | `saomnk_plot_utility_contributions` |
 | `saomnk_plot_utility_contributions_basic` | Plot basic utility contributions (statistic decomposition) without strategy coloring | `saomnk_plot_utility_contributions_basic` |
@@ -216,7 +215,7 @@ and regenerate with `Rscript tools/api_inventory.R`.
 | `searchnet_game_summary` | End Game and Generate Summary | `searchnet_game_summary` |
 | `searchnet_validate_preset` | Validate a Classroom Preset | `searchnet_validate_preset` |
 
-## Legacy (deprecated wrappers) (22)
+## Legacy (deprecated wrappers) (21)
 
 | Function | Title | Help topic |
 |---|---|---|
@@ -227,7 +226,6 @@ and regenerate with `Rscript tools/api_inventory.R`.
 | `saomnk_plot_exploration_exploitation_faceted` | Deprecated plot function names | `searchnet-deprecated-plots` |
 | `saomnk_plot_exploration_exploitation_improved` | Deprecated plot function names | `searchnet-deprecated-plots` |
 | `saomnk_plot_exploration_exploitation_phase` | Deprecated plot function names | `searchnet-deprecated-plots` |
-| `saomnk_plot_exploration_exploitation_subsidies` | Deprecated plot function names | `searchnet-deprecated-plots` |
 | `saomnk_plot_K_AC_NEW_shocks` | Deprecated plot function names | `searchnet-deprecated-plots` |
 | `saomnk_plot_market_entry_survival_v0` | Deprecated plot function names | `searchnet-deprecated-plots` |
 | `saomnk_plot_strategy_exploration_exploitation` | Deprecated plot function names | `searchnet-deprecated-plots` |

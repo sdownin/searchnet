@@ -91,7 +91,7 @@ NULL
   strategy_groups    = ".searchnet_ee_strategy_groups",
   strategy_facets    = ".searchnet_ee_strategy_facets",
   strategy_result    = ".searchnet_ee_strategy_result",
-  risk_subsidies     = ".searchnet_ee_risk_subsidies")
+  treatment_risk     = ".searchnet_ee_treatment_risk")
 
 #' Plot exploration versus exploitation over a simulation run
 #'
@@ -105,18 +105,18 @@ NULL
 #' | `"trajectory"` | Per-actor and strategy-mean shares over chain steps | `saomnk_plot_exploration_exploitation()` |
 #' | `"trajectory_density"` | The same trajectories with a side density panel per activity type, styled like the utility plot | `saomnk_plot_exploration_exploitation_consistent()` |
 #' | `"phase_space"` | Actor positions in the exploitation-by-exploration plane, faceted by strategy | `saomnk_plot_exploration_exploitation_phase()` |
-#' | `"portfolio"` | Activity-portfolio evolution with an optional subsidized-minus-control difference panel | `saomnk_plot_exploration_exploitation_improved()` |
+#' | `"portfolio"` | Activity-portfolio evolution with an optional treated-minus-control difference panel | `saomnk_plot_exploration_exploitation_improved()` |
 #' | `"strategy_groups"` | Strategy-group means of both shares, computed from the run | `saomnk_plot_exploration_exploitation_by_strategy()` |
 #' | `"strategy_facets"` | Activity type by strategy group in a facet grid, from a supplied `metrics_df` | `saomnk_plot_exploration_exploitation_faceted()` |
 #' | `"strategy_result"` | Strategy-group means from a precomputed `result` (its `$metrics`) | `saomnk_plot_strategy_exploration_exploitation()` |
-#' | `"risk_subsidies"` | Risk-adjusted exploration and exploitation under subsidies, with social-logic constraints | `saomnk_plot_exploration_exploitation_subsidies()` |
+#' | `"treatment_risk"` | Risk-adjusted exploration and exploitation of the treated group (strategy `"100"`) against the control group (strategy `"0"`), with social-logic constraints and an optional shock marker (`shock_time`) | (none) |
 #'
 #' @param x A simulated `SaomNkRSienaBiEnv` environment.
 #' @param type Which view to draw; see the table above.
 #' @param ... Further arguments for the selected view, with the same names
 #'   and defaults as the function it replaces (for example `actor_ids`,
 #'   `thin_factor`, `loess_span`, `plot_return`; `metrics_df` for
-#'   `"strategy_facets"` and `"risk_subsidies"`; `result` for
+#'   `"strategy_facets"` and `"treatment_risk"`; `result` for
 #'   `"strategy_result"`; `time_window` for `"phase_space"`).
 #' @return The object the replaced function returned for the same arguments:
 #'   a ggplot, or a combined plot from `ggpubr::ggarrange()` for the views that
@@ -133,7 +133,7 @@ searchnet_plot_exploration <- function(x,
                                        type = c("trajectory", "trajectory_density",
                                                 "phase_space", "portfolio",
                                                 "strategy_groups", "strategy_facets",
-                                                "strategy_result", "risk_subsidies"),
+                                                "strategy_result", "treatment_risk"),
                                        ...) {
   type <- match.arg(type)
   impl <- get(.searchnet_exploration_types[[type]], envir = asNamespace("searchnet"),
@@ -236,7 +236,6 @@ searchnet_plot_multiwave <- function(x,
 #' | `saomnk_plot_exploration_exploitation_by_strategy()` | `searchnet_plot_exploration(type = "strategy_groups")` |
 #' | `saomnk_plot_exploration_exploitation_faceted()` | `searchnet_plot_exploration(type = "strategy_facets")` |
 #' | `saomnk_plot_strategy_exploration_exploitation()` | `searchnet_plot_exploration(type = "strategy_result")` |
-#' | `saomnk_plot_exploration_exploitation_subsidies()` | `searchnet_plot_exploration(type = "risk_subsidies")` |
 #' | `saomnk_search_rsiena_multiwave_plot()` | `searchnet_plot_multiwave(what = "list")` |
 #' | `saomnk_search_rsiena_multiwave_plot_K_4panel()` | `searchnet_plot_multiwave(what = "K_4panel")` |
 #' | `saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary()` | `searchnet_plot_multiwave(what = "K_AA", by = "strategy")` |
@@ -252,7 +251,7 @@ searchnet_plot_multiwave <- function(x,
 #'
 #' @param env A `SaomNkRSienaBiEnv` environment, passed on as the
 #'   replacement's first argument.
-#' @param actor_ids,component_ids,wave_ids,thin_factor,thin_pct,thin_wave_factor,smooth_method,show_points,show_individuals,show_group_means,show_difference,loess_span,point_alpha,point_alpha_dimmer,line_alpha,group_line_size,se_ribbon,ylim,plot_return,plot_save,plot_file,plot_dir,time_window,show_trajectories,metrics_df,result,show_se_ribbon,shock_time,type,rolling_window,show_utility_points,show_strategy_means,append_plot,histogram_position,scale_utility,return_plot,show_legend,show_title,plot_periods,n,environ_params,structure_model,steps_per_actor,theta_shocks,conf_level,verbose
+#' @param actor_ids,component_ids,wave_ids,thin_factor,thin_pct,thin_wave_factor,smooth_method,show_points,show_individuals,show_group_means,show_difference,loess_span,point_alpha,point_alpha_dimmer,line_alpha,group_line_size,se_ribbon,ylim,plot_return,plot_save,plot_file,plot_dir,time_window,show_trajectories,metrics_df,result,type,rolling_window,show_utility_points,show_strategy_means,append_plot,histogram_position,scale_utility,return_plot,show_legend,show_title,plot_periods,n,environ_params,structure_model,steps_per_actor,theta_shocks,conf_level,verbose
 #'   Passed unchanged to the replacement; see its documentation.
 #' @return The replacement's return value.
 #' @seealso [searchnet_plot_exploration()], [searchnet_plot_multiwave()],
@@ -383,18 +382,6 @@ saomnk_plot_strategy_exploration_exploitation <- function(env,
                                                           group_line_size = 2) {
   .searchnet_deprecated_plot("saomnk_plot_strategy_exploration_exploitation", 'searchnet_plot_exploration(type = "strategy_result")')
   .searchnet_forward(searchnet_plot_exploration, list(type = "strategy_result"))
-}
-
-#' @rdname searchnet-deprecated-plots
-#' @export
-saomnk_plot_exploration_exploitation_subsidies <- function(env,
-                                                           metrics_df = NULL,
-                                                           show_points = FALSE,
-                                                           show_se_ribbon = TRUE,
-                                                           loess_span = 0.3,
-                                                           shock_time = NULL) {
-  .searchnet_deprecated_plot("saomnk_plot_exploration_exploitation_subsidies", 'searchnet_plot_exploration(type = "risk_subsidies")')
-  .searchnet_forward(searchnet_plot_exploration, list(type = "risk_subsidies"))
 }
 
 #' @rdname searchnet-deprecated-plots

@@ -139,7 +139,6 @@ test_that("legacy wrappers keep their exact signatures", {
     saomnk_plot_exploration_exploitation_by_strategy = ".searchnet_ee_strategy_groups",
     saomnk_plot_exploration_exploitation_faceted = ".searchnet_ee_strategy_facets",
     saomnk_plot_strategy_exploration_exploitation = ".searchnet_ee_strategy_result",
-    saomnk_plot_exploration_exploitation_subsidies = ".searchnet_ee_risk_subsidies",
     saomnk_search_rsiena_multiwave_plot = ".searchnet_mw_list",
     saomnk_search_rsiena_multiwave_plot_K_4panel = ".searchnet_mw_K_4panel",
     saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary = ".searchnet_mw_K_AA",
@@ -199,15 +198,14 @@ test_that("exploration plot names forward to searchnet_plot_exploration()", {
     list("saomnk_plot_exploration_exploitation_faceted", "strategy_facets",
          list(env = env, metrics_df = metrics_df)),
     list("saomnk_plot_strategy_exploration_exploitation", "strategy_result",
-         list(env = env, result = result)),
-    list("saomnk_plot_exploration_exploitation_subsidies", "risk_subsidies", list(env = env)))
+         list(env = env, result = result)))
   drawn <- 0L
   for (cs in cases) {
     out <- .expect_forwards(cs[[1]], "searchnet_plot_exploration", list(type = cs[[2]]), cs[[3]])
     drawn <- drawn + !is.null(out$value)
   }
   ## most views draw on this fixture, so equality is tested on real output
-  expect_gte(drawn, 6L)
+  expect_gte(drawn, 5L)
 
   ## positional arguments still bind to the old formals
   .searchnet_reset_deprecations()
