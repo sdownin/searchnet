@@ -131,3 +131,12 @@
 # searchnet-landscape-views vignette by repository URL; the vignette
 # shows still frames from vignettes/figures, so the GIFs need not ship.
 ^man/figures/readme-arch-.*\.gif$
+# The remaining README images, about 6 MB of GIFs and PNGs on 2026-10-11, are
+# referenced only by README.md, which GitHub renders from the repository. No
+# Rd \figure and no vignette uses them, so they need not ship either; this
+# keeps the CRAN tarball under the 5 MB guideline.
+^man/figures/readme-.*\.(gif|png)$
+# The PDW workshop handout, an html_document with a Bootstrap theme and about
+# 0.75 MB compressed, is a session handout rather than package documentation
+# and nothing links to it; it stays in the repository for the website.
+^vignettes/saomnk-pdw-workshop\.Rmd$

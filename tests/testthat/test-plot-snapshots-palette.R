@@ -25,6 +25,9 @@ scale_ends <- function(p, aesthetic) {
 }
 
 test_that("default palette uses only Okabe-Ito node colors", {
+  skip_if_not_installed("ggraph")
+  skip_if_not_installed("gridExtra")
+  skip_if_not_installed("reshape2")
   skip_if_not_installed("RSiena")
   env <- tiny_snapshot_env()
   pdf(NULL); on.exit(dev.off(), add = TRUE)
@@ -58,6 +61,9 @@ test_that("default palette uses only Okabe-Ito node colors", {
 })
 
 test_that("legacy palette restores the earlier colors", {
+  skip_if_not_installed("ggraph")
+  skip_if_not_installed("gridExtra")
+  skip_if_not_installed("reshape2")
   skip_if_not_installed("RSiena")
   env <- tiny_snapshot_env()
   snaps <- saomnk_plot_snapshots(env, steps = 2, palette = "legacy", draw = FALSE)
@@ -68,6 +74,9 @@ test_that("legacy palette restores the earlier colors", {
 })
 
 test_that("node_colors overrides, draw = FALSE, and argument checks", {
+  skip_if_not_installed("ggraph")
+  skip_if_not_installed("gridExtra")
+  skip_if_not_installed("reshape2")
   skip_if_not_installed("RSiena")
   env <- tiny_snapshot_env()
   lev <- levels(env$get_actor_strategies())

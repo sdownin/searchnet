@@ -345,6 +345,7 @@ saomnk_plot_K_attribute_shocks <- function(env,
 #' }
 #' @export
 searchnet_plot_new_component_shocks <- function(env, verbose = FALSE) {
+  .searchnet_need("gridExtra", "searchnet_plot_new_component_shocks()")
   .searchnet_require_path(env, "searchnet_plot_new_component_shocks()")
 
   # Get K data for new components
@@ -448,7 +449,7 @@ searchnet_plot_new_component_shocks <- function(env, verbose = FALSE) {
                            rot = 90, gp = gpar(fontsize = 9))
 
   # Combine plots
-  plots <- arrangeGrob(
+  plots <- gridExtra::arrangeGrob(
     p_top, p_bottom,
     ncol = 1,
     heights = c(1, 1),
@@ -471,7 +472,7 @@ searchnet_plot_new_component_shocks <- function(env, verbose = FALSE) {
                           gp = gpar(fontsize = 9))
 
   # Final assembly
-  final_plot <- arrangeGrob(
+  final_plot <- gridExtra::arrangeGrob(
     title,
     subtitle,
     plots,

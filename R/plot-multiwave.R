@@ -71,6 +71,7 @@
                                                                                    plot_file = NA,
                                                                                    plot_dir = NA,
                                                                                    plot_periods = 4) {
+  .searchnet_need("ggridges")
   actor_strat <- env$get_actor_strategies()
   nstep <- sum(!env$chain_stats$stability)
   coveffs   <- sapply(env$config_structure_model$dv_bipartite$coCovars, function(x)x$effect)
@@ -194,6 +195,7 @@
                                                           show_utility_points = TRUE,
                                                           return_plot = TRUE,
                                                           plot_file = NA, plot_dir = NA) {
+  .searchnet_need("ggpubr")
   K_AA  <- .searchnet_mw_K_AA(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=TRUE, show_title=FALSE, return_plot=TRUE)
   K_AC <- .searchnet_mw_K_AC(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=FALSE, show_title=FALSE, return_plot=TRUE)
   K_CA <- .searchnet_mw_K_CA(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=FALSE, show_title=FALSE, return_plot=TRUE)
@@ -215,7 +217,7 @@
                        paste( paste(paste(structeffs, structparams, sep='= '), structfixs, sep=''), collapse = ';  ')
   )
 
-  combined_plot_notitle <- ggarrange(
+  combined_plot_notitle <- ggpubr::ggarrange(
     K_AC, K_CA,
     K_AA, K_CC,
     nrow = 2, ncol = 2,
@@ -252,6 +254,7 @@
                                                                        show_title = TRUE,
                                                                        return_plot = TRUE,
                                                                        plot_file = NA, plot_dir = NA) {
+  .searchnet_need("ggpubr")
   ## actor strategy
   if ( !identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
     stop("Actor Strategy env$strat_1_coCovar are not  set.")
@@ -335,7 +338,7 @@
     plt2 <- plt2 + ggtitle('\n\n\n')
 
 
-  combined_plot <- ggarrange(
+  combined_plot <- ggpubr::ggarrange(
     plt, plt2,
     ncol = 2,
     widths = c(4.1,0.9),
@@ -363,6 +366,7 @@
                                                                        show_title = TRUE,
                                                                        return_plot = TRUE,
                                                                        plot_file = NA, plot_dir = NA) {
+  .searchnet_need("ggpubr")
   ## actor strategy
   if ( !identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
     stop("Actor Strategy env$strat_1_coCovar are not set.")
@@ -450,7 +454,7 @@
     plt2 <- plt2 + ggtitle('\n\n\n')
 
 
-  combined_plot <- ggarrange(
+  combined_plot <- ggpubr::ggarrange(
     plt, plt2,
     ncol = 2,
     widths = c(4.1,0.9),
@@ -478,6 +482,7 @@
                                                                        show_title = TRUE,
                                                                        return_plot = TRUE,
                                                                        plot_file = NA, plot_dir = NA) {
+  .searchnet_need("ggpubr")
   ## actor strategy
   if ( !identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
     stop("Actor Strategy env$strat_1_coCovar not set.")
@@ -562,7 +567,7 @@
     plt2 <- plt2 + ggtitle('\n\n\n')
 
 
-  combined_plot <- ggarrange(
+  combined_plot <- ggpubr::ggarrange(
     plt, plt2,
     ncol = 2,
     widths = c(4.1,0.9),
@@ -590,6 +595,7 @@
                                                                        show_title = TRUE,
                                                                        return_plot = TRUE,
                                                                        plot_file = NA, plot_dir = NA) {
+  .searchnet_need("ggpubr")
   ## actor strategy
   if ( !identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
     stop("Actor Strategy env$strat_1_coCovar not set.")
@@ -674,7 +680,7 @@
     plt2 <- plt2 + ggtitle('\n\n\n')
 
 
-  combined_plot <- ggarrange(
+  combined_plot <- ggpubr::ggarrange(
     plt, plt2,
     ncol = 2,
     widths = c(4.1,0.9),
@@ -702,6 +708,7 @@
                                                                                 return_plot = TRUE,
                                                                                 plot_file = NA, plot_dir = NA,
                                                                                 loess_span = 0.4) {
+  .searchnet_need("ggpubr")
   ## actor strategy
   if ( !identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
     stop("Actor Strategy env$strat_1_coCovar not set.")
@@ -810,7 +817,7 @@
       ) + ggtitle('\n\n\n')
 
 
-  combined_plot <- ggarrange(
+  combined_plot <- ggpubr::ggarrange(
     plt, plt2,
     ncol = 2,
     widths = c(4.1,0.9),
@@ -836,6 +843,7 @@
                                                                            show_utility_points = TRUE,
                                                                            return_plot = TRUE,
                                                                            plot_file = NA, plot_dir = NA) {
+  .searchnet_need("ggExtra")
   ## actor strategy
   if ( !identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
     stop("Actor Strategy env$strat_1_coCovar not set.")

@@ -27,6 +27,7 @@
     plot_file = '',
     plot_dir = NA
 ) {
+  .searchnet_need(c("ggpubr", "stringr"))
   .searchnet_require_path(env, "searchnet_plot_exploration(type = 'trajectory_density')")
 
   # Get actor strategies - matching the utility plot logic
@@ -325,7 +326,7 @@
 
     # Combine plots
     suppressMessages({
-      combined_plot <- ggarrange(
+      combined_plot <- ggpubr::ggarrange(
         plt, plt2,
         ncol = 2,
         widths = c(4.1, 0.9),
@@ -1401,6 +1402,7 @@
     show_group_means = TRUE,
     group_line_size = 2
 ) {
+  .searchnet_need("stringr")
   .searchnet_require_path(env, "searchnet_plot_exploration(type = 'strategy_result')")
 
   # Use the metrics from the result
@@ -2072,6 +2074,7 @@ saomnk_plot_exploration_did_combined <- function(
     save_plot = FALSE,
     plot_dir = NULL
 ) {
+  .searchnet_need("ggpubr", "saomnk_plot_exploration_did_combined()")
   .searchnet_require_path(env, "saomnk_plot_exploration_did_combined()")
 
   # Create data for all metrics
@@ -2145,7 +2148,7 @@ saomnk_plot_exploration_did_combined <- function(
   }
 
   # Combine plots
-  combined_plot <- ggarrange(plotlist = plot_list, nrow = length(plot_list),
+  combined_plot <- ggpubr::ggarrange(plotlist = plot_list, nrow = length(plot_list),
                              common.legend = FALSE)
 
   # Add common title and x-label

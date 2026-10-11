@@ -177,6 +177,8 @@ test_that("searchnet_plot_multiwave() validates `by` against `what`", {
 })
 
 test_that("exploration plot names forward to searchnet_plot_exploration()", {
+  skip_if_not_installed("ggpubr")
+  skip_if_not_installed("stringr")
   skip_if_not_installed("RSiena")
   local_close_new_devices()
   env <- run_tiny_sim(M = 4, N = 16, iterations_per_actor = 5, rand_seed = 42,
@@ -220,6 +222,9 @@ test_that("exploration plot names forward to searchnet_plot_exploration()", {
 })
 
 test_that("multi-wave plot names forward to searchnet_plot_multiwave()", {
+  skip_if_not_installed("ggpubr")
+  skip_if_not_installed("ggridges")
+  skip_if_not_installed("ggExtra")
   skip_if_not_installed("RSiena")
   local_close_new_devices()
   params <- make_small_environ_params(M = 4, N = 8, rand_seed = 505)

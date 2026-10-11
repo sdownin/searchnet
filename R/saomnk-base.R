@@ -2,15 +2,8 @@
 #' @importFrom plyr ddply
 #' @importFrom dplyr mutate filter select group_by summarize arrange bind_rows
 #' @importFrom Matrix Matrix
-#' @importFrom network network
-#' @importFrom visNetwork visNetwork visEdges visNodes
-#' @importFrom reshape2 melt
 #' @importFrom ggplot2 ggplot aes geom_line geom_point labs theme_minimal
 #' @importFrom grid grid.text
-#' @importFrom gridExtra grid.arrange
-#' @importFrom cowplot plot_grid
-#' @importFrom ggraph ggraph
-#' @importFrom ggpubr ggarrange
 #' @importFrom texreg screenreg
 #' @importFrom tidyr pivot_longer pivot_wider
 #' @importFrom uuid UUIDgenerate

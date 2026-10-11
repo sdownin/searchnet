@@ -9,7 +9,10 @@ import(RSiena)
 import(ggplot2)
 import(Matrix)
 import(grid)
-import(reshape2)
+
+# Suggests-only packages (cowplot, ggExtra, ggpubr, ggraph, ggridges,
+# gridExtra, reshape2, stringr, visNetwork) are never imported here: they are
+# called as pkg::fn behind .searchnet_need() (R/searchnet-suggests.R).
 
 # ---------------------------------------------------------------------------
 # Selective imports (avoid conflicts between igraph/network, dplyr/plyr, etc.)
@@ -22,10 +25,6 @@ importFrom(igraph, graph_from_biadjacency_matrix, graph_from_adjacency_matrix,
            layout_with_fr, set_vertex_attr, vertex_attr, edge_attr,
            components, clusters, is_bipartite, simplify, delete_vertices,
            eigen_centrality)
-
-# network — use selectively to avoid conflicts with igraph::
-importFrom(network, network, as.network, set.vertex.attribute,
-           get.vertex.attribute, as.sociomatrix)
 
 # dplyr — use selectively to avoid conflicts with plyr::
 importFrom(dplyr, filter, select, mutate, group_by, summarize, summarise,
@@ -43,26 +42,9 @@ importFrom(tidyr, pivot_longer, pivot_wider, crossing, gather, spread,
 # texreg — use selectively to avoid conflicts with tidyr::extract
 importFrom(texreg, screenreg, texreg, htmlreg, extract)
 
-# gridExtra — use selectively to avoid conflicts with dplyr::combine
-importFrom(gridExtra, grid.arrange, arrangeGrob)
-
-# cowplot — use selectively to avoid conflicts with ggpubr::get_legend
-importFrom(cowplot, plot_grid, theme_cowplot)
-
-# ggpubr — use selectively
-importFrom(ggpubr, ggarrange, ggboxplot, get_legend, stat_compare_means)
-
-# ggraph
-importFrom(ggraph, ggraph, geom_edge_link, geom_node_point, geom_node_text,
-           create_layout, theme_graph)
-
 # Other selective imports
 importFrom(uuid, UUIDgenerate)
 importFrom(scales, rescale, percent_format, hue_pal, comma)
-importFrom(RColorBrewer, brewer.pal)
-importFrom(knitr, kable)
-importFrom(visNetwork, visNetwork, visNodes, visEdges, visOptions,
-           visLayout, visIgraph)
 importFrom(stats, qnorm, aggregate, setNames, pnorm, median, coef,
            sd, var, quantile, cor, lm, predict, residuals, fitted,
            dnorm, runif, rnorm, rbinom, na.omit, loess, uniroot, optim,

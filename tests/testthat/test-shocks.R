@@ -169,6 +169,7 @@ test_that("search_rsiena with NULL theta_shocks is a no-op for shocks", {
 
 
 test_that("compute_utility_shocks runs without error when shocks are set", {
+  skip_if_not_installed("did")
   skip_if_not_installed("RSiena")
 
   M <- 4

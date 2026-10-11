@@ -19,8 +19,11 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   fig.width = 7,
-  fig.height = 5
+  fig.height = 5,
+  dpi = 72  # keeps the 40-odd embedded figures inside the CRAN size guideline
 )
+has_graph_pkgs <- all(vapply(c("ggraph", "gridExtra", "reshape2"), requireNamespace,
+                         logical(1), quietly = TRUE))  # network snapshot panels
 ```
 
 # Overview
@@ -149,7 +152,7 @@ env$search_rsiena_model_summary()
 Snapshots of the bipartite network (DGP) and the social and component epistasis
 projections show the evolving multidimensional coupled search environment:
 
-```{r snapshots, fig.height=5, fig.width=11}
+```{r snapshots, fig.height=5, fig.width=11, eval = has_graph_pkgs}
 ## Sample the trajectory evenly rather than plotting every ministep: one
 ## panel per step is both slow and unreadable at this figure size.
 snapshot_ids <- unique(round(
@@ -195,7 +198,7 @@ env2$search_rsiena(
   run_seed = 12345
 )
 
-env2$plot_snapshots(c(1:5, env2$get_step()))
+if (has_graph_pkgs) env2$plot_snapshots(c(1:5, env2$get_step()))
 ```
 
 ```{r longer-sim-plots, fig.height=10, fig.width=10}

@@ -595,6 +595,7 @@ saomnk_plot_phase_space_3d <- function(env,
                                    x_label, y_label, z_label,
                                    color_by, trajectories, smooth, alpha,
                                    title) {
+  .searchnet_need("cowplot")
 
   npoints <- nrow(df)
   point_size <- max(0.4, 4 / log10(max(npoints, 10)))

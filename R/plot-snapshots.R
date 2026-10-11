@@ -33,8 +33,10 @@
 #' mod <- saomnk_model(density = -0.5, popularity = 0.2)
 #' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345)
 #'
-#' saomnk_plot_snapshots_from_array(env, snapshot_ids = c(1, 10),
-#'                                  include_init = FALSE)
+#' if (all(vapply(c("ggraph", "gridExtra", "reshape2"), requireNamespace,
+#'                logical(1), quietly = TRUE)))
+#'   saomnk_plot_snapshots_from_array(env, snapshot_ids = c(1, 10),
+#'                                    include_init = FALSE)
 #' }
 #' @export
 saomnk_plot_snapshots_from_array <- function(env, snapshot_ids = c(), include_init = TRUE) {
@@ -156,6 +158,7 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
                                                    return_plot = TRUE,
                                                    normalize_degree = FALSE,
                                                    initial_bipartite_matrix = NULL) {
+  .searchnet_need(c("ggraph", "gridExtra", "reshape2"), "saomnk_plot_bipartite_system_from_mat()")
 
   N <- ncol(bipartite_matrix)
   M <- nrow(bipartite_matrix)
@@ -227,10 +230,10 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
   # Create subtitle with strategy info
   strategy_range_text <- paste(levels(env$get_actor_strategies()), collapse = ', ')
 
-  bipartite_plot <- ggraph(ig_bipartite, layout = "fr") +
-    geom_edge_link(color = "gray") +
-    geom_node_point(aes(shape = shape, color = color), size = 6) +
-    geom_node_text(aes(label = label), vjust = 0.5, hjust = 0.5, size = 3, color = "white") +
+  bipartite_plot <- ggraph::ggraph(ig_bipartite, layout = "fr") +
+    ggraph::geom_edge_link(color = "gray") +
+    ggraph::geom_node_point(aes(shape = shape, color = color), size = 6) +
+    ggraph::geom_node_text(aes(label = label), vjust = 0.5, hjust = 0.5, size = 3, color = "white") +
     scale_shape_manual(values = c("circle" = 16, "square" = 15)) +
     scale_color_identity() +
     labs(title = "[DGP] Bipartite Environment",
@@ -242,10 +245,10 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
   node_color <- eigen_centrality(ig_social)$vector
   node_text <- 1:env$M
 
-  social_plot <- ggraph(ig_social, layout = "fr") +
-    geom_edge_link(color = "gray") +
-    geom_node_point(aes(size = node_size, color = node_color)) +
-    geom_node_text(aes(label = node_text), vjust = 0.5, hjust = 0.5, size = 3, color='white') +
+  social_plot <- ggraph::ggraph(ig_social, layout = "fr") +
+    ggraph::geom_edge_link(color = "gray") +
+    ggraph::geom_node_point(aes(size = node_size, color = node_color)) +
+    ggraph::geom_node_text(aes(label = node_text), vjust = 0.5, hjust = 0.5, size = 3, color='white') +
     scale_color_viridis_c(option = "viridis", end = 0.9) +
     labs(title = "[Proj1] Actor Social Network\n(common components)",
          color = "Eigenvector\nCentrality", size = "Degree\nCentrality") +
@@ -259,7 +262,7 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
   # 3. Component influence matrix heatmap
   component_matrix <- igraph::as_adjacency_matrix(ig_component, type = 'both', sparse = FALSE, attr = 'weight')
 
-  component_df <- melt(component_matrix)
+  component_df <- reshape2::melt(component_matrix)
   colnames(component_df) <- c("Component1", "Component2", "Weight")
 
   # Replace component numbers with labels in the heatmap data frame
@@ -289,7 +292,7 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
                         RSIENA_ITERATION, density_current, avg_degree_social, avg_degree_component)
 
   # Arrange plots with a main title
-  plt <- grid.arrange(
+  plt <- gridExtra::grid.arrange(
     social_plot, bipartite_plot, heatmap_plot,
     ncol = 3,
     top = textGrob(main_title, gp = gpar(fontsize = 16, fontface = "bold"))
@@ -351,6 +354,7 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
 ## ggplots, the arranged grob (not drawn), and the node colors used.
 .snapshot_panels <- function(env, mat, step, palette = "okabe-ito",
                              node_colors = NULL) {
+  .searchnet_need(c("ggraph", "gridExtra", "reshape2"))
   M <- nrow(mat); N <- ncol(mat)
   comp_labels <- if (N <= 26) LETTERS[seq_len(N)] else
     paste0(rep(LETTERS, ceiling(N / 26)),
@@ -412,10 +416,10 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
     bi_sub <- paste0(bi_sub, if (length(lev) > 1) "; " else "\n",
                      "darker squares: unused at the start")
 
-  bipartite_plot <- ggraph(ig_bi, layout = "fr") +
-    geom_edge_link(color = "grey70") +
-    geom_node_point(aes(shape = shape, color = color), size = 6) +
-    geom_node_text(aes(label = label), vjust = 0.5, hjust = 0.5, size = 3, color = "white",
+  bipartite_plot <- ggraph::ggraph(ig_bi, layout = "fr") +
+    ggraph::geom_edge_link(color = "grey70") +
+    ggraph::geom_node_point(aes(shape = shape, color = color), size = 6) +
+    ggraph::geom_node_text(aes(label = label), vjust = 0.5, hjust = 0.5, size = 3, color = "white",
                    fontface = "bold") +
     scale_shape_manual(values = c("circle" = 16, "square" = 15)) +
     scale_color_identity() +
@@ -428,10 +432,10 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
   social_sub <- sprintf("K_AA: %.1f partners per actor\nnode size: number of partners",
                         k_aa)
   if (identical(pal$social$type, "actor")) {
-    social_plot <- ggraph(ig_social, layout = "fr") +
-      geom_edge_link(color = "grey70") +
-      geom_node_point(aes(size = node_size), color = a_col) +
-      geom_node_text(aes(label = node_text), vjust = 0.5, hjust = 0.5, size = 3,
+    social_plot <- ggraph::ggraph(ig_social, layout = "fr") +
+      ggraph::geom_edge_link(color = "grey70") +
+      ggraph::geom_node_point(aes(size = node_size), color = a_col) +
+      ggraph::geom_node_text(aes(label = node_text), vjust = 0.5, hjust = 0.5, size = 3,
                      color = "white", fontface = "bold") +
       scale_size_continuous(range = c(4, 8), guide = "none") +
       labs(title = "Actors linked by a shared component", subtitle = social_sub) +
@@ -439,10 +443,10 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
   } else {
     node_color <- if (igraph::ecount(ig_social) > 0)
       igraph::eigen_centrality(ig_social)$vector else rep(0, igraph::vcount(ig_social))
-    social_plot <- ggraph(ig_social, layout = "fr") +
-      geom_edge_link(color = "gray") +
-      geom_node_point(aes(size = node_size, color = node_color)) +
-      geom_node_text(aes(label = node_text), vjust = 0.5, hjust = 0.5, size = 3, color = "white") +
+    social_plot <- ggraph::ggraph(ig_social, layout = "fr") +
+      ggraph::geom_edge_link(color = "gray") +
+      ggraph::geom_node_point(aes(size = node_size, color = node_color)) +
+      ggraph::geom_node_text(aes(label = node_text), vjust = 0.5, hjust = 0.5, size = 3, color = "white") +
       scale_color_gradient(low = pal$social$low, high = pal$social$high) +
       labs(title = "Actors linked by a shared component", subtitle = social_sub,
            color = "Eigenvector\nCentrality", size = "Degree\nCentrality") +

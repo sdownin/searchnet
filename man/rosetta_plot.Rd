@@ -98,7 +98,8 @@ attached as \code{attr(, "k_groups_reads")}.
 }
 \examples{
 \donttest{
-if (requireNamespace("yaml", quietly = TRUE)) {
+if (requireNamespace("yaml", quietly = TRUE) &&
+    requireNamespace("cowplot", quietly = TRUE)) {
   p <- rosetta_plot(NULL, compare = "nk-adaptive-walk")
 }
 }

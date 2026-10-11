@@ -18,6 +18,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 11, fig.heigh
 library(searchnet)
 have_yaml <- requireNamespace("yaml", quietly = TRUE)
 knitr::opts_chunk$set(eval = have_yaml)
+has_cowplot <- requireNamespace("cowplot", quietly = TRUE)  # multi-panel layouts
 ```
 
 The SAOM-NK objective is a sum over classes of effects. Each class is one
@@ -176,15 +177,15 @@ pattern `1[W != 0]` off the diagonal (the engine's XWX sums over
 `j != h`), whose row counts are the K that a binary NK influence
 pattern records.
 
-```{r plot-nk}
+```{r plot-nk, eval = have_yaml && has_cowplot}
 rosetta_plot(NULL, compare = "nk-adaptive-walk")
 ```
 
-```{r plot-both, fig.height = 3.6}
+```{r plot-both, fig.height = 3.6, eval = have_yaml && has_cowplot}
 rosetta_plot(NULL, glyph = FALSE, view = "both")
 ```
 
-```{r plot-mine}
+```{r plot-mine, eval = have_yaml && has_cowplot}
 rosetta_plot(mine, compare = "brock-durlauf-social-interactions")
 ```
 

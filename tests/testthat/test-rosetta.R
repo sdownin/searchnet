@@ -190,6 +190,7 @@ test_that("rosetta_compare returns classes by models", {
 })
 
 test_that("rosetta_plot builds a figure", {
+  skip_if_not_installed("cowplot")
   p <- rosetta_plot(NULL, compare = "nk-adaptive-walk")
   expect_s3_class(p, "ggplot")
   grDevices::pdf(NULL); on.exit(grDevices::dev.off(), add = TRUE)
@@ -205,6 +206,7 @@ test_that("rosetta_plot builds a figure", {
 })
 
 test_that("rosetta_plot groups classes sharing a {K} dimension under one badge", {
+  skip_if_not_installed("cowplot")
   local_close_new_devices()  # rosetta_plot() opens a device to compose its panels
   full <- saomnk_model(density = -1, popularity = -0.2,
                        influence_matrix = saomnk_block_diagonal(6, 2),

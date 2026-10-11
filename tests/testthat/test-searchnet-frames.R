@@ -26,6 +26,7 @@
 }
 
 test_that("prepare reads the stored run and picks the most active actor", {
+  skip_if_not_installed("cowplot")
   env <- .fr_env()
   fr <- searchnet_frames_prepare(env, views = c("network", "k4", "landscape", "w"))
   expect_s3_class(fr, "searchnet_frames")
@@ -46,6 +47,7 @@ test_that("prepare reads the stored run and picks the most active actor", {
 })
 
 test_that("a frame builds for each view and draws", {
+  skip_if_not_installed("cowplot")
   env <- .fr_env()
   fr <- searchnet_frames_prepare(env, views = c("network", "k4", "landscape", "w"))
   for (v in c("network", "k4", "landscape", "w")) {
@@ -62,6 +64,7 @@ test_that("a frame builds for each view and draws", {
 })
 
 test_that("the landscape view is skipped with a message for large N", {
+  skip_if_not_installed("cowplot")
   env <- .fr_env()
   fr <- searchnet_frames_prepare(env, views = c("network", "landscape"), max_n = 4L)
   expect_message(p <- searchnet_frame(fr, 2, views = c("network", "landscape")),
@@ -70,6 +73,7 @@ test_that("the landscape view is skipped with a message for large N", {
 })
 
 test_that("the landscape view marks the actor's current portfolio and peaks", {
+  skip_if_not_installed("cowplot")
   env <- .fr_env()
   fr <- searchnet_frames_prepare(env, views = "landscape")
   t <- fr$n_steps %/% 2L
@@ -83,6 +87,7 @@ test_that("the landscape view marks the actor's current portfolio and peaks", {
 })
 
 test_that("the last frame equals the static K4 panel and the end-of-run ties", {
+  skip_if_not_installed("cowplot")
   env <- .fr_env()
   fr <- searchnet_frames_prepare(env)
   n_t <- fr$n_steps
@@ -119,6 +124,7 @@ test_that("the last frame equals the static K4 panel and the end-of-run ties", {
 })
 
 test_that("filmstrip grid returns one plot with one frame per step", {
+  skip_if_not_installed("cowplot")
   env <- .fr_env()
   fr <- searchnet_frames_prepare(env)
   steps <- c(0L, 5L, 10L, fr$n_steps)
@@ -130,6 +136,7 @@ test_that("filmstrip grid returns one plot with one frame per step", {
 })
 
 test_that("filmstrip writes a grid page, a multipage PDF and numbered PNGs", {
+  skip_if_not_installed("cowplot")
   skip_on_cran()
   env <- .fr_env()
   fr <- searchnet_frames_prepare(env)
@@ -160,6 +167,7 @@ test_that("filmstrip writes a grid page, a multipage PDF and numbered PNGs", {
 })
 
 test_that("animate writes a GIF with the available renderer", {
+  skip_if_not_installed("cowplot")
   skip_on_cran()
   avail <- .sn_frames_renderers()
   skip_if_not(any(avail), "no GIF renderer available")
@@ -176,6 +184,7 @@ test_that("animate writes a GIF with the available renderer", {
 })
 
 test_that("animate validates its file and renderer arguments", {
+  skip_if_not_installed("cowplot")
   env <- .fr_env()
   expect_error(searchnet_animate(env), "file must be")
   avail <- .sn_frames_renderers()

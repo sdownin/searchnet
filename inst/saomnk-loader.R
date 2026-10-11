@@ -79,13 +79,14 @@ if (is.null(.saomnk_dir)) {
 ## ---------------------------------------------------------------------------
 ## Hard dependencies: the package cannot load without these.
 for (.pkg in c('R6', 'igraph', 'RSiena', 'ggplot2', 'plyr', 'dplyr', 'tidyr',
-               'Matrix', 'network', 'reshape2')) {
+               'Matrix')) {
   suppressPackageStartupMessages(library(.pkg, character.only = TRUE))
 }
 ## Soft dependencies: only some plot/report modules need these. A missing one
 ## degrades specific functions rather than blocking the whole load.
 .saomnk_soft_missing <- character(0)
-for (.pkg in c('cowplot', 'ggraph', 'ggpubr', 'grid', 'gridExtra', 'texreg', 'uuid')) {
+for (.pkg in c('cowplot', 'ggraph', 'ggpubr', 'grid', 'gridExtra', 'reshape2',
+               'texreg', 'uuid')) {
   if (!suppressWarnings(suppressPackageStartupMessages(
         require(.pkg, character.only = TRUE, quietly = TRUE))))
     .saomnk_soft_missing <- c(.saomnk_soft_missing, .pkg)

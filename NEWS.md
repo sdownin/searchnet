@@ -1,3 +1,10 @@
+# searchnet 0.17.0
+
+Released 2026-10-11. Tested with RSiena 1.5.0 and 1.6.6: 82 files, 1088 tests, 0 failures, 0 errors under each. `R CMD check --as-cran` (clean build, RSiena 1.6.6): 0 errors, 0 warnings. No change to simulated results.
+
+* **Lighter dependencies.** cowplot, ggExtra, ggpubr, ggraph, ggridges, gridExtra, reshape2, stringr, visNetwork and knitr move from Imports to Suggests (Imports: 25 to 13 non-default packages); functions that use them stop with an `install.packages()` hint, and the core simulation path never needs them. `network` and `RColorBrewer` are no longer dependencies. `searchnet_frame()`, `searchnet_filmstrip()` and `searchnet_animate()` need cowplot.
+* **Smaller source tarball** (12.8 MB to 4.8 MB): the README images and the PDW workshop vignette stay in the repository but out of the build, and four figure-heavy vignettes render at 72 dpi.
+
 # searchnet 0.16.0
 
 Released 2026-10-11. Tested with RSiena 1.5.0 and 1.6.6: 81 files, 1083 tests, 0 failures, 0 errors under each. No change to simulated results.

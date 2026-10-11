@@ -6,6 +6,9 @@
 local_close_new_devices()
 
 test_that("plot_bipartite_system_from_mat returns a plot object", {
+  skip_if_not_installed("ggraph")
+  skip_if_not_installed("gridExtra")
+  skip_if_not_installed("reshape2")
   skip_if_not_installed("RSiena")
 
   params <- make_small_environ_params(M = 4, N = 8, rand_seed = 500)
@@ -105,6 +108,7 @@ test_that("search_rsiena_plot with strategy model produces plots", {
 
 
 test_that("search_rsiena_plot_stability runs after simulation", {
+  skip_if_not_installed("cowplot")
   skip_if_not_installed("RSiena")
 
   env <- tryCatch(
@@ -131,6 +135,9 @@ test_that("search_rsiena_plot_stability runs after simulation", {
 
 
 test_that("multiwave plot functions return ggplot objects", {
+  skip_if_not_installed("ggpubr")
+  skip_if_not_installed("ggridges")
+  skip_if_not_installed("ggExtra")
   skip_if_not_installed("RSiena")
 
   params <- make_small_environ_params(M = 4, N = 8, rand_seed = 505)

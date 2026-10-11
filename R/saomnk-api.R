@@ -1035,6 +1035,7 @@ saomnk_plot_k4 <- function(env, smooth = 0.3, annotate = TRUE) {
 saomnk_plot_snapshots <- function(env, steps = NULL, palette = c("okabe-ito", "legacy"),
                                   node_colors = NULL, draw = TRUE) {
   .searchnet_require_path(env, "saomnk_plot_snapshots()")
+  .searchnet_need(c("ggraph", "gridExtra", "reshape2"), "saomnk_plot_snapshots()")
   stopifnot(inherits(env, "SaomNkRSienaBiEnv"))
   palette <- match.arg(palette)
 

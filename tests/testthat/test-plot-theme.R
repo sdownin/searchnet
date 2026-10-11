@@ -86,6 +86,7 @@ test_that("scale_*_searchnet() map categories to Okabe-Ito and zero to white", {
 ## ---------------------------------------------------------------------------
 
 test_that("plot.searchnet_ergodicity() returns x with a ggplot attached and draws", {
+  skip_if_not_installed("cowplot")
   skip_if_not_installed("RSiena")
   erg <- searchnet_ergodicity_sweep(M = 6, N = 6, run_lengths = c(5L, 10L, 20L),
                                     replicates = 3L)
@@ -101,6 +102,7 @@ test_that("plot.searchnet_ergodicity() returns x with a ggplot attached and draw
 })
 
 test_that("search_rsiena_plot_stability() returns the stability ggplot", {
+  skip_if_not_installed("cowplot")
   env <- run_tiny_sim(M = 4, N = 8, iterations_per_actor = 5, rand_seed = 504)
   grDevices::pdf(NULL)
   on.exit(grDevices::dev.off(), add = TRUE)
@@ -146,6 +148,7 @@ test_that("phase-space heatmap uses the package style", {
 })
 
 test_that("phase-space 2D projections (the no-plotly fallback) draw in the package theme", {
+  skip_if_not_installed("cowplot")
   df <- data.frame(K_AC = runif(20), exploration_rate = runif(20),
                    utility = runif(20), time_norm = seq(0, 1, length.out = 20),
                    actor_id = rep(1:4, 5), strategy = "none", phase = "Exploration")
@@ -158,6 +161,9 @@ test_that("phase-space 2D projections (the no-plotly fallback) draw in the packa
 })
 
 test_that("saomnk_plot_bipartite_system_from_mat() draws in the package style", {
+  skip_if_not_installed("ggraph")
+  skip_if_not_installed("gridExtra")
+  skip_if_not_installed("reshape2")
   skip_if_not_installed("RSiena")
   env <- tiny_theme_env()
   B <- saomnk_get_bipartite(env)

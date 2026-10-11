@@ -179,6 +179,7 @@ test_that("searchnet_causal_plot(type = 'did') states the ATT and annotate toggl
 })
 
 test_that("plot.searchnet_ergodicity() takes annotate and keeps its return value", {
+  skip_if_not_installed("cowplot")
   skip_if_not_installed("RSiena")
   erg <- searchnet_ergodicity_sweep(M = 6, N = 6, run_lengths = c(5L, 10L, 20L),
                                     replicates = 3L)
@@ -191,6 +192,9 @@ test_that("plot.searchnet_ergodicity() takes annotate and keeps its return value
 })
 
 test_that("snapshots: plain panel titles; the R6 method draws the same panels", {
+  skip_if_not_installed("ggraph")
+  skip_if_not_installed("gridExtra")
+  skip_if_not_installed("reshape2")
   skip_if_not_installed("RSiena")
   local_close_new_devices()  # building the panels and the R6 method both open one
   env <- readable_env()

@@ -420,7 +420,8 @@
 #' @export
 #' @examples
 #' \donttest{
-#' if (requireNamespace("yaml", quietly = TRUE)) {
+#' if (requireNamespace("yaml", quietly = TRUE) &&
+#'     requireNamespace("cowplot", quietly = TRUE)) {
 #'   p <- rosetta_plot(NULL, compare = "nk-adaptive-walk")
 #' }
 #' }
@@ -428,6 +429,7 @@ rosetta_plot <- function(x = NULL, compare = NULL, glyph = TRUE, W = NULL, seed 
                          include_private = FALSE, classes = NULL, file = NULL,
                          width = 12, height = 10, dpi = 110,
                          view = c("outcome", "decision", "both", "moves", "reads")) {
+  .searchnet_need("cowplot", "rosetta_plot()")
   view <- match.arg(view)
   view <- switch(view, outcome = "moves", decision = "reads", view)
   cl <- rosetta_classes()

@@ -110,6 +110,7 @@ plot_entry_restraint <- function(env = NULL,
 #' @noRd
 plot_entry_restraint_spectrum <- function(restraint_sweep_results,
                                              ci = 0.95) {
+  .searchnet_need("cowplot", "plot_entry_restraint_spectrum()")
   df <- restraint_sweep_results
   stopifnot(all(c("theta_inPop", "competitive_entry_rate",
                    "mean_rivals_at_entry") %in% names(df)))

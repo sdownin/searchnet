@@ -1,6 +1,6 @@
 Package: searchnet
 Title: Network-Embedded Search Simulation Engine
-Version: 0.16.0
+Version: 0.17.0
 Authors@R: person("Stephen", "Downing", email = "sdowning@missouri.edu",
                   role = c("aut", "cre"))
 Description: R6-based simulation engine for strategic search and adaptation
@@ -29,27 +29,15 @@ Imports:
     graphics,
     RSiena (>= 1.5.0),
     igraph,
-    network,
     Matrix,
-    visNetwork,
     plyr,
     dplyr,
     tidyr,
-    reshape2,
     ggplot2,
     grid,
-    gridExtra,
-    cowplot,
-    ggraph,
-    ggpubr,
-    ggridges,
-    ggExtra,
     texreg,
     uuid,
-    stringr,
     scales,
-    RColorBrewer,
-    knitr,
     data.table,
     jsonlite
 Suggests:
@@ -82,7 +70,17 @@ Suggests:
     gmp,
     processx,
     withr,
-    yaml
+    yaml,
+    knitr,
+    cowplot,
+    ggExtra,
+    ggpubr,
+    ggraph,
+    ggridges,
+    gridExtra,
+    reshape2,
+    stringr,
+    visNetwork
 SystemRequirements: Lean 4 via elan (optional; used only by the lean_*()
     formal-verification functions; toolchain pinned in inst/lean/lean-toolchain)
 VignetteBuilder: knitr

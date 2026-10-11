@@ -398,6 +398,7 @@ print.searchnet_ergodicity <- function(x, ...) {
 #'   \code{attr(x, "plot")}; restyle or save it from there.
 #' @export
 plot.searchnet_ergodicity <- function(x, ..., draw = TRUE, annotate = TRUE) {
+  .searchnet_need("cowplot", "plot.searchnet_ergodicity()")
   cfg <- x$config; s <- x$summary
   arm_cols <- searchnet_palette()[c("blue", "vermillion")]
   starts   <- cfg$start_densities

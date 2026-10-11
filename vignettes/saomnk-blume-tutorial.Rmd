@@ -21,6 +21,7 @@ knitr::opts_chunk$set(
   fig.width = 7,
   fig.height = 5
 )
+has_cowplot <- requireNamespace("cowplot", quietly = TRUE)  # multi-panel layouts
 ```
 
 ```{r load-saomnk, include=FALSE}
@@ -210,7 +211,7 @@ if (.full_run) {
 }
 
 erg
-plot(erg)
+if (has_cowplot) plot(erg)
 ```
 
 > **Key takeaway:** Two arms that started 0.70 apart in density end up
@@ -786,7 +787,7 @@ conv_panel <- function(y, ylab, title, col) {
     theme_searchnet()
 }
 
-cowplot::plot_grid(
+if (has_cowplot) cowplot::plot_grid(
   conv_panel("density", "Final Density", "Convergence: Density", pal[["green"]]) +
     coord_cartesian(ylim = c(0, 1)),
   conv_panel("scope", "Mean Final K_AC (Scope)", "Convergence: Scope", pal[["blue"]]),
@@ -901,7 +902,7 @@ p_scope <- ggplot(temp_df, aes(scale, scope)) +
   labs(title = "Temperature Effect on Scope Heterogeneity", x = scale_lab,
        y = "SD of Final K_AC (Scope)") +
   theme_searchnet()
-cowplot::plot_grid(p_dens, p_scope, nrow = 1, align = "h", axis = "tb")
+if (has_cowplot) cowplot::plot_grid(p_dens, p_scope, nrow = 1, align = "h", axis = "tb")
 ```
 
 > **Interpretation:** At low $\beta$ (scale = 0.2), the stationary
@@ -1121,8 +1122,8 @@ p_phase <- ggplot(agg_phase, aes(mean_density, mean_kcc)) +
        y = expression("Mean " * K[CC])) +
   theme_searchnet(base_size = 10)
 
-cowplot::plot_grid(p_kcc, p_dens4, p_scope4, p_phase, ncol = 2,
-                   align = "hv", axis = "tblr")
+if (has_cowplot) cowplot::plot_grid(p_kcc, p_dens4, p_scope4, p_phase, ncol = 2,
+                                    align = "hv", axis = "tblr")
 ```
 
 > **Interpretation:** As $\beta$ increases (moving from random to

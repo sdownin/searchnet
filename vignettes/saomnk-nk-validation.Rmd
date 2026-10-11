@@ -22,8 +22,11 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   fig.width = 7,
-  fig.height = 5
+  fig.height = 5,
+  dpi = 72  # keeps the 40-odd embedded figures inside the CRAN size guideline
 )
+has_graph_pkgs <- all(vapply(c("ggraph", "gridExtra", "reshape2"), requireNamespace,
+                         logical(1), quietly = TRUE))  # network snapshot panels
 ```
 
 # Overview
@@ -152,7 +155,7 @@ sample_steps <- function(env) {
   unique(round(seq(1, env$M * steps_per_actor, length.out = n_frames)))
 }
 
-env_rugged$plot_snapshots(sample_steps(env_rugged))
+if (has_graph_pkgs) env_rugged$plot_snapshots(sample_steps(env_rugged))
 ```
 
 ```{r single-rugged-k4, fig.height=10, fig.width=10}
@@ -280,7 +283,7 @@ env_base$search_rsiena(
 env_base$search_rsiena_model_summary()
 ```
 
-```{r multi-baseline-snapshots, fig.height=5, fig.width=11}
+```{r multi-baseline-snapshots, fig.height=5, fig.width=11, eval = has_graph_pkgs}
 env_base$plot_snapshots(sample_steps(env_base))
 ```
 
@@ -342,7 +345,7 @@ env_endog$search_rsiena(
 env_endog$search_rsiena_model_summary()
 ```
 
-```{r multi-endog-snapshots, fig.height=5, fig.width=11}
+```{r multi-endog-snapshots, fig.height=5, fig.width=11, eval = has_graph_pkgs}
 env_endog$plot_snapshots(sample_steps(env_endog))
 ```
 

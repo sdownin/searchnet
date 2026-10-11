@@ -1,10 +1,7 @@
-#' @import R6 igraph RSiena ggplot2 dplyr tidyr cowplot ggraph Matrix network reshape2 texreg grid gridExtra ggpubr plyr
+#' @import R6 igraph RSiena ggplot2 dplyr tidyr Matrix texreg grid plyr
 #' @importFrom rvest html_text
-#' @importFrom knitr kable
 #' @importFrom broom tidy
-#' @importFrom stringr str_detect str_replace
 #' @importFrom scales percent_format
-#' @importFrom RColorBrewer brewer.pal
 #' @importFrom MatchIt matchit
 
 
@@ -2470,6 +2467,7 @@ SaomNkRSienaBiEnv <- R6Class(
     },
     
     plot_K_AC_NEW_shocks = function(verbose = FALSE) {
+      .searchnet_need("gridExtra", "plot_K_AC_NEW_shocks()")
 
       # Get K data for new components
       Kdf_new <- self$compute_K_attribute_shocks(K_type = 'K_AC', verbose = verbose)
@@ -2577,7 +2575,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                rot = 90, gp = gpar(fontsize = 9))
       
       # Combine plots
-      plots <- arrangeGrob(
+      plots <- gridExtra::arrangeGrob(
         p_top, p_bottom,
         ncol = 1,
         heights = c(1, 1),
@@ -2600,7 +2598,7 @@ SaomNkRSienaBiEnv <- R6Class(
                               gp = gpar(fontsize = 9))
       
       # Final assembly
-      final_plot <- arrangeGrob(
+      final_plot <- gridExtra::arrangeGrob(
         title,
         subtitle,
         plots,
@@ -3095,6 +3093,7 @@ SaomNkRSienaBiEnv <- R6Class(
     test_shocks_K_AC = function(model_type='did',
                                 include_group_test=FALSE,
                                 verbose=FALSE) {
+      .searchnet_need("ggpubr", "test_shocks_K_AC()")
       
       if(is.null(self$theta_shocks))
         stop('No shocks to test. Run search_rsiena with theta_shocks list.')
@@ -3234,7 +3233,7 @@ SaomNkRSienaBiEnv <- R6Class(
         
         ##------------------- Combined Plot ------------------------------------
         n_test_ids <- length(unique(as.character(kb1d$test_id)))
-        combined_plot <- ggarrange(plotlist=list(plt1, plt2), nrow=2, heights = c(2.5, 1.5+n_test_ids ) )
+        combined_plot <- ggpubr::ggarrange(plotlist=list(plt1, plt2), nrow=2, heights = c(2.5, 1.5+n_test_ids ) )
         
         # Add common title
         combined_title_str <- "Multiperiod Diff-in-Diff Tests of Firm Scope (K_AC): Combined and Grouped by Activity (Old v. New)"
@@ -3257,6 +3256,7 @@ SaomNkRSienaBiEnv <- R6Class(
     
     test_shocks_by_component_type = function(model_type='did', 
                                              verbose=FALSE) {
+      .searchnet_need("ggpubr", "test_shocks_by_component_type()")
       if(is.null(self$theta_shocks))
         stop('No shocks to test. Run search_rsiena with theta_shocks list.')
         
@@ -3385,7 +3385,7 @@ SaomNkRSienaBiEnv <- R6Class(
         
         
         ##------------------- Combined Plot ------------------------------------
-        combined_plot <- ggarrange(plotlist=list(plt1, plt2), nrow=2, heights = c(2,2) )
+        combined_plot <- ggpubr::ggarrange(plotlist=list(plt1, plt2), nrow=2, heights = c(2,2) )
         
         # Add common title
         combined_title_str <- "Multiperiod Diff-in-Diff Tests of Degrees (K_AC, K_AA): Combined and Grouped by Activity (Old, New)"
@@ -3407,6 +3407,7 @@ SaomNkRSienaBiEnv <- R6Class(
     test_shocks = function(model_type='did', 
                            component_type='all', ## 'all', 'old', 'new' (exploration proxy)
                            verbose=FALSE) {
+      .searchnet_need("ggpubr", "test_shocks()")
       if(is.null(self$theta_shocks))
         stop('No shocks to test. Run search_rsiena with theta_shocks list.')
       
@@ -3523,7 +3524,7 @@ SaomNkRSienaBiEnv <- R6Class(
         
         
         ##------------------- Combined Plot ------------------------------------
-        combined_plot <- ggarrange(plotlist=list(plt1, plt2), nrow=2)
+        combined_plot <- ggpubr::ggarrange(plotlist=list(plt1, plt2), nrow=2)
         
         # Add common title
         combined_title_str <- if(grepl('new', component_type, ignore.case = TRUE)) {
@@ -5710,6 +5711,7 @@ SaomNkRSienaBiEnv <- R6Class(
 
     
     search_rsiena_plot_stability = function(tol=1e-5, step_size=1, wave_id=1) {
+      .searchnet_need("cowplot", "search_rsiena_plot_stability()")
       
       .searchnet_require_path(self, "search_rsiena_plot_stability()")
       sims = self$rsiena_model$sims
@@ -5943,6 +5945,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                               plot_file=NA,
                                                                               plot_dir=NA,
                                                                               plot_periods=4) {
+      .searchnet_need("ggridges", "search_rsiena_multiwave_plot_utility_ridge_density_by_strategy()")
       actor_strat <- self$get_actor_strategies() 
       nstep <- sum(!self$chain_stats$stability)
       coveffs   <- sapply(self$config_structure_model$dv_bipartite$coCovars, function(x)x$effect)
@@ -6065,6 +6068,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                      return_plot=TRUE,
                                                      plot_file=NA, plot_dir=NA
                                                      ) {
+      .searchnet_need("ggpubr", "search_rsiena_multiwave_plot_K_4panel()")
       K_AA  <- self$search_rsiena_multiwave_plot_K_AA_strategy_summary(actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=TRUE, show_title=FALSE, return_plot=TRUE)
       K_AC <- self$search_rsiena_multiwave_plot_K_AC_strategy_summary(actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=FALSE, show_title=FALSE, return_plot=TRUE)
       K_CA <- self$search_rsiena_multiwave_plot_K_CA_strategy_summary(component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=FALSE, show_title=FALSE, return_plot=TRUE)
@@ -6086,7 +6090,7 @@ SaomNkRSienaBiEnv <- R6Class(
                            paste( paste(paste(structeffs, structparams, sep='= '), structfixs, sep=''), collapse = ';  ')
       )
       
-      combined_plot_notitle <- ggarrange(
+      combined_plot_notitle <- ggpubr::ggarrange(
         K_AC, K_CA, 
         K_AA, K_CC,
         nrow = 2, ncol = 2, 
@@ -6121,6 +6125,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                   return_plot=TRUE,
                                                                   plot_file=NA, plot_dir=NA
                                                                  ) {
+      .searchnet_need("ggpubr", "search_rsiena_multiwave_plot_K_CC_strategy_summary()")
       ## actor strategy
       if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar are not  set.")
@@ -6208,7 +6213,7 @@ SaomNkRSienaBiEnv <- R6Class(
         plt2 <- plt2 + ggtitle('\n\n\n')
       
       
-      combined_plot <- ggarrange(
+      combined_plot <- ggpubr::ggarrange(
         plt, plt2, 
         ncol = 2, 
         widths = c(4.1,0.9), # Adjust column widths
@@ -6234,6 +6239,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                   return_plot=TRUE,
                                                                   plot_file=NA, plot_dir=NA
     ) {
+      .searchnet_need("ggpubr", "search_rsiena_multiwave_plot_K_CA_strategy_summary()")
       ## actor strategy
       if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar are not set.")
@@ -6324,7 +6330,7 @@ SaomNkRSienaBiEnv <- R6Class(
         plt2 <- plt2 + ggtitle('\n\n\n')
       
       
-      combined_plot <- ggarrange(
+      combined_plot <- ggpubr::ggarrange(
         plt, plt2, 
         ncol = 2, 
         widths = c(4.1,0.9), # Adjust column widths
@@ -6351,6 +6357,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                  return_plot=TRUE,
                                                                  plot_file=NA, plot_dir=NA
     ) {
+      .searchnet_need("ggpubr", "search_rsiena_multiwave_plot_K_AC_strategy_summary()")
       ## actor strategy
       if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
@@ -6437,7 +6444,7 @@ SaomNkRSienaBiEnv <- R6Class(
         plt2 <- plt2 + ggtitle('\n\n\n')
       
       
-      combined_plot <- ggarrange(
+      combined_plot <- ggpubr::ggarrange(
         plt, plt2, 
         ncol = 2, 
         widths = c(4.1,0.9), # Adjust column widths
@@ -6464,6 +6471,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                  return_plot=TRUE,
                                                                  plot_file=NA, plot_dir=NA
     ) {
+      .searchnet_need("ggpubr", "search_rsiena_multiwave_plot_K_AA_strategy_summary()")
       ## actor strategy
       if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
@@ -6550,7 +6558,7 @@ SaomNkRSienaBiEnv <- R6Class(
         plt2 <- plt2 + ggtitle('\n\n\n')
       
       
-      combined_plot <- ggarrange(
+      combined_plot <- ggpubr::ggarrange(
         plt, plt2, 
         ncol = 2, 
         widths = c(4.1,0.9), # Adjust column widths
@@ -6620,6 +6628,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                             plot_file=NA, plot_dir=NA,
                                                                            loess_span=0.4
     ) {
+      .searchnet_need("ggpubr", "search_rsiena_multiwave_plot_actor_utility_strategy_summary()")
       ## actor strategy
       if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
@@ -6729,7 +6738,7 @@ SaomNkRSienaBiEnv <- R6Class(
           ) + ggtitle('\n\n\n')
       
       
-      combined_plot <- ggarrange(
+      combined_plot <- ggpubr::ggarrange(
         plt, plt2, 
         ncol = 2, 
         widths = c(4.1,0.9), # Adjust column widths
@@ -6753,6 +6762,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                                       return_plot=TRUE,
                                                                       plot_file=NA, plot_dir=NA
     ) {
+      .searchnet_need("ggExtra", "search_rsiena_multiwave_plot_actor_utility_by_strategy()")
       ## actor strategy
       if ( !identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS') )
         stop("Actor Strategy self$strat_1_coCovar not set.")
@@ -7129,6 +7139,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                               plot_save = FALSE, return_plot=TRUE,
                                               normalize_degree = FALSE,
                                               initial_bipartite_matrix = NULL) {
+      .searchnet_need(c("ggraph", "gridExtra", "reshape2"), "plot_bipartite_system_from_mat()")
       
       N <- ncol(bipartite_matrix)
       M <- nrow(bipartite_matrix)
@@ -7207,10 +7218,10 @@ SaomNkRSienaBiEnv <- R6Class(
       # Create subtitle with strategy info
       strategy_range_text <- paste(levels(self$get_actor_strategies()), collapse = ', ')
       
-      bipartite_plot <- ggraph(ig_bipartite, layout = "fr") +
-        geom_edge_link(color = "gray") +
-        geom_node_point(aes(shape = shape, color = color), size = 6) +  # Increased size for visibility
-        geom_node_text(aes(label = label), vjust = 0.5, hjust = 0.5, size = 3, color = "white") +  # White text for better contrast
+      bipartite_plot <- ggraph::ggraph(ig_bipartite, layout = "fr") +
+        ggraph::geom_edge_link(color = "gray") +
+        ggraph::geom_node_point(aes(shape = shape, color = color), size = 6) +  # Increased size for visibility
+        ggraph::geom_node_text(aes(label = label), vjust = 0.5, hjust = 0.5, size = 3, color = "white") +  # White text for better contrast
         scale_shape_manual(values = c("circle" = 16, "square" = 15)) +
         scale_color_identity() +  # This uses the exact colors we assigned
         labs(title = "[DGP] Bipartite Environment",
@@ -7222,10 +7233,10 @@ SaomNkRSienaBiEnv <- R6Class(
       node_color <- igraph::eigen_centrality(ig_social)$vector  # Eigenvector centrality for node color
       node_text <- 1:self$M
       
-      social_plot <- ggraph(ig_social, layout = "fr") +
-        geom_edge_link(color = "gray") +
-        geom_node_point(aes(size = node_size, color = node_color)) +
-        geom_node_text(aes(label = node_text), vjust = 0.5, hjust = 0.5, size = 3, color='white') +
+      social_plot <- ggraph::ggraph(ig_social, layout = "fr") +
+        ggraph::geom_edge_link(color = "gray") +
+        ggraph::geom_node_point(aes(size = node_size, color = node_color)) +
+        ggraph::geom_node_text(aes(label = node_text), vjust = 0.5, hjust = 0.5, size = 3, color='white') +
         scale_color_viridis_c(option = "viridis", end = 0.9) +
         labs(title = "[Proj1] Actor Social Network\n(common components)", 
              color = "Eigenvector\nCentrality", size = "Degree\nCentrality") +
@@ -7239,7 +7250,7 @@ SaomNkRSienaBiEnv <- R6Class(
       # 3. Component influence matrix heatmap
       component_matrix <- igraph::as_adjacency_matrix(ig_component, type = 'both', sparse = FALSE, attr = 'weight')
       
-      component_df <- melt(component_matrix)
+      component_df <- reshape2::melt(component_matrix)
       colnames(component_df) <- c("Component1", "Component2", "Weight")
       
       # Replace component numbers with labels in the heatmap data frame
@@ -7269,7 +7280,7 @@ SaomNkRSienaBiEnv <- R6Class(
                             RSIENA_ITERATION, density_current, avg_degree_social, avg_degree_component)
       
       # Arrange plots with a main title
-      plt <- grid.arrange(
+      plt <- gridExtra::grid.arrange(
         social_plot, bipartite_plot, heatmap_plot, 
         ncol = 3,
         top = textGrob(main_title, gp = gpar(fontsize = 16, fontface = "bold"))
@@ -7289,14 +7300,15 @@ SaomNkRSienaBiEnv <- R6Class(
   
   # Interactive visualization using visNetwork
   visNetwork_social = function() {
+    .searchnet_need("visNetwork", "visNetwork_social()")
     ig_social <- graph_from_adjacency_matrix(as.matrix.network(self$social_network), mode = 'directed')
     vis_data <- toVisNetworkData(ig_social)
     
-    visNetwork(nodes = vis_data$nodes, edges = vis_data$edges) %>%
-      visNodes(shape = "dot", size = 10) %>%
-      visEdges(arrows = "to") %>%
-      visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
-      visLayout(randomSeed = 123)
+    visNetwork::visNetwork(nodes = vis_data$nodes, edges = vis_data$edges) %>%
+      visNetwork::visNodes(shape = "dot", size = 10) %>%
+      visNetwork::visEdges(arrows = "to") %>%
+      visNetwork::visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+      visNetwork::visLayout(randomSeed = 123)
   },
   
   # Evaluate interactions between social and search spaces using the bipartite matrix
@@ -7851,6 +7863,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                  ylim=NULL,
                                                  experiment=''
   ) {
+    .searchnet_need(c("ggpubr", "stringr"), "plot_actor_utility_strategy_summary()")
     structure_model <- self$config_structure_model
     
     ## actor strategy
@@ -8015,7 +8028,7 @@ SaomNkRSienaBiEnv <- R6Class(
     
     
     suppressMessages({
-      combined_plot <- ggarrange(
+      combined_plot <- ggpubr::ggarrange(
         plt, plt2, 
         ncol = 2, 
         widths = c(4.1,0.9), # Adjust column widths
@@ -10142,6 +10155,7 @@ SaomNkRSienaBiEnv <- R6Class(
   
   
   compute_FMA_FMB = function(actor_ids=1:2, trim_upto_step=1, max_step=Inf, actor_type_label='Firm') {
+    .searchnet_need("ggpubr", "compute_FMA_FMB()")
     
     if (is.null(self$experiments) || 
         is.null(self$experiments$market_entry) || 
@@ -10348,7 +10362,7 @@ SaomNkRSienaBiEnv <- R6Class(
     ##------------------- Combined Plots ------------------------------------
     
     
-    plt_diff_combined <- ggarrange(plotlist=list(plt_diff_fmb_1, 
+    plt_diff_combined <- ggpubr::ggarrange(plotlist=list(plt_diff_fmb_1, 
                                                  plt_diff_fmb_2, 
                                                  plt_diff_fma_A, 
                                                  plt_diff_fma_B), nrow=2, ncol=2)
@@ -10359,7 +10373,7 @@ SaomNkRSienaBiEnv <- R6Class(
     
     
     ####
-    plt_fma_fmb_combined <- ggarrange(plotlist=list(plt_fmb,
+    plt_fma_fmb_combined <- ggpubr::ggarrange(plotlist=list(plt_fmb,
                                                     plt_fma), nrow=2, ncol=1)
     # Add common title
     combined_title_str2 <- "First Mover Benefit vs. First Mover Advantage"
@@ -10431,6 +10445,7 @@ SaomNkRSienaBiEnv <- R6Class(
     plot_file = '',
     plot_dir = NA
   ) {
+    .searchnet_need(c("ggpubr", "stringr"), "plot_exploration_exploitation_consistent()")
 
     # Get actor strategies - matching the utility plot logic
     if (!identical(attr(self$strat_1_coCovar, 'nodeSet'), 'ACTORS'))
@@ -10728,7 +10743,7 @@ SaomNkRSienaBiEnv <- R6Class(
       
       # Combine plots
       suppressMessages({
-        combined_plot <- ggarrange(
+        combined_plot <- ggpubr::ggarrange(
           plt, plt2,
           ncol = 2,
           widths = c(4.1, 0.9),
@@ -11780,6 +11795,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                                      show_points = TRUE,
                                                      show_group_means = TRUE,
                                                      group_line_size = 2) {
+    .searchnet_need("stringr", "plot_strategy_exploration_exploitation()")
     
     # Use the metrics from the result
     metrics_df <- result$metrics
@@ -12614,6 +12630,7 @@ SaomNkRSienaBiEnv <- R6Class(
     post_periods_analyze = NULL,
     verbose = FALSE
   ) {
+    .searchnet_need("ggpubr", "test_multiperiod_exploration_risk()")
 
     if (is.null(metrics_df)) {
       metrics_df <- self$calculate_explore_exploit_risk_adjusted()
@@ -12817,7 +12834,7 @@ SaomNkRSienaBiEnv <- R6Class(
       )
     
     # Combine plots
-    combined_plot <- ggarrange(p1, p2, nrow = 2, heights = c(2, 1))
+    combined_plot <- ggpubr::ggarrange(p1, p2, nrow = 2, heights = c(2, 1))
     
     # Add title with simulation parameters
     if (pre_periods_analyze == 0) {
@@ -14023,6 +14040,7 @@ SaomNkRSienaBiEnv <- R6Class(
   
   plot_exploration_did_combined = function(metrics = c("exploration", "n_new", "prop_new"), 
                                            save_plot = FALSE, plot_dir = NULL) {
+    .searchnet_need("ggpubr", "plot_exploration_did_combined()")
 
     # Create data for all metrics
     all_data <- list()
@@ -14095,7 +14113,7 @@ SaomNkRSienaBiEnv <- R6Class(
     }
     
     # Combine plots
-    combined_plot <- ggarrange(plotlist = plot_list, nrow = length(plot_list), 
+    combined_plot <- ggpubr::ggarrange(plotlist = plot_list, nrow = length(plot_list), 
                                common.legend = FALSE)
     
     # Add common title and x-label

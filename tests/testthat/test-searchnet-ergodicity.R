@@ -66,7 +66,7 @@ test_that("sweep returns a well-formed object with the expected shape", {
 
   ## print and plot must not error
   expect_output(print(erg), "Ergodicity sweep")
-  expect_silent({
+  if (requireNamespace("cowplot", quietly = TRUE)) expect_silent({
     pf <- tempfile(fileext = ".png"); grDevices::png(pf)
     plot(erg); grDevices::dev.off(); unlink(pf)
   })

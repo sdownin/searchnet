@@ -19,8 +19,13 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   fig.width = 7,
-  fig.height = 5
+  fig.height = 5,
+  dpi = 72  # keeps the 40-odd embedded figures inside the CRAN size guideline
 )
+has_graph_pkgs <- all(vapply(c("ggraph", "gridExtra", "reshape2"), requireNamespace,
+                         logical(1), quietly = TRUE))  # network snapshot panels
+has_ggpubr <- all(vapply(c("ggpubr", "stringr"), requireNamespace,
+                     logical(1), quietly = TRUE))  # strategy summary panels
 ```
 
 ```{r load-saomnk, include=FALSE}
@@ -137,7 +142,7 @@ env$search_rsiena(
 
 ## 1.4 Results
 
-```{r strategy-results, fig.height=5, fig.width=11}
+```{r strategy-results, fig.height=5, fig.width=11, eval = has_graph_pkgs}
 n_steps <- env$get_step()
 ## Cap the panel count: every tenth step is still more frames than the figure
 ## can show legibly, and each one costs plotting time.
@@ -150,7 +155,7 @@ env$plot_actor_degrees(loess_span = 0.25)
 env$plot_component_degrees(loess_span = 0.35)
 ```
 
-```{r strategy-utility, fig.height=6, fig.width=8}
+```{r strategy-utility, fig.height=6, fig.width=8, eval = has_ggpubr}
 env$plot_actor_utility_strategy_summary(loess_span = 0.5)
 ```
 

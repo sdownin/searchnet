@@ -516,6 +516,7 @@ print.searchnet_frames <- function(x, ...) {
 searchnet_frame <- function(env, step, views = c("network", "k4", "landscape"),
                             actor = NULL, layout = NULL, arrange = c("row", "column"),
                             legend = TRUE, ...) {
+  .searchnet_need("cowplot", "searchnet_frame()")
   arrange <- match.arg(arrange)
   views <- .sn_frames_views(views)
   fr <- .sn_frames_ensure(env, views, actor, layout, ...)
@@ -664,6 +665,7 @@ searchnet_frame <- function(env, step, views = c("network", "k4", "landscape"),
 searchnet_filmstrip <- function(env, steps = NULL, file = NULL, views = c("network", "k4"),
                                 layout = c("grid", "pages"), ncol = NULL,
                                 width = NULL, height = NULL, res = 100, ...) {
+  .searchnet_need("cowplot", "searchnet_filmstrip()")
   layout <- match.arg(layout)
   views <- .sn_frames_views(views)
   fr <- .sn_frames_ensure(env, views, NULL, NULL, ...)
@@ -783,6 +785,7 @@ searchnet_animate <- function(env, steps = NULL, file, views = c("network", "k4"
                               fps = 10, width = 1200, height = 1000, res = 100,
                               hold_last = 2, renderer = c("auto", "gifski", "ffmpeg", "magick"),
                               ...) {
+  .searchnet_need("cowplot", "searchnet_animate()")
   renderer <- match.arg(renderer)
   if (missing(file) || !is.character(file) || length(file) != 1L || !nzchar(file))
     stop("file must be the path of the .gif to write", call. = FALSE)

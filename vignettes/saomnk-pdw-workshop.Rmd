@@ -27,8 +27,13 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   fig.width = 10,
-  fig.height = 7
+  fig.height = 7,
+  fig.retina = 1,  # html_document defaults to 2, which quadruples the embedded PNGs
+  dpi = 72
 )
+has_graph_pkgs <- all(vapply(c("ggraph", "gridExtra", "reshape2"), requireNamespace,
+                         logical(1), quietly = TRUE))  # network snapshot panels
+has_cowplot <- requireNamespace("cowplot", quietly = TRUE)  # multi-panel layouts
 ```
 
 ```{r load-saomnk, include=FALSE}
@@ -449,7 +454,7 @@ saomnk_plot_k4(env1, smooth = 0.3)
 Snapshots show the bipartite network at selected time points, along
 with the actor-actor and component-component projections.
 
-```{r snapshots, fig.height=5, fig.width=11}
+```{r snapshots, fig.height=5, fig.width=11, eval = has_graph_pkgs}
 saomnk_plot_snapshots(env1)
 ```
 
@@ -521,7 +526,7 @@ erg <- searchnet_ergodicity_sweep(
 )
 
 erg
-plot(erg)
+if (has_cowplot) plot(erg)
 ```
 
 A starting gap of 0.70 is erased to around 0.002, and the gap decays as a power
