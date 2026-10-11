@@ -1,3 +1,9 @@
+# searchnet 0.16.0
+
+Released 2026-10-11. Tested with RSiena 1.5.0 and 1.6.6: 81 files, 1083 tests, 0 failures, 0 errors under each. No change to simulated results.
+
+* New `searchnet_frame()`, `searchnet_filmstrip()` and `searchnet_animate()` replay a stored run frame by frame: the bipartite network on a fixed layout, the {K}-4 panel revealed up to the current ministep on fixed axes, an actor's landscape (N <= 12) and W. `searchnet_filmstrip()` writes a grid of chosen ministeps, a multipage PDF or numbered PNGs; `searchnet_animate()` writes a GIF with gifski, ffmpeg or magick, whichever is installed (pure R; the README's manim scenes stay optional tools). `searchnet_frames_prepare()` precomputes once for many frames. The last frame equals the end of the run. `magick` added to Suggests.
+
 # searchnet 0.15.1
 
 Released 2026-10-11. Tested with RSiena 1.5.0 and 1.6.6: 80 files, 1074 tests, 0 failures, 0 errors under each. No change to simulated results.

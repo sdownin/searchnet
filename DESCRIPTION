@@ -1,6 +1,6 @@
 Package: searchnet
 Title: Network-Embedded Search Simulation Engine
-Version: 0.15.1
+Version: 0.16.0
 Authors@R: person("Stephen", "Downing", email = "sdowning@missouri.edu",
                   role = c("aut", "cre"))
 Description: R6-based simulation engine for strategic search and adaptation
@@ -72,6 +72,7 @@ Suggests:
     gganimate,
     plotly,
     gifski,
+    magick,
     patchwork,
     fixest,
     forcats,

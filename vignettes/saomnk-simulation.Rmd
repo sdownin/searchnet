@@ -154,6 +154,36 @@ env$plot_component_degrees(loess_span = 0.35)
 env$plot_actor_utility_strategy_summary(loess_span = 0.5)
 ```
 
+## 1.5 Frames, Filmstrips, and Animation
+
+The same stored run can be replayed ministep by ministep. `searchnet_frame()`
+draws one frame: the network on a fixed layout (ties held at the start light
+grey, ties formed since dark) beside the K-4 panel revealed up to that
+ministep on the full-run axes. `searchnet_filmstrip()` places several frames
+side by side, and `searchnet_animate()` writes them to a GIF. None of them
+simulates again; they read the path stored on `env`. Preparing the run once
+with `searchnet_frames_prepare()` lets every later frame reuse the layout and
+the K-4 panel.
+
+```{r filmstrip, fig.height=10, fig.width=16}
+fr <- searchnet_frames_prepare(env)
+strip <- searchnet_filmstrip(fr, steps = round(seq(0, fr$n_steps, length.out = 4)))
+print(strip)
+```
+
+Other views are `"landscape"` (the focal actor's objective at all $2^N$
+portfolios, for $N \le 12$) and `"w"` (the influence matrix). An animation of
+about 120 frames is one call; it needs the gifski or magick package, or ffmpeg
+on the `PATH`:
+
+```{r animate, eval=FALSE}
+searchnet_animate(fr, file = file.path(tempdir(), "run.gif"), fps = 10)
+```
+
+The animated figures in the package README are made with scripts in the
+source repository's `tools/` directory, which use optional manim scenes for
+the polished versions; `searchnet_animate()` needs none of that.
+
 # 2. Fitness Landscape Analysis
 
 The `compute_fitness_landscape` method evaluates the utility of all $2^N$
