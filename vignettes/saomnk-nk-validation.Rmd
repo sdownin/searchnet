@@ -7,7 +7,7 @@ output:
     toc: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Validating SAOM-NK Against Classical NK}
+  %\VignetteIndexEntry{Validating SAOM-NK: Reproducing Classical NK Landscape Dynamics}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 

@@ -135,8 +135,10 @@ test_that("chain processing reproduces its golden outputs exactly", {
   skip_if_not_installed("RSiena")
   ## The fixture was produced under RSiena 1.5.0; another RSiena version may
   ## simulate a different chain, which is not a chain-processing change.
-  skip_if(as.character(utils::packageVersion("RSiena")) != "1.5.0",
-          "golden chain outputs were recorded under RSiena 1.5.0")
+  ## RSiena 1.6.6 was checked on 2026-10-10 to simulate byte-identical seeded
+  ## chains (with returnDataFrame = FALSE), so it is held to the same fixture.
+  skip_if(!as.character(utils::packageVersion("RSiena")) %in% c("1.5.0", "1.6.6"),
+          "golden chain outputs were checked under RSiena 1.5.0 and 1.6.6 only")
 
   got <- .golden_compute()
 

@@ -6,7 +6,7 @@ output:
   rmarkdown::html_vignette:
     toc: true
 vignette: >
-  %\VignetteIndexEntry{Planted-Truth Recovery and Power}
+  %\VignetteIndexEntry{Planted-Truth Recovery and Power for a Bipartite SAOM}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

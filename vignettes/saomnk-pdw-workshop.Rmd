@@ -15,7 +15,7 @@ output:
     fig_width: 10
     fig_height: 7
 vignette: >
-  %\VignetteIndexEntry{PDW Workshop: Building Your First Search Simulation}
+  %\VignetteIndexEntry{searchnet Workshop: Building Your First Search Simulation}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

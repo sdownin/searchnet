@@ -39,13 +39,13 @@ the four coupled degree series `saomnk_plot_k4()` draws over the run. Generated 
 42, run seed 12345).*
 
 > [!WARNING]
-> **Development status: experimental pre-release (v0.12.x).**
+> **Development status: experimental pre-release (v0.13.x).**
 > This is a research release of a new package: the API is still
 > evolving, breaking changes may occur between 0.x versions, and bugs are
 > to be expected. The companion methods paper has not yet been
 > peer-reviewed; results should be treated accordingly.
 > For reproducibility, install a pinned tag rather than the moving branch:
-> `devtools::install_github("sdownin/searchnet@v0.13.0")`.
+> `devtools::install_github("sdownin/searchnet@v0.13.1")`.
 > **v0.8.3 and earlier:** `saomnk_model()` simulations that declared
 > `influence_weight`, `cycle4`, `XWX`, `X`, `inPopX`, `outActX` or
 > `homXOutAct` did not simulate the declared coefficient (estimation via
@@ -564,6 +564,7 @@ history jumps from v0.4.1 to v0.7.0 — NEWS.md records why.
 
 | Version | Highlights |
 |---|---|
+| **v0.13.1** | Compatibility: works with RSiena 1.6.x, whose forward simulation began returning ministep chains as a sorted data frame (which stopped `saomnk_run()` at the path terminus gate). Tested with RSiena 1.5.0 and 1.6.6. No change to simulated results. Suite: 69 files, 963 tests, 0 failures, 0 errors under each. |
 | **v0.13.0** | Your own data in: `searchnet_bipartite_from_long()` and `searchnet_k_readings()` ({K} readings computed exactly as the engine does). `searchnet_recovery()`: planted-truth recovery and power (bias, coverage, size, MDE). Workshop onboarding: `searchnet_check_setup()`, batch classroom submission from a CSV, preset validation; the presets now ship. One name, SAOM-NK, throughout. R CMD check clean (0 errors, 0 warnings) with CI. No change to simulated results. Suite: 68 files, 957 tests, 0 failures, 0 errors. |
 | **v0.12.9** | NK validation reference corrected to the 2^N/(N+1) local-optimum count of the fully random case K = N − 1; animated fitness landscape in the README overview; `searchnet_export_for_manim()` writes generic `actor`/`component` columns (argument `actor_labels`); the public repository carries the package only (no paper sources or internal development notes). No change to simulated results. Suite: 65 files, 924 tests, 0 failures, 0 errors. |
 | **v0.12.8** | `searchnet_classify_effect()` gives a candidate-centered statistic the outcome of its core, marked approximate (similarity to holders: Sociality strength, similarity-weighted), instead of "none". No change to simulated results or the shipped effect table. Suite: 65 files, 924 tests, 0 failures, 0 errors. |
@@ -604,7 +605,7 @@ line and are exercised by the v0.12.2 test suite.
   title  = {searchnet: Network-Embedded Search Simulation Engine},
   author = {Stephen Downing},
   year   = {2026},
-  note   = {R package version 0.13.0},
+  note   = {R package version 0.13.1},
   url    = {https://github.com/sdownin/searchnet}
 }
 ```

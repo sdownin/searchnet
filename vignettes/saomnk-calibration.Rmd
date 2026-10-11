@@ -7,7 +7,7 @@ output:
     toc: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Empirical Calibration}
+  %\VignetteIndexEntry{Empirical Calibration: SAOM Parameters to SAOM-NK Simulations}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

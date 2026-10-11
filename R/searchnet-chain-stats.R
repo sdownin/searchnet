@@ -554,6 +554,9 @@ searchnet_chain_from_fit <- function(fit, dat, dv_name = NULL,
   ## shifts everything after position 9 by two.
   ##  [[3]] dv name   [[4]] ego (0-indexed)   [[5]] alter (0-indexed)
   ##  [[12]] diagonal [[13]] stability
+  ## RSiena >= 1.6.0 returns a chains.data.frame instead when the fit was made
+  ## with returnDataFrame = TRUE; .searchnet_chain_fields() reads either
+  ## format and restores chain order (see R/searchnet-path.R).
   out <- list(); finals <- list(); cid <- 0L
 
   for (p in periods) {
@@ -561,12 +564,13 @@ searchnet_chain_from_fit <- function(fit, dat, dv_name = NULL,
     storage.mode(B0) <- "integer"
     for (r in runs) {
       ms <- fit$chain[[r]][[group]][[p]]
-      if (!length(ms)) next
+      if (!.searchnet_chain_n(ms)) next
 
-      nm   <- vapply(ms, function(x) as.character(x[[3]]), character(1))
-      ego  <- vapply(ms, function(x) as.integer(x[[4]]),   integer(1))
-      alt  <- vapply(ms, function(x) as.integer(x[[5]]),   integer(1))
-      stab <- vapply(ms, function(x) as.logical(x[[13]]),  logical(1))
+      fld  <- .searchnet_chain_fields(ms)
+      nm   <- fld$name
+      ego  <- fld$ego
+      alt  <- fld$alter
+      stab <- fld$stab
 
       ## Realized changes on THIS dependent variable only. For a bipartite DV
       ## RSiena encodes "the actor declined to change anything" as alter == N

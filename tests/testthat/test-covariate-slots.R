@@ -84,7 +84,7 @@ test_that("a strategy coDyadCovar is not filled from the component one", {
   ))
 
   rsiena_data <- suppressWarnings(register(env, sm))
-  expect_true(inherits(rsiena_data, "siena"))
+  expect_true(.searchnet_is_siena_data(rsiena_data))
 
   ## Wrong index => strat_1_coDyadCovar would be the component's 6x6 matrix
   ## on the COMPONENTS node set.
@@ -118,7 +118,7 @@ test_that("get_rsiena_data_static keeps strat and component coDyadCovars apart",
   input_varlist[[DVN]] <- env$bipartite_rsienaDV
   rsiena_data <- suppressWarnings(env$get_rsiena_data_static(sm, input_varlist))
 
-  expect_true(inherits(rsiena_data, "siena"))
+  expect_true(.searchnet_is_siena_data(rsiena_data))
   expect_equal(dim(rsiena_data$dycCovars[["strat_1_coDyadCovar"]]), c(4L, 4L))
   expect_equal(dim(rsiena_data$dycCovars[["component_1_coDyadCovar"]]), c(6L, 6L))
 })
@@ -222,7 +222,7 @@ test_that("an N x N component coDyadCovar infers COMPONENTS x COMPONENTS", {
 
   ## The unreachable inner branch meant this hit the stop() instead.
   rsiena_data <- suppressWarnings(register(env, sm))
-  expect_true(inherits(rsiena_data, "siena"))
+  expect_true(.searchnet_is_siena_data(rsiena_data))
   expect_equal(attr(env$component_1_coDyadCovar, "nodeSet"),
                c("COMPONENTS", "COMPONENTS"))
 })
@@ -237,7 +237,7 @@ test_that("an M x N component coDyadCovar still infers ACTORS x COMPONENTS", {
   ))
 
   rsiena_data <- suppressWarnings(register(env, sm))
-  expect_true(inherits(rsiena_data, "siena"))
+  expect_true(.searchnet_is_siena_data(rsiena_data))
   expect_equal(attr(env$component_1_coDyadCovar, "nodeSet"),
                c("ACTORS", "COMPONENTS"))
 })
@@ -252,7 +252,7 @@ test_that("an M x M strategy coDyadCovar infers ACTORS x ACTORS", {
   ))
 
   rsiena_data <- suppressWarnings(register(env, sm))
-  expect_true(inherits(rsiena_data, "siena"))
+  expect_true(.searchnet_is_siena_data(rsiena_data))
   expect_equal(attr(env$strat_1_coDyadCovar, "nodeSet"), c("ACTORS", "ACTORS"))
 })
 
@@ -296,7 +296,7 @@ test_that("an explicit nodeSet overrides dimension inference", {
   ))
 
   rsiena_data <- suppressWarnings(register(env, sm))
-  expect_true(inherits(rsiena_data, "siena"))
+  expect_true(.searchnet_is_siena_data(rsiena_data))
   expect_equal(attr(env$component_1_coDyadCovar, "nodeSet"),
                c("COMPONENTS", "COMPONENTS"))
 })
@@ -326,7 +326,7 @@ test_that("a decoy singular coDyadCovar key does not hijack the plural one", {
   )
 
   rsiena_data <- suppressWarnings(register(env, sm))
-  expect_true(inherits(rsiena_data, "siena"))
+  expect_true(.searchnet_is_siena_data(rsiena_data))
   expect_equal(dim(env$component_1_coDyadCovar), c(6L, 6L))
   expect_equal(attr(env$component_1_coDyadCovar, "nodeSet"),
                c("COMPONENTS", "COMPONENTS"))
@@ -354,7 +354,7 @@ test_that("a decoy singular varDyadCovar key does not hijack the plural one", {
   )
 
   rsiena_data <- suppressWarnings(register(env, sm))
-  expect_true(inherits(rsiena_data, "siena"))
+  expect_true(.searchnet_is_siena_data(rsiena_data))
   expect_equal(dim(env$component_1_varDyadCovar)[1:2], c(6L, 6L))
 })
 
@@ -386,7 +386,7 @@ test_that("a model with ONLY time-varying influence still registers it", {
   expect_length(sm$dv_bipartite$varDyadCovars, 1L)
 
   d <- suppressWarnings(env$get_rsiena_data_from_structure_model(sm))
-  expect_true(inherits(d, "siena"))
+  expect_true(.searchnet_is_siena_data(d))
   ## The assertion that fails against the unfixed gate:
   expect_length(d$dyvCovars, 1L)
   expect_length(d$dycCovars, 0L)

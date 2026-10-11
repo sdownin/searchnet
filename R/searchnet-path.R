@@ -191,19 +191,133 @@
 ## ---------------------------------------------------------------------------
 ## Chain parsing and replay
 ## ---------------------------------------------------------------------------
-## One period's ministeps (a list of RSiena ministep records) as the
-## 11-column frame search_rsiena_process_ministep_chain() has always built.
-## Fields 10 and 11 of a record are zero-length, so unlisting leaves 11 values
-## per ministep, the last being the stability flag (declared field 13).
+## RSiena returns one period's ministep chain in one of two formats, and which
+## one depends on the RSiena version AND on `returnDataFrame`:
+##
+##   LIST format (RSiena <= 1.5.x always; RSiena >= 1.6.0 with
+##   returnDataFrame = FALSE): a list with one record per ministep, IN CHAIN
+##   ORDER. Each record is a list of 13 declared fields:
+##     [[1]] aspect ("Network"/"Behavior")  [[2]] 0 = network, 1 = behavior
+##     [[3]] dependent variable name        [[4]] ego (0-indexed)
+##     [[5]] alter (0-indexed)              [[6]] behavior difference
+##     [[7]] reciprocal rate                [[8]] log option-set probability
+##     [[9]] log choice probability         [[10]], [[11]] zero-length
+##     [[12]] RSiena's missing flag         [[13]] RSiena's diagonal flag
+##   searchnet has always called [[12]] "diagonal" and [[13]] "stability"; the
+##   column names are kept for compatibility. [[13]] is TRUE for a no-change
+##   ministep (bipartite: alter == N on the 0-indexed scale).
+##
+##   DATA-FRAME format (RSiena >= 1.6.0 with returnDataFrame = TRUE, verified
+##   on 1.6.6; RSiena 1.5.0 ignored the flag in forward simulation): a
+##   `chains.data.frame` with ten columns Aspect, Var, VarName, Ego, Alter,
+##   Diff, ReciRate, LogOptionSetProb, LogChoiceProb, Diagonal, one row per
+##   ministep. The missing flag (list field [[12]]) is not carried. The rows
+##   are SORTED BY EGO AND ALTER, not in chain order; the row names keep each
+##   ministep's chain position (1..n). Indices stay 0-based.
+##
+## Both formats are detected structurally, not by version string.
+##
+## A related RSiena 1.6.x change: sienaDataCreate() returns class "sienadata"
+## (1.5.0: "siena"); a sienaGroup is still c("sienaGroup", "siena").
+.searchnet_is_siena_data <- function(x) inherits(x, c("siena", "sienadata"))
+
+.SEARCHNET_RSIENA_CHAIN_DF_COLS <- c("Aspect", "Var", "VarName", "Ego", "Alter",
+                                     "Diff", "ReciRate", "LogOptionSetProb",
+                                     "LogChoiceProb", "Diagonal")
+
+## A data-frame chain put back into chain order by its row names. Stops if the
+## row names are not a permutation of 1..n, since the order would then be lost.
+.searchnet_chain_df_ordered <- function(x) {
+  miss <- setdiff(.SEARCHNET_RSIENA_CHAIN_DF_COLS, names(x))
+  if (length(miss))
+    stop(sprintf(paste0(
+      "searchnet: unrecognized RSiena ministep chain format: a data frame ",
+      "without column(s) %s (columns: %s). RSiena's chain format may have ",
+      "changed again."), paste(miss, collapse = ", "),
+      paste(names(x), collapse = ", ")), call. = FALSE)
+  n <- nrow(x)
+  if (!n) return(x)
+  pos <- suppressWarnings(as.integer(rownames(x)))
+  if (anyNA(pos) || !identical(sort(pos), seq_len(n)))
+    stop(paste0(
+      "searchnet: RSiena returned the ministep chain as a data frame whose ",
+      "row names are not the chain positions 1..n, so the order of the ",
+      "ministeps cannot be recovered. Simulate with returnDataFrame = FALSE."),
+      call. = FALSE)
+  x[order(pos), , drop = FALSE]
+}
+
+## Is `ministeps` (one period of `fit$chain`) in RSiena's data-frame format?
+.searchnet_chain_is_df <- function(ministeps) is.data.frame(ministeps)
+
+## Number of ministeps in one period of `fit$chain`, either format.
+.searchnet_chain_n <- function(ministeps) {
+  if (.searchnet_chain_is_df(ministeps)) nrow(ministeps) else length(ministeps)
+}
+
+## The four fields every replay needs, typed, in chain order, either format:
+## dependent variable name, 0-indexed ego and alter, and the no-change flag
+## (declared field 13 / column Diagonal).
+.searchnet_chain_fields <- function(ministeps) {
+  if (.searchnet_chain_is_df(ministeps)) {
+    d <- .searchnet_chain_df_ordered(ministeps)
+    return(list(name  = as.character(d$VarName),
+                ego   = as.integer(d$Ego),
+                alter = as.integer(d$Alter),
+                stab  = as.logical(d$Diagonal)))
+  }
+  .searchnet_chain_check_list(ministeps)
+  list(name  = vapply(ministeps, function(x) as.character(x[[3]]), character(1)),
+       ego   = vapply(ministeps, function(x) as.integer(x[[4]]),   integer(1)),
+       alter = vapply(ministeps, function(x) as.integer(x[[5]]),   integer(1)),
+       stab  = vapply(ministeps, function(x) as.logical(x[[13]]),  logical(1)))
+}
+
+## Guard for the list format: every record must declare 13 fields with
+## [[10]] and [[11]] zero-length, or the positional reading below is wrong.
+.searchnet_chain_check_list <- function(ministeps) {
+  if (!length(ministeps)) return(invisible(TRUE))
+  ok <- is.list(ministeps) && all(vapply(ministeps, function(x)
+    is.list(x) && length(x) == 13L && !length(x[[10]]) && !length(x[[11]]),
+    logical(1)))
+  if (!ok)
+    stop(paste0(
+      "searchnet: unrecognized RSiena ministep chain format: expected a list ",
+      "of 13-field ministep records (fields 10 and 11 empty) or a ",
+      "chains.data.frame. RSiena's chain format may have changed again."),
+      call. = FALSE)
+  invisible(TRUE)
+}
+
+## One period's ministeps as the 11-column character frame
+## search_rsiena_process_ministep_chain() has always built, in chain order,
+## from either format. In the list format fields 10 and 11 are zero-length, so
+## unlisting leaves 11 values per ministep. The data-frame format does not
+## carry the missing flag, so `diagonal` is NA there.
 .searchnet_chain_frame <- function(ministeps) {
   cols <- c("dv_type", "dv_type_bin", "dv_varname", "id_from", "id_to",
             "beh_difference", "reciprocal_rate", "LogOptionSetProb",
             "LogChoiceProb", "diagonal", "stability")
-  if (!length(ministeps)) {
+  if (!.searchnet_chain_n(ministeps)) {
     df <- as.data.frame(setNames(replicate(length(cols), character(0), simplify = FALSE), cols),
                         stringsAsFactors = FALSE)
     return(df)
   }
+  if (.searchnet_chain_is_df(ministeps)) {
+    d <- .searchnet_chain_df_ordered(ministeps)
+    df <- data.frame(
+      dv_type = as.character(d$Aspect), dv_type_bin = as.character(d$Var),
+      dv_varname = as.character(d$VarName), id_from = as.character(d$Ego),
+      id_to = as.character(d$Alter), beh_difference = as.character(d$Diff),
+      reciprocal_rate = as.character(d$ReciRate),
+      LogOptionSetProb = as.character(d$LogOptionSetProb),
+      LogChoiceProb = as.character(d$LogChoiceProb),
+      diagonal = NA_character_, stability = as.character(d$Diagonal),
+      stringsAsFactors = FALSE)
+    rownames(df) <- NULL
+    return(df)
+  }
+  .searchnet_chain_check_list(ministeps)
   m <- t(matrix(unlist(ministeps), ncol = length(ministeps)))
   df <- as.data.frame(m, stringsAsFactors = FALSE)
   names(df) <- cols
@@ -288,7 +402,11 @@
     alg, data = env$rsiena_data, effects = env$rsiena_effects,
     thetaValues = tv, thetaBound = bound, batch = TRUE, silent = !verbose,
     returnDeps = TRUE, returnChains = TRUE, returnThetas = TRUE,
-    returnDataFrame = TRUE, returnLoglik = TRUE, verbose = verbose)
+    ## returnDataFrame = FALSE keeps the chain in RSiena's list format, in
+    ## chain order, on every RSiena version. With TRUE, RSiena >= 1.6.0
+    ## returns an ego/alter-sorted data frame instead (1.5.0 ignored the
+    ## flag here, so the 1.5.0 chain is byte-identical either way).
+    returnDataFrame = FALSE, returnLoglik = TRUE, verbose = verbose)
   fit <- if (verbose) run() else {
     res <- NULL
     utils::capture.output(res <- run())

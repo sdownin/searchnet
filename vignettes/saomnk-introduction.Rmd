@@ -7,7 +7,7 @@ output:
     toc: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Introduction to searchnet}
+  %\VignetteIndexEntry{Introduction to searchnet: Stochastic Actor-Oriented MNK Search Simulation}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

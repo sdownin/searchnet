@@ -1,3 +1,11 @@
+# searchnet 0.13.1
+
+Released 2026-10-11. Compatibility release; no change to simulated results. Tested with RSiena 1.5.0 and 1.6.6: 69 files, 963 tests, 0 failures, 0 errors under each.
+
+* **Works with RSiena 1.6.x.** RSiena 1.6 began honoring `returnDataFrame = TRUE` in forward simulation, returning each period's ministep chain as a `chains.data.frame` sorted by variable, ego and alter instead of a list in chain order, which made `search_rsiena()` and `saomnk_run()` stop at the path terminus gate. searchnet now requests the list format (`returnDataFrame = FALSE`), its chain readers recognize either format by structure and restore chain order, and the new `sienadata` class of `sienaDataCreate()` is accepted. Seeded results are identical under RSiena 1.5.0 and 1.6.6. A format test with fixtures from both versions guards against the next change.
+* The SAOM goodness-of-fit floor profile used by the screens looks up `descriptives.sienaGOF()` in the RSiena namespace, since RSiena 1.6 no longer exports it.
+* Vignette index titles now match their YAML titles.
+
 # searchnet 0.13.0
 
 Released 2026-10-10. No change to simulated results or to `inst/rosetta/effect_dimensions.csv`. Suite: 68 files, 957 tests, 7218 expectations, 0 failures, 0 errors, 5 skips. `R CMD check --as-cran` from a clean build: 0 errors, 0 warnings.

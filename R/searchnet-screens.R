@@ -119,7 +119,9 @@ NULL
                             join = TRUE, varName = varName, levls = 0:4),
            silent = TRUE)
   if (inherits(g, "try-error")) return(out)
-  d <- try(RSiena::descriptives.sienaGOF(g), silent = TRUE)
+  ## RSiena 1.5 exports descriptives.sienaGOF(); 1.6 exports the generic
+  ## descriptives() and keeps the method unexported. Both have it in the namespace.
+  d <- try(utils::getFromNamespace("descriptives.sienaGOF", "RSiena")(g), silent = TRUE)
   if (inherits(d, "try-error") || is.null(dim(d)) || ncol(d) < 2L) return(out)
   rn <- tolower(rownames(d))
   r_obs <- which(startsWith(rn, "obs"))[1]
@@ -575,7 +577,7 @@ rate_ladder <- function(data, effects, varName = "dv",
                         nbrNodes = 1L, continuation_threshold = 0.25,
                         projname = NULL, verbose = TRUE) {
 
-  if (!inherits(data, "siena"))
+  if (!.searchnet_is_siena_data(data))
     stop("`data` must be a siena data object from sienaDataCreate().")
   if (!inherits(effects, "sienaEffects"))
     stop("`effects` must be a sienaEffects object from getEffects().")

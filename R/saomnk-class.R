@@ -903,7 +903,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                    returnDeps = TRUE,
                                    returnChains = TRUE,
                                    returnThetas = TRUE,
-                                   returnDataFrame = TRUE, ##**TODO** CHECK
+                                   returnDataFrame = FALSE, ## list-format chain on every RSiena (>= 1.6.0 sorts the data frame)
                                    returnLoglik = TRUE     ##**TODO** CHECK
       )   # returnChains = returnChains
       
@@ -1619,7 +1619,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                    returnDeps = TRUE, 
                                    returnChains = TRUE,
                                    returnThetas = TRUE,
-                                   returnDataFrame = TRUE, ##**TODO** CHECK
+                                   returnDataFrame = FALSE, ## list-format chain on every RSiena (>= 1.6.0 sorts the data frame)
                                    returnLoglik = TRUE,   ##**TODO** CHECK
                                    verbose = verbose
       )   
@@ -4645,7 +4645,7 @@ SaomNkRSienaBiEnv <- R6Class(
                                    batch = TRUE,
                                    returnDeps = returnDeps,
                                    returnChains = returnChains,
-                                   returnDataFrame = TRUE, ##**TODO** CHECK
+                                   returnDataFrame = FALSE, ## list-format chain on every RSiena (>= 1.6.0 sorts the data frame)
                                    returnLoglik = TRUE #,  ##**TODO** CHECK
                                    )   # returnChains = returnChains
 
@@ -4974,7 +4974,7 @@ SaomNkRSienaBiEnv <- R6Class(
           ## Replicate each run's theta for all ministeps in that run
           simChain <- self$rsiena_model$chain
           run_lengths <- sapply(seq_along(simChain), function(iter) {
-            length(simChain[[iter]][[1]][[1]])
+            .searchnet_chain_n(simChain[[iter]][[1]][[1]])
           })
           run_ids <- rep(seq_along(run_lengths), run_lengths)
           theta_mat <- theta_used[run_ids, , drop = FALSE]

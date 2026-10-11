@@ -540,7 +540,7 @@ searchnet_coevolve_available_effects <- function(dat,
                                                  type       = "eval",
                                                  cross_only = FALSE,
                                                  print      = TRUE) {
-  if (!inherits(dat, "siena"))
+  if (!.searchnet_is_siena_data(dat))
     stop("`dat` must be a siena data object.", call. = FALSE)
 
   eff <- RSiena::getEffects(dat)
@@ -877,7 +877,7 @@ searchnet_coevolve <- function(dat,
                                verbose      = TRUE,
                                ...) {
 
-  if (!inherits(dat, "siena"))
+  if (!.searchnet_is_siena_data(dat))
     stop("`dat` must be a siena data object.", call. = FALSE)
   if (!inherits(eff, "sienaEffects"))
     stop("`eff` must be a sienaEffects object.", call. = FALSE)

@@ -251,9 +251,9 @@ test_that("from_long output and k_covariate feed searchnet_coevolve_data", {
     actor_covars = list(scope = searchnet_k_covariate(k, "K_AC")),
     component_covars = list(holders = searchnet_k_covariate(k, "K_CA")),
     verbose = FALSE)
-  expect_s3_class(dat, "siena")
+  expect_true(.searchnet_is_siena_data(dat))
   dat2 <- searchnet_coevolve_data(bipartite = obs$B, component = arc,
                                   verbose = FALSE)
-  expect_s3_class(dat2, "siena")
+  expect_true(.searchnet_is_siena_data(dat2))
   expect_equal(dat$observations, 3L)
 })

@@ -69,7 +69,7 @@ test_that("get_rsiena_data_from_structure_model returns siena data object", {
   )
 
   rsiena_data <- env$get_rsiena_data_from_structure_model(sm)
-  expect_true(inherits(rsiena_data, "siena"))
+  expect_true(.searchnet_is_siena_data(rsiena_data))
 })
 
 # ===========================================================================

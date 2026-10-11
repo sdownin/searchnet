@@ -7,7 +7,7 @@ output:
     toc: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Simulation Walkthrough: Strategies, Fitness, and Shocks}
+  %\VignetteIndexEntry{Simulation Walkthrough: Strategies, Fitness, and Exogenous Shocks}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

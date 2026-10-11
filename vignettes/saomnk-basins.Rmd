@@ -7,7 +7,7 @@ output:
     toc: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Basin Geometry and Depth-Width Tradeoff}
+  %\VignetteIndexEntry{Basin Geometry and the Depth-Width Tradeoff in searchnet}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
