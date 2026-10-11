@@ -36,3 +36,7 @@ With an override in place, do not run \verb{lake update} or \verb{lake exe cache
 in the project: Lake runs no git command on a path dependency, but those
 commands would try to move the pins.
 }
+\examples{
+## Print the build commands without running them
+if (!is.na(lean_home())) lean_setup(run = FALSE)
+}

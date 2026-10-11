@@ -324,6 +324,19 @@
   df
 }
 
+## One long K table of get_chain_stats_list(): chain_step_id, the node id (a factor), value and
+## stability, then the `extra` columns. Rows are steps in order, nodes
+## fastest; `vals` holds one vector per step. as.factor() over one step's ids,
+## repeated per step, gives the codes and levels as.factor() over the long
+## column gives.
+.searchnet_chain_long <- function(vals, ids, id_name, steps, stab, extra = list()) {
+  n_per <- length(ids)
+  cols <- list(rep(steps, each = n_per), rep(as.factor(ids), length(steps)),
+               unlist(vals, use.names = FALSE), rep(stab, each = n_per))
+  names(cols) <- c('chain_step_id', id_name, 'value', 'stability')
+  data.table::rbindlist(list(c(cols, extra)))
+}
+
 ## RSiena's end-of-period bipartite network for one run's `$sims` entry.
 .searchnet_sims_bipartite <- function(sims_run, M, N,
                                       dv = "self$bipartite_rsienaDV") {
@@ -389,9 +402,14 @@
 ## run 1. `n3 = 1` fails inside siena07() under cond = FALSE; run 1 is
 ## identical for n3 = 2 and n3 = 3 (pre-registration, probe P2).
 .searchnet_run_period <- function(env, theta_full, seed, verbose = FALSE) {
-  alg <- RSiena::sienaAlgorithmCreate(
-    projname = NULL, simOnly = TRUE, cond = FALSE, nsub = 0, n3 = 2,
-    seed = as.integer(seed), silent = !verbose)
+  ## An actor degree cap is RSiena's MaxDegree on the bipartite DV
+  ## (R/searchnet-degree-bounds.R); NULL leaves the algorithm as before.
+  alg_args <- .searchnet_bounds_algorithm_args(
+    list(projname = NULL, simOnly = TRUE, cond = FALSE, nsub = 0, n3 = 2,
+         seed = as.integer(seed), silent = !verbose),
+    .searchnet_model_bounds(env$config_structure_model),
+    dv_name = "self$bipartite_rsienaDV", N = env$N, where = "search_rsiena()")
+  alg <- do.call(RSiena::sienaAlgorithmCreate, alg_args)
   env$rsiena_algorithm <- alg
   tv <- rbind(theta_full, theta_full)
   ## siena07() refuses any |theta| above thetaBound (default 50), and under
@@ -510,6 +528,10 @@
         "chain from the segment's start state ends %d toggles away from ",
         "RSiena's end network. The simulation is not a path; aborting."),
         s, sum(B_rep != B_end)), call. = FALSE)
+    ## Degree-bound gate: a penalized bound is soft in principle, so check it
+    ## at every ministep of the segment, not only at its end.
+    .searchnet_bounds_chain_gate(B, frame, .searchnet_model_bounds(structure_model),
+                                 sprintf("segment %d", s))
     if (has_beh) beh <- .searchnet_sims_behavior(run_sims, beh_name)
     chains[[s]] <- run_chain
     sims[[s]]   <- run_sims
@@ -667,6 +689,8 @@
   }
 
   B <- matrix(as.numeric(env$bipartite_matrix), env$M, env$N)
+  B <- .searchnet_bounds_start(B, .searchnet_model_bounds(structure_model),
+                               rand_seed, "multiwave simulation")
   .searchnet_prepare_period_data(env, structure_model, B, beh, verbose = verbose)
   env$covariate_centering <- .searchnet_centering_table(env$rsiena_data)
   theta_row <- env$get_theta_matrix(input_effs, 1L, verbose = verbose)

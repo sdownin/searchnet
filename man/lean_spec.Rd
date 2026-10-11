@@ -69,6 +69,11 @@ exporter then also states the two-layer no-potential results that apply: an
 ego covariate on the relational degree with non-constant \code{z} admits no
 common potential, and \code{theta_AB != theta_BA} admits no joint potential.
 }
+\examples{
+mod <- list(M = 2, N = 3, E = diag(3),
+            theta = c(density = -0.5, inPop = 0.2))
+lean_spec(mod)
+}
 \seealso{
 \code{\link[=lean_export_model]{lean_export_model()}}, \code{\link[=lean_effect_map]{lean_effect_map()}}
 }

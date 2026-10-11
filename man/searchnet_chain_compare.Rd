@@ -90,6 +90,18 @@ free statement about event ordering}, and a claim of generative sufficiency is
 safest stated on it.  \code{mixing} is \code{activity * reinforcing} by
 construction and is not independent evidence.
 }
+\examples{
+## Synthetic event logs on a 6 x 5 actor-by-component network
+set.seed(1)
+B0 <- matrix(0L, 6, 5)
+make_log <- function(n = 40) data.frame(actor = sample(6, n, TRUE),
+                                        comp  = sample(5, n, TRUE))
+obs <- searchnet_chain_stats(make_log(), B0 = B0)
+sim <- do.call(rbind, lapply(1:25, function(r)
+  searchnet_chain_stats(make_log(), B0 = B0, source = "simulated",
+                        chain_id = r)))
+searchnet_chain_compare(sim, obs)
+}
 \seealso{
 \code{\link{searchnet_chain_stats}}
 }

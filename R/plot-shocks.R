@@ -6,6 +6,44 @@
 # ============================================================================
 
 
+#' Shock Visualization Functions
+#'
+#' Plotting functions for visualizing parameter shocks and their effects
+#' on K-system degree distributions and attributes. All three take a
+#' \code{SaomNkRSienaBiEnv} object, simulated by \code{\link{saomnk_run}}
+#' with a \code{shocks} list (see \code{\link{saomnk_shock}}), as their first
+#' argument, and refuse an environment simulated on the legacy replay route.
+#'
+#' \code{saomnk_plot_K_attribute_shocks} and
+#' \code{saomnk_plot_K_AC_NEW_shocks} read the degrees to \emph{new}
+#' components; by default these are the components with no holder in the
+#' initial matrix, so the run must start with at least one empty component.
+#'
+#' @param env A \code{SaomNkRSienaBiEnv} object after \code{\link{saomnk_run}}
+#'   with shocks.
+#' @param verbose Logical. Print progress (default \code{FALSE}).
+#' @param K_type Character. \code{"K_AC"} (default) or \code{"K_AA"}.
+#' @param new_components Integer vector of component indices treated as new.
+#'   \code{NULL} (default) uses the components with no initial holder.
+#' @param plot_type One of \code{"raw"}, \code{"did"} or \code{"both"}.
+#' @return \code{saomnk_plot_shocks} returns a list of three ggplot objects:
+#'   \code{pu} (utility by shock), \code{pk} (K degrees by shock) and
+#'   \code{ps} (utility contributions by shock).
+#'   \code{saomnk_plot_K_attribute_shocks} returns a list with \code{data},
+#'   \code{plot}, \code{new_components} and \code{did_data}.
+#'   \code{saomnk_plot_K_AC_NEW_shocks} returns a list with \code{plot} (a
+#'   grob) and \code{data} (\code{top}, \code{bottom}, \code{test_results}).
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, density = 0.3, seed = 42)
+#' mod <- saomnk_model(density = -0.5, popularity = 0.2)
+#' shocks <- list(saomnk_shock("density", parameter = -0.5, portion = 1),
+#'                saomnk_shock("density", parameter = -1.5, portion = 1))
+#' saomnk_run(env, mod, steps_per_actor = 5, seed = 12345, shocks = shocks)
+#' p <- saomnk_plot_shocks(env)
+#' p$pu
+#' }
+#' @rdname saomnk_plot_shocks
 #' @export
 saomnk_plot_shocks <- function(env, verbose = FALSE) {
   .searchnet_require_path(env, "saomnk_plot_shocks()")
@@ -107,6 +145,7 @@ saomnk_plot_shocks <- function(env, verbose = FALSE) {
 }
 
 
+#' @rdname saomnk_plot_shocks
 #' @export
 saomnk_plot_K_attribute_shocks <- function(env,
                                             K_type = 'K_AC',
@@ -282,9 +321,31 @@ saomnk_plot_K_attribute_shocks <- function(env,
 }
 
 
+#' Plot actor degrees to new components around a shock
+#'
+#' Two stacked panels for a run with a parameter shock: the average degree
+#' of strategy-100 actors to the new components (C9-C16, the K_AC degree
+#' restricted to components absent at the start), and the treated-minus-control
+#' difference between strategy-100 and strategy-0 actors, with the shock
+#' start marked. The difference-in-differences test from
+#' `env$test_shocks_new_components()` is returned with the panel data.
+#'
+#' Formerly `saomnk_plot_K_AC_NEW_shocks()`, which remains as a deprecated
+#' wrapper (see [searchnet-naming]).
+#'
+#' @param env A simulated `SaomNkRSienaBiEnv` environment with
+#'   `theta_shocks` set.
+#' @param verbose Print progress and diagnostic notes.
+#' @return A list with `plot` (a grob from `gridExtra::arrangeGrob()`) and
+#'   `data` (a list of `top`, `bottom`, and `test_results`).
+#' @examples
+#' \dontrun{
+#' res <- searchnet_plot_new_component_shocks(env)
+#' grid::grid.draw(res$plot)
+#' }
 #' @export
-saomnk_plot_K_AC_NEW_shocks <- function(env, verbose = FALSE) {
-  .searchnet_require_path(env, "saomnk_plot_K_AC_NEW_shocks()")
+searchnet_plot_new_component_shocks <- function(env, verbose = FALSE) {
+  .searchnet_require_path(env, "searchnet_plot_new_component_shocks()")
 
   # Get K data for new components
   Kdf_new <- env$compute_K_attribute_shocks(K_type = 'K_AC', verbose = verbose)

@@ -18,3 +18,6 @@ whether the effect keeps the exact potential (\code{"exact"}) and so the Gibbs
 stationary law, or breaks it (\code{"none"}), with the Lean declaration that
 proves the claim.
 }
+\examples{
+lean_effect_map()[, c("effect", "slot", "potential")]
+}

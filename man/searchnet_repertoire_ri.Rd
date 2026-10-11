@@ -47,6 +47,34 @@ substitute quantity should be reported in its place.
 to none of the above.
 }
 
+\examples{
+\donttest{
+## A small bipartite panel and a quick method-of-moments fit
+set.seed(4242)
+M <- 10; N <- 6
+arr <- array(0L, c(M, N, 3))
+arr[, , 1] <- matrix(rbinom(M * N, 1, 0.3), M, N)
+for (w in 2:3) {
+  p <- arr[, , w - 1]
+  flip <- matrix(runif(M * N) < 0.15, M, N)
+  p[flip] <- 1L - p[flip]
+  arr[, , w] <- p
+}
+actors <- RSiena::sienaNodeSet(M, nodeSetName = "actors")
+comps  <- RSiena::sienaNodeSet(N, nodeSetName = "comps")
+dv  <- RSiena::sienaDependent(arr, type = "bipartite",
+                              nodeSet = c("actors", "comps"))
+dat <- RSiena::sienaDataCreate(dv, nodeSets = list(actors, comps))
+alg <- RSiena::sienaAlgorithmCreate(projname = NULL, nsub = 1, n3 = 20,
+                                    seed = 1, cond = FALSE)
+fit <- RSiena::siena07(alg, data = dat, effects = RSiena::getEffects(dat),
+                       returnChains = TRUE, batch = TRUE, silent = TRUE,
+                       useCluster = FALSE)
+## Stops with the cause named when this RSiena build lacks
+## sienaRI or the panel shape is unsupported
+ri <- try(searchnet_repertoire_ri(dat, fit))
+}
+}
 \seealso{
 \code{\link{searchnet_repertoire}}
 }

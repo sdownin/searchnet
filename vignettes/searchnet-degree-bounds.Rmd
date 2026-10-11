@@ -1,0 +1,219 @@
+---
+title: "Degree Bounds in SAOM-NK: Floors and Caps on Portfolios"
+author: "Stephen Downing"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Degree Bounds: Floors and Caps on Portfolios}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## What a degree bound is here
+
+A degree bound restricts how many components an actor may hold (its portfolio
+size, the actor's outdegree in the bipartite network) or how many actors may
+hold a component (the component's indegree). A floor of 1 on actors says that
+no actor may be left holding nothing: an actor that wants to switch from
+component A to component B must add B first and drop A afterwards. A cap says
+that no actor may hold more than `max` components.
+
+In SAOM-NK a bound is a **fixed modeling assumption**. It holds in forward
+simulation and is imposed, unchanged, when the same model is estimated. It is
+never an estimated parameter, and searchnet never reports an estimate for it.
+
+## How each bound is carried in RSiena
+
+Everything below was verified on RSiena 1.5.0 with a two-mode dependent
+network.
+
+| Bound | RSiena mechanism | Exact? |
+|---|---|---|
+| actor max `k` | `MaxDegree = k` algorithm setting | exact: options above the cap are removed |
+| actor min 1 | `outIso` (number of out-isolates), fixed at `-bound_penalty` | penalty |
+| actor min `k > 1` | `outTrunc(k)` (sum of outdegrees truncated at `k`), fixed at `+bound_penalty` | penalty |
+| component min 1, 2, 3 | `antiInIso` (+ `in2Plus`, + `in3Plus`), fixed at `+bound_penalty` | penalty |
+| component max 1, 2 | `in2Plus` or `in3Plus`, fixed at `-bound_penalty` | penalty (barrier) |
+| component min above 3, component max above 2 | none | **non-implementation** |
+
+With the default `bound_penalty = 20`, a move across a penalized bound has a
+choice probability of about `exp(-20)`, roughly 2e-9, relative to staying put.
+The bound is therefore soft in principle, and searchnet checks it: every
+simulated period ends with a gate that aborts the run if any bound was
+crossed.
+
+Two consequences of the penalty form are worth knowing.
+
+* **A floor also attracts.** An actor below its floor gains `+20` by adding a
+  component, so it adds one at its first opportunity. A start state below the
+  floor would be repaired almost at once, but it would not satisfy the stated
+  bounds, so searchnet stops by default and lists the violators.
+  `repair_initial = TRUE` adds seeded random ties first instead, and says so.
+* **A component cap is a barrier only.** The indicator `in3Plus` stops a
+  component from gaining a third holder, but a component that already has four
+  is not pulled back. A start state above any cap is always an error.
+
+**Non-implementations.** RSiena 1.5.0 offers indegree indicators only up to
+`in3Plus`, no indegree analogue of `outTrunc`, and `MaxDegree` applies to
+outdegrees only. A component floor above 3 or a component cap above 2 is
+refused with an error of class `"searchnet_not_implemented"`. That says
+nothing about whether such a bound matters in the world; it says the software
+offers no statistic for it.
+
+**Maximum likelihood.** Estimation under bounds uses the method of moments.
+RSiena 1.5.0 itself warns that `maxlike` and `MaxDegree` are incompatible, and
+an ML fit of a bipartite network with `MaxDegree` stopped with a NaN score;
+with only a fixed floor penalty, ML returned a missing standard error for a
+period rate. searchnet refuses `maxlike = TRUE` whenever bounds are set.
+
+## Declaring bounds
+
+```{r declare}
+library(searchnet)
+b <- searchnet_degree_bounds(actor = c(min = 1, max = 3))
+b
+mod <- saomnk_model(density = -1.5, popularity = 0.1,
+                    degree_bounds = c(min = 1, max = 3))
+mod
+```
+
+The same `degree_bounds` argument is accepted by `searchnet_recovery()`,
+`searchnet_coevolve()`, `run_calibrated_counterfactual()` and
+`run_counterfactual_with_uncertainty()`.
+
+A simulation under these bounds is an ordinary `saomnk_run()`:
+
+```{r run, eval = FALSE}
+env <- saomnk_env(M = 8, N = 6, density = 0.3, seed = 7)
+saomnk_run(env, saomnk_model(density = -1.5, degree_bounds = c(min = 1, max = 3),
+                             repair_initial = TRUE),
+           steps_per_actor = 20, seed = 11)
+range(apply(env$bi_env_arr, 3, rowSums))   # 1 3
+```
+
+## Checking observed data before estimation
+
+Estimation under a bound assumes the bound held in every observed wave. A
+method-of-moments fit cannot reproduce an observed degree the model forbids,
+so a violating panel is an error before estimation, not a fit to report.
+`searchnet_check_degree_bounds()` is called automatically by every estimation
+entry point when bounds are set, and can be called directly:
+
+```{r check}
+B1 <- matrix(c(1, 0, 0,
+               0, 1, 1), 2, 3, byrow = TRUE)
+B2 <- B1; B2[1, 1] <- 0          # actor 1 drops its last component
+try(searchnet_check_degree_bounds(list(B1, B2), c(min = 1)))
+```
+
+## Landscapes: infeasible portfolios
+
+A landscape plot that enumerates all `2^N` portfolios of an actor would color
+an infeasible portfolio by the fixed penalty, a utility near -20 that is a
+modeling device rather than a payoff. `searchnet_portfolio_infeasible()` flags
+those portfolios so a figure can grey them out:
+
+```{r infeasible}
+configs <- as.matrix(expand.grid(rep(list(0:1), 3)))
+cbind(configs, infeasible = searchnet_portfolio_infeasible(configs, c(min = 1, max = 2)))
+```
+
+No existing figure changes: a plotting script opts in by calling it. The
+README landscape script (`tools/make_readme_gif.R`) adds the flag to its JSON
+only when its model carries bounds, which the README model does not.
+
+## Evidence: recovery with and without the bound
+
+**What this section shows, and what it does not.** It shows recovery at one
+design: M = 30 actors, N = 10 components, 3 waves, 100 replications, an actor
+floor of 1, and the planted values below. Nothing more. It says nothing about
+other sizes, densities, effects, or bounds.
+
+The planted data-generating process has an actor floor of 1 (`outIso` fixed at
+-20), `density = -1.8`, `inPop = 0.08` and a basic rate of 4 per period. Wave 1
+is a Bernoulli draw at density 0.12, brought within the floor by seeded random
+additions. Each simulated panel is estimated twice, on the same panels and
+with the same seeds:
+
+* **with the bound**: the panel is checked, `outIso` enters fixed at -20, and
+  the method of moments estimates rate, `density` and `inPop`;
+* **without the bound**: the same estimation with no `outIso` term, which is
+  what an analyst who did not know about the floor would fit.
+
+The runs take a few minutes, so the chunk that runs them is shown with
+`eval = FALSE`. The printed output comes from results precomputed with exactly
+that code by `tools/make_degree_bounds_vignette_data.R` and stored in
+`inst/extdata/searchnet_degree_bounds_recovery.rds`.
+
+```{r heavy, eval = FALSE}
+design <- list(
+  effects_spec = c("density", "inPop"),
+  theta_true = c(rate = 4, density = -1.8, inPop = 0.08),
+  M = 30L, N = 10L, waves = 3L, reps = 100L,
+  nbrNodes = 1L, seed = 20261010L,
+  n3 = 500L, nsub = 4L, init_density = 0.12,
+  degree_bounds = c(min = 1),
+  criterion = list(max_abs_bias = 0.10, min_coverage = 0.90,
+                   min_converged_share = 0.90))
+with_bounds    <- do.call(searchnet_recovery, c(design, list(estimate_with_bounds = TRUE)))
+without_bounds <- do.call(searchnet_recovery, c(design, list(estimate_with_bounds = FALSE)))
+```
+
+```{r load}
+path <- system.file("extdata", "searchnet_degree_bounds_recovery.rds",
+                    package = "searchnet")
+if (!nzchar(path))  # building from a source tree without an installed copy
+  path <- file.path("..", "inst", "extdata", "searchnet_degree_bounds_recovery.rds")
+stored <- readRDS(path)
+```
+
+How often the floor binds in the simulated data (share of actors holding
+exactly one component, share holding none, and mean portfolio size, by wave):
+
+```{r binding}
+round(stored$floor_binding, 3)
+```
+
+Estimated **with** the bound:
+
+```{r with}
+stored$with_bounds
+```
+
+Estimated **without** the bound, on the same panels:
+
+```{r without}
+stored$without_bounds
+```
+
+Side by side, for the two structural effects:
+
+```{r compare}
+pick <- function(x, arm) {
+  t <- x$table[x$table$effect %in% c("density", "inPop"),
+               c("effect", "true", "bias", "mcse_bias", "coverage", "rmse")]
+  cbind(arm = arm, t)
+}
+cmp <- rbind(pick(stored$with_bounds, "with bound"),
+             pick(stored$without_bounds, "without bound"))
+num <- vapply(cmp, is.numeric, logical(1))
+cmp[num] <- lapply(cmp[num], round, 3)
+cmp
+c(with_bound_seconds = stored$with_bounds$elapsed,
+  without_bound_seconds = stored$without_bounds$elapsed)
+```
+
+**Reading.** The bias, coverage and verdict lines above are the result; the
+criterion (absolute bias at most 0.10, coverage at least 0.90, at least 90
+percent of replications converged) was fixed in the generating script before
+the run. Omitting a floor that generated the data does not leave the model
+merely less efficient: the estimator has to explain, through the remaining
+effects, why actors at one component never drop it, and the effects it uses
+for that absorb the bound. Which effects absorb it, and by how much, is
+specific to this design.

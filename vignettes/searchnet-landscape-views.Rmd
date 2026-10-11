@@ -1,0 +1,328 @@
+---
+title: "Seeing the Landscape for Any Influence Matrix"
+author: "Stephen Downing"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Seeing the Landscape for Any Influence Matrix}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.align = "center")
+```
+
+## What this vignette shows, and what it does not
+
+The README animation draws an actor's whole fitness landscape as a 16 x 16
+grid: the components held in one module on the rows, the other module on the
+columns. That picture is honest only because its influence matrix $W$ has two
+blocks. When $W$ is a ring, a random sparse matrix, or a set of nested
+modules, there is no natural pair of axes, and a grid built on an arbitrary
+split hides the interdependence it is supposed to show.
+
+This vignette presents three views that do not depend on $W$ having two
+blocks, and compares them across four architectures:
+
+| View | Question it answers | Scope |
+|---|---|---|
+| **Move compass** | Which of my $N$ single moves raise $f$, and by how much? | local; any $N$ |
+| **W overlay** | Why is $f$ what it is? Which cells of $W$ are switched on? | the held portfolio only; any $N$ |
+| **W-fitted grid** | Where are the peaks of the whole landscape? | global; small $N$ only |
+
+Each view is computed from the package's own statistics, so the numbers in
+the figures are the numbers the SAOM-NK engine uses when an actor chooses a
+move. **The results below are for one simulated run per architecture, at
+$N = 8$ components and $M = 6$ actors, with the model and seeds stated.**
+They illustrate the views; they are not a study of how architecture shapes
+search.
+
+```{r load}
+library(searchnet)
+library(ggplot2)
+```
+
+## Four architectures at equal total weight
+
+The four influence matrices are those of the README architectures figure, at
+$N = 8$: two modules, nested modules, a local ring with $K = 2$, and a random
+matrix with $K = 2$.
+
+```{r archs}
+N <- 8L
+M <- 6L
+offdiag <- function(W) { W <- abs(W); diag(W) <- 0; sum(W) }
+archs <- list(
+  modular = saomnk_block_diagonal(N, 2),
+  nested  = (saomnk_block_diagonal(N, 2) + saomnk_block_diagonal(N, 4) + diag(N)) / 3,
+  ring    = nk_to_saomnk(nk_landscape(N, 2, model = "adjacent", seed = 1))$influence_matrix,
+  random  = nk_to_saomnk(nk_landscape(N, 2, model = "random", seed = 1))$influence_matrix
+)
+archs <- lapply(archs, function(W) { W <- unname(as.matrix(W)); storage.mode(W) <- "double"; W })
+```
+
+The matrices differ in how much off-diagonal weight they carry, not only in
+where it sits. At one common XWX weight, an architecture with more total
+$|w|$ would simply have stronger complementarity, and any difference in its
+landscape would mix *where* $W$ puts interdependence with *how much* of it
+there is. The comparison here is about the first, so each architecture's XWX
+weight is scaled to give every $W$ the same total off-diagonal weight as the
+two-module $W$ at weight 0.8:
+
+$$\text{weight} = 0.8 \times \frac{24}{\sum_{h \ne j} |w_{hj}|}.$$
+
+```{r weights}
+ref_total <- 0.8 * offdiag(archs$modular)
+weights <- vapply(archs, function(W) ref_total / offdiag(W), numeric(1))
+data.frame(architecture = names(archs),
+           offdiag_total = round(vapply(archs, offdiag, numeric(1)), 2),
+           xwx_weight = round(weights, 2),
+           weighted_total = round(weights * vapply(archs, offdiag, numeric(1)), 2),
+           row.names = NULL)
+```
+
+This is also the default of the script that renders the animations,
+`tools/make_architecture_gifs.R` in the source repository; its
+`--raw-weight` option uses 0.8 for every $W$ instead, for checking how much
+the scaling matters.
+
+```{r wplot, fig.width = 7, fig.height = 2.3}
+wdf <- do.call(rbind, lapply(names(archs), function(a) {
+  W <- archs[[a]]
+  data.frame(architecture = factor(a, levels = names(archs)),
+             h = rep(LETTERS[1:N], N), j = rep(LETTERS[1:N], each = N),
+             w = as.vector(W) * weights[[a]])
+}))
+wdf$w[wdf$h == wdf$j] <- NA
+ggplot(wdf, aes(j, h, fill = w)) +
+  geom_tile(color = "grey85", linewidth = 0.2) +
+  scale_y_discrete(limits = rev(LETTERS[1:N])) +
+  scale_fill_gradient(low = "white", high = "#0b6aa8", na.value = "grey95",
+                      name = "weight x w") +
+  facet_wrap(~ architecture, nrow = 1) +
+  coord_fixed() +
+  labs(x = NULL, y = NULL) +
+  theme_minimal(base_size = 9) +
+  theme(panel.grid = element_blank(), axis.text = element_text(size = 6))
+```
+
+## One run per architecture
+
+Each architecture gets the same model (density $-2.5$, popularity $0.2$, XWX
+at the weight above), the same starting network (seed 42) and the same
+simulation seed (12345). The focal actor in each run is the one that moves
+most often.
+
+```{r runs}
+run_arch <- function(W, wt) {
+  env <- saomnk_env(M = M, N = N, density = 0.15, seed = 42)
+  mod <- saomnk_model(density = -2.5, popularity = 0.2,
+                      influence_matrix = W, influence_weight = wt)
+  invisible(capture.output(suppressMessages(
+    saomnk_run(env, mod, steps_per_actor = 10, seed = 12345))))
+  env
+}
+envs <- Map(run_arch, archs, weights)
+focal <- vapply(envs, function(env)
+  which.max(tabulate(env$bi_env_changes[, "actor_i"], nbins = M)), integer(1))
+n_steps <- vapply(envs, function(env) dim(env$bi_env_arr)[3], integer(1))
+data.frame(architecture = names(envs), focal_actor = focal, ministeps = n_steps,
+           row.names = NULL)
+```
+
+## The move compass: the actor's decision view
+
+An actor in a SAOM-NK ministep does not see its landscape. It sees the $N$
+portfolios one move away: add a component it lacks, or drop one it holds.
+The compass draws exactly that. Each of the $N$ spokes is one move, labeled
+`+C` for adding component C and `-C` for dropping it, and colored by the
+change in $f$ the move would produce, red for a gain and blue for a loss.
+When no spoke is red, the current portfolio is a local peak.
+
+`searchnet_move_compass()` returns the data for one actor at one state:
+
+```{r compass-data}
+cp <- searchnet_move_compass(envs$modular, actor = focal[["modular"]], step = 0)
+cp
+attr(cp, "local_peak")
+```
+
+and a static compass is a few lines of `ggplot2`:
+
+```{r compass-fn}
+plot_compass <- function(cp, title = NULL) {
+  N <- nrow(cp)
+  ang <- pi / 2 - (seq_len(N) - 1) * 2 * pi / N
+  cp$x <- cos(ang); cp$y <- sin(ang)
+  cp$lab <- paste0(ifelse(cp$move == "add", "+", "-"), cp$label)
+  lim <- max(abs(cp$delta))
+  ggplot(cp) +
+    geom_segment(aes(x = 0.42 * x, y = 0.42 * y, xend = 0.85 * x, yend = 0.85 * y,
+                     color = delta, linewidth = abs(delta))) +
+    annotate("point", 0, 0, shape = 21, size = 26, fill = "white", color = "#d9a21b") +
+    geom_point(aes(x, y, fill = delta), shape = 21, size = 11, color = "grey20") +
+    geom_text(aes(x, y, label = lab), data = cp[abs(cp$delta) <= 0.55 * lim, ],
+              size = 3.2, fontface = "bold", color = "grey10") +
+    geom_text(aes(x, y, label = lab), data = cp[abs(cp$delta) > 0.55 * lim, ],
+              size = 3.2, fontface = "bold", color = "white") +
+    geom_text(aes(1.32 * x, 1.32 * y, label = sprintf("%+.1f", delta)), size = 3) +
+    annotate("text", 0, 0, label = sprintf("f = %.1f", cp$f_now[1]), fontface = "bold") +
+    scale_fill_gradient2(low = "#2166ac", mid = "grey95", high = "#b2182b",
+                         limits = c(-lim, lim), name = "change in f") +
+    scale_color_gradient2(low = "#2166ac", mid = "grey85", high = "#b2182b",
+                          limits = c(-lim, lim), guide = "none") +
+    scale_linewidth(range = c(0.4, 3), guide = "none") +
+    coord_fixed(xlim = c(-1.5, 1.5), ylim = c(-1.5, 1.5)) +
+    labs(title = title,
+         subtitle = if (attr(cp, "local_peak")) "local peak: no single move raises f"
+                    else sprintf("%d of %d single moves raise f", sum(cp$delta > 1e-9), N)) +
+    theme_void(base_size = 10)
+}
+```
+
+```{r compass-plot, fig.width = 5, fig.height = 4.2}
+plot_compass(cp, sprintf("Modular W: the moves open to actor %d at the start",
+                         focal[["modular"]]))
+```
+
+The same actor at the end of its run:
+
+```{r compass-end, fig.width = 5, fig.height = 4.2}
+plot_compass(searchnet_move_compass(envs$modular, actor = focal[["modular"]]),
+             sprintf("Modular W: actor %d at the end of the run", focal[["modular"]]))
+```
+
+The animated compass follows the focal actor through the whole run, ringing
+the move it takes at each of its ministeps. One frame from each architecture:
+
+```{r compass-stills, echo = FALSE, out.width = "49%", fig.show = "hold"}
+knitr::include_graphics(file.path("figures", paste0("arch-", names(archs), "-compass.png")))
+```
+
+The full animations (about 2.5 MB each) are in the source repository:
+[modular](https://github.com/sdownin/searchnet/blob/public-release/man/figures/readme-arch-modular-compass.gif),
+[nested](https://github.com/sdownin/searchnet/blob/public-release/man/figures/readme-arch-nested-compass.gif),
+[ring](https://github.com/sdownin/searchnet/blob/public-release/man/figures/readme-arch-ring-compass.gif),
+[random](https://github.com/sdownin/searchnet/blob/public-release/man/figures/readme-arch-random-compass.gif).
+
+**What the compass cannot show.** It is local by construction. It says
+whether the current portfolio is a peak and which moves lead uphill, but not
+how many peaks the landscape has, where they are, or how far the actor is
+from the best portfolio. Two portfolios with identical compasses can sit on
+very different landscapes. Its cost is $N + 1$ evaluations of $f$, so it
+works at any $N$.
+
+## The W overlay: why f changes
+
+The compass reports *that* a move changes $f$; the overlay shows *why*. It
+draws $W$ and lights the cells the actor's held portfolio switches on: cell
+$(h, j)$ contributes $\theta_{XWX}\, w_{hj}$ to $f$ when the actor holds both
+$h$ and $j$. Below the matrix, $f$ is split into its parts (density,
+popularity, and the lit cells of $W$), which sum to the value on the compass.
+Adding a component lights a new row and column of $W$; how many of those
+cells carry weight is the complementarity gain of the move.
+
+```{r overlay-stills, echo = FALSE, out.width = "49%", fig.show = "hold"}
+knitr::include_graphics(file.path("figures", paste0("arch-", names(archs), "-overlay.png")))
+```
+
+The four frames are the end of each run. Under the two-module $W$ the actor
+has filled one module, and every lit cell carries weight. Under the ring, the
+held components form a contiguous arc, so the lit cells run along the band.
+Under the random $W$, only the few held pairs that happen to be linked
+contribute. The full animation for the modular $W$ is
+[here](https://github.com/sdownin/searchnet/blob/public-release/man/figures/readme-arch-modular-overlay.gif).
+
+**What the overlay cannot show.** Peaks. It describes the one portfolio held,
+not the $2^N$ portfolios the actor could hold, so it cannot say whether a
+better portfolio exists or how to reach it. It is the explanation for the
+compass, not a replacement for it.
+
+## The W-fitted grid: the global view for small N
+
+For small $N$ every portfolio can be drawn. The W-fitted grid places all
+$2^8 = 256$ portfolios on a 16 x 16 grid, with the eight components split
+into a row group and a column group of four. The split is chosen from $W$:
+of the 35 balanced splits, the one with the least $|w|$ across it. Within
+each axis the components are ordered so that strongly linked ones are
+neighbors, and the axis runs in Gray-code order, so adjacent rows (or
+columns) differ by exactly one component. Local peaks, portfolios that no
+single add or drop improves, are ringed.
+
+```{r grid-stills, echo = FALSE, out.width = "49%", fig.show = "hold"}
+knitr::include_graphics(file.path("figures", paste0("arch-", names(archs), "-grid.png")))
+```
+
+For the modular and nested $W$, the split falls on the module boundary and
+no weight crosses it. For the ring and random $W$, even the best balanced
+split leaves a quarter of $|W|$ across it; the grid is still a correct
+picture of $f$, but its rows and columns no longer separate the
+interdependence.
+
+**What the grid cannot show.** It is lossless only while $2^N$ portfolios fit
+on a screen: $N \le 10$ or so (1024 cells) before cells become too small to
+read, and its cost doubles with each component. Its adjacency is partial: of
+the $N$ single moves from a portfolio, at most four are neighboring cells
+(one step along each axis in each direction), and the rest jump across the
+grid. Two cells far apart can be one move apart, so the grid is a map of
+heights, not of paths. The compass is the view of paths.
+
+## Local peaks per architecture
+
+`searchnet_actor_landscape()` evaluates $f$ at all $2^N$ portfolios for one
+actor at one state, holding the other actors fixed, and marks the local
+peaks. The counts for each focal actor, at the start and at the end of its
+run:
+
+```{r peaks}
+peaks <- do.call(rbind, lapply(names(envs), function(a) {
+  env <- envs[[a]]
+  start <- searchnet_actor_landscape(env, focal[[a]], step = 0)
+  end <- searchnet_actor_landscape(env, focal[[a]])
+  best <- end[which.max(end$f), seq_len(N)]
+  data.frame(architecture = a,
+             peaks_start = sum(start$local_peak),
+             peaks_end = sum(end$local_peak),
+             best_f_end = round(max(end$f), 2),
+             best_portfolio_end = paste(LETTERS[1:N][unlist(best) == 1], collapse = " "),
+             at_peak_end = end$local_peak[end$current])
+}))
+peaks
+```
+
+At equal total weight, the ring has fewer peaks than the other three
+architectures in this run. The counts describe one actor's landscape at one
+model and one set of seeds; they are not a general claim about ring
+architectures, which would need many runs and the planted-truth discipline of
+`vignette("searchnet-recovery")`.
+
+## When to use which
+
+| | Move compass | W overlay | W-fitted grid |
+|---|---|---|---|
+| Shows | the $N$ moves and their $\Delta f$ | the cells of $W$ switched on; the parts of $f$ | $f$ at all $2^N$ portfolios; local peaks |
+| Cannot show | peaks elsewhere; global shape | peaks; better portfolios | paths (adjacency is partial) |
+| Cost | $N + 1$ evaluations | one evaluation | $2^N$ evaluations |
+| Use for | any $N$; the actor's decision | any $N$; explaining a move | $N \lesssim 10$; the global picture |
+| Function | `searchnet_move_compass()` | (animation only) | `searchnet_actor_landscape()` |
+
+For $N$ up to about 10, show the grid for the global shape and the compass for
+the decision. For larger $N$, the compass and the overlay remain exact, and
+the global view has to come from summaries such as peak counts on sampled
+landscapes rather than from a picture.
+
+## Reproducing the animations
+
+The stills above are frames from animations rendered by
+`tools/make_architecture_gifs.R` in the source repository, which runs the
+same models and seeds as this vignette, checks that every recomputed utility
+equals the recorded one, and renders with manim (`inst/manim/scene_architecture_views.py`):
+
+```{r gif-cmd, eval = FALSE}
+## from the package root of a source checkout
+## Rscript tools/make_architecture_gifs.R OUTDIR [--only=ring,random]
+##   [--views=grid,compass,overlay] [--raw-weight] [--export-only]
+```

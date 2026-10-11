@@ -17,6 +17,24 @@
 
 
 
+## Helpers of get_struct_mod_stats_mat_from_bi_mat(), kept at package level
+## rather than rebuilt at every call (see the note there).
+##
+## RSiena centers a covariate on its mean unless it was created with
+## centered = FALSE, and every covariate effect reads the centered value.
+## Using the raw value adds mean(v) times a degree term to the statistic,
+## so the egoX, altX, outActX and X columns were off by that much until
+## 2026-10-04 (tests/testthat/test-structural-stats-vs-rsiena.R).
+.searchnet_rsiena_centered <- function(covar) {
+  v <- as.numeric(covar)
+  if (isFALSE(attr(covar, 'centered'))) v else v - mean(v)
+}
+## Effect i's covariate: fetched once per chain by prepare_struct_mod_stats()
+## when `.prep` is given, otherwise from the environment.
+.searchnet_stats_covar <- function(self, .prep, i, item) {
+  if (is.null(.prep)) self$get_cov_data(item) else .prep$covars[[i]]
+}
+
 ##
 ##
 ##
@@ -1449,9 +1467,24 @@ SaomNkRSienaBiEnv_base <- R6Class(
       mat <- matrix(rep(0, self$M * neffs ), nrow=self$M, ncol=neffs )
       colnames(mat) <- theta_df_norates$effect_level
       rownames(mat) <- 1:self$M
+      items <- lapply(seq_len(neffs), function(i) theta_df_norates[ i , ])
+      ## Each covariate effect's covariate, and for XWX its numeric W and
+      ## diag(W): fixed for the model, so fetched once rather than at every
+      ## ministep (2026-10-10). The statistics use the same values either way.
+      .cov_effects <- c('egoX', 'altX', 'outActX', 'inPopX', 'XWX', 'X',
+                        'totInDist2', 'simEgoInDist2')
+      covars <- lapply(items, function(item)
+        if (item$effect %in% .cov_effects) self$get_cov_data(item) else NULL)
+      xwx_W <- lapply(seq_len(neffs), function(i) {
+        if (items[[i]]$effect != 'XWX') return(NULL)
+        covar <- covars[[i]]
+        W <- matrix(as.numeric(covar), nrow = nrow(covar), ncol = ncol(covar))
+        list(W = W, diag = diag(W))
+      })
       list(theta_df = theta_df_norates,
-           items = lapply(seq_len(neffs),
-                          function(i) theta_df_norates[ i , ]),
+           items = items,
+           covars = covars,
+           xwx_W = xwx_W,
            mat_template = mat)
     },
 
@@ -1518,24 +1551,12 @@ SaomNkRSienaBiEnv_base <- R6Class(
         rownames(mat) <- 1:self$M
       }
       #
-      ## Lazy-compute helpers: only materialize social/epistasis when first needed
-      .get_social <- function() {
-        if (is.null(.cache$social)) .cache$social <<- bi_env_mat %*% t(bi_env_mat)
-        .cache$social
-      }
-      .get_epistasis <- function() {
-        if (is.null(.cache$epistasis)) .cache$epistasis <<- t(bi_env_mat) %*% bi_env_mat
-        .cache$epistasis
-      }
-      ## RSiena centers a covariate on its mean unless it was created with
-      ## centered = FALSE, and every covariate effect reads the centered value.
-      ## Using the raw value adds mean(v) times a degree term to the statistic,
-      ## so the egoX, altX, outActX and X columns were off by that much until
-      ## 2026-10-04 (tests/testthat/test-structural-stats-vs-rsiena.R).
-      .rsiena_centered <- function(covar) {
-        v <- as.numeric(covar)
-        if (isFALSE(attr(covar, 'centered'))) v else v - mean(v)
-      }
+      ## The helpers are package-level functions (2026-10-10) rather than
+      ## closures rebuilt at every call, which the ministep-chain replay makes
+      ## once per ministep: .searchnet_rsiena_centered() and
+      ## .searchnet_stats_covar(). The social projection for cycle4 is
+      ## computed in place (lazily, as before).
+      .rsiena_centered <- .searchnet_rsiena_centered
       #
       for (i in 1:neffs)
       {
@@ -1583,14 +1604,15 @@ SaomNkRSienaBiEnv_base <- R6Class(
             ## four-cycles, RSiena 1.5.0's cycle4 target (parameter 1). The former
             ## rowSums((BB')^2 * BB') / 2 kept the diagonal and counted degenerate
             ## closed walks.
-            ov <- .get_social()   ## cached; the local copy is modified, not the cache
+            if (is.null(.cache$social)) .cache$social <- bi_env_mat %*% t(bi_env_mat)
+            ov <- .cache$social   ## cached; the local copy is modified, not the cache
             diag(ov) <- 0
             mat[ , i] <- rowSums( choose(ov, 2) ) / 2
 
         } else if (item$effect == 'egoX') {
           
           # covar <- item$x
-          covar <- self$get_cov_data(item)
+          covar <- .searchnet_stats_covar(self, .prep, i, item)
           checkConform <-  all(
             (  ## A or B
               class(covar) %in% c('array','matrix') & nrow(covar)==self$M
@@ -1607,7 +1629,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
         } else if (item$effect == 'altX') {
           
           # covar <- item$x
-          covar <- self$get_cov_data(item)
+          covar <- .searchnet_stats_covar(self, .prep, i, item)
           checkConform <-  all(
             (  ## A or B
               class(covar) %in% c('array','matrix') & nrow(covar)==self$M
@@ -1626,7 +1648,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
           
           ## N-vector of component covariate
           # covar <- item$x
-          covar <- self$get_cov_data(item)
+          covar <- .searchnet_stats_covar(self, .prep, i, item)
           # MxN matrix of row-stacked component covariate (repeated for each actor)
           covarComponentMat <- matrix(rep(.rsiena_centered(covar), self$M), nrow=self$M, ncol=self$N, byrow = TRUE)
           ## s_i = x_i+ sum_j x_ij (v_j - vbar); sums to RSiena 1.5.0's outActX
@@ -1647,15 +1669,21 @@ SaomNkRSienaBiEnv_base <- R6Class(
           ## sum with the LAST component's term omitted
           ## (tests/testthat/test-structural-stats-vs-rsiena.R records this).
           ## Only the internal parameter 1 (no root) is implemented here.
-          covar <- self$get_cov_data(item)
+          covar <- .searchnet_stats_covar(self, .prep, i, item)
           w_j <- colSums(bi_env_mat * .rsiena_centered(covar), na.rm = TRUE)
           mat[ , i] <- as.numeric(bi_env_mat %*% w_j)
         
         } else if (item$effect == 'XWX') { ## NxN
           
-          # covar <- item$x
-          covar <- self$get_cov_data(item)
-          W <- matrix(as.numeric(covar), nrow = nrow(covar), ncol = ncol(covar))
+          ## W and diag(W) as numeric matrices; built once per chain with `.prep`.
+          if (is.null(.prep)) {
+            covar <- .searchnet_stats_covar(self, .prep, i, item)
+            W <- matrix(as.numeric(covar), nrow = nrow(covar), ncol = ncol(covar))
+            W_diag <- diag(W)
+          } else {
+            W <- .prep$xwx_W[[i]]$W
+            W_diag <- .prep$xwx_W[[i]]$diag
+          }
           ## Within-ego: s_i = sum_{j != h} x_ij x_ih w_hj
           ##           = sum_j x_ij (B W)_ij - sum_j x_ij w_jj.
           ## The former rowSums(B W B') summed over every actor k, not ego alone.
@@ -1665,12 +1693,12 @@ SaomNkRSienaBiEnv_base <- R6Class(
           ## (verified 2026-09-15), although it can affect other effects that
           ## read the same covariate.
           mat[ , i] <- rowSums( (bi_env_mat %*% W) * bi_env_mat, na.rm=TRUE ) -
-            c( bi_env_mat %*% diag(W) )
+            c( bi_env_mat %*% W_diag )
           
         }  else if (item$effect == 'X') { ## MxN
           
           # covar <- item$x
-          covar <- self$get_cov_data(item)
+          covar <- .searchnet_stats_covar(self, .prep, i, item)
           ## s_i = sum_j x_ij (w_ij - wbar) for an actor x component dyadic
           ## covariate centered on its overall mean, as RSiena centers it; sums to
           ## RSiena 1.5.0's X target. The uncentered form, marked TODO, stood here
@@ -1686,7 +1714,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
           ## once per shared component. Sums to RSiena 1.5.0's totInDist2 target.
           ## Until 2026-10-04 this used the raw covariate and counted ego among
           ## the holders.
-          v <- .rsiena_centered(self$get_cov_data(item))
+          v <- .rsiena_centered(.searchnet_stats_covar(self, .prep, i, item))
           holder_sums <- c( v %*% bi_env_mat )   ## sum_h x_hj v_h, ego included
           mat[ , i ] <- c( bi_env_mat %*% holder_sums ) - xActorDegree * v
 
@@ -1706,7 +1734,7 @@ SaomNkRSienaBiEnv_base <- R6Class(
           ##
           ## saomnk_coholder_similarity() (R/searchnet-imitation.R, formerly
           ## saomnk_sim_ego_indist2()) is NOT this statistic either.
-          v <- as.numeric(self$get_cov_data(item))
+          v <- as.numeric(.searchnet_stats_covar(self, .prep, i, item))
           xRange <- max(v) - min(v)
           if (xRange == 0) {
             ## A constant covariate leaves the similarity undefined (R = 0).
@@ -1721,6 +1749,15 @@ SaomNkRSienaBiEnv_base <- R6Class(
             vbar <- ifelse(n_other > 0, sum_other / pmax(n_other, 1), mean(v))
             mat[ , i ] <- rowSums( bi_env_mat * (1 - abs(v - vbar) / xRange - simMean) )
           }
+
+        }  else if (item$effect %in% .SEARCHNET_BOUND_STAT_EFFECTS) {
+
+          ## Degree-bound penalty effects (R/searchnet-degree-bounds.R): RSiena's
+          ## statistic up to a constant, zero on every state within the bounds,
+          ## so the change for any toggle is RSiena's and a feasible path's
+          ## reported utility carries no penalty term.
+          mat[ , i ] <- .searchnet_bound_stat(item$effect, item$parm,
+                                              item$initialValue, bi_env_mat)
 
         }  else if(grepl('[|]', item$effect) | item$effect == 'unspInt' )  {
           

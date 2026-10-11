@@ -154,8 +154,16 @@ test_that("chain processing reproduces its golden outputs exactly", {
   for (model in names(want)) {
     expect_identical(names(got[[model]]), names(want[[model]]), label = model)
     for (obj in names(want[[model]])) {
-      expect_identical(got[[model]][[obj]], want[[model]][[obj]],
-                       label = sprintf("%s$%s", model, obj))
+      ## The fixture was written on Windows. Elsewhere the math library can
+      ## differ in the last bit (about 1e-16), so off Windows the comparison
+      ## allows a 1e-12 relative tolerance; on Windows it stays exact.
+      if (.Platform$OS.type == "windows") {
+        expect_identical(got[[model]][[obj]], want[[model]][[obj]],
+                         label = sprintf("%s$%s", model, obj))
+      } else {
+        expect_equal(got[[model]][[obj]], want[[model]][[obj]],
+                     tolerance = 1e-12, label = sprintf("%s$%s", model, obj))
+      }
     }
   }
 })

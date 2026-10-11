@@ -47,6 +47,28 @@ explicitly anyway so the arm does not silently inherit whatever a caller's
 effects object happened to carry.
 }
 
+\examples{
+\donttest{
+## A small bipartite panel and a quick method-of-moments fit
+set.seed(4242)
+M <- 10; N <- 6
+arr <- array(0L, c(M, N, 3))
+arr[, , 1] <- matrix(rbinom(M * N, 1, 0.3), M, N)
+for (w in 2:3) {
+  p <- arr[, , w - 1]
+  flip <- matrix(runif(M * N) < 0.15, M, N)
+  p[flip] <- 1L - p[flip]
+  arr[, , w] <- p
+}
+actors <- RSiena::sienaNodeSet(M, nodeSetName = "actors")
+comps  <- RSiena::sienaNodeSet(N, nodeSetName = "comps")
+dv  <- RSiena::sienaDependent(arr, type = "bipartite",
+                              nodeSet = c("actors", "comps"))
+dat <- RSiena::sienaDataCreate(dv, nodeSets = list(actors, comps))
+null_fit <- searchnet_chain_null_model(dat, n3 = 20)
+null_chains <- searchnet_chain_from_fit(null_fit, dat)
+}
+}
 \seealso{
 \code{\link{searchnet_chain_gap}},
 \code{\link{searchnet_chain_from_fit}}

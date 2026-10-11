@@ -1215,8 +1215,38 @@ saomnk_plot_market_entry_survival_strategy <- function(env,
 }
 
 
+#' Simulate and plot cumulative market entry by actor
+#'
+#' Runs `n` independent simulations from deep clones of `env`, each with its
+#' own seed, records when each actor first ties to a new market (components
+#' C10-C12), and plots the share of runs in which each actor has entered by
+#' each chain step, with a normal-approximation confidence band. This is the
+#' self-contained Monte Carlo version; [saomnk_plot_market_entry_survival()]
+#' instead reads results already stored by an experiment.
+#'
+#' Formerly `saomnk_plot_market_entry_survival_v0()`, which remains as a
+#' deprecated wrapper (see [searchnet-naming]).
+#'
+#' @param env A `SaomNkRSienaBiEnv` environment. Its stored
+#'   `config_environ_params` and `config_structure_model`, when present, take
+#'   precedence over the arguments of the same purpose.
+#' @param n Number of simulations.
+#' @param environ_params Environment parameters, used when `env` has none.
+#' @param structure_model Structure model, used when `env` has none.
+#' @param steps_per_actor Passed to `search_rsiena()` as
+#'   `iterations_per_actor`.
+#' @param theta_shocks Optional parameter shocks passed to `search_rsiena()`.
+#' @param conf_level Confidence level of the band.
+#' @param verbose Passed to `search_rsiena()`.
+#' @return A list with `entry_df`, `util_df`, `survival_data`, `plot` (a
+#'   ggplot), and `first_entries`.
+#' @examples
+#' \dontrun{
+#' res <- searchnet_plot_cumulative_entry(env, n = 20)
+#' res$plot
+#' }
 #' @export
-saomnk_plot_market_entry_survival_v0 <- function(env,
+searchnet_plot_cumulative_entry <- function(env,
                                                   n = 50,
                                                   environ_params = NULL,
                                                   structure_model = NULL,

@@ -135,6 +135,16 @@ export(saomnk_plot_component_degrees)
 export(saomnk_plot_actor_degrees)
 
 # ---------------------------------------------------------------------------
+# Plot functions -- plot-unified.R (searchnet_ API; see ?searchnet-naming).
+# The saomnk_ exploration, multiwave, _v0 and K_AC_NEW plot names exported
+# below are deprecated wrappers kept for existing callers.
+# ---------------------------------------------------------------------------
+export(searchnet_plot_exploration)
+export(searchnet_plot_multiwave)
+export(searchnet_plot_cumulative_entry)
+export(searchnet_plot_new_component_shocks)
+
+# ---------------------------------------------------------------------------
 # Plot functions -- plot-exploration.R
 # ---------------------------------------------------------------------------
 export(saomnk_plot_exploration_exploitation_consistent)
@@ -224,6 +234,10 @@ export(searchnet_did)
 export(searchnet_synth)
 export(searchnet_rd)
 export(searchnet_causal_plot)
+export(searchnet_placebo)
+export(searchnet_shock_support_check)
+S3method(print, searchnet_placebo)
+S3method(print, searchnet_shock_support)
 
 # ---------------------------------------------------------------------------
 # Ergodicity demonstration -- searchnet-ergodicity.R
@@ -408,6 +422,11 @@ export(searchnet_k_readings)
 export(searchnet_k_covariate)
 S3method(print, searchnet_bipartite)
 
+# Moment gate: does a simulated world reproduce the observed moments, judged by
+# the simulated mean (R/searchnet-moment-gate.R).
+export(searchnet_moment_gate)
+S3method(print, searchnet_moment_gate)
+
 # ---------------------------------------------------------------------------
 # Engine hygiene: provenance, opportunity table, readback check
 # (searchnet-seeds.R, searchnet-opportunity.R, searchnet-readback.R)
@@ -427,6 +446,10 @@ S3method(print, searchnet_recovery)
 S3method(summary, searchnet_recovery)
 S3method(print, summary.searchnet_recovery)
 S3method(plot, searchnet_recovery)
+export(searchnet_degree_bounds)
+export(searchnet_check_degree_bounds)
+export(searchnet_portfolio_infeasible)
+S3method(print, searchnet_degree_bounds)
 
 # ---------------------------------------------------------------------------
 # Formal verification with Lean 4 (lean-tools.R, lean-export.R; inst/lean)
@@ -472,3 +495,7 @@ S3method(print, rosetta_lean)
 # The {K} dimensions each effect reads and moves -- k-dimensions.R
 export(searchnet_effect_dimensions)
 export(searchnet_classify_effect)
+
+# Landscape views for any influence matrix (R/landscape-views.R)
+export(searchnet_move_compass)
+export(searchnet_actor_landscape)

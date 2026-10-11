@@ -77,6 +77,18 @@ repeat attention over long chains is where it has power; a short panel is
 not.
 }
 
+\examples{
+## Synthetic event logs on a 6 x 5 actor-by-component network
+set.seed(1)
+B0 <- matrix(0L, 6, 5)
+make_log <- function(n = 40) data.frame(actor = sample(6, n, TRUE),
+                                        comp  = sample(5, n, TRUE))
+obs <- searchnet_chain_stats(make_log(), B0 = B0)
+sim <- do.call(rbind, lapply(1:25, function(r)
+  searchnet_chain_stats(make_log(), B0 = B0, source = "simulated",
+                        chain_id = r)))
+searchnet_chain_calibrate(sim, max_holdout = 10)
+}
 \seealso{
 \code{\link{searchnet_chain_gap}}
 }

@@ -1,3 +1,27 @@
+# searchnet 0.14.0
+
+Released 2026-10-11. Tested with RSiena 1.5.0 and 1.6.6: 75 files, 1048 tests, 0 failures, 0 errors under each. `R CMD check --as-cran` (clean build, RSiena 1.6.6): 0 errors, 0 warnings. Simulated results for existing models are unchanged; `bd_self_consistency()` and `saomnk_social_multiplier()` return corrected values in the regimes listed below.
+
+## New
+
+* **Degree bounds.** `saomnk_model(degree_bounds = )` and `searchnet_degree_bounds()` set floors and caps on portfolio size (and, where RSiena supports it, on the number of holders of a component), held in simulation and in estimation. An actor cap is RSiena's `MaxDegree`; floors and component caps are fixed penalty effects (`outIso`, `outTrunc`, `antiInIso`, `in2Plus`, `in3Plus`), reported by `print()` as fixed modeling assumptions, never estimated. A floor of 1 means an actor cannot drop its last component, so switching goes through holding both. `searchnet_check_degree_bounds()` checks observed waves before estimation, `searchnet_portfolio_infeasible()` flags forbidden portfolios, and maximum likelihood is refused with bounds (RSiena reports it incompatible with `MaxDegree`). New vignette "Degree Bounds", with a planted-truth comparison: estimated with the floor, density bias +0.05 and coverage 0.95; estimated without it, bias +0.50 and coverage 0.47.
+* **Moment-calibration gate.** `searchnet_moment_gate()` checks that a simulated world reproduces observed moments (density, mean and SD of K_AC and K_CA, change rate, and more) before anything is read from it. Tolerances are required and judged against the simulated mean; replication SD and Monte Carlo SE are reported but never widen them. Worlds parameterized from RSiena default starting values are refused, and a failed gate stops by default.
+* **Real-time placebo for the causal tools.** `searchnet_placebo()` draws pseudo-events step by step at the empirical hazard among never-exposed units and returns the placebo distribution, the real estimate's placebo p-value and a two-part gate (centered, extreme); the uniform-over-survived-periods design is refused. `searchnet_shock_support_check()` warns when a shock leaves a structurally impoverished post-state, so an outcome difference could be mechanical.
+* **Landscape views for any influence matrix.** `searchnet_move_compass()` returns the change in an actor's objective for each single add or drop; `searchnet_actor_landscape()` enumerates all 2^N portfolios with local peaks marked (N <= 12). New vignette "Seeing the Landscape for Any Influence Matrix": the move compass, the W overlay and a W-fitted grid across four architectures compared at equal total interaction weight.
+* **README animations.** The difference animation (how the other actors' moves reshape one actor's landscape) and an all-actors animation (six actors on their own landscapes, one shared scale) join the landscape animation at the top of the README. Drivers: `tools/make_readme_gif.R --styles`, `tools/make_two_actor_gif.R`, `tools/make_all_actors_gif.R`, `tools/make_architecture_gifs.R`.
+
+## Changed
+
+* **Plot consolidation.** `searchnet_plot_exploration(type = )` and `searchnet_plot_multiwave(what, by)` replace 8 exploration and 10 multi-wave plot functions; `searchnet_plot_cumulative_entry()` and `searchnet_plot_new_component_shocks()` replace `saomnk_plot_market_entry_survival_v0()` and `saomnk_plot_K_AC_NEW_shocks()`. The old names still work, return identical results and warn once per session. `?searchnet-naming` states the policy: new API uses `searchnet_`; `saomnk_` names are frozen.
+* **Faster chain processing.** Chain processing allocates about a third less and fetches covariates once per chain: `saomnk_run()` at M = 30, N = 50 takes about 0.5 s instead of 0.84 s, with identical outputs. New `tools/benchmark_search_rsiena.R`.
+
+## Fixed
+
+* `bd_self_consistency()` returns roots that satisfy the self-consistency equation to `tol` (they were rounded to 5 decimals). With `all_roots = FALSE` and J < 0, beta |J| > 1 it returns the unique equilibrium instead of a point on a period-2 cycle, which also corrects `saomnk_social_multiplier()` in that regime (for example (1, -1.5, 0.3): 0.120, was -0.782). The `bd_equilibrium_count()` example now reads 3 for h = 0.5.
+* The Brock-Durlauf vignette evaluates its chunks against the current functions; its displayed numbers and return structures were stale.
+* The calibration vignette describes only implemented functions and runs end to end on a synthetic panel; four hand-written help pages are now generated from roxygen; 20 exported functions gained examples; 41 new tests cover the Brock-Durlauf properties and previously untested exports.
+* The chain golden test is exact on Windows, where its fixture was written, and allows a 1e-12 relative tolerance elsewhere (Linux CI differed in the last bit).
+
 # searchnet 0.13.1
 
 Released 2026-10-11. Compatibility release; no change to simulated results. Tested with RSiena 1.5.0 and 1.6.6: 69 files, 963 tests, 0 failures, 0 errors under each.

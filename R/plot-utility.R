@@ -14,6 +14,13 @@
 #' @param loess_span Numeric span for loess smoother
 #' @param return_plot Logical; if TRUE return the ggplot object
 #' @return A ggplot object (if \code{return_plot} is TRUE)
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, density = 0.3, seed = 42)
+#' saomnk_run(env, saomnk_model(density = -0.5, popularity = 0.2),
+#'            steps_per_actor = 5, seed = 12345)
+#' saomnk_plot_actor_utility(env)
+#' }
 #' @export
 saomnk_plot_actor_utility <- function(env,
                                       xints = c(),
@@ -62,6 +69,13 @@ saomnk_plot_actor_utility <- function(env,
 #' @param loess_span Numeric span for loess smoother
 #' @param return_plot Logical; if TRUE return the ggplot object
 #' @return A ggplot object (if \code{return_plot} is TRUE)
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, density = 0.3, seed = 42)
+#' saomnk_run(env, saomnk_model(density = -0.5, popularity = 0.2),
+#'            steps_per_actor = 5, seed = 12345)
+#' saomnk_plot_strategy_utility(env)
+#' }
 #' @export
 saomnk_plot_strategy_utility <- function(env,
                                          xints = c(),

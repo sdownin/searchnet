@@ -21,3 +21,9 @@ Scans the \code{.lean} sources of the \code{SaomNK} library and returns every
 Used to generate the library-wide axiom audit (\code{Axioms.lean}) and to count
 results.
 }
+\examples{
+if (!is.na(lean_home())) {
+  d <- lean_declarations()
+  table(d$kind)
+}
+}

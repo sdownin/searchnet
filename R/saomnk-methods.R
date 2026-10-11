@@ -84,13 +84,20 @@ print.saomnk_model <- function(x, ...) {
   cat("SAOM-NK Structure Model\n")
   cat("----------------------\n")
 
-  effs <- dv$effects
+  is_bound <- vapply(dv$effects, function(e) isTRUE(e$bound), logical(1))
+  effs <- dv$effects[!is_bound]
   cat(sprintf("Effects on the bipartite network DV (%d):\n",
               length(effs)))
   for (e in effs) {
     cat(sprintf("  %-22s theta = %6s  %s\n",
                 .saomnk_effect_label(e$effect),
                 format(e$parameter), .saomnk_fix_label(e$fix)))
+  }
+
+  b <- .searchnet_model_bounds(x)
+  if (!is.null(b)) {
+    cat("Degree bounds (fixed modeling assumptions, NOT estimated):\n")
+    cat(paste0("  ", .searchnet_bounds_lines(b), collapse = "\n"), "\n", sep = "")
   }
 
   covs <- dv$coCovars

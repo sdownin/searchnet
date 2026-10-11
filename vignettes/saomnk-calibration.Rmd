@@ -12,36 +12,30 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE, purl=FALSE}
-## This vignette is a design document, not a worked example: its code
-## operates on empirical panel data the package does not ship, and part of
-## the interface it sketches is not implemented yet. eval = FALSE below stops
-## the chunks running at build time; every chunk ALSO carries purl = FALSE in
-## its own header, which is what stops `R CMD check`'s vignette-code step
-## tangling and sourcing them. purl cannot be set here: in tangle mode knitr
-## never evaluates this chunk, so a global purl = FALSE is silently ignored.
+```{r setup, include=FALSE}
+## Chunks run at build time on a small synthetic panel built in section 3.
+## Chunks that need a fitted RSiena model, or take minutes, carry
+## eval = FALSE and purl = FALSE in their own headers and say so in the text.
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   warning = FALSE,
   message = FALSE,
-  eval = FALSE,
-  purl = FALSE,
   fig.width = 7,
   fig.height = 5
 )
 ```
 
-> **How to read this vignette.** None of the code below is executed when the
-> vignette is built, and the `#>` blocks are illustrative rather than captured
-> output. Two groups of functions appear. `saom_to_saomnk()`,
-> `empirical_to_saomnk_env()` and `run_calibrated_counterfactual()` are
-> implemented and exported; see `?saom_to_saomnk` for the current signatures.
-> `saom_to_saomnk_manual()`, `run_all_counterfactuals()`,
-> `compute_empirical_k()`, `run_calibrated_waves()`,
-> `plot_trajectory_comparison()`, `validate_calibration()`,
-> `calibration_gof()` and `saomnk_app()` are **not implemented**; the sections
-> that use them describe the intended interface and will not run.
+> **How to read this vignette.** The code runs end to end on a small
+> synthetic panel (15 firms, 5 industry categories, 3 waves) that the vignette
+> builds itself; no empirical data ships with the package. The functions used
+> are all implemented and exported: `saom_to_saomnk()`,
+> `empirical_to_saomnk_env()`, `run_calibrated_counterfactual()`,
+> `get_orm_scenarios()`, `searchnet_k_readings()`, `gof_battery()`,
+> `searchnet_recovery()` and `searchnet_chain_calibrate()`. The last three need
+> a fitted RSiena model or several minutes, so their chunks are shown with
+> `eval = FALSE`. Interfaces that are planned but not implemented are listed
+> in one place, section 7.
 
 # 1. Introduction
 
@@ -84,15 +78,24 @@ structure model specification.
 ## 2.2 Mapping table
 
 The `saom_to_saomnk()` function maps RSiena effect names to their
-SAOM-NK equivalents and applies an optional scale factor $\alpha$:
+SAOM-NK equivalents and applies an optional scale factor $\alpha$. Each
+entry has a status: *exact* (the SAOM-NK effect is the estimated effect),
+*approximate* (a different statistic stands in; refused unless
+`strict = FALSE`), or *unavailable* (no counterpart for a bipartite
+dependent variable; always refused). A selection:
 
-| SAOM Effect   | SAOM-NK Effect   | Transformation               | Strategic Interpretation       |
-|---------------|-----------------|------------------------------|-------------------------------|
-| `density`     | `density`       | $\beta = \theta \cdot \alpha$ | Cost of scope expansion        |
-| `inPopSqrt`   | `inPop`         | $\beta = \theta \cdot \alpha$ | Preferential attachment        |
-| `gwespFF`     | `transTriads`   | $\beta = \theta \cdot \alpha$ | Triadic closure / clustering   |
-| `simX`        | `egoX`          | $\beta = \theta \cdot \alpha$ | Attribute-based homophily      |
-| `cycle3`      | `cycle4`        | $\beta = \theta \cdot \alpha$ | Bipartite cycle analog         |
+| SAOM Effect   | SAOM-NK Effect  | Status       | Transformation                 | Strategic Interpretation       |
+|---------------|-----------------|--------------|--------------------------------|--------------------------------|
+| `density`     | `density`       | exact        | $\beta = \theta \cdot \alpha$  | Cost of scope expansion        |
+| `inPop`       | `inPop`         | exact        | $\beta = \theta \cdot \alpha$  | Preferential attachment        |
+| `inPopSqrt`   | `inPopSqrt`     | exact        | $\beta = \theta \cdot \alpha$  | Preferential attachment (sqrt) |
+| `outAct`      | `outAct`        | exact        | $\beta = \theta \cdot \alpha$  | Scope expansion                |
+| `cycle3`      | `cycle4`        | approximate  | $\beta = \theta \cdot \alpha$  | Bipartite cycle analog         |
+| `recip`       | `cycle4`        | approximate  | $\beta = 0.5\,\theta \cdot \alpha$ | Bipartite cycle analog     |
+| `simX`        | `egoX`          | approximate  | $\beta = \theta \cdot \alpha$  | Attribute-based homophily      |
+| `gwespFF`     | `transTriads`   | unavailable  | (refused)                      | Triadic closure / clustering   |
+
+`?saom_to_saomnk` documents the full crosswalk.
 
 The scale factor $\alpha$ (default 1.0) allows the researcher to
 accommodate differences in network size or observation granularity
@@ -100,27 +103,29 @@ between the empirical sample and the simulation environment.
 
 ## 2.3 Using `saom_to_saomnk()`
 
-```{r bridge-basic, purl=FALSE}
+```{r bridge-basic}
 library(searchnet)
 
-## Suppose saom_fit is a fitted RSiena model object
-bridge <- saom_to_saomnk(saom_fit, scale_factor = 1.0)
+## A named vector of estimates stands in for a fitted RSiena model here;
+## a sienaFit object is accepted in the same position.
+example_theta <- c(density = -1.2, inPop = 0.3, outAct = -0.2)
+bridge <- saom_to_saomnk(example_theta, scale_factor = 1.0, verbose = FALSE)
 
 ## Inspect the mapping
-print(bridge$mapping_table)
-#>   saom_effect saomnk_effect  theta   beta
-#> 1    density       density  -0.50  -0.50
-#> 2  inPopSqrt         inPop   0.30   0.30
-#> 3    gwespFF    transTriads   0.45   0.45
-#> 4       simX          egoX   0.20   0.20
+bridge$mapping_table[, c("saom_effect", "saom_theta", "saomnk_effect",
+                         "saomnk_parameter", "mapping_status")]
 
-## Access the converted parameter vector
-bridge$saomnk_params
+## The converted effect specifications
+str(bridge$effects[[1]])
 ```
 
-The function validates that all RSiena effects have known SAOM-NK
-counterparts and issues warnings for effects that are dropped during
-conversion.
+The function refuses approximate mappings unless `strict = FALSE`, refuses
+unavailable ones regardless, and lists effects it cannot map in
+`$unmapped`:
+
+```{r bridge-strict}
+try(saom_to_saomnk(c(density = -1.2, cycle3 = -0.1), verbose = FALSE))
+```
 
 ## 2.4 Scale factor considerations
 
@@ -139,153 +144,108 @@ by sensitivity analysis across $\alpha \in \{0.5, 0.75, 1.0, 1.25, 1.5\}$.
 
 # 3. Environment from Data
 
-## 3.1 The `empirical_to_saomnk_env()` function
+## 3.1 MI data structure
 
-Real-world network data typically arrives as a one-mode adjacency matrix
-(firm-to-firm ties) or as an edgelist with node attributes.  The
-`empirical_to_saomnk_env()` function converts this to the bipartite
-actor-component incidence matrix required by `searchnet`.
+`empirical_to_saomnk_env()` reads a multiply imputed panel of one-mode
+firm-to-firm networks. The input `mi_data` object is a list in which
+`mi_data$imputations[[imp]][[wave]]` holds:
 
-```{r env-from-data, purl=FALSE}
-## mi_data: a list with adjacency matrices and node attributes per wave
-## (e.g., from an empirical panel)
-env_data <- empirical_to_saomnk_env(mi_data, wave = 5)
+- `$network`: an $M \times M$ firm-to-firm adjacency matrix.
+- `$covariates`: a named list with at least `$sic`, each firm's industry
+  (SIC) code; optional covariates such as `is_seed`, `assets` and
+  `revenue` are carried into the actor attributes.
+
+The synthetic panel used throughout this vignette:
+
+```{r mi-structure}
+set.seed(7)
+M   <- 15
+sic <- rep(c("2011", "2834", "3571", "3674", "4512"), each = 3)
+make_wave <- function(p) {
+  net <- matrix(rbinom(M * M, 1, p), M, M)
+  diag(net) <- 0
+  list(network = net, covariates = list(sic = sic))
+}
+mi_data <- list(imputations = list(
+  list(make_wave(0.06), make_wave(0.08), make_wave(0.10))
+))
+```
+
+## 3.2 The `empirical_to_saomnk_env()` function
+
+The function converts one wave to the bipartite actor-component incidence
+matrix required by `searchnet`. Components are the SIC categories held by
+at least `min_firms_per_sic` firms. Firm $i$ is tied to its own category
+and to the category of every firm it has a tie to. The influence matrix
+$W$ is the normalized co-occurrence of categories within firms' rows.
+
+```{r env-from-data}
+bridge_env <- empirical_to_saomnk_env(mi_data, wave = 3)
 
 ## Inspect the resulting environment
-cat("Actors:", env_data$M, "\n")
-cat("Components:", env_data$N, "\n")
-cat("Initial density:", mean(env_data$incidence_matrix), "\n")
-```
-
-## 3.2 MI data structure
-
-The input `mi_data` object is a list containing:
-
-- `$networks`: A list of adjacency or incidence matrices, one per wave.
-- `$attributes`: A data frame of node-level covariates (e.g., firm size,
-  R&D intensity, geographic region).
-- `$wave_info`: Metadata including wave labels and time intervals.
-
-For one-mode networks (firm-to-firm alliances, supply chain links), the
-function performs bipartite projection using a shared-partner decomposition:
-actors are the original nodes, and components are extracted as latent
-activity dimensions via spectral clustering.
-
-```{r mi-structure, purl=FALSE}
-## Example: constructing mi_data from raw alliance data
-mi_data <- list(
-  networks = list(
-    wave1 = alliance_matrix_2015,
-    wave2 = alliance_matrix_2017,
-    wave3 = alliance_matrix_2019,
-    wave4 = alliance_matrix_2021,
-    wave5 = alliance_matrix_2023
-  ),
-  attributes = firm_attributes,
-  wave_info = data.frame(
-    wave = 1:5,
-    year = seq(2015, 2023, by = 2)
-  )
-)
-```
-
-## 3.3 Bipartite conversion for one-mode data
-
-When the empirical data is a one-mode network (e.g., airline code-share
-agreements), the conversion involves:
-
-1. **Spectral decomposition** of the one-mode adjacency matrix to
-   identify latent component dimensions.
-2. **Threshold assignment** to create binary actor-component affiliations.
-3. **Validation** that the reconstructed bipartite network preserves the
-   degree distribution and clustering of the original one-mode projection.
-
-```{r bipartite-convert, purl=FALSE}
-## Convert one-mode airline alliance data to bipartite
-env_data <- empirical_to_saomnk_env(
-  mi_data, wave = 5,
-  mode = "one-mode",
-  n_components = 8,
-  threshold = "median"
-)
-
-## Verify reconstruction quality
-cat("Degree correlation:", env_data$diagnostics$degree_cor, "\n")
-cat("Clustering preservation:", env_data$diagnostics$clustering_cor, "\n")
+dim(bridge_env$bi_matrix)
+mean(bridge_env$bi_matrix)          # initial density
+round(bridge_env$W, 2)              # influence matrix from co-occurrence
 ```
 
 
 # 4. Worked Example
 
-This section walks through a complete calibration using example SAOM
-parameter estimates from a hypothetical airline competitive dynamics study.
+This section walks through a complete calibration on the synthetic panel,
+using the parameter bridge from section 2.3.
 
-## 4.1 Set up the parameter bridge
+## 4.1 Observed {K} readings
 
-```{r worked-bridge, purl=FALSE}
-## Example: manually specify SAOM estimates
-## (in practice these come from a fitted RSiena model)
-example_theta <- c(
-  density    = -0.50,
-  inPopSqrt  =  0.30,
-  gwespFF    =  0.45,
-  simX       =  0.20,
-  cycle3     = -0.10
-)
+`searchnet_k_readings()` reads the four $\{K\}$ dimensions off each
+observed wave, by the same definitions the simulation engine uses, so the
+observed panel and a simulated run can be compared directly.
 
-## Create the bridge with default scale factor
-bridge <- saom_to_saomnk_manual(example_theta, scale_factor = 1.0)
-print(bridge$mapping_table)
+```{r worked-observed}
+obs_waves <- lapply(1:3, function(w) {
+  utils::capture.output(e <- empirical_to_saomnk_env(mi_data, wave = w))
+  e$bi_matrix
+})
+obs_k <- searchnet_k_readings(obs_waves)
+attr(obs_k, "summary")[, c("period", "density", "mean_K_AC", "mean_K_CA",
+                           "mean_K_AA", "mean_K_CC", "tie_jaccard")]
 ```
 
-## 4.2 Create the simulation environment
+## 4.2 Run the calibrated baseline and a counterfactual
 
-```{r worked-env, purl=FALSE}
-## Create an environment matching the empirical network dimensions
-env <- saomnk_env(
-  M = 8,                  # 8 airlines
-  N = 12,                 # 12 route components
-  K_AC = 4,               # initial scope
-  epistasis = "modular",  # 3 blocks of 4 components
-  seed = 42
+`run_calibrated_counterfactual()` runs a matched pair of simulations,
+baseline and counterfactual, `n_reps` times from the empirical
+environment. The settings below are small so that the vignette builds in
+seconds; use more replications and iterations for reported results.
+
+```{r worked-baseline}
+result <- run_calibrated_counterfactual(
+  bridge_env, bridge,
+  scenario   = get_orm_scenarios()$double_popularity,
+  iterations = 20,
+  n_reps     = 3,
+  seed       = 42,
+  verbose    = FALSE
 )
 
-## Apply calibrated parameters
-model <- saomnk_model(
-  env,
-  effects = bridge$saomnk_params,
-  steps = 100
-)
+## Baseline arm, first replication: mean {K} degrees
+unlist(result$baseline$k4[c("mean_K_AC", "mean_K_CA", "mean_K_AA", "mean_K_CC")])
 ```
 
-## 4.3 Run the calibrated baseline
+## 4.3 Compare to observed data
 
-```{r worked-baseline, purl=FALSE}
-## Run calibrated simulation
-baseline <- saomnk_run(model)
-
-## Inspect the coupled degree trajectory
-summary(baseline)
-#> SAOM-NK simulation: 8 actors, 12 components, 100 steps
-#> Final K_AC: 3.75  K_CA: 2.67  K_AA: 1.50  K_CC: 3.00
-#> Mean fitness: 0.623 (sd = 0.082)
-
-## Plot the {K}-4 panel
-plot(baseline, type = "k4")
-```
-
-## 4.4 Compare to observed data
-
-```{r worked-validate, purl=FALSE}
-## Compare simulated degree distributions to empirical wave 5
-obs_degrees <- colSums(mi_data$networks$wave5)
-sim_degrees <- colSums(baseline$final_incidence)
+```{r worked-validate}
+## Compare simulated degree distributions to the observed final wave
+obs_degrees <- colSums(obs_waves[[3]])
+sim_degrees <- colSums(result$baseline$env$bipartite_matrix)
 
 ## Kolmogorov-Smirnov test
-ks_result <- ks.test(obs_degrees, sim_degrees)
+ks_result <- suppressWarnings(ks.test(obs_degrees, sim_degrees))
 cat(sprintf("KS statistic: %.3f, p-value: %.3f\n",
             ks_result$statistic, ks_result$p.value))
 ```
+
+With five components the test has almost no power; it is shown for the
+mechanics only.
 
 
 # 5. Counterfactual Scenarios
@@ -297,149 +257,61 @@ workflow.
 
 ## 5.1 Predefined scenarios
 
-The package includes six predefined scenarios, each motivated by a
-substantive research question:
+`get_orm_scenarios()` returns six predefined scenarios, each a named
+multiplier on a SAOM-NK effect:
 
 | # | Scenario               | Modification                   | Research Question                                     |
-|---|------------------------|-------------------------------|-------------------------------------------------------|
-| 1 | Density shock          | `density` $\times$ 0.5        | What if market entry barriers double?                 |
-| 2 | Double closure         | `transTriads` $\times$ 2.0    | What if alliance clustering intensifies?              |
-| 3 | Popularity concentration | `inPop` $\times$ 2.0        | What if preferential attachment strengthens?           |
-| 4 | Scope expansion        | `density` $\times$ 1.5        | What if firms diversify more broadly?                 |
-| 5 | Epistasis rewiring     | Modify $\mathbf{E}$ matrix    | What if modular architectures become integral?        |
-| 6 | Attribute homophily    | `egoX` $\times$ 2.0           | What if firms increasingly sort by similarity?        |
+|---|------------------------|--------------------------------|-------------------------------------------------------|
+| 1 | `double_closure`       | `cycle4` $\times$ 2.0          | What if closure tendency were twice as strong?        |
+| 2 | `remove_homophily`     | `egoX` $\times$ 0              | What if firms ignored industry similarity?            |
+| 3 | `double_popularity`    | `inPop` $\times$ 2.0           | What if preferential attachment were stronger?        |
+| 4 | `density_shock`        | `density` $\times$ 1.5         | What if tie formation became much costlier?           |
+| 5 | `remove_rivalry`       | `cycle4` $\times$ 0            | What if competitive avoidance disappeared?            |
+| 6 | `epistasis_boost`      | `XWX` $\times$ 2.0             | What if component interdependencies doubled?          |
+
+A scenario whose effect is not in the calibrated bridge is an error, not a
+silent no-op. The bridge in section 2.3 carries `density`, `inPop` and
+`outAct`, so scenarios 3 and 4 apply to it.
 
 ## 5.2 Running a counterfactual
 
-```{r counterfactual-run, purl=FALSE}
-## Scenario 2: Double the transitive closure parameter
-result <- run_calibrated_counterfactual(
-  env_data, bridge,
-  scenario = list(
-    name = "double_closure",
-    modify = list(transTriads = 2.0)
-  ),
-  iterations = 50
-)
+The run in section 4.2 doubled the `inPop` parameter. Its comparison
+reports the mean change in each $\{K\}$ dimension over replications:
 
-## Examine the comparison
-print(result$comparison)
-#>         metric   baseline counterfactual   delta  pct_change
-#> 1         K_AC      3.750          4.125   0.375       10.0%
-#> 2         K_CA      2.667          3.000   0.333       12.5%
-#> 3         K_AA      1.500          2.250   0.750       50.0%
-#> 4         K_CC      3.000          3.500   0.500       16.7%
-#> 5 mean_fitness      0.623          0.591  -0.032       -5.1%
+```{r counterfactual-run}
+unlist(result$comparison)
 ```
 
 ## 5.3 Interpreting results
 
-The comparison structure reports changes across all four $\{K\}$
-dimensions, mean fitness, and basin geometry metrics.  In the double
-closure example above:
+The `summary` element reports, for each $\{K\}$ dimension, the mean delta
+over replications with its Monte Carlo standard error, a paired t-test and
+a paired quantile interval. Matched seeds fix the initial state, not the
+realized path, so a single pair is not a counterfactual; read the mean
+delta with its error (see `result$caveat`).
 
-- **$K_{AA}$ increases by 50%**: Stronger triadic closure creates denser
-  actor-actor co-affiliation, meaning firms increasingly share the same
-  components as their alliance partners.
-- **Mean fitness declines by 5.1%**: The increased clustering traps firms
-  in suboptimal regions of the landscape, consistent with the
-  competence-trap literature (Levitt & March, 1988).
-
-## 5.4 Running all predefined scenarios
-
-```{r counterfactual-all, purl=FALSE}
-## Run all six predefined scenarios
-all_results <- run_all_counterfactuals(env_data, bridge, iterations = 50)
-
-## Summary table
-print(all_results$summary)
-
-## Visualization: {K}-4 comparison across scenarios
-plot(all_results, type = "k4_comparison")
+```{r counterfactual-summary}
+result$summary[, c("measure", "mean_baseline", "mean_cf", "mean_delta",
+                   "mc_se", "p_value")]
 ```
 
+Per-actor and per-component deltas are in `result$actor_deltas` and
+`result$component_deltas` for heterogeneous effects.
 
-# 6. Validation
+## 5.4 Running several predefined scenarios
 
-Calibrated simulations require validation against the empirical data that
-generated the parameter estimates.  The package provides three validation
-approaches.
+```{r counterfactual-all}
+applicable <- get_orm_scenarios()[c("double_popularity", "density_shock")]
+all_results <- lapply(applicable, function(s)
+  run_calibrated_counterfactual(bridge_env, bridge, scenario = s,
+                                iterations = 20, n_reps = 3, seed = 42,
+                                verbose = FALSE)$summary)
 
-## 6.1 Trajectory comparison
-
-Compare the simulated coupled degree trajectories to observed wave-level
-statistics from the empirical panel data.
-
-```{r validation-trajectory, purl=FALSE}
-## Extract observed {K} statistics per wave
-obs_k <- compute_empirical_k(mi_data)
-
-## Run calibrated simulation with wave-matching
-sim_k <- run_calibrated_waves(env_data, bridge, waves = 1:5)
-
-## Plot observed vs. simulated trajectories
-plot_trajectory_comparison(obs_k, sim_k)
+## Summary table: mean delta per scenario and {K} dimension
+sapply(all_results, function(s) setNames(s$mean_delta, s$measure))
 ```
 
-## 6.2 Distribution matching
-
-Compare the full distribution of actor-level outcomes (fitness, scope,
-sociality) between simulation and data.
-
-```{r validation-distribution, purl=FALSE}
-## QQ-plot of degree distributions
-validation <- validate_calibration(baseline, mi_data, wave = 5)
-plot(validation, type = "qq")
-cat(sprintf("Overall fit (RMSE): %.4f\n", validation$rmse))
-```
-
-## 6.3 Goodness-of-fit statistics
-
-Following RSiena's goodness-of-fit framework (Lospinoso et al., 2011),
-the package computes Mahalanobis distance between simulated and observed
-network statistics across multiple dimensions.
-
-```{r validation-gof, purl=FALSE}
-## Goodness-of-fit assessment
-gof <- calibration_gof(baseline, mi_data, wave = 5,
-                       statistics = c("degree", "triad.census",
-                                      "geodesic.distribution"))
-print(gof)
-plot(gof)
-```
-
-
-# 7. Integration with the GUI
-
-The `searchnet` Shiny application (accessible via `saomnk_app()`) includes
-an interactive calibration page at the `/calibrate` route.
-
-## 7.1 Features
-
-The calibration interface provides:
-
-- **Parameter upload**: Import fitted RSiena objects (`.RData` or `.rds`
-  files) or enter parameter estimates manually.
-- **Interactive mapping table**: Review and adjust the SAOM-to-SAOM-NK
-  effect mapping with real-time preview.
-- **Scale factor slider**: Adjust $\alpha$ and immediately see its effect
-  on the simulated $\{K\}$-4 trajectory.
-- **Scenario builder**: Select predefined counterfactual scenarios or
-  define custom parameter modifications.
-- **Comparison dashboard**: Side-by-side visualization of baseline and
-  counterfactual outcomes with statistical tests.
-
-## 7.2 Launching the calibration page
-
-```{r gui-launch, purl=FALSE}
-## Launch the full application
-saomnk_app()
-
-## Or navigate directly to the calibration page
-saomnk_app(page = "calibrate")
-```
-
-## 7.3 Supply chain example
+## 5.5 Supply chain interpretation
 
 For supply chain networks, the calibration workflow is identical but the
 interpretation changes.  Actors are firms in the supply chain, and
@@ -454,6 +326,96 @@ then tracks:
 Counterfactual scenarios such as "What if a key supplier exits?" or "What
 if two product categories merge?" can be expressed as parameter
 modifications to the calibrated bridge.
+
+
+# 6. Validation
+
+Calibrated simulations require validation against the empirical data that
+generated the parameter estimates.  Four checks are implemented.
+
+## 6.1 Trajectory comparison
+
+Compare the simulated $\{K\}$ readings to the observed wave-level
+readings from section 4.1.
+
+```{r validation-trajectory}
+sim_k <- searchnet_k_readings(result$baseline$env$bipartite_matrix)
+rbind(observed_wave3 = attr(obs_k, "summary")[3, c("density", "mean_K_AC",
+                                                   "mean_K_CA", "mean_K_AA",
+                                                   "mean_K_CC")],
+      simulated      = attr(sim_k, "summary")[1, c("density", "mean_K_AC",
+                                                   "mean_K_CA", "mean_K_AA",
+                                                   "mean_K_CC")])
+```
+
+## 6.2 Distribution matching
+
+Compare the full distribution of actor-level scope ($K_{AC}$) between
+simulation and data.
+
+```{r validation-distribution}
+obs_kac <- obs_k$K_AC[obs_k$level == "actor" & obs_k$period == 3]
+sim_kac <- sim_k$K_AC[sim_k$level == "actor"]
+qqplot(obs_kac, sim_kac, xlab = "Observed K_AC (wave 3)",
+       ylab = "Simulated K_AC (baseline)")
+abline(0, 1, lty = 2)
+```
+
+## 6.3 Goodness-of-fit statistics
+
+Following RSiena's goodness-of-fit framework (Lospinoso et al., 2011),
+`gof_battery()` runs `RSiena::sienaGOF()` on five auxiliary statistics of a
+bipartite SAOM fit and returns a verdict for each. It needs a `sienaFit`
+estimated with `returnDeps = TRUE`, so the chunk is not run here.
+
+```{r validation-gof, eval=FALSE, purl=FALSE}
+## Goodness-of-fit assessment of the empirical SAOM fit
+fit <- RSiena::siena07(alg, data = dat, effects = eff, returnDeps = TRUE)
+gof <- gof_battery(fit, varName = "dv")
+print(gof)
+```
+
+## 6.4 Recovery and test calibration
+
+Before trusting a calibrated design, check that it recovers parameters
+planted at the estimated values, and that the generative-sufficiency test
+holds its nominal size on the model's own chains. Both take minutes, so
+the chunk is not run here; `vignette("searchnet-recovery")` shows stored
+results.
+
+```{r validation-recovery, eval=FALSE, purl=FALSE}
+## Planted-truth recovery at the design's size
+rec <- searchnet_recovery(c("density", "inPop", "outAct"),
+                          theta_true = c(rate = 4, example_theta),
+                          reps = 50, M = 15, N = 5, waves = 3, seed = 1)
+summary(rec)
+
+## Leave-one-out size check of the chain-statistics test
+chains <- searchnet_chain_from_fit(fit_with_chains, dat)
+searchnet_chain_calibrate(chains)
+```
+
+
+# 7. Planned Interfaces
+
+The following are planned and **not implemented**; no exported function
+of these names exists:
+
+- `saom_to_saomnk_manual()`: superseded, since `saom_to_saomnk()` already
+  accepts a named vector.
+- `run_all_counterfactuals()`: run every predefined scenario; section 5.4
+  shows the implemented route.
+- `compute_empirical_k()`, `run_calibrated_waves()` and
+  `plot_trajectory_comparison()`: wave-matched trajectory comparison;
+  section 6.1 shows the implemented route with `searchnet_k_readings()`.
+- `validate_calibration()` and `calibration_gof()`: a single validation
+  object; sections 6.2 and 6.3 show the implemented routes.
+- One-mode conversion options for `empirical_to_saomnk_env()` (spectral
+  decomposition into latent components, threshold assignment, and
+  reconstruction diagnostics).
+- `saomnk_app()`: a Shiny calibration page with parameter upload, an
+  interactive mapping table, a scale factor slider, a scenario builder and
+  a comparison dashboard. No GUI ships with the package.
 
 
 # 8. References

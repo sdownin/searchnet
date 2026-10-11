@@ -12,7 +12,8 @@ run_calibrated_counterfactual(
   n_reps = 10,
   seed = 42,
   conf_level = 0.95,
-  verbose = TRUE
+  verbose = TRUE,
+  degree_bounds = NULL
 )
 }
 \arguments{
@@ -46,6 +47,12 @@ replications (default \code{0.95}).}
 
 \item{verbose}{Logical. Print per-replication progress and the summary
 (default \code{TRUE}).}
+
+\item{degree_bounds}{Optional degree bounds applied to BOTH arms, in any
+form \code{\link{searchnet_degree_bounds}} accepts: fixed penalty effects
+plus \code{MaxDegree} for an actor cap, exactly as in
+\code{\link{saomnk_model}}. A scenario never multiplies them. Default
+\code{NULL}.}
 }
 \value{
 A list with components:

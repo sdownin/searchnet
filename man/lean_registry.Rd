@@ -17,3 +17,9 @@ declaration, with its module, a plain statement, the step identifiers of the
 package's proof table it underwrites, the testthat files that exercise the
 same claim numerically, and the R functions whose behavior it concerns.
 }
+\examples{
+if (requireNamespace("yaml", quietly = TRUE) && !is.na(lean_home())) {
+  reg <- lean_registry()
+  head(reg[, c("decl", "module", "proof_table")])
+}
+}

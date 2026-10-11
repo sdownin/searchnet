@@ -17,7 +17,8 @@ run_counterfactual_with_uncertainty(
   strict = TRUE,
   conf_level = 0.95,
   keep_runs = FALSE,
-  verbose = TRUE
+  verbose = TRUE,
+  degree_bounds = NULL
 )
 }
 \arguments{
@@ -54,6 +55,10 @@ environments, so keeping them is expensive).}
 
 \item{verbose}{Logical. Print per-draw progress and the pooled summary
 (default \code{TRUE}).}
+
+\item{degree_bounds}{Optional degree bounds, passed to
+\code{\link{run_calibrated_counterfactual}} for every draw. Default
+\code{NULL}.}
 }
 \value{
 A list with components:

@@ -283,6 +283,14 @@
 #'
 #' @seealso \code{\link{searchnet_chain_compare}},
 #'   \code{\link{searchnet_repertoire}}
+#' @examples
+#' ## Synthetic event logs on a 6 x 5 actor-by-component network
+#' set.seed(1)
+#' B0 <- matrix(0L, 6, 5)
+#' make_log <- function(n = 40) data.frame(actor = sample(6, n, TRUE),
+#'                                         comp  = sample(5, n, TRUE))
+#' cs <- searchnet_chain_stats(make_log(), B0 = B0)
+#' head(cs)
 #' @export
 searchnet_chain_stats <- function(x,
                                   B0        = NULL,
@@ -471,6 +479,32 @@ searchnet_chain_stats <- function(x,
 #'
 #' @seealso \code{\link{searchnet_chain_stats}},
 #'   \code{\link{searchnet_chain_compare}}
+#' @examples
+#' \donttest{
+#' ## A small bipartite panel and a quick method-of-moments fit
+#' set.seed(4242)
+#' M <- 10; N <- 6
+#' arr <- array(0L, c(M, N, 3))
+#' arr[, , 1] <- matrix(rbinom(M * N, 1, 0.3), M, N)
+#' for (w in 2:3) {
+#'   p <- arr[, , w - 1]
+#'   flip <- matrix(runif(M * N) < 0.15, M, N)
+#'   p[flip] <- 1L - p[flip]
+#'   arr[, , w] <- p
+#' }
+#' actors <- RSiena::sienaNodeSet(M, nodeSetName = "actors")
+#' comps  <- RSiena::sienaNodeSet(N, nodeSetName = "comps")
+#' dv  <- RSiena::sienaDependent(arr, type = "bipartite",
+#'                               nodeSet = c("actors", "comps"))
+#' dat <- RSiena::sienaDataCreate(dv, nodeSets = list(actors, comps))
+#' alg <- RSiena::sienaAlgorithmCreate(projname = NULL, nsub = 1, n3 = 20,
+#'                                     seed = 1, cond = FALSE)
+#' fit <- RSiena::siena07(alg, data = dat, effects = RSiena::getEffects(dat),
+#'                        returnChains = TRUE, batch = TRUE, silent = TRUE,
+#'                        useCluster = FALSE)
+#' chains <- searchnet_chain_from_fit(fit, dat)
+#' length(unique(chains$chain_id))
+#' }
 #' @export
 searchnet_chain_from_fit <- function(fit, dat, dv_name = NULL,
                                      periods = NULL, runs = NULL,
@@ -674,6 +708,17 @@ searchnet_chain_from_fit <- function(fit, dat, dv_name = NULL,
 #' construction and is not independent evidence.
 #'
 #' @seealso \code{\link{searchnet_chain_stats}}
+#' @examples
+#' ## Synthetic event logs on a 6 x 5 actor-by-component network
+#' set.seed(1)
+#' B0 <- matrix(0L, 6, 5)
+#' make_log <- function(n = 40) data.frame(actor = sample(6, n, TRUE),
+#'                                         comp  = sample(5, n, TRUE))
+#' obs <- searchnet_chain_stats(make_log(), B0 = B0)
+#' sim <- do.call(rbind, lapply(1:25, function(r)
+#'   searchnet_chain_stats(make_log(), B0 = B0, source = "simulated",
+#'                         chain_id = r)))
+#' searchnet_chain_compare(sim, obs)
 #' @export
 searchnet_chain_compare <- function(simulated,
                                     observed,
@@ -869,6 +914,27 @@ searchnet_chain_compare <- function(simulated,
 #'
 #' @seealso \code{\link{searchnet_chain_gap}},
 #'   \code{\link{searchnet_chain_from_fit}}
+#' @examples
+#' \donttest{
+#' ## A small bipartite panel and a quick method-of-moments fit
+#' set.seed(4242)
+#' M <- 10; N <- 6
+#' arr <- array(0L, c(M, N, 3))
+#' arr[, , 1] <- matrix(rbinom(M * N, 1, 0.3), M, N)
+#' for (w in 2:3) {
+#'   p <- arr[, , w - 1]
+#'   flip <- matrix(runif(M * N) < 0.15, M, N)
+#'   p[flip] <- 1L - p[flip]
+#'   arr[, , w] <- p
+#' }
+#' actors <- RSiena::sienaNodeSet(M, nodeSetName = "actors")
+#' comps  <- RSiena::sienaNodeSet(N, nodeSetName = "comps")
+#' dv  <- RSiena::sienaDependent(arr, type = "bipartite",
+#'                               nodeSet = c("actors", "comps"))
+#' dat <- RSiena::sienaDataCreate(dv, nodeSets = list(actors, comps))
+#' null_fit <- searchnet_chain_null_model(dat, n3 = 20)
+#' null_chains <- searchnet_chain_from_fit(null_fit, dat)
+#' }
 #' @export
 searchnet_chain_null_model <- function(dat, algorithm = NULL, seed = 1L,
                                        n3 = 100L, ...) {
@@ -932,6 +998,21 @@ searchnet_chain_null_model <- function(dat, algorithm = NULL, seed = 1L,
 #'
 #' @seealso \code{\link{searchnet_chain_null_model}},
 #'   \code{\link{searchnet_chain_compare}}
+#' @examples
+#' ## Synthetic event logs on a 6 x 5 actor-by-component network
+#' set.seed(1)
+#' B0 <- matrix(0L, 6, 5)
+#' make_log <- function(n = 40) data.frame(actor = sample(6, n, TRUE),
+#'                                         comp  = sample(5, n, TRUE))
+#' obs <- searchnet_chain_stats(make_log(), B0 = B0)
+#' sim <- do.call(rbind, lapply(1:25, function(r)
+#'   searchnet_chain_stats(make_log(), B0 = B0, source = "simulated",
+#'                         chain_id = r)))
+#' ## A second set of chains standing in for the null model
+#' null <- do.call(rbind, lapply(1:25, function(r)
+#'   searchnet_chain_stats(make_log(), B0 = B0, source = "simulated",
+#'                         chain_id = r)))
+#' searchnet_chain_gap(focal = sim, null = null, observed = obs)
 #' @export
 searchnet_chain_gap <- function(focal, null, observed, alpha = 0.05, ...) {
 
@@ -1026,6 +1107,17 @@ searchnet_chain_gap <- function(focal, null, observed, alpha = 0.05, ...) {
 #' not.
 #'
 #' @seealso \code{\link{searchnet_chain_gap}}
+#' @examples
+#' ## Synthetic event logs on a 6 x 5 actor-by-component network
+#' set.seed(1)
+#' B0 <- matrix(0L, 6, 5)
+#' make_log <- function(n = 40) data.frame(actor = sample(6, n, TRUE),
+#'                                         comp  = sample(5, n, TRUE))
+#' obs <- searchnet_chain_stats(make_log(), B0 = B0)
+#' sim <- do.call(rbind, lapply(1:25, function(r)
+#'   searchnet_chain_stats(make_log(), B0 = B0, source = "simulated",
+#'                         chain_id = r)))
+#' searchnet_chain_calibrate(sim, max_holdout = 10)
 #' @export
 searchnet_chain_calibrate <- function(chains, alpha = 0.05,
                                       stats = .SEARCHNET_REM_STATS,

@@ -57,16 +57,24 @@ NULL
 #'   anti-coordination / congestion regime.
 #' @param h Numeric private-utility bias (external field) in spin form.
 #' @param x0 Numeric starting value for fixed-point iteration when
-#'   \code{all_roots = FALSE} (default \code{0}, must be in \eqn{[-1, 1]}).
-#' @param tol Numeric convergence tolerance (default \code{1e-10}).
+#'   \code{all_roots = FALSE} and \eqn{\beta J > 0} (default \code{0}, must
+#'   be in \eqn{[-1, 1]}).
+#' @param tol Numeric tolerance (default \code{1e-10}): every returned value
+#'   satisfies \eqn{|f(m)| \le} \code{tol}, and a warning is raised if that
+#'   cannot be achieved.
 #' @param max_iter Integer maximum number of fixed-point iterations
 #'   (default \code{1000}).
 #' @param all_roots Logical.  If \code{TRUE} (default), scan
 #'   \eqn{[-1, 1]} at 1001 grid points to bracket all sign changes of the
-#'   residual \eqn{f(m) = m - \tanh(\beta h + \beta J m)} and return all
-#'   equilibrium values via \code{\link[stats]{uniroot}}.  If
-#'   \code{FALSE}, run fixed-point iteration starting from \code{x0} and
-#'   return a single scalar.
+#'   residual \eqn{f(m) = m - \tanh(\beta h + \beta J m)}, refine each with
+#'   \code{\link[stats]{uniroot}} and Newton steps, and return all
+#'   equilibrium values (roots closer than \code{sqrt(tol)} are merged; the
+#'   values are not rounded).  If \code{FALSE}, return a single root: for
+#'   \eqn{\beta J \le 0} the map is non-increasing, the root is unique, and
+#'   it is found by bracketing on \eqn{[-1, 1]} (plain iteration can cycle
+#'   when \eqn{\beta |J| > 1}); for \eqn{\beta J > 0} the map is increasing
+#'   and fixed-point iteration from \code{x0} converges monotonically to the
+#'   nearest fixed point in its direction of travel, which is then polished.
 #' @return A numeric vector of equilibrium magnetizations.  Length 1 in
 #'   the unique-equilibrium regime, length 3 in the multiple-equilibria
 #'   regime (when \code{all_roots = TRUE}); a scalar when
@@ -96,6 +104,10 @@ bd_self_consistency <- function(beta, J, h,
   stopifnot(is.numeric(max_iter), length(max_iter) == 1, max_iter >= 1)
   stopifnot(is.logical(all_roots), length(all_roots) == 1)
 
+  ## A residual below a few ulps cannot be improved in double precision, so
+  ## a tol smaller than that is checked against the attainable floor.
+  tol_check <- max(tol, 8 * .Machine$double.eps)
+
   if (all_roots) {
     grid <- seq(-1, 1, length.out = 1001)
     fvals <- .bd_residual(grid, beta = beta, J = J, h = h)
@@ -107,46 +119,119 @@ bd_self_consistency <- function(beta, J, h,
       roots <- c(roots, grid[exact_zeros])
     }
 
-    ## Bracket every sign change and refine via uniroot
+    ## Bracket every sign change, refine via uniroot at `tol`, then polish
+    ## with Newton steps so the returned value satisfies the equation.
     sign_changes <- which(fvals[-length(fvals)] * fvals[-1] < 0)
     for (idx in sign_changes) {
-      lo <- grid[idx]
-      hi <- grid[idx + 1]
-      r <- tryCatch(
-        stats::uniroot(.bd_residual, lower = lo, upper = hi,
-                       beta = beta, J = J, h = h, tol = tol)$root,
-        error = function(e) NA_real_
-      )
+      r <- .bd_bracket_root(grid[idx], grid[idx + 1], beta, J, h, tol)
       if (is.finite(r)) roots <- c(roots, r)
     }
 
     if (length(roots) == 0) {
       ## Degenerate edge case: no sign change found (e.g., beta == 0).
-      ## Fall back to fixed-point iteration from x0.
+      ## Fall back to the single-root solver.
       return(bd_self_consistency(beta = beta, J = J, h = h,
                                  x0 = x0, tol = tol,
                                  max_iter = max_iter,
                                  all_roots = FALSE))
     }
 
-    ## De-duplicate near-coincident roots (within sqrt(tol))
-    roots <- sort(unique(round(roots, digits = -log10(sqrt(tol)))))
+    ## De-duplicate near-coincident roots (within sqrt(tol)) by keeping the
+    ## first of each cluster. The values themselves are not rounded.
+    roots <- sort(roots)
+    keep <- c(TRUE, diff(roots) > sqrt(tol))
+    roots <- roots[keep]
+    .bd_check_residual(roots, beta, J, h, tol_check)
     return(roots)
   }
 
-  ## Fixed-point iteration branch
+  if (beta * J <= 0) {
+    ## Anti-coordination (or no coupling): the map m -> tanh(beta h + beta J m)
+    ## is non-increasing, so the residual is strictly increasing and the root
+    ## is unique. Plain iteration can fall into a 2-cycle when
+    ## beta |J| (1 - m^2) > 1, so the root is bracketed on [-1, 1] instead.
+    m <- .bd_bracket_root(-1, 1, beta, J, h, tol)
+    .bd_check_residual(m, beta, J, h, tol_check)
+    return(m)
+  }
+
+  ## Coordination (beta J > 0): the map is increasing, so iteration from x0
+  ## is monotone and converges to the nearest fixed point in its direction
+  ## of travel. The limit is then polished and its residual verified.
   m <- x0
+  converged <- FALSE
   for (k in seq_len(max_iter)) {
     m_new <- tanh(beta * h + beta * J * m)
     if (abs(m_new - m) < tol) {
-      return(m_new)
+      m <- m_new
+      converged <- TRUE
+      break
     }
     m <- m_new
   }
-  warning("bd_self_consistency: fixed-point iteration did not converge ",
-          "within max_iter = ", max_iter, " (final residual ",
-          format(abs(.bd_residual(m, beta, J, h)), digits = 3), ")")
+  if (!converged || abs(.bd_residual(m, beta, J, h)) > tol_check) {
+    ## Slow (near-critical) convergence: bracket the first sign change of the
+    ## residual ahead of the iterate, in the direction the iteration moves.
+    f_m <- .bd_residual(m, beta, J, h)
+    if (f_m != 0) {
+      ahead <- if (f_m < 0) seq(m, 1, length.out = 2001) else seq(m, -1, length.out = 2001)
+      fa <- .bd_residual(ahead, beta, J, h)
+      idx <- which(fa[-length(fa)] * fa[-1] <= 0)
+      if (length(idx) > 0) {
+        lo <- min(ahead[idx[1]], ahead[idx[1] + 1])
+        hi <- max(ahead[idx[1]], ahead[idx[1] + 1])
+        r <- .bd_bracket_root(lo, hi, beta, J, h, tol)
+        if (is.finite(r)) m <- r
+      }
+    }
+  }
+  m <- .bd_newton_polish(m, beta, J, h)
+  .bd_check_residual(m, beta, J, h, tol_check)
   m
+}
+
+## Root of the residual on [lo, hi] (a sign-change bracket) via uniroot at
+## `tol`, polished by Newton steps. NA if uniroot fails.
+.bd_bracket_root <- function(lo, hi, beta, J, h, tol) {
+  r <- tryCatch(
+    stats::uniroot(.bd_residual, lower = lo, upper = hi,
+                   beta = beta, J = J, h = h, tol = tol)$root,
+    error = function(e) NA_real_
+  )
+  if (!is.finite(r)) return(NA_real_)
+  .bd_newton_polish(r, beta, J, h)
+}
+
+## Newton steps on f(m) = m - tanh(beta h + beta J m), accepted only while
+## they reduce |f| and stay in [-1, 1]. Starting from a bracketed root this
+## converges to the same root at machine precision.
+.bd_newton_polish <- function(m, beta, J, h, max_steps = 50L) {
+  f <- .bd_residual(m, beta, J, h)
+  for (s in seq_len(max_steps)) {
+    if (f == 0) break
+    t <- tanh(beta * h + beta * J * m)
+    fp <- 1 - beta * J * (1 - t^2)
+    if (!is.finite(fp) || fp == 0) break
+    m_new <- m - f / fp
+    if (!is.finite(m_new) || m_new < -1 || m_new > 1) break
+    f_new <- .bd_residual(m_new, beta, J, h)
+    if (abs(f_new) >= abs(f)) break
+    m <- m_new
+    f <- f_new
+  }
+  m
+}
+
+## Warn when a returned value does not solve the self-consistency equation.
+.bd_check_residual <- function(m, beta, J, h, tol) {
+  res <- abs(.bd_residual(m, beta, J, h))
+  if (any(!is.finite(res)) || any(res > tol)) {
+    warning("bd_self_consistency: no root found within tol = ",
+            format(tol, digits = 3), " (largest residual ",
+            format(max(res), digits = 3), " at beta = ", beta, ", J = ", J,
+            ", h = ", h, ")", call. = FALSE)
+  }
+  invisible(res)
 }
 
 
@@ -302,7 +387,8 @@ saomnk_inpop_self_consistency <- function(beta, theta_inPop, h_b, M,
 #' @examples
 #' bd_equilibrium_count(beta = 1, J = 0.5)   # 1 (subcritical)
 #' bd_equilibrium_count(beta = 1, J = 2.0)   # 3 (supercritical)
-#' bd_equilibrium_count(beta = 1, J = 2.0, h = 0.5)  # 1 (field destroys mult.)
+#' bd_equilibrium_count(beta = 1, J = 2.0, h = 0.5)  # 3 (below critical field 0.533)
+#' bd_equilibrium_count(beta = 1, J = 2.0, h = 0.6)  # 1 (field destroys mult.)
 #' @export
 bd_equilibrium_count <- function(beta, J, h = 0) {
 

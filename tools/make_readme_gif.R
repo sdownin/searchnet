@@ -9,7 +9,12 @@
 ##
 ## Usage, from the package root:
 ##
-##     Rscript tools/make_readme_gif.R [--export-only]
+##     Rscript tools/make_readme_gif.R [--export-only] [--styles=DIR]
+##
+## --styles=DIR renders the alternative landscape panels in
+## inst/manim/scene_landscape_styles.py (hypercube, terrain, contour,
+## difference) from the same data into DIR as review drafts, and leaves the
+## README GIF untouched.
 ##
 ## Three stages:
 ##   1. R (this script): a seeded saomnk_run(); for every ministep, the focal
@@ -31,7 +36,9 @@
 ## into the package.
 ###############################################################################
 
-export_only <- "--export-only" %in% commandArgs(trailingOnly = TRUE)
+args        <- commandArgs(trailingOnly = TRUE)
+export_only <- "--export-only" %in% args
+styles_dir  <- sub("^--styles=", "", grep("^--styles=", args, value = TRUE)[1])
 
 if (file.exists("DESCRIPTION") &&
     any(grepl("^Package: searchnet", readLines("DESCRIPTION", n = 1)))) {
@@ -138,6 +145,16 @@ out <- list(
   K_AC = unname(kt[, "K_AC"]), K_AA = unname(kt[, "K_AA"]),
   seeds = list(env = 42L, run = 12345L)
 )
+## Under degree bounds (saomnk_model(degree_bounds = )), portfolios outside them
+## carry the fixed penalty's large negative utility; flag them per state so a
+## scene can grey them out instead of coloring that value. This run has no
+## bounds, so nothing is added and the JSON (and the GIF) are unchanged.
+if (!is.null(mod$dv_bipartite$degree_bounds)) {
+  all_st <- c(list(B0), lapply(seq_len(n_t), function(t) arr[, , t]))
+  out$infeasible <- unname(t(vapply(all_st, function(S)
+    as.logical(searchnet_portfolio_infeasible(configs, mod, state = S, actor = focal)),
+    logical(nrow(configs)))))
+}
 
 ## SEARCHNET_GIF_WORKDIR keeps the intermediates (JSON, MP4) for inspection;
 ## by default they live in this session's tempdir and vanish with it.
@@ -149,21 +166,38 @@ cat("wrote", json, "\n")
 if (export_only) quit(status = 0)
 
 ## ---- 4. render ---------------------------------------------------------------
-py    <- Sys.getenv("SEARCHNET_PYTHON", "python")
-scene <- normalizePath(file.path("inst", "manim", "scene_readme_landscape.py"))
+py <- Sys.getenv("SEARCHNET_PYTHON", "python")
 Sys.setenv(SEARCHNET_README_JSON = json)
-status <- system2(py, c("-m", "manim", "render", "--media_dir", shQuote(work),
-                        "-r", "880,520", "--fps", "10", "--disable_caching",
-                        "-o", "readme_landscape", shQuote(scene), "ReadmeLandscapeScene"))
-if (status != 0) stop("manim render failed")
-mp4 <- list.files(work, pattern = "^readme_landscape[.]mp4$", recursive = TRUE, full.names = TRUE)[1]
-if (is.na(mp4)) stop("manim output not found under ", work)
 
-gif <- file.path("man", "figures", "readme-landscape.gif")
-pal <- file.path(work, "palette.png")
-system2("ffmpeg", c("-v", "error", "-y", "-i", shQuote(mp4),
-                    "-vf", shQuote("fps=10,palettegen=max_colors=64:stats_mode=diff"), shQuote(pal)))
-system2("ffmpeg", c("-v", "error", "-y", "-i", shQuote(mp4), "-i", shQuote(pal),
-                    "-lavfi", shQuote("fps=10[x];[x][1:v]paletteuse=dither=none:diff_mode=rectangle"),
-                    "-loop", "0", shQuote(gif)))
-cat(sprintf("wrote %s (%.0f KB)\n", gif, file.size(gif) / 1024))
+## manim scene -> MP4 -> two-pass palette GIF
+render_gif <- function(file, cls, out_name, gif, colors = 64L) {
+  scene <- normalizePath(file.path("inst", "manim", file))
+  status <- system2(py, c("-m", "manim", "render", "--media_dir", shQuote(work),
+                          "-r", "880,520", "--fps", "10", "--disable_caching",
+                          "-o", out_name, shQuote(scene), cls))
+  if (status != 0) stop("manim render failed")
+  mp4 <- list.files(work, pattern = paste0("^", out_name, "[.]mp4$"), recursive = TRUE,
+                    full.names = TRUE)[1]
+  if (is.na(mp4)) stop("manim output not found under ", work)
+  pal <- file.path(work, "palette.png")
+  system2("ffmpeg", c("-v", "error", "-y", "-i", shQuote(mp4),
+                      "-vf", shQuote(sprintf("fps=10,palettegen=max_colors=%d:stats_mode=diff", colors)),
+                      shQuote(pal)))
+  system2("ffmpeg", c("-v", "error", "-y", "-i", shQuote(mp4), "-i", shQuote(pal),
+                      "-lavfi", shQuote("fps=10[x];[x][1:v]paletteuse=dither=none:diff_mode=rectangle"),
+                      "-loop", "0", shQuote(gif)))
+  cat(sprintf("wrote %s (%.0f KB)\n", gif, file.size(gif) / 1024))
+}
+
+if (!is.na(styles_dir)) {
+  ## review drafts of alternative right-hand panels; the README GIF is not touched
+  dir.create(styles_dir, showWarnings = FALSE, recursive = TRUE)
+  styles <- c(HypercubeScene = 64L, TerrainScene = 48L, ContourScene = 96L, DifferenceScene = 64L)
+  for (cls in names(styles))
+    render_gif("scene_landscape_styles.py", cls, cls, file.path(styles_dir, paste0(cls, ".gif")),
+               colors = styles[[cls]])
+  quit(status = 0)
+}
+
+render_gif("scene_readme_landscape.py", "ReadmeLandscapeScene", "readme_landscape",
+           file.path("man", "figures", "readme-landscape.gif"))

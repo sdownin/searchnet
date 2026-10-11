@@ -6,8 +6,8 @@
 
 # ---- plot_exploration_exploitation_consistent --------------------------------
 
-#' @export
-saomnk_plot_exploration_exploitation_consistent <- function(
+#' @noRd
+.searchnet_ee_trajectory_density <- function(
     env,
     actor_ids = c(),
     thin_factor = 1,
@@ -27,7 +27,7 @@ saomnk_plot_exploration_exploitation_consistent <- function(
     plot_file = '',
     plot_dir = NA
 ) {
-  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation_consistent()")
+  .searchnet_require_path(env, "searchnet_plot_exploration(type = 'trajectory_density')")
 
   # Get actor strategies - matching the utility plot logic
   if (!identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS'))
@@ -359,8 +359,8 @@ saomnk_plot_exploration_exploitation_consistent <- function(
 
 # ---- plot_exploration_exploitation -------------------------------------------
 
-#' @export
-saomnk_plot_exploration_exploitation <- function(
+#' @noRd
+.searchnet_ee_trajectory <- function(
     env,
     actor_ids = c(),
     thin_factor = 1,
@@ -379,7 +379,7 @@ saomnk_plot_exploration_exploitation <- function(
     plot_file = '',
     plot_dir = NA
 ) {
-  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation()")
+  .searchnet_require_path(env, "searchnet_plot_exploration(type = 'trajectory')")
 
   # Get bipartite network data from chain
   bi_env_arr <- env$bi_env_arr
@@ -627,14 +627,14 @@ saomnk_plot_exploration_exploitation <- function(
 
 # ---- plot_exploration_exploitation_phase -------------------------------------
 
-#' @export
-saomnk_plot_exploration_exploitation_phase <- function(
+#' @noRd
+.searchnet_ee_phase_space <- function(
     env,
     time_window = 50,
     show_trajectories = TRUE,
     plot_return = TRUE
 ) {
-  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation_phase()")
+  .searchnet_require_path(env, "searchnet_plot_exploration(type = 'phase_space')")
 
   # Get the metrics using the same calculation as above
   bi_env_arr <- env$bi_env_arr
@@ -723,8 +723,8 @@ saomnk_plot_exploration_exploitation_phase <- function(
 
 # ---- plot_exploration_exploitation_improved ----------------------------------
 
-#' @export
-saomnk_plot_exploration_exploitation_improved <- function(
+#' @noRd
+.searchnet_ee_portfolio <- function(
     env,
     actor_ids = c(),
     thin_factor = 1,
@@ -743,7 +743,7 @@ saomnk_plot_exploration_exploitation_improved <- function(
     plot_file = '',
     plot_dir = NA
 ) {
-  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation_improved()")
+  .searchnet_require_path(env, "searchnet_plot_exploration(type = 'portfolio')")
 
   # Get actor strategies
   if (!identical(attr(env$strat_1_coCovar, 'nodeSet'), 'ACTORS'))
@@ -1043,14 +1043,14 @@ saomnk_plot_exploration_exploitation_improved <- function(
 
 # ---- plot_exploration_exploitation_faceted ------------------------------------
 
-#' @export
-saomnk_plot_exploration_exploitation_faceted <- function(
+#' @noRd
+.searchnet_ee_strategy_facets <- function(
     env,
     metrics_df,
     loess_span = 0.3,
     show_points = FALSE
 ) {
-  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation_faceted()")
+  .searchnet_require_path(env, "searchnet_plot_exploration(type = 'strategy_facets')")
 
   # Prepare data
   plot_data <- metrics_df %>%
@@ -1123,8 +1123,8 @@ saomnk_plot_exploration_exploitation_faceted <- function(
 
 # ---- plot_exploration_exploitation_by_strategy -------------------------------
 
-#' @export
-saomnk_plot_exploration_exploitation_by_strategy <- function(
+#' @noRd
+.searchnet_ee_strategy_groups <- function(
     env,
     actor_ids = c(),
     thin_factor = 1,
@@ -1142,7 +1142,7 @@ saomnk_plot_exploration_exploitation_by_strategy <- function(
     plot_file = '',
     plot_dir = NA
 ) {
-  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation_by_strategy()")
+  .searchnet_require_path(env, "searchnet_plot_exploration(type = 'strategy_groups')")
 
   # Get actor strategies using the R6 method
   actor_strategies <- env$get_actor_strategies()
@@ -1393,15 +1393,15 @@ saomnk_plot_exploration_exploitation_by_strategy <- function(
 
 # ---- plot_strategy_exploration_exploitation ----------------------------------
 
-#' @export
-saomnk_plot_strategy_exploration_exploitation <- function(
+#' @noRd
+.searchnet_ee_strategy_result <- function(
     env,
     result,
     show_points = TRUE,
     show_group_means = TRUE,
     group_line_size = 2
 ) {
-  .searchnet_require_path(env, "saomnk_plot_strategy_exploration_exploitation()")
+  .searchnet_require_path(env, "searchnet_plot_exploration(type = 'strategy_result')")
 
   # Use the metrics from the result
   metrics_df <- result$metrics
@@ -1648,8 +1648,8 @@ saomnk_plot_did_exploration <- function(
 
 # ---- plot_exploration_exploitation_subsidies ---------------------------------
 
-#' @export
-saomnk_plot_exploration_exploitation_subsidies <- function(
+#' @noRd
+.searchnet_ee_risk_subsidies <- function(
     env,
     metrics_df = NULL,
     show_points = FALSE,
@@ -1657,7 +1657,7 @@ saomnk_plot_exploration_exploitation_subsidies <- function(
     loess_span = 0.3,
     shock_time = NULL
 ) {
-  .searchnet_require_path(env, "saomnk_plot_exploration_exploitation_subsidies()")
+  .searchnet_require_path(env, "searchnet_plot_exploration(type = 'risk_subsidies')")
 
   if (is.null(metrics_df)) {
     metrics_df <- env$calculate_explore_exploit_risk_adjusted()

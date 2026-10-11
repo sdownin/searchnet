@@ -127,3 +127,7 @@
 # A standalone dev script that sources R/ from the repository root; it is not
 # a test R CMD check can run from the installed package.
 ^tests/verify_searchnet_port\.R$
+# Architecture-view animations (about 13 MB) are linked from the
+# searchnet-landscape-views vignette by repository URL; the vignette
+# shows still frames from vignettes/figures, so the GIFs need not ship.
+^man/figures/readme-arch-.*\.gif$

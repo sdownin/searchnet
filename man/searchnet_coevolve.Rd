@@ -20,6 +20,7 @@ searchnet_coevolve(
   silent = FALSE,
   stop_on_nonidentification = TRUE,
   verbose = TRUE,
+  degree_bounds = NULL,
   ...
 )
 }
@@ -62,6 +63,14 @@ all \code{NA}. Default \code{TRUE}. Setting it \code{FALSE} returns the
 object for inspection but does not make the estimates quotable.}
 
 \item{verbose}{Logical. Print the convergence report. Default \code{TRUE}.}
+
+\item{degree_bounds}{Optional degree bounds on the (single) bipartite
+dependent network, in any form \code{\link{searchnet_degree_bounds}}
+accepts. When set, every observed wave is checked with
+\code{\link{searchnet_check_degree_bounds}}, the penalty effects are added
+to \code{eff} fixed and untested (modeling assumptions, not estimates),
+and an actor cap becomes \code{MaxDegree} in the algorithm. Default
+\code{NULL}.}
 
 \item{...}{Further arguments passed to \code{\link[RSiena]{siena07}}.}
 }

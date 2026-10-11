@@ -30,7 +30,9 @@ searchnet_recovery(
   conv_threshold = 0.25,
   algorithm_args = list(),
   keep_panels = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  degree_bounds = NULL,
+  estimate_with_bounds = TRUE
 )
 
 \method{print}{searchnet_recovery}(x, digits = 3, ...)
@@ -108,6 +110,21 @@ Default \code{FALSE}.}
 
 \item{verbose}{Logical. Print one line per replication. Default
 \code{FALSE}.}
+
+\item{degree_bounds}{Optional degree bounds for the planted
+data-generating process, in any form
+\code{\link{searchnet_degree_bounds}} accepts. Every simulated period
+uses RSiena's \code{MaxDegree} for an actor cap and fixed penalty effects
+for floors and component caps; the wave-1 draw is brought within the
+bounds (seeded: ties above a cap dropped, then ties below a floor added);
+and every wave is gated. The penalty effects are not part of
+\code{theta_true} or of the estimates. Default \code{NULL}.}
+
+\item{estimate_with_bounds}{Logical. With \code{degree_bounds}, estimate
+each panel under the same bounds (\code{TRUE}, default: data checked,
+penalty effects fixed, \code{MaxDegree} set; method of moments only) or
+ignoring them (\code{FALSE}), which measures the cost of omitting a bound
+that generated the data.}
 
 \item{x}{A \code{"searchnet_recovery"} object.}
 

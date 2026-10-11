@@ -23,6 +23,8 @@
 #'
 #' @return A data.frame with columns `effect`, `slot`, `lean`, `potential`,
 #'   `proof`, `note`.
+#' @examples
+#' lean_effect_map()[, c("effect", "slot", "potential")]
 #' @export
 lean_effect_map <- function() {
   data.frame(
@@ -123,6 +125,10 @@ lean_effect_map <- function() {
 #' @param relational Optional relational-layer declaration (see Details).
 #' @return An object of class `searchnet_lean_spec`.
 #' @seealso [lean_export_model()], [lean_effect_map()]
+#' @examples
+#' mod <- list(M = 2, N = 3, E = diag(3),
+#'             theta = c(density = -0.5, inPop = 0.2))
+#' lean_spec(mod)
 #' @export
 lean_spec <- function(model, theta = NULL, landscape_id = 1, config = NULL,
                       revision = c("glauber", "metropolis", "multinomial"),
@@ -423,6 +429,12 @@ print.searchnet_lean_spec <- function(x, ...) {
 #' @param ... Passed to [lean_spec()].
 #' @return Invisibly, the path of the written file, with attributes `spec`,
 #'   `hash` and `facts` (a data.frame of the numeric facts stated).
+#' @examples
+#' mod <- list(M = 2, N = 3, E = diag(3),
+#'             theta = c(density = -0.5, inPop = 0.2))
+#' f <- lean_export_model(mod, dir = tempdir())
+#' basename(f)
+#' attr(f, "facts")
 #' @export
 lean_export_model <- function(model, dir = tempdir(), exact = TRUE, digits = 6,
                               native = FALSE, max_N = 6, max_cells = 8, ...) {

@@ -32,3 +32,13 @@ incomplete proof, \code{"native"} a fact proved by \code{native_decide} (trustin
 compiler, \code{Lean.ofReduceBool}), \code{"axiom"} anything else. A file that fails
 to compile is reported with \code{status == "error"} and its error lines.
 }
+\examples{
+\donttest{
+## Needs elan/lake and a built SaomNK library; otherwise it
+## returns NULL with a message saying what is missing.
+mod <- list(M = 2, N = 3, E = diag(3),
+            theta = c(density = -0.5, inPop = 0.2))
+f <- lean_export_model(mod, dir = tempdir())
+res <- lean_check(files = f)
+}
+}

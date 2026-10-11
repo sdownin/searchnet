@@ -21,6 +21,9 @@ An installed package directory may not be writable, and \verb{lake build} writes
 its output next to the sources. \code{\link[=lean_setup]{lean_setup()}} can copy the project to a
 writable location and point \code{searchnet.lean_home} at it.
 }
+\examples{
+lean_home()
+}
 \seealso{
 \code{\link[=lean_available]{lean_available()}}, \code{\link[=lean_setup]{lean_setup()}}
 }

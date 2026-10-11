@@ -331,55 +331,36 @@ consequences are:
   stated in spin form) must apply this transformation explicitly.
 
 The package functions `bd_self_consistency()` and
-`saomnk_social_multiplier()` adopt the spin-form convention by
-default (matching Brock & Durlauf, 2001) and provide an explicit
-`spin = FALSE` argument when the user wishes to work in
-$\{0,1\}$-form.
+`saomnk_social_multiplier()` adopt the spin-form convention
+(matching Brock & Durlauf, 2001); $\{0,1\}$-form coefficients must be
+converted with Rb4 before they are passed in.
 
 ---
 
 # Solving the Self-Consistency Equation
 
 The package function `bd_self_consistency()` solves
-$m^* = \tanh\bigl(\beta(h + J m^*)\bigr)$ by fixed-point iteration
-starting from a small positive seed. When $\beta J > 1$ and $h = 0$,
-three roots exist; the `all_roots = TRUE` flag returns all of them.
+$m^* = \tanh\bigl(\beta(h + J m^*)\bigr)$ by bracketing every sign
+change of the residual on $[-1, 1]$ and returns the roots as a plain
+numeric vector. When $\beta J > 1$ and $h = 0$, three roots exist; the
+`all_roots = TRUE` flag (the default) returns all of them.
 
-```{r bd-single-root, eval=FALSE}
+```{r bd-single-root}
 library(searchnet)
 
 # Single equilibrium: weak coupling (sub-critical).
 bd_self_consistency(beta = 1, J = 0.5, h = 0)
-#> $m_star
-#> [1] 0
-#> $regime
-#> [1] "subcritical"
-#> $beta_J
-#> [1] 0.5
 ```
 
-```{r bd-multi-root, eval=FALSE}
+```{r bd-multi-root}
 # Multiple equilibria: strong coupling, zero field.
 bd_self_consistency(beta = 1, J = 2, h = 0, all_roots = TRUE)
-#> $m_star
-#> [1] -0.9575  0.0000  0.9575
-#> $stable
-#> [1]  TRUE FALSE  TRUE
-#> $regime
-#> [1] "supercritical"
-#> $beta_J
-#> [1] 2
+bd_equilibrium_count(beta = 1, J = 2, h = 0)
 ```
 
-```{r bd-with-field, eval=FALSE}
+```{r bd-with-field}
 # Strong coupling with a small positive field: symmetry broken.
 bd_self_consistency(beta = 1, J = 2, h = 0.05, all_roots = TRUE)
-#> $m_star
-#> [1] -0.9381 -0.0500  0.9651
-#> $stable
-#> [1]  TRUE FALSE  TRUE
-#> $regime
-#> [1] "supercritical_biased"
 ```
 
 The qualitative shifts from the symmetric $h = 0$ case are: the
@@ -399,7 +380,7 @@ diagram below sweeps $\beta J \in [0, 3]$, solves the
 self-consistency equation at each value, and overlays the unstable
 $m^* = 0$ branch as a dashed line in the supercritical regime.
 
-```{r bifurcation-diagram, eval=FALSE, fig.height=5.5}
+```{r bifurcation-diagram, fig.height=5.5}
 # Sweep beta*J across [0, 3] holding beta = 1 (so J varies from 0 to 3).
 bJ_seq <- seq(0, 3, length.out = 200)
 m_upper <- numeric(length(bJ_seq))
@@ -409,13 +390,13 @@ m_unstab <- numeric(length(bJ_seq))
 for (k in seq_along(bJ_seq)) {
   res <- bd_self_consistency(beta = 1, J = bJ_seq[k], h = 0,
                              all_roots = TRUE)
-  if (length(res$m_star) == 1) {
-    m_upper[k]  <- res$m_star
-    m_lower[k]  <- res$m_star
+  if (length(res) == 1) {
+    m_upper[k]  <- res
+    m_lower[k]  <- res
     m_unstab[k] <- NA_real_
   } else {
-    m_upper[k]  <- max(res$m_star)
-    m_lower[k]  <- min(res$m_star)
+    m_upper[k]  <- max(res)
+    m_lower[k]  <- min(res)
     m_unstab[k] <- 0
   }
 }
@@ -483,27 +464,27 @@ formal counterpart of the empirical observation that small policy
 shifts can have outsized aggregate consequences in tipping-prone
 systems (Schelling, 1971; Glaeser & Scheinkman, 2003).
 
-```{r social-multiplier-point, eval=FALSE}
+```{r social-multiplier-point}
 # Multiplier at a single point, sub-critical regime.
-saomnk_social_multiplier(beta = 1, J = 0.5, h = 0.1)
-#> $m_star
-#> [1] 0.1965
-#> $direct_effect
-#> [1] 0.9614
-#> $multiplier
-#> [1] 2.080
-#> $dm_dh
-#> [1] 1.999
+sm <- saomnk_social_multiplier(beta = 1, J = 0.5, h = 0.1)
+str(sm)
+
+# The function returns the multiplier; the direct effect and the total
+# response dm*/dh follow from m_star.
+direct_effect <- 1 * (1 - sm$m_star^2)   # beta * (1 - m*^2), beta = 1
+c(direct_effect = direct_effect,
+  multiplier    = sm$multiplier,
+  dm_dh         = direct_effect * sm$multiplier)
 ```
 
 The decomposition reads: the *direct effect*
 $\beta(1-(m^*)^2) \approx 0.96$ is what the response would be if
-peer behavior were held fixed. The *multiplier* $\approx 2.08$ is the
+peer behavior were held fixed. The *multiplier* $\approx 1.93$ is the
 amplification produced by feedback through the rationally expected
-peer mean. Their product, $dm^*/dh \approx 2.0$, is the total
+peer mean. Their product, $dm^*/dh \approx 1.85$, is the total
 equilibrium response.
 
-```{r multiplier-sweep, eval=FALSE, fig.height=5.5}
+```{r multiplier-sweep, fig.height=5.5}
 # Multiplier as a function of beta*J for several h values.
 bJ_seq  <- seq(0.05, 0.99, length.out = 100)
 h_grid  <- c(0, 0.05, 0.15)
@@ -593,6 +574,11 @@ $M = 100$** -- empirical $\hat m = 0.5004$ vs B&D $m^* = 0.5$.
 
 > **Rerun 2026-10-07:** stored output, |error| 0.0083 / 0.0042 / 0.0004 at M = 20 / 50 / 100 ("four decimal places") -> re-run with the rescaling of 0.11.0, 0.0271 / 0.0117 / 0.0017; claim no longer supported as stated.
 
+The simulation runs below take from about 20 seconds to a few minutes,
+so these chunks are not evaluated when the
+vignette is built. Their displayed output was obtained by running them
+once on 2026-10-10 with searchnet 0.13.0.
+
 ```{r verify-bd, eval=FALSE, fig.height=5.5}
 # Default Option C regime: J_b=0.5, h_b=-0.25, beta=1, m* ~= 0.5
 ver <- verify_brock_durlauf_reduction(
@@ -613,11 +599,11 @@ print(ver[, c("M", "m_b_empirical", "m_BD_analytical",
 #> 1  0.027083333      0.027083333
 #> 2  0.011666667      0.011666667
 #> 3  0.001666667      0.001666667
-# Agreement to four decimal places at M=100 -- Tier 1 verification of Property 5
+# |error| falls from 0.027 at M = 20 to 0.0017 at M = 100
 ```
 
 For all three $M$ values, `in_BD_regime = TRUE` and both error metrics
-are very small (< 0.012). The empirical converges to $m_{BD} = 0.5$ at
+are small (< 0.03). The empirical converges to $m_{BD} = 0.5$ at
 the standard Curie-Weiss rate as $M$ grows. *[Revised 2026-10-07:
 previously "This confirms Option C verification of Property 5 to
 publication-grade numerical precision."]* Because $m = 1/2$ is a fixed
@@ -642,9 +628,19 @@ ver_B <- verify_brock_durlauf_reduction(
   J_b   = 2, h_b = -1,        # outside Option C
   n_steps = 100, n_replicates = 2
 )
-# Here abs_error_saomnk is small but abs_error_BD is large -- the
-# simulation IS doing the right thing for its own dynamics, but
-# B&D is not the right comparison target outside Option C regime.
+print(ver_B[, c("M", "m_b_empirical", "m_BD_analytical",
+                "m_saomnk_analytical", "in_BD_regime",
+                "abs_error_BD", "abs_error_saomnk")])
+#>     M m_b_empirical m_BD_analytical m_saomnk_analytical in_BD_regime
+#> 1  20      0.475000             0.5                 0.5         TRUE
+#> 2  50      0.491250             0.5                 0.5         TRUE
+#> 3 100      0.500625             0.5                 0.5         TRUE
+#>   abs_error_BD abs_error_saomnk
+#> 1     0.025000         0.025000
+#> 2     0.008750         0.008750
+#> 3     0.000625         0.000625
+# h_b = -J_b / 2 here, so m = 0.5 is a fixed point of both maps and this
+# run is still inside the Option C regime (see the rerun note below).
 ```
 
 > **Rerun 2026-10-07:** abs_error_BD large outside Option C -> J_b = 2, h_b = -1 gives m_BD = 0.5 (in_BD_regime TRUE), abs_error_BD 0.025 / 0.009 / 0.0006 at M = 20 / 50 / 100; claim no longer supported as stated.
@@ -656,12 +652,13 @@ $-1/2$:
 ```{r verify-bd-plot, eval=FALSE, fig.height=5.5}
 # Log-log plot of |error| vs M with the predicted O(M^-1/2) reference line.
 # Reference line: y = c / sqrt(M), c chosen to pass through the smallest M
-ref_c <- ver$summary$abs_error[1] * sqrt(ver$summary$M[1])
-M_grid <- 10 ^ seq(log10(min(ver$summary$M)),
-                   log10(max(ver$summary$M)),
+err <- data.frame(M = ver$M, abs_error = ver$abs_error_BD)
+ref_c <- err$abs_error[1] * sqrt(err$M[1])
+M_grid <- 10 ^ seq(log10(min(err$M)),
+                   log10(max(err$M)),
                    length.out = 80)
 pal <- searchnet_palette()
-ggplot(ver$summary, aes(M, abs_error)) +
+ggplot(err, aes(M, abs_error)) +
   geom_line(data = data.frame(M = M_grid, abs_error = ref_c / sqrt(M_grid)),
             aes(linetype = "Reference: O(1 / sqrt(M))"),
             color = pal[["vermillion"]], linewidth = 0.9) +
@@ -807,32 +804,20 @@ which positive social interaction frees the basin steepness exponent
 $s$ from the Gaussian default $s = 2$. The corresponding searchnet
 function is `bd_landau_steepness()`:
 
-```{r landau-steepness, eval=FALSE}
-# Quartic coefficient b at a few sample equilibria.
-bd_landau_steepness(beta_eff = 0.6, tau = 0.25)
-#> $m_star
-#> [1] 0
-#> $a
-#> [1] -0.350
-#> $b
-#> [1] 0.500
-#> $effective_s
-#> [1] 2.000
+```{r landau-steepness}
+# Quartic coefficient b and steepness s at two sample equilibria.
+# Disordered regime: beta * J = 0.6, unique root m* = 0.
+bd_landau_steepness(beta = 1, J = 0.6, m_star = 0)
 
-bd_landau_steepness(beta_eff = 1.5, tau = 0.25)
-#> $m_star
-#> [1] 0.9362
-#> $a
-#> [1] 0.5377
-#> $b
-#> [1] 38.91
-#> $effective_s
-#> [1] ~ 2.8
+# Ordered regime: beta * J = 1.5, upper stable root.
+m_ord <- max(bd_self_consistency(beta = 1, J = 1.5, h = 0))
+m_ord
+bd_landau_steepness(beta = 1, J = 1.5, m_star = m_ord)
 ```
 
 The first call corresponds to the disordered regime ($m^* = 0$,
-$s = 2$ Gaussian baseline). The second call corresponds to a strongly
-ordered regime ($|m^*| \approx 0.94$, $s \approx 2.8$ super-Gaussian).
+$s \approx 2$ Gaussian baseline). The second call corresponds to a strongly
+ordered regime ($|m^*| \approx 0.86$, $s \approx 2.9$ super-Gaussian).
 The chain $\beta_h \uparrow \Rightarrow |m^*| \uparrow \Rightarrow b \uparrow \Rightarrow s \uparrow$
 links the herding coefficient to basin steepness, obtained here as a
 consequence of Property 5.

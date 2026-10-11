@@ -6,8 +6,8 @@
 # ============================================================================
 
 
-#' @export
-saomnk_search_rsiena_multiwave_plot <- function(env,
+#' @noRd
+.searchnet_mw_list <- function(env,
                                                  type = c(),
                                                  rolling_window = 10,
                                                  actor_ids = c(),
@@ -26,30 +26,30 @@ saomnk_search_rsiena_multiwave_plot <- function(env,
                                                  loess_span = 0.4) {
   plist <- list()
   if (length(type)==0 |  'K_4panel' %in% type)
-    plist[['K_4panel']] <- saomnk_search_rsiena_multiwave_plot_K_4panel(env, actor_ids, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
+    plist[['K_4panel']] <- .searchnet_mw_K_4panel(env, actor_ids, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
 
   if (length(type)==0 |  'K_AA_strategy_summary' %in% type)
-    plist[['K_AA_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
+    plist[['K_AA_strategy_summary']] <- .searchnet_mw_K_AA(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
 
   if (length(type)==0 |  'K_AC_strategy_summary' %in% type)
-    plist[['K_AC_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
+    plist[['K_AC_strategy_summary']] <- .searchnet_mw_K_AC(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
 
   if (length(type)==0 |  'K_CA_strategy_summary' %in% type)
-    plist[['K_CA_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
+    plist[['K_CA_strategy_summary']] <- .searchnet_mw_K_CA(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
 
   if (length(type)==0 |  'K_CC_strategy_summary' %in% type)
-    plist[['K_CC_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
+    plist[['K_CC_strategy_summary']] <- .searchnet_mw_K_CC(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
 
 
   if (length(type)==0 |  'utility_strategy_summary' %in% type)
-    plist[['utility_strategy_summary']] <- saomnk_search_rsiena_multiwave_plot_actor_utility_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, scale_utility, return_plot=TRUE, plot_file=plot_file, loess_span=loess_span )
+    plist[['utility_strategy_summary']] <- .searchnet_mw_utility_strategy(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, scale_utility, return_plot=TRUE, plot_file=plot_file, loess_span=loess_span )
 
   if (length(type)==0 |  'utility_by_strategy' %in% type)
-    plist[['utility_by_strategy']] <- saomnk_search_rsiena_multiwave_plot_actor_utility_by_strategy(env, actor_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
+    plist[['utility_by_strategy']] <- .searchnet_mw_utility_actor(env, actor_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, return_plot=TRUE, plot_file=plot_file )
   if (length(type)==0 |  'utility_density_by_strategy' %in% type)
-    plist[['utility_density_by_strategy']] <- saomnk_search_rsiena_multiwave_plot_actor_utility_density_by_strategy(env, thin_wave_factor, return_plot=TRUE, plot_file=plot_file )
+    plist[['utility_density_by_strategy']] <- .searchnet_mw_utility_density(env, thin_wave_factor, return_plot=TRUE, plot_file=plot_file )
   if (length(type)==0 |  'utility_ridge_density_by_strategy' %in% type)
-    plist[['utility_ridge_density_by_strategy']] <- saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, show_utility_points, show_strategy_means, return_plot=TRUE, plot_file=plot_file )
+    plist[['utility_ridge_density_by_strategy']] <- .searchnet_mw_utility_ridge(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, show_utility_points, show_strategy_means, return_plot=TRUE, plot_file=plot_file )
   #  SET plots
   env$multiwave_plots <- if(append_plot) { append(env$multiwave_plots, plist) } else { plist }
 
@@ -58,8 +58,8 @@ saomnk_search_rsiena_multiwave_plot <- function(env,
 }
 
 
-#' @export
-saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy <- function(env,
+#' @noRd
+.searchnet_mw_utility_ridge <- function(env,
                                                                                    actor_ids = c(),
                                                                                    wave_ids = c(),
                                                                                    thin_factor = 1,
@@ -183,8 +183,8 @@ saomnk_search_rsiena_multiwave_plot_utility_ridge_density_by_strategy <- functio
 }
 
 
-#' @export
-saomnk_search_rsiena_multiwave_plot_K_4panel <- function(env,
+#' @noRd
+.searchnet_mw_K_4panel <- function(env,
                                                           actor_ids = c(),
                                                           component_ids = c(),
                                                           wave_ids = c(),
@@ -194,10 +194,10 @@ saomnk_search_rsiena_multiwave_plot_K_4panel <- function(env,
                                                           show_utility_points = TRUE,
                                                           return_plot = TRUE,
                                                           plot_file = NA, plot_dir = NA) {
-  K_AA  <- saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=TRUE, show_title=FALSE, return_plot=TRUE)
-  K_AC <- saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=FALSE, show_title=FALSE, return_plot=TRUE)
-  K_CA <- saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=FALSE, show_title=FALSE, return_plot=TRUE)
-  K_CC  <- saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=TRUE, show_title=FALSE, return_plot=TRUE)
+  K_AA  <- .searchnet_mw_K_AA(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=TRUE, show_title=FALSE, return_plot=TRUE)
+  K_AC <- .searchnet_mw_K_AC(env, actor_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=FALSE, show_title=FALSE, return_plot=TRUE)
+  K_CA <- .searchnet_mw_K_CA(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=FALSE, show_title=FALSE, return_plot=TRUE)
+  K_CC  <- .searchnet_mw_K_CC(env, component_ids, wave_ids, thin_factor, thin_wave_factor, smooth_method, show_utility_points, show_legend=TRUE, show_title=FALSE, return_plot=TRUE)
   strateffs   <- sapply(env$config_structure_model$dv_bipartite$coCovars, function(x)x$effect)
   stratparams <- sapply(env$config_structure_model$dv_bipartite$coCovars, function(x)x$parameter)
   stratfixs   <- sapply(env$config_structure_model$dv_bipartite$coCovars, function(x)ifelse(x$fix,'','(var)'))
@@ -240,8 +240,8 @@ saomnk_search_rsiena_multiwave_plot_K_4panel <- function(env,
 }
 
 
-#' @export
-saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary <- function(env,
+#' @noRd
+.searchnet_mw_K_CC <- function(env,
                                                                        component_ids = c(),
                                                                        wave_ids = c(),
                                                                        thin_factor = 1,
@@ -351,8 +351,8 @@ saomnk_search_rsiena_multiwave_plot_K_CC_strategy_summary <- function(env,
 }
 
 
-#' @export
-saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary <- function(env,
+#' @noRd
+.searchnet_mw_K_CA <- function(env,
                                                                        component_ids = c(),
                                                                        wave_ids = c(),
                                                                        thin_factor = 1,
@@ -466,8 +466,8 @@ saomnk_search_rsiena_multiwave_plot_K_CA_strategy_summary <- function(env,
 }
 
 
-#' @export
-saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary <- function(env,
+#' @noRd
+.searchnet_mw_K_AC <- function(env,
                                                                        actor_ids = c(),
                                                                        wave_ids = c(),
                                                                        thin_factor = 1,
@@ -578,8 +578,8 @@ saomnk_search_rsiena_multiwave_plot_K_AC_strategy_summary <- function(env,
 }
 
 
-#' @export
-saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary <- function(env,
+#' @noRd
+.searchnet_mw_K_AA <- function(env,
                                                                        actor_ids = c(),
                                                                        wave_ids = c(),
                                                                        thin_factor = 1,
@@ -690,8 +690,8 @@ saomnk_search_rsiena_multiwave_plot_K_AA_strategy_summary <- function(env,
 }
 
 
-#' @export
-saomnk_search_rsiena_multiwave_plot_actor_utility_strategy_summary <- function(env,
+#' @noRd
+.searchnet_mw_utility_strategy <- function(env,
                                                                                 actor_ids = c(),
                                                                                 wave_ids = c(),
                                                                                 thin_factor = 1,
@@ -827,8 +827,8 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_strategy_summary <- function(e
 }
 
 
-#' @export
-saomnk_search_rsiena_multiwave_plot_actor_utility_by_strategy <- function(env,
+#' @noRd
+.searchnet_mw_utility_actor <- function(env,
                                                                            actor_ids = c(),
                                                                            thin_factor = 1,
                                                                            thin_wave_factor = 1,
@@ -867,8 +867,8 @@ saomnk_search_rsiena_multiwave_plot_actor_utility_by_strategy <- function(env,
 }
 
 
-#' @export
-saomnk_search_rsiena_multiwave_plot_actor_utility_density_by_strategy <- function(env,
+#' @noRd
+.searchnet_mw_utility_density <- function(env,
                                                                                    thin_wave_factor = 1,
                                                                                    return_plot = TRUE,
                                                                                    plot_file = NA,

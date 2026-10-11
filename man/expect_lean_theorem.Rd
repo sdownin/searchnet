@@ -16,3 +16,12 @@ A testthat expectation for checked results: \code{result} is the data.frame
 returned by \code{\link[=lean_check]{lean_check()}}; the expectation passes when \code{decl} appears in
 it with status \code{"ok"} (only the standard axioms).
 }
+\examples{
+## A lean_check() result, written out by hand for illustration
+res <- data.frame(file = "Instance_demo.lean",
+                  decl = "SaomNK.Demo.exact_potential",
+                  status = "ok", axioms = "propext, Quot.sound")
+if (requireNamespace("testthat", quietly = TRUE))
+  testthat::test_that("the exported potential is verified",
+                      expect_lean_theorem(res, "exact_potential"))
+}

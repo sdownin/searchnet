@@ -39,6 +39,7 @@ walkthrough.
 \examples{
 bd_equilibrium_count(beta = 1, J = 0.5)              # 1 (subcritical)
 bd_equilibrium_count(beta = 1, J = 2.0)              # 3 (supercritical)
-bd_equilibrium_count(beta = 1, J = 2.0, h = 0.5)     # 1 (field destroys mult.)
+bd_equilibrium_count(beta = 1, J = 2.0, h = 0.5)     # 3 (below critical field 0.533)
+bd_equilibrium_count(beta = 1, J = 2.0, h = 0.6)     # 1 (field destroys mult.)
 }
 \keyword{utilities}

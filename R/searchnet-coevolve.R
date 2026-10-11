@@ -846,6 +846,13 @@ searchnet_coevolve_effects <- function(dat,
 #'   all \code{NA}. Default \code{TRUE}. Setting it \code{FALSE} returns the
 #'   object for inspection but does not make the estimates quotable.
 #' @param verbose Logical. Print the convergence report. Default \code{TRUE}.
+#' @param degree_bounds Optional degree bounds on the (single) bipartite
+#'   dependent network, in any form \code{\link{searchnet_degree_bounds}}
+#'   accepts. When set, every observed wave is checked with
+#'   \code{\link{searchnet_check_degree_bounds}}, the penalty effects are added
+#'   to \code{eff} fixed and untested (modeling assumptions, not estimates),
+#'   and an actor cap becomes \code{MaxDegree} in the algorithm. Default
+#'   \code{NULL}.
 #' @param ... Further arguments passed to \code{\link[RSiena]{siena07}}.
 #'
 #' @return The \code{sienaFit} object, with attribute
@@ -875,6 +882,7 @@ searchnet_coevolve <- function(dat,
                                silent       = FALSE,
                                stop_on_nonidentification = TRUE,
                                verbose      = TRUE,
+                               degree_bounds = NULL,
                                ...) {
 
   if (!.searchnet_is_siena_data(dat))
@@ -882,9 +890,25 @@ searchnet_coevolve <- function(dat,
   if (!inherits(eff, "sienaEffects"))
     stop("`eff` must be a sienaEffects object.", call. = FALSE)
 
-  alg <- RSiena::sienaAlgorithmCreate(
-    projname = projname, n3 = as.integer(n3), nsub = as.integer(nsub),
-    seed = seed, silent = silent)
+  ## Degree bounds on the bipartite DV: observed waves checked, penalty
+  ## effects fixed, actor cap as MaxDegree (R/searchnet-degree-bounds.R).
+  bounds <- .searchnet_as_degree_bounds(degree_bounds)
+  alg_args <- list(projname = projname, n3 = as.integer(n3),
+                   nsub = as.integer(nsub), seed = seed, silent = silent)
+  if (!is.null(bounds)) {
+    bip <- names(dat$depvars)[vapply(dat$depvars, function(d)
+      identical(attr(d, "type"), "bipartite"), logical(1))]
+    if (length(bip) != 1L)
+      stop(sprintf(paste0("searchnet_coevolve(): `degree_bounds` needs exactly one ",
+                          "bipartite dependent network; `dat` has %d."), length(bip)),
+           call. = FALSE)
+    searchnet_check_degree_bounds(dat$depvars[[bip]], bounds)
+    eff <- .searchnet_apply_bound_effects(eff, bounds, bip)
+    alg_args <- .searchnet_bounds_algorithm_args(
+      alg_args, bounds, bip, N = dim(dat$depvars[[bip]])[2],
+      where = "searchnet_coevolve()")
+  }
+  alg <- do.call(RSiena::sienaAlgorithmCreate, alg_args)
 
   call_args <- list(alg, data = dat, effects = eff,
                     batch = batch, silent = silent,

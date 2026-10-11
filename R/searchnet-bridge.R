@@ -1070,6 +1070,11 @@ empirical_to_saomnk_env <- function(mi_data, wave = 1, imputation = 1,
 #'   replications (default \code{0.95}).
 #' @param verbose Logical. Print per-replication progress and the summary
 #'   (default \code{TRUE}).
+#' @param degree_bounds Optional degree bounds applied to BOTH arms, in any
+#'   form \code{\link{searchnet_degree_bounds}} accepts: fixed penalty effects
+#'   plus \code{MaxDegree} for an actor cap, exactly as in
+#'   \code{\link{saomnk_model}}. A scenario never multiplies them. Default
+#'   \code{NULL}.
 #' @section Matched seeds fix initialisation, not the path:
 #' Within a replication both arms are constructed and run at the same seed, so
 #' the landscape, the W matrix, the NK noise matrix and the initial holdings are
@@ -1143,7 +1148,8 @@ run_calibrated_counterfactual <- function(bridge_env, bridge_params,
                                           n_reps = 10,
                                           seed = 42,
                                           conf_level = 0.95,
-                                          verbose = TRUE) {
+                                          verbose = TRUE,
+                                          degree_bounds = NULL) {
 
   stopifnot(is.list(bridge_env), !is.null(bridge_env$env))
   stopifnot(is.list(bridge_params), !is.null(bridge_params$effects))
@@ -1388,6 +1394,14 @@ run_calibrated_counterfactual <- function(bridge_env, bridge_params,
   if (W_ok && .BRIDGE_W_EFFECT %in% modify_keys) {
     cf_model$dv_bipartite$coDyadCovars <-
       list(.as_w_entry(xwx_weight * scenario$modify[[.BRIDGE_W_EFFECT]]))
+  }
+
+  ## Degree bounds hold in both arms, identically; no scenario reaches them.
+  if (!is.null(degree_bounds)) {
+    baseline_model <- .searchnet_attach_degree_bounds(baseline_model, degree_bounds,
+                                                      dv_name = .BRIDGE_DV_NAME)
+    cf_model <- .searchnet_attach_degree_bounds(cf_model, degree_bounds,
+                                                dv_name = .BRIDGE_DV_NAME)
   }
 
   if (verbose) {
@@ -1991,6 +2005,9 @@ get_orm_scenarios <- function() {
 #'   environments, so keeping them is expensive).
 #' @param verbose Logical. Print per-draw progress and the pooled summary
 #'   (default \code{TRUE}).
+#' @param degree_bounds Optional degree bounds, passed to
+#'   \code{\link{run_calibrated_counterfactual}} for every draw. Default
+#'   \code{NULL}.
 #' @return A list with components:
 #'   \describe{
 #'     \item{\code{scenario}}{The scenario specification.}
@@ -2040,7 +2057,8 @@ run_counterfactual_with_uncertainty <- function(bridge_env, saom_result,
                                                 strict = TRUE,
                                                 conf_level = 0.95,
                                                 keep_runs = FALSE,
-                                                verbose = TRUE) {
+                                                verbose = TRUE,
+                                                degree_bounds = NULL) {
 
   stopifnot(is.list(bridge_env), !is.null(bridge_env$env))
   stopifnot(is.list(scenario), !is.null(scenario$name), !is.null(scenario$modify))
@@ -2107,7 +2125,8 @@ run_counterfactual_with_uncertainty <- function(bridge_env, saom_result,
       bridge_env, bp, scenario = scenario,
       iterations = iterations, n_reps = n_reps,
       seed = as.integer(seed) + (d - 1L) * n_reps,
-      conf_level = conf_level, verbose = FALSE))
+      conf_level = conf_level, verbose = FALSE,
+      degree_bounds = degree_bounds))
 
     if (is.null(influence)) influence <- res$influence
     if (isTRUE(keep_runs)) runs[[d]] <- res

@@ -30,7 +30,7 @@
     get_bipartite_effects_theta_df = function() theta_df,
     get_cov_data = function(item) cov[[item$effect]]
   )
-  environment(f) <- list2env(list(self = fake_self), parent = globalenv())
+  environment(f) <- list2env(list(self = fake_self), parent = asNamespace("searchnet"))
   out <- f(B)
   colnames(out) <- effects
   out

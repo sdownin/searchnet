@@ -33,6 +33,7 @@ if (requireNamespace("searchnet", quietly = TRUE)) {
   .saomnk_dir <- dir_r
   .saomnk_dir <- dir_r; source(file.path(dirname(dir_r), "inst", "saomnk-loader.R"))
   source(file.path(dir_r, "searchnet-causal.R"))
+  source(file.path(dir_r, "searchnet-causal-placebo.R"))
 }
 
 library(ggplot2)
@@ -278,3 +279,56 @@ built from a shocked and a comparison arm as in Section 3.
   the researcher wants to estimate the immediate local effect at the
   discontinuity.  It requires no explicit control group but estimates only
   the effect at the boundary, not the full post-treatment path.
+
+
+# 8. Two Gates Before Reading an Estimate
+
+An estimate from any of the designs above can be produced by the design
+itself. Two checks ask whether it was, before the estimate is read.
+
+**A real-time placebo.** `searchnet_placebo()` re-runs the estimator on
+pseudo-events assigned to units that were never exposed. Pseudo-events are
+drawn step by step, in calendar order, at the panel's empirical treatment
+hazard among units at risk at that step, so the pseudo-treated group has the
+real timing without conditioning on the future. Drawing each unit's
+pseudo-date uniformly from the steps it was observed is not a null (it
+conditions on survival) and is refused. The placebo must center on zero; the
+real estimate then has a placebo p-value.
+
+Here the never-exposed units are the six actors of the comparison arm from
+Section 3. With six of them, `did::att_gt()`'s minimum of five units per
+group is rarely met by a pseudo-treated subset, so the gate uses the stacked
+two-by-two DID (`estimator = "did_2x2"`); with a larger comparison arm,
+`estimator = "did"` gates `searchnet_did()` itself.
+
+```{r placebo}
+pl <- searchnet_placebo(panel_did, estimator = "did_2x2", n_draws = 200, seed = 1)
+pl
+```
+
+The gate has two legs. `centered` fails when the placebo mean is far from
+zero, which is a defect of the design: the estimator returns an effect when
+exposure is random. `extreme` fails when the real estimate is not unusual
+against the placebo, which on a centered placebo is the correct reading of a
+world with no effect. A passing placebo shows that the estimator is unbiased
+when exposure is random; it does not make the real exposure random.
+
+**Structural support.** A shock can leave a poorer world behind: fewer ties,
+fewer occupied portfolios, a lower attainable degree. A lower outcome after
+such a shock can follow arithmetically from the smaller support, whatever
+actors did in response. `searchnet_shock_support_check()` counts these
+primitives in equal windows on either side of the shock and warns when the
+post-shock state is impoverished.
+
+```{r support}
+chk <- searchnet_shock_support_check(env, shock_step = shock_step, warn = FALSE)
+chk
+```
+
+This world is flagged: the density shock removes ties, so the post-shock
+state has less room to earn utility, and part of the utility ATT in Section 3
+may follow from the smaller support rather than from a response to the shock.
+A flagged metric does not say the effect is mechanical; it says the
+comparison cannot rule that out. Hold the primitive constant (a post-shock
+state that is a relabeling of the pre-shock state) or report these counts
+beside any before-and-after level claim.

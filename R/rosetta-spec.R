@@ -334,6 +334,11 @@ rosetta_model_to_json <- function(x, path = NULL, pretty = TRUE) {
 #'   imitation statistic, covariates without data) are left out with a
 #'   warning.
 #' @seealso [rosetta_run()], [saomnk_model()]
+#' @examples
+#' if (requireNamespace("yaml", quietly = TRUE)) {
+#'   mod <- rosetta_saomnk_model("plain-saom-two-mode")
+#'   names(mod)
+#' }
 #' @export
 rosetta_saomnk_model <- function(x, beta_large = 25) {
   s <- .rosetta_as_spec(x)

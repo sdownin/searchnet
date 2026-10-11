@@ -203,7 +203,8 @@ test_that("G7: the legacy replay warns, and every path consumer refuses it", {
   refuses(saomnk_get_degrees(env))
   refuses(saomnk_get_bipartite(env, step = 1))
   refuses(saomnk_plot_actor_degrees(env))
-  refuses(saomnk_plot_exploration_exploitation(env))
+  refuses(searchnet_plot_exploration(env))
+  refuses(suppressWarnings(saomnk_plot_exploration_exploitation(env)))
 
   ## The three consumers that run their own simulation. Force the legacy
   ## route through the class, so the guard each one carries is exercised.

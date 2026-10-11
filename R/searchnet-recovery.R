@@ -98,7 +98,7 @@
 ## Include the spec's effects and verify each one, using the coevolve helpers.
 ## Returns the effects object with attribute "recovery_labels": one label per
 ## included row, in RSiena's order ("rate" for basic rate rows).
-.recovery_effects <- function(dat, spec) {
+.recovery_effects <- function(dat, spec, bounds = NULL) {
   eff <- RSiena::getEffects(dat)
   requests <- lapply(seq_len(nrow(spec)), function(i)
     list(name = .RECOVERY_DV, shortName = spec$shortName[i],
@@ -123,9 +123,18 @@
          "choose an effect RSiena offers for a two-mode network.",
          call. = FALSE)
   }
+  ## Degree bounds: fixed penalty effects, labeled "bound:<shortName>". They
+  ## are modeling assumptions, never part of theta_true or of the estimates.
+  bound_names <- character(0)
+  if (!is.null(bounds)) {
+    eff <- .searchnet_apply_bound_effects(eff, bounds, .RECOVERY_DV)
+    bound_names <- bounds$effects$shortName
+  }
   inc <- which(eff$include)
   labels <- vapply(inc, function(r) {
     if (eff$type[r] == "rate" && eff$shortName[r] == "Rate") return("rate")
+    if (eff$type[r] == "eval" && eff$shortName[r] %in% bound_names &&
+        isTRUE(eff$fix[r])) return(paste0("bound:", eff$shortName[r]))
     hit <- which(spec$shortName == eff$shortName[r] & spec$type == eff$type[r] &
                    spec$interaction1 == eff$interaction1[r])
     if (length(hit) != 1L) return(NA_character_)
@@ -143,39 +152,87 @@
 ## Simulation of one planted panel
 ## ---------------------------------------------------------------------------
 .recovery_simulate_panel <- function(spec, theta, M, N, waves, init_density,
-                                     covariates, seed, rep) {
+                                     covariates, seed, rep, bounds = NULL) {
   B <- .with_local_seed(.searchnet_seed(seed, "recovery:init", rep),
                         matrix(stats::rbinom(M * N, 1L, init_density), M, N))
+  ## Under degree bounds the wave-1 draw is brought within them (seeded): ties
+  ## above a cap dropped, then ties added below a floor. Part of the planted
+  ## data-generating process, so wave 1 satisfies the bounds like every wave.
+  if (!is.null(bounds)) B <- .recovery_bounded_start(B, bounds, seed, rep)
   panel <- list(B)
   for (w in 2:waves) {
     dat <- .recovery_data(list(B, B), covariates, M, N, allowOnly = FALSE)
-    eff <- .recovery_effects(dat, spec)
+    eff <- .recovery_effects(dat, spec, bounds)
     lab <- attr(eff, "recovery_labels")
-    th <- unname(theta[lab])
+    is_b <- startsWith(lab, "bound:")
+    th <- numeric(length(lab))
+    th[!is_b] <- unname(theta[lab[!is_b]])
+    th[is_b]  <- eff$initialValue[which(eff$include)][is_b]
     bound <- max(50, ceiling(2 * max(abs(th))) + 1)
-    alg <- RSiena::sienaAlgorithmCreate(
-      projname = NULL, simOnly = TRUE, cond = FALSE, nsub = 0, n3 = 2,
-      seed = .searchnet_seed(seed, "recovery:sim", rep, w), silent = TRUE)
+    alg <- do.call(RSiena::sienaAlgorithmCreate, .searchnet_bounds_algorithm_args(
+      list(projname = NULL, simOnly = TRUE, cond = FALSE, nsub = 0, n3 = 2,
+           seed = .searchnet_seed(seed, "recovery:sim", rep, w), silent = TRUE),
+      bounds, .RECOVERY_DV, N = N, where = "searchnet_recovery()"))
     fit <- NULL
     utils::capture.output(fit <- RSiena::siena07(
       alg, data = dat, effects = eff, thetaValues = rbind(th, th),
-      thetaBound = bound, batch = TRUE, silent = TRUE, returnDeps = TRUE))
+      thetaBound = bound, batch = TRUE, silent = TRUE, returnDeps = TRUE,
+      returnChains = !is.null(bounds)))
+    B_prev <- B
     B <- .searchnet_sims_bipartite(fit$sims[[1L]], M, N, dv = .RECOVERY_DV)
+    if (!is.null(bounds)) {
+      ## Every ministep of the period, then the end state, within the bounds.
+      where <- sprintf("recovery rep %d, wave %d", rep, w)
+      .searchnet_bounds_chain_gate(
+        B_prev, .searchnet_chain_frame(fit$chain[[1L]][[1L]][[1L]]), bounds,
+        where, dv = .RECOVERY_DV)
+      .searchnet_bounds_end_gate(B, bounds, where)
+    }
     panel[[w]] <- B
   }
   panel
+}
+
+## Wave 1 within the bounds: trim ties above a cap, then add ties below a
+## floor, both seeded; stop if the bounds cannot be met at this density.
+.recovery_bounded_start <- function(B, b, seed, rep) {
+  B <- .with_local_seed(.searchnet_seed(seed, "recovery:bounds_trim", rep), {
+    amax <- b$actor[["max"]]
+    if (!is.na(amax)) for (i in which(rowSums(B) > amax)) {
+      on <- which(B[i, ] == 1)
+      B[i, on[sample.int(length(on), length(on) - amax)]] <- 0
+    }
+    cmax <- b$component[["max"]]
+    if (!is.na(cmax)) for (j in which(colSums(B) > cmax)) {
+      on <- which(B[, j] == 1)
+      B[on[sample.int(length(on), length(on) - cmax)], j] <- 0
+    }
+    B
+  })
+  B <- .searchnet_bounds_repair(B, b, .searchnet_seed(seed, "recovery:bounds_fill", rep))
+  v <- .searchnet_bounds_violations(array(B, c(dim(B), 1L)), b)
+  if (nrow(v))
+    stop("the wave-1 draw could not be brought within the degree bounds:\n",
+         .searchnet_bounds_violation_text(v), call. = FALSE)
+  B
 }
 
 ## ---------------------------------------------------------------------------
 ## Estimation of one panel under the fixed algorithm
 ## ---------------------------------------------------------------------------
 .recovery_estimate <- function(panel, spec, covariates, M, N, est_seed,
-                               n3, nsub, nbrNodes, algorithm_args) {
+                               n3, nsub, nbrNodes, algorithm_args,
+                               bounds = NULL) {
+  ## Estimation under bounds: the panel must satisfy them, the penalty effects
+  ## are entered fixed, and the actor cap is MaxDegree (method of moments).
+  if (!is.null(bounds)) searchnet_check_degree_bounds(panel, bounds)
   dat <- .recovery_data(panel, covariates, M, N, allowOnly = TRUE)
-  eff <- .recovery_effects(dat, spec)
-  alg <- do.call(RSiena::sienaAlgorithmCreate, utils::modifyList(list(
-    projname = NULL, seed = est_seed, n3 = as.integer(n3),
-    nsub = as.integer(nsub), cond = FALSE, silent = TRUE), algorithm_args))
+  eff <- .recovery_effects(dat, spec, bounds)
+  alg <- do.call(RSiena::sienaAlgorithmCreate, .searchnet_bounds_algorithm_args(
+    utils::modifyList(list(
+      projname = NULL, seed = est_seed, n3 = as.integer(n3),
+      nsub = as.integer(nsub), cond = FALSE, silent = TRUE), algorithm_args),
+    bounds, .RECOVERY_DV, N = N, where = "searchnet_recovery()"))
   fit <- NULL
   utils::capture.output(fit <- RSiena::siena07(
     alg, data = dat, effects = eff, batch = TRUE, silent = TRUE,
@@ -187,7 +244,10 @@
   se <- if (is.null(fit$covtheta)) rep(NA_real_, length(fit$theta))
         else sqrt(pmax(diag(as.matrix(fit$covtheta)), 0))
   se[!is.finite(se)] <- NA_real_
-  list(effect = lab, estimate = as.numeric(fit$theta), se = as.numeric(se),
+  ## Fixed bound effects carry no standard error and are not estimates.
+  keep <- !startsWith(lab, "bound:")
+  list(effect = lab[keep], estimate = as.numeric(fit$theta)[keep],
+       se = as.numeric(se)[keep],
        tconv_max = if (is.null(fit$tconv.max)) NA_real_
                    else as.numeric(fit$tconv.max))
 }
@@ -414,6 +474,19 @@
 #'   Default \code{FALSE}.
 #' @param verbose Logical. Print one line per replication. Default
 #'   \code{FALSE}.
+#' @param degree_bounds Optional degree bounds for the planted
+#'   data-generating process, in any form
+#'   \code{\link{searchnet_degree_bounds}} accepts. Every simulated period
+#'   uses RSiena's \code{MaxDegree} for an actor cap and fixed penalty effects
+#'   for floors and component caps; the wave-1 draw is brought within the
+#'   bounds (seeded: ties above a cap dropped, then ties below a floor added);
+#'   and every wave is gated. The penalty effects are not part of
+#'   \code{theta_true} or of the estimates. Default \code{NULL}.
+#' @param estimate_with_bounds Logical. With \code{degree_bounds}, estimate
+#'   each panel under the same bounds (\code{TRUE}, default: data checked,
+#'   penalty effects fixed, \code{MaxDegree} set; method of moments only) or
+#'   ignoring them (\code{FALSE}), which measures the cost of omitting a bound
+#'   that generated the data.
 #'
 #' @return An object of class \code{"searchnet_recovery"}: a list with
 #'   \code{table} (one row per parameter: \code{effect}, \code{true},
@@ -443,7 +516,9 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
                                ci_level = 0.95, init_density = 0.2,
                                covariates = NULL, n3 = 500L, nsub = 4L,
                                conv_threshold = 0.25, algorithm_args = list(),
-                               keep_panels = FALSE, verbose = FALSE) {
+                               keep_panels = FALSE, verbose = FALSE,
+                               degree_bounds = NULL,
+                               estimate_with_bounds = TRUE) {
   cl <- match.call()
   t_start <- proc.time()[["elapsed"]]
 
@@ -509,6 +584,24 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
          ": the harness derives per-replication seeds from `seed`.",
          call. = FALSE)
 
+  bounds <- .searchnet_as_degree_bounds(degree_bounds)
+  if (!is.logical(estimate_with_bounds) || length(estimate_with_bounds) != 1L ||
+      is.na(estimate_with_bounds))
+    stop("`estimate_with_bounds` must be TRUE or FALSE.", call. = FALSE)
+  est_bounds <- if (isTRUE(estimate_with_bounds)) bounds else NULL
+  if (!is.null(bounds)) {
+    .searchnet_bounds_check_dims(bounds, M, N)
+    clash <- intersect(spec$shortName, bounds$effects$shortName)
+    if (length(clash))
+      stop("`effects_spec` names ", paste(clash, collapse = ", "),
+           ", which the degree bounds use as a fixed penalty effect.", call. = FALSE)
+    if (!is.null(algorithm_args$MaxDegree))
+      stop("`algorithm_args` may not set MaxDegree when `degree_bounds` is given: ",
+           "the bounds set it.", call. = FALSE)
+  }
+  .searchnet_bounds_refuse_ml(est_bounds, algorithm_args$maxlike,
+                              "searchnet_recovery()")
+
   assessed <- if (is.null(focal)) spec$label else focal
 
   ## ---- pre-flight: every requested effect must exist for this data shape ---
@@ -517,7 +610,7 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
   ## "error_simulation".
   probe_B <- matrix(rep_len(c(1, 0, 0), M * N), M, N)
   .recovery_effects(.recovery_data(list(probe_B, probe_B), covariates, M, N,
-                                   allowOnly = FALSE), spec)
+                                   allowOnly = FALSE), spec, bounds)
 
   ## ---- replications -------------------------------------------------------
   rep_rows <- vector("list", reps)
@@ -527,7 +620,7 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
     status <- NA_character_; msg <- ""; tcm <- NA_real_; est <- NULL
     panel <- tryCatch(
       .recovery_simulate_panel(spec, theta_true, M, N, waves, init_density,
-                               covariates, seed, r),
+                               covariates, seed, r, bounds = bounds),
       error = function(e) e)
     if (inherits(panel, "error")) {
       status <- "error_simulation"; msg <- conditionMessage(panel)
@@ -536,7 +629,8 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
       est <- tryCatch(
         .recovery_estimate(panel, spec, covariates, M, N,
                            .searchnet_seed(seed, "recovery:est", r),
-                           n3, nsub, nbrNodes, algorithm_args),
+                           n3, nsub, nbrNodes, algorithm_args,
+                           bounds = est_bounds),
         error = function(e) e)
       if (inherits(est, "error")) {
         status <- "error_estimation"; msg <- conditionMessage(est); est <- NULL
@@ -589,7 +683,9 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
                     init_density = init_density, n3 = as.integer(n3),
                     nsub = as.integer(nsub), conv_threshold = conv_threshold,
                     cond = FALSE, null = isTRUE(null), focal = focal,
-                    algorithm_args = algorithm_args),
+                    algorithm_args = algorithm_args,
+                    degree_bounds = bounds,
+                    estimate_with_bounds = !is.null(est_bounds)),
     panels = panels,
     elapsed = proc.time()[["elapsed"]] - t_start,
     provenance = .searchnet_provenance(seed = seed, call = cl))
@@ -602,10 +698,19 @@ searchnet_recovery <- function(effects_spec, theta_true, reps = 50L, M, N,
 ## ---------------------------------------------------------------------------
 
 .recovery_scope_line <- function(s) {
-  sprintf(paste0("Shown: recovery at M = %d, N = %d, waves = %d, reps = %d, ",
-                 "init_density = %g, n3 = %d, nsub = %d, nbrNodes = %d. ",
-                 "Nothing more."),
-          s$M, s$N, s$waves, s$reps, s$init_density, s$n3, s$nsub, s$nbrNodes)
+  out <- sprintf(paste0("Shown: recovery at M = %d, N = %d, waves = %d, reps = %d, ",
+                        "init_density = %g, n3 = %d, nsub = %d, nbrNodes = %d. ",
+                        "Nothing more."),
+                 s$M, s$N, s$waves, s$reps, s$init_density, s$n3, s$nsub, s$nbrNodes)
+  b <- s$degree_bounds
+  if (!is.null(b))
+    out <- paste0(out, sprintf(paste0(
+      "
+  Degree bounds in the DGP: actor %s; component %s (fixed, not estimated). ",
+      "Estimated %s the bounds."),
+      .searchnet_bounds_fmt(b$actor), .searchnet_bounds_fmt(b$component),
+      if (isTRUE(s$estimate_with_bounds)) "WITH" else "WITHOUT"))
+  out
 }
 
 .recovery_status_line <- function(x) {

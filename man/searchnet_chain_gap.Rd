@@ -48,6 +48,22 @@ the informative ones. An undiscriminating result is a real finding about what
 the statistic can detect.
 }
 
+\examples{
+## Synthetic event logs on a 6 x 5 actor-by-component network
+set.seed(1)
+B0 <- matrix(0L, 6, 5)
+make_log <- function(n = 40) data.frame(actor = sample(6, n, TRUE),
+                                        comp  = sample(5, n, TRUE))
+obs <- searchnet_chain_stats(make_log(), B0 = B0)
+sim <- do.call(rbind, lapply(1:25, function(r)
+  searchnet_chain_stats(make_log(), B0 = B0, source = "simulated",
+                        chain_id = r)))
+## A second set of chains standing in for the null model
+null <- do.call(rbind, lapply(1:25, function(r)
+  searchnet_chain_stats(make_log(), B0 = B0, source = "simulated",
+                        chain_id = r)))
+searchnet_chain_gap(focal = sim, null = null, observed = obs)
+}
 \seealso{
 \code{\link{searchnet_chain_null_model}},
 \code{\link{searchnet_chain_compare}}

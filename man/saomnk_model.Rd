@@ -24,6 +24,9 @@ saomnk_model(
   dyad_covariate = NULL,
   dyad_covariate_effect = "X",
   dyad_covariate_weight = 0.1,
+  degree_bounds = NULL,
+  bound_penalty = 20,
+  repair_initial = FALSE,
   ...
 )
 }
@@ -144,6 +147,28 @@ effect and is NOT valid here).}
 
 \item{dyad_covariate_weight}{Numeric. Weight for the dyad covariate effect
 (default \code{0.1}).}
+
+\item{degree_bounds}{Degree bounds, or \code{NULL} (default, none):
+\code{c(min = , max = )} for actors (portfolio size), a
+\code{list(actor = c(min = , max = ), component = c(min = , max = ))}, or
+a \code{\link{searchnet_degree_bounds}} object. An actor maximum becomes
+RSiena's \code{MaxDegree} (exact); a floor, and a component cap, become
+fixed penalty effects (\code{outIso}, \code{outTrunc}, \code{antiInIso},
+\code{in2Plus}, \code{in3Plus}). They are fixed modeling assumptions, not
+estimated, and \code{print()} lists them as such. Under
+\code{c(min = 1)} an actor cannot drop its last component: to switch it
+must add first, then drop. See \code{\link{searchnet_degree_bounds}} for
+what RSiena supports (component minimum at most 3, component maximum at
+most 2).}
+
+\item{bound_penalty}{Absolute value of the fixed coefficient on each penalty
+effect. Default 20 (a crossing has probability about \eqn{e^{-20}} per
+opportunity). Ignored without \code{degree_bounds}.}
+
+\item{repair_initial}{Logical. When a run starts below a floor:
+\code{FALSE} (default) stops and lists the violators; \code{TRUE} adds
+seeded random ties until every floor holds. Ignored without
+\code{degree_bounds}.}
 
 \item{\dots}{Additional effects specified as named lists and appended to the
 effects section.  Each must include at minimum \code{effect} (character)

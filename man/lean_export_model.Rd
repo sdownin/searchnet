@@ -73,3 +73,10 @@ above \code{max_cells} the count is skipped, unless \code{native = TRUE}, which 
 the large facts with \code{native_decide}. That trusts the Lean compiler
 (axiom \code{Lean.ofReduceBool}), and \code{\link[=lean_check]{lean_check()}} reports it as \code{"native"}.
 }
+\examples{
+mod <- list(M = 2, N = 3, E = diag(3),
+            theta = c(density = -0.5, inPop = 0.2))
+f <- lean_export_model(mod, dir = tempdir())
+basename(f)
+attr(f, "facts")
+}

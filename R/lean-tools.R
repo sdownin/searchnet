@@ -37,6 +37,8 @@
 #'
 #' @return Path to the Lean project, or `NA_character_` if none is found.
 #' @seealso [lean_available()], [lean_setup()]
+#' @examples
+#' lean_home()
 #' @export
 lean_home <- function() {
   ok <- function(d) !is.null(d) && length(d) == 1L && !is.na(d) && nzchar(d) &&
@@ -143,6 +145,9 @@ lean_available <- function(check_build = FALSE) {
 #' @param run Logical; ask before running the commands. Default:
 #'   `interactive()`. When `FALSE`, only prints.
 #' @return Invisibly, the character vector of commands.
+#' @examples
+#' ## Print the build commands without running them
+#' if (!is.na(lean_home())) lean_setup(run = FALSE)
 #' @export
 lean_setup <- function(packages_dir = NULL, copy_to = NULL, run = interactive()) {
   home <- lean_home()
@@ -243,6 +248,15 @@ lean_setup <- function(packages_dir = NULL, copy_to = NULL, run = interactive())
 #' @param timeout Seconds per file (default 1800).
 #' @return A data.frame with columns `file`, `decl`, `status`, `axioms`, and
 #'   attributes `errors` (character) and `seconds`.
+#' @examples
+#' \donttest{
+#' ## Needs elan/lake and a built SaomNK library; otherwise it
+#' ## returns NULL with a message saying what is missing.
+#' mod <- list(M = 2, N = 3, E = diag(3),
+#'             theta = c(density = -0.5, inPop = 0.2))
+#' f <- lean_export_model(mod, dir = tempdir())
+#' res <- lean_check(files = f)
+#' }
 #' @export
 lean_check <- function(dir = NULL, files = NULL, timeout = 1800) {
   if (!isTRUE(lean_available())) return(.lean_skip_message("lean_check()"))
@@ -293,6 +307,11 @@ lean_check <- function(dir = NULL, files = NULL, timeout = 1800) {
 #' @return A data.frame with columns `decl`, `module`, `kind`, `statement`,
 #'   `proof_table`, `tests`, `r_functions` (list columns collapsed to
 #'   `"; "`-separated strings).
+#' @examples
+#' if (requireNamespace("yaml", quietly = TRUE) && !is.na(lean_home())) {
+#'   reg <- lean_registry()
+#'   head(reg[, c("decl", "module", "proof_table")])
+#' }
 #' @export
 lean_registry <- function() {
   if (!requireNamespace("yaml", quietly = TRUE))
@@ -315,6 +334,14 @@ lean_registry <- function() {
 #'
 #' @param result Output of [lean_check()].
 #' @param decl Declaration name, fully qualified or a unique suffix.
+#' @examples
+#' ## A lean_check() result, written out by hand for illustration
+#' res <- data.frame(file = "Instance_demo.lean",
+#'                   decl = "SaomNK.Demo.exact_potential",
+#'                   status = "ok", axioms = "propext, Quot.sound")
+#' if (requireNamespace("testthat", quietly = TRUE))
+#'   testthat::test_that("the exported potential is verified",
+#'                       expect_lean_theorem(res, "exact_potential"))
 #' @export
 expect_lean_theorem <- function(result, decl) {
   if (!requireNamespace("testthat", quietly = TRUE)) stop("testthat is required", call. = FALSE)
@@ -339,6 +366,11 @@ expect_lean_theorem <- function(result, decl) {
 #' @param kinds Declaration keywords to include (default theorems and lemmas;
 #'   add `"def"` for definitions).
 #' @return A data.frame with columns `decl`, `kind`, `module`.
+#' @examples
+#' if (!is.na(lean_home())) {
+#'   d <- lean_declarations()
+#'   table(d$kind)
+#' }
 #' @export
 lean_declarations <- function(home = lean_home(), kinds = c("theorem", "lemma")) {
   src <- list.files(file.path(home, "SaomNK"), pattern = "\\.lean$", recursive = TRUE,

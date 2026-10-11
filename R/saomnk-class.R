@@ -1313,6 +1313,10 @@ SaomNkRSienaBiEnv <- R6Class(
                              max_segments=50L
     ) {
       path <- match.arg(path)
+      if (path == "legacy_replay" && !is.null(.searchnet_model_bounds(structure_model)))
+        stop("search_rsiena(): degree bounds are not supported on the legacy replay ",
+             "route, which is kept only to reproduce archived numbers. Use the ",
+             "default path = \"genuine\".", call. = FALSE)
       if (path == "legacy_replay") {
         return(self$search_rsiena_legacy_replay(
           structure_model = structure_model, array_bi_net = array_bi_net,
@@ -1379,6 +1383,13 @@ SaomNkRSienaBiEnv <- R6Class(
 
       self$config_structure_model <- structure_model
       input_effs <- self$get_input_from_structure_model(structure_model)
+
+      ## Degree bounds: the start state must satisfy them (or be repaired,
+      ## seeded from run_seed, when the model asks for it). MaxDegree and the
+      ## end-of-period gate are applied per period in searchnet-path.R.
+      B_start <- .searchnet_bounds_start(B_start,
+                                         .searchnet_model_bounds(structure_model),
+                                         run_seed, "search_rsiena()")
 
       ##--------- I-II. RSIENA DATA AND EFFECTS AT THE START STATE ----------
       decl_beh_values <- if (.searchnet_has_behavior(structure_model)) structure_model$dv_behavior$values else NULL
@@ -3648,6 +3659,15 @@ SaomNkRSienaBiEnv <- R6Class(
       rsiena_effects <- RSiena::getEffects(rsiena_data)
       ## 3.1 Effects: Add from structure model
       rsiena_effects <- self$add_rsiena_effects_static(rsiena_effects, self$config_structure_model, theta_shock)
+      ## Degree bounds: the observed states must satisfy them, the penalty
+      ## effects stay FIXED (the static route frees every other effect), and
+      ## the actor cap is MaxDegree in the estimation algorithm.
+      .bounds <- .searchnet_model_bounds(self$config_structure_model)
+      if (!is.null(.bounds)) {
+        searchnet_check_degree_bounds(bi_env_arr, .bounds)
+        rsiena_effects <- .searchnet_apply_bound_effects(
+          rsiena_effects, .bounds, dv_name = "bipartite_rsienaDV")
+      }
 
       if(verbose) {
         cat('\n\nself$rsiena_data : \n\n')
@@ -3657,10 +3677,13 @@ SaomNkRSienaBiEnv <- R6Class(
       ##---------- ESTIMATION  -----------------------------
       iterations <-  self$rsiena_model$n3 * iterations_multiplier
       ##  4. RSiena Algorithm
-      rsiena_fit_algorithm <- sienaAlgorithmCreate(projname=file.path(self$DIR_OUTPUT, sprintf('%s_%s',self$SIM_NAME,as.numeric(Sys.time())*100)),
-                                                    simOnly = FALSE,  # nsub = rsiena_phase2_nsub * 1,
-                                                    n3 = iterations,
-                                                    seed = self$rsiena_run_seed)
+      rsiena_fit_algorithm <- do.call(sienaAlgorithmCreate, .searchnet_bounds_algorithm_args(
+        list(projname=file.path(self$DIR_OUTPUT, sprintf('%s_%s',self$SIM_NAME,as.numeric(Sys.time())*100)),
+             simOnly = FALSE,  # nsub = rsiena_phase2_nsub * 1,
+             n3 = iterations,
+             seed = self$rsiena_run_seed),
+        .bounds, dv_name = "bipartite_rsienaDV", N = self$N,
+        where = "fit_rsiena_static()"))
       ## 5. Run RSiena simulation
       rsiena_model <- siena07(rsiena_fit_algorithm,
                              data = rsiena_data,
@@ -4335,6 +4358,16 @@ SaomNkRSienaBiEnv <- R6Class(
           probabilities = probs,
           beta         = beta
         )
+        ## Under degree bounds, flag the toggles that would leave them, so a
+        ## figure can grey them out. The formal-utility probabilities above
+        ## are left as they are.
+        .bounds <- .searchnet_model_bounds(self$config_structure_model)
+        if (!is.null(.bounds)) {
+          cand <- t(vapply(seq_len(self$N), function(j) {
+            x <- as.numeric(b_i); x[j] <- 1 - x[j]; x }, numeric(self$N)))
+          result[[i]]$infeasible <- as.logical(searchnet_portfolio_infeasible(
+            cand, .bounds, state = bi_mat, actor = i))
+        }
       }
       return(result)
     },
@@ -4950,7 +4983,10 @@ SaomNkRSienaBiEnv <- R6Class(
         no_rates = !(self$get_n_rsiena_depvars() > 1L))
       .net_cols <- which(.theta_df_all$name == 'self$bipartite_rsienaDV' &
                            !(.theta_df_all$shortName == 'Rate' & .theta_df_all$type == 'rate'))
-      theta_df_norates <- self$get_bipartite_effects_theta_df()
+      ## The effects table, built once rather than at every ministep; its
+      ## bipartite table is the one get_bipartite_effects_theta_df() returns.
+      .stats_prep <- self$prepare_struct_mod_stats()
+      theta_df_norates <- .stats_prep$theta_df
       theta_names_norate <-  theta_df_norates$shortName
       theta_levels_norates <- theta_df_norates$effect_level
       if(is.null(self$rsiena_model$thetaUsed)){
@@ -4994,7 +5030,9 @@ SaomNkRSienaBiEnv <- R6Class(
         }
       }
       
-      bi_env_arr <- array(NA, dim=c(self$M, self$N, nchains))
+      ## Allocated as the matrix's own type: every slice is overwritten below,
+      ## so a logical array was only coerced (copied) at the first step.
+      bi_env_arr <- array(bi_env_mat[NA_integer_], dim=c(self$M, self$N, nchains))
       ## Diff-based storage (Task 4 memory optimization)
       bi_env_changes <- matrix(NA_integer_, nrow = nchains, ncol = 3)
       colnames(bi_env_changes) <- c("step", "actor_i", "comp_j")
@@ -5022,8 +5060,6 @@ SaomNkRSienaBiEnv <- R6Class(
       .is_beh_vec <- as.character(tiechdf$dv_varname) %in% .SEARCHNET_BEHAVIOR_DV_NAME
       .from_vec  <- tiechdf$id_from
       .to_vec    <- tiechdf$id_to
-      ## The effects table, built once rather than at every ministep.
-      .stats_prep <- self$prepare_struct_mod_stats()
       .int_vars <- lapply(interaction_effnames, function(x) strsplit(x, '[|]')[[1]])
 
       ## ========================================================================
@@ -5167,13 +5203,8 @@ SaomNkRSienaBiEnv <- R6Class(
           ## Check if sign changed for column actor_i across all rows k
           changed_k <- which(old_col_pos != (social_mat[, actor_i] > 0))
           changed_k <- changed_k[changed_k != actor_i]  # exclude diagonal
-          for (k in changed_k) {
-            if (social_mat[k, actor_i] > 0) {
-              K_AA_vec[k] <- K_AA_vec[k] + 1L
-            } else {
-              K_AA_vec[k] <- K_AA_vec[k] - 1L
-            }
-          }
+          K_AA_vec[changed_k] <- K_AA_vec[changed_k] +
+            ifelse(social_mat[changed_k, actor_i] > 0, 1L, -1L)
 
           ## ----- Rank-1 update: EPISTASIS projection E = t(B) %*% B -----
           b_row_i <- bi_env_mat[actor_i, ]  # row i of B AFTER toggle
@@ -5187,13 +5218,8 @@ SaomNkRSienaBiEnv <- R6Class(
           K_CC_vec[comp_j] <- sum(new_row_pos_e)
           changed_l <- which(old_col_pos_e != (search_mat[, comp_j] > 0))
           changed_l <- changed_l[changed_l != comp_j]
-          for (l in changed_l) {
-            if (search_mat[l, comp_j] > 0) {
-              K_CC_vec[l] <- K_CC_vec[l] + 1L
-            } else {
-              K_CC_vec[l] <- K_CC_vec[l] - 1L
-            }
-          }
+          K_CC_vec[changed_l] <- K_CC_vec[changed_l] +
+            ifelse(search_mat[changed_l, comp_j] > 0, 1L, -1L)
 
           ## ----- Incremental row/col sums -----
           row_sums[actor_i] <- row_sums[actor_i] + delta
@@ -5214,13 +5240,8 @@ SaomNkRSienaBiEnv <- R6Class(
             K_AA_NEW_vec[actor_i] <- sum(social_new[actor_i, ] > 0)
             changed_kn <- which(old_cpos_sn != (social_new[, actor_i] > 0))
             changed_kn <- changed_kn[changed_kn != actor_i]
-            for (k in changed_kn) {
-              if (social_new[k, actor_i] > 0) {
-                K_AA_NEW_vec[k] <- K_AA_NEW_vec[k] + 1L
-              } else {
-                K_AA_NEW_vec[k] <- K_AA_NEW_vec[k] - 1L
-              }
-            }
+            K_AA_NEW_vec[changed_kn] <- K_AA_NEW_vec[changed_kn] +
+              ifelse(social_new[changed_kn, actor_i] > 0, 1L, -1L)
             ## Epistasis NEW: E_new = t(B_new) %*% B_new
             b_row_i_new <- bi_env_mat[actor_i, new_components]  # row i restricted to new cols
             update_e_new <- delta * b_row_i_new
@@ -5232,13 +5253,8 @@ SaomNkRSienaBiEnv <- R6Class(
             K_CC_NEW_vec[local_j] <- sum(search_new[local_j, ] > 0)
             changed_ln <- which(old_cpos_en != (search_new[, local_j] > 0))
             changed_ln <- changed_ln[changed_ln != local_j]
-            for (l in changed_ln) {
-              if (search_new[l, local_j] > 0) {
-                K_CC_NEW_vec[l] <- K_CC_NEW_vec[l] + 1L
-              } else {
-                K_CC_NEW_vec[l] <- K_CC_NEW_vec[l] - 1L
-              }
-            }
+            K_CC_NEW_vec[changed_ln] <- K_CC_NEW_vec[changed_ln] +
+              ifelse(search_new[changed_ln, local_j] > 0, 1L, -1L)
             ## row/col sums for NEW subset
             row_sums_new[actor_i] <- row_sums_new[actor_i] + delta
             col_sums_new[local_j] <- col_sums_new[local_j] + delta
@@ -5256,13 +5272,8 @@ SaomNkRSienaBiEnv <- R6Class(
             K_AA_OLD_vec[actor_i] <- sum(social_old[actor_i, ] > 0)
             changed_ko <- which(old_cpos_so != (social_old[, actor_i] > 0))
             changed_ko <- changed_ko[changed_ko != actor_i]
-            for (k in changed_ko) {
-              if (social_old[k, actor_i] > 0) {
-                K_AA_OLD_vec[k] <- K_AA_OLD_vec[k] + 1L
-              } else {
-                K_AA_OLD_vec[k] <- K_AA_OLD_vec[k] - 1L
-              }
-            }
+            K_AA_OLD_vec[changed_ko] <- K_AA_OLD_vec[changed_ko] +
+              ifelse(social_old[changed_ko, actor_i] > 0, 1L, -1L)
             ## Epistasis OLD
             b_row_i_old <- bi_env_mat[actor_i, old_components]
             update_e_old <- delta * b_row_i_old
@@ -5274,13 +5285,8 @@ SaomNkRSienaBiEnv <- R6Class(
             K_CC_OLD_vec[local_j] <- sum(search_old[local_j, ] > 0)
             changed_lo <- which(old_cpos_eo != (search_old[, local_j] > 0))
             changed_lo <- changed_lo[changed_lo != local_j]
-            for (l in changed_lo) {
-              if (search_old[l, local_j] > 0) {
-                K_CC_OLD_vec[l] <- K_CC_OLD_vec[l] + 1L
-              } else {
-                K_CC_OLD_vec[l] <- K_CC_OLD_vec[l] - 1L
-              }
-            }
+            K_CC_OLD_vec[changed_lo] <- K_CC_OLD_vec[changed_lo] +
+              ifelse(search_old[changed_lo, local_j] > 0, 1L, -1L)
             row_sums_old[actor_i] <- row_sums_old[actor_i] + delta
             col_sums_old[local_j] <- col_sums_old[local_j] + delta
           }
@@ -5344,38 +5350,36 @@ SaomNkRSienaBiEnv <- R6Class(
       ##-----------------
       ## Long tables, one row per (step, node), steps in order and nodes fastest:
       ## the same rows, columns and types the per-step frames bound into.
+      ## Each table is built once with all its columns (2026-10-10). Adding
+      ## columns to a data.table one `$<-` at a time copied the whole table
+      ## each time, and the factor columns were formed over the full long
+      ## vectors; a factor over one step's ids repeated nchains times has the
+      ## same codes and levels (.searchnet_chain_long()).
       .steps <- seq_len(nchains)
-      .long <- function(vals, ids, id_name) {
-        n_per <- length(ids)
-        cols <- list(rep(.steps, each = n_per), rep(ids, nchains),
-                     unlist(vals, use.names = FALSE), rep(.stab_vec, each = n_per))
-        names(cols) <- c('chain_step_id', id_name, 'value', 'stability')
-        data.table::rbindlist(list(cols))
-      }
+      ## Actor strategies by actor id (what indexing by the actor_id factor gave)
+      .strat_actor <- rep(actor_strats[1:M], nchains)
       ## Actor Network Statistics long dataframe
       .stat_all <- unlist(stat_vals, use.names = FALSE)
       stats_df <- data.table::rbindlist(list(list(
         chain_step_id = rep(.steps, each = M * ntheta),
-        actor_id      = rep(tpl_stat_actor, nchains),
+        actor_id      = rep(as.factor(tpl_stat_actor), nchains),
         effect_level  = rep(tpl_stat_level, nchains),
         effect_name   = rep(tpl_stat_name, nchains),
         value         = .stat_all,
         ## statmat times theta, column by column (what sweep() did per step)
         value_contributions = .stat_all * rep(c(t(theta_mat)), each = M),
-        stability     = rep(.stab_vec, each = M * ntheta)
+        stability     = rep(.stab_vec, each = M * ntheta),
+        strategy      = rep(actor_strats[tpl_stat_actor], nchains)
       )))
-      stats_df$actor_id <- as.factor(stats_df$actor_id)
-      stats_df$strategy <- as.factor( actor_strats[ stats_df$actor_id ] )
       ## Actor Utility  long dataframe
       .util_all <- unlist(util_vals, use.names = FALSE)
       util_df <- data.table::rbindlist(list(list(
         chain_step_id = rep(.steps, each = M),
-        actor_id      = rep(1:M, nchains),
+        actor_id      = rep(as.factor(1:M), nchains),
         utility       = .util_all,
-        stability     = rep(.stab_vec, each = M)
+        stability     = rep(.stab_vec, each = M),
+        strategy      = .strat_actor
       )))
-      util_df$actor_id <- as.factor(util_df$actor_id)
-      util_df$strategy <- as.factor( actor_strats[ util_df$actor_id ] )
       ## Actor Utility Difference long dataframe: NA at the first step, then
       ## the change from the previous step. A one-step chain keeps the
       ## logical NA column the per-step frames produced.
@@ -5384,50 +5388,40 @@ SaomNkRSienaBiEnv <- R6Class(
       } else rep(NA, M)
       util_diff_df <- data.table::rbindlist(list(list(
         chain_step_id = rep(.steps, each = M),
-        actor_id      = rep(1:M, nchains),
+        actor_id      = rep(as.factor(1:M), nchains),
         utility       = .util_diff,
-        stability     = rep(.stab_vec, each = M)
+        stability     = rep(.stab_vec, each = M),
+        strategy      = .strat_actor
       )))
-      util_diff_df$actor_id <- as.factor(util_diff_df$actor_id)
-      util_diff_df$strategy <- as.factor( actor_strats[ util_diff_df$actor_id ] )
       ##---
-      
-      K_AA_df <- .long(K_AA_vals, 1:M, 'actor_id')
-      K_AA_df$actor_id <- as.factor(K_AA_df$actor_id)
-      K_AA_df$component_id <- as.factor( NA )
-      K_AA_df$strategy <- as.factor( actor_strats[ K_AA_df$actor_id ] )
-      K_AC_df <- .long(K_AC_vals, 1:M, 'actor_id')
-      K_AC_df$actor_id <- as.factor(K_AC_df$actor_id)
-      K_AC_df$component_id <- as.factor( NA )
-      K_AC_df$strategy <- as.factor( actor_strats[ K_AC_df$actor_id ] )
-      K_AA_NEW_df <- if (has_new) .long(K_AA_NEW_vals, 1:M, 'actor_id') else data.frame(chain_step_id=integer(0), actor_id=integer(0), value=numeric(0), stability=logical(0))
-      if (nrow(K_AA_NEW_df) > 0) { K_AA_NEW_df$actor_id <- as.factor(K_AA_NEW_df$actor_id); K_AA_NEW_df$component_id <- as.factor(NA); K_AA_NEW_df$strategy <- as.factor(actor_strats[K_AA_NEW_df$actor_id]) }
-      K_AC_NEW_df <- if (has_new) .long(K_AC_NEW_vals, 1:M, 'actor_id') else data.frame(chain_step_id=integer(0), actor_id=integer(0), value=numeric(0), stability=logical(0))
-      if (nrow(K_AC_NEW_df) > 0) { K_AC_NEW_df$actor_id <- as.factor(K_AC_NEW_df$actor_id); K_AC_NEW_df$component_id <- as.factor(NA); K_AC_NEW_df$strategy <- as.factor(actor_strats[K_AC_NEW_df$actor_id]) }
-      K_AA_OLD_df <- if (has_old) .long(K_AA_OLD_vals, 1:M, 'actor_id') else data.frame(chain_step_id=integer(0), actor_id=integer(0), value=numeric(0), stability=logical(0))
-      if (nrow(K_AA_OLD_df) > 0) { K_AA_OLD_df$actor_id <- as.factor(K_AA_OLD_df$actor_id); K_AA_OLD_df$component_id <- as.factor(NA); K_AA_OLD_df$strategy <- as.factor(actor_strats[K_AA_OLD_df$actor_id]) }
-      K_AC_OLD_df <- if (has_old) .long(K_AC_OLD_vals, 1:M, 'actor_id') else data.frame(chain_step_id=integer(0), actor_id=integer(0), value=numeric(0), stability=logical(0))
-      if (nrow(K_AC_OLD_df) > 0) { K_AC_OLD_df$actor_id <- as.factor(K_AC_OLD_df$actor_id); K_AC_OLD_df$component_id <- as.factor(NA); K_AC_OLD_df$strategy <- as.factor(actor_strats[K_AC_OLD_df$actor_id]) }
-      
+      ## Actor K tables: the actor id, then component_id (NA) and strategy.
+      .actor_extra <- list(component_id = rep(as.factor(NA), M * nchains),
+                           strategy = .strat_actor)
+      .empty_actor <- data.frame(chain_step_id=integer(0), actor_id=integer(0), value=numeric(0), stability=logical(0))
+      K_AA_df <- .searchnet_chain_long(K_AA_vals, 1:M, 'actor_id', .steps, .stab_vec, .actor_extra)
+      K_AC_df <- .searchnet_chain_long(K_AC_vals, 1:M, 'actor_id', .steps, .stab_vec, .actor_extra)
+      K_AA_NEW_df <- if (has_new) .searchnet_chain_long(K_AA_NEW_vals, 1:M, 'actor_id', .steps, .stab_vec, .actor_extra) else .empty_actor
+      K_AC_NEW_df <- if (has_new) .searchnet_chain_long(K_AC_NEW_vals, 1:M, 'actor_id', .steps, .stab_vec, .actor_extra) else .empty_actor
+      K_AA_OLD_df <- if (has_old) .searchnet_chain_long(K_AA_OLD_vals, 1:M, 'actor_id', .steps, .stab_vec, .actor_extra) else .empty_actor
+      K_AC_OLD_df <- if (has_old) .searchnet_chain_long(K_AC_OLD_vals, 1:M, 'actor_id', .steps, .stab_vec, .actor_extra) else .empty_actor
+
       ##---
-      ## Component strategy: NEW or OLD by the start state (vectorized; the
-      ## component ids are still integers here, as they were in the sapply).
-      K_CA_df <- .long(K_CA_vals, 1:N, 'component_id')
-      K_CA_df$strategy <- as.factor(ifelse( K_CA_df$component_id %in% new_components, "NEW", "OLD"))
-      K_CA_df$component_id <- as.factor(K_CA_df$component_id)
-      K_CA_df$actor_id <- as.factor( NA )
-      K_CC_df <- .long(K_CC_vals, 1:N, 'component_id')
-      K_CC_df$strategy <- as.factor(ifelse( K_CC_df$component_id %in% new_components, "NEW", "OLD"))
-      K_CC_df$component_id <- as.factor(K_CC_df$component_id)
-      K_CC_df$actor_id <- as.factor( NA )
-      K_CA_NEW_df <- if (has_new) .long(K_CA_NEW_vals, 1:n_new, 'component_id') else data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))
-      if (nrow(K_CA_NEW_df) > 0) { K_CA_NEW_df$component_id <- as.factor(K_CA_NEW_df$component_id); K_CA_NEW_df$actor_id <- as.factor(NA); K_CA_NEW_df$strategy <- as.factor("NEW") }
-      K_CC_NEW_df <- if (has_new) .long(K_CC_NEW_vals, 1:n_new, 'component_id') else data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))
-      if (nrow(K_CC_NEW_df) > 0) { K_CC_NEW_df$component_id <- as.factor(K_CC_NEW_df$component_id); K_CC_NEW_df$actor_id <- as.factor(NA); K_CC_NEW_df$strategy <- as.factor("NEW") }
-      K_CA_OLD_df <- if (has_old) .long(K_CA_OLD_vals, 1:n_old, 'component_id') else data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))
-      if (nrow(K_CA_OLD_df) > 0) { K_CA_OLD_df$component_id <- as.factor(K_CA_OLD_df$component_id); K_CA_OLD_df$actor_id <- as.factor(NA); K_CA_OLD_df$strategy <- as.factor("OLD") }
-      K_CC_OLD_df <- if (has_old) .long(K_CC_OLD_vals, 1:n_old, 'component_id') else data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))
-      if (nrow(K_CC_OLD_df) > 0) { K_CC_OLD_df$component_id <- as.factor(K_CC_OLD_df$component_id); K_CC_OLD_df$actor_id <- as.factor(NA); K_CC_OLD_df$strategy <- as.factor("OLD") }
+      ## Component K tables. Full tables: strategy NEW or OLD by the start
+      ## state, then actor_id (NA). NEW/OLD subsets: actor_id (NA), then the
+      ## subset's strategy.
+      .comp_extra <- list(strategy = rep(as.factor(ifelse(1:N %in% new_components, "NEW", "OLD")), nchains),
+                          actor_id = rep(as.factor(NA), N * nchains))
+      .new_extra <- list(actor_id = rep(as.factor(NA), n_new * nchains),
+                         strategy = rep(as.factor("NEW"), n_new * nchains))
+      .old_extra <- list(actor_id = rep(as.factor(NA), n_old * nchains),
+                         strategy = rep(as.factor("OLD"), n_old * nchains))
+      .empty_comp <- data.frame(chain_step_id=integer(0), component_id=integer(0), value=numeric(0), stability=logical(0))
+      K_CA_df <- .searchnet_chain_long(K_CA_vals, 1:N, 'component_id', .steps, .stab_vec, .comp_extra)
+      K_CC_df <- .searchnet_chain_long(K_CC_vals, 1:N, 'component_id', .steps, .stab_vec, .comp_extra)
+      K_CA_NEW_df <- if (has_new) .searchnet_chain_long(K_CA_NEW_vals, 1:n_new, 'component_id', .steps, .stab_vec, .new_extra) else .empty_comp
+      K_CC_NEW_df <- if (has_new) .searchnet_chain_long(K_CC_NEW_vals, 1:n_new, 'component_id', .steps, .stab_vec, .new_extra) else .empty_comp
+      K_CA_OLD_df <- if (has_old) .searchnet_chain_long(K_CA_OLD_vals, 1:n_old, 'component_id', .steps, .stab_vec, .old_extra) else .empty_comp
+      K_CC_OLD_df <- if (has_old) .searchnet_chain_long(K_CC_OLD_vals, 1:n_old, 'component_id', .steps, .stab_vec, .old_extra) else .empty_comp
       
       
       ##---
@@ -5588,7 +5582,8 @@ SaomNkRSienaBiEnv <- R6Class(
       ## even if search_rsiena_process_stats() fails downstream
       nchains <- nrow(chainDat)
       bi_env_mat <- start_matrix
-      bi_env_arr <- array(NA, dim = c(self$M, self$N, nchains))
+      ## The start matrix's own type (every slice is overwritten below).
+      bi_env_arr <- array(start_matrix[NA_integer_], dim = c(self$M, self$N, nchains))
       ## Also build diff-based storage (Task 4 memory optimization):
       ## Store initial matrix + per-step (step, i, j) changes instead of full 3D array.
       ## Reduces memory from O(M*N*nchains) to O(nchains + M*N).
@@ -5618,7 +5613,9 @@ SaomNkRSienaBiEnv <- R6Class(
       }
       .kind <- if (identical(self$searchnet_path_kind, .SEARCHNET_PATH_LEGACY))
         .SEARCHNET_PATH_LEGACY else .SEARCHNET_PATH_GENUINE
-      self$bi_env_arr <- .searchnet_tag_path(bi_env_arr, .kind)
+      ## Tagged in place, as .searchnet_tag_path() would (which copies the array).
+      attr(bi_env_arr, "searchnet_path") <- .kind
+      self$bi_env_arr <- bi_env_arr
       self$bi_env_arr_initial <- start_matrix
       self$bi_env_changes <- bi_env_changes
 

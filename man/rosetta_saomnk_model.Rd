@@ -19,6 +19,12 @@ warning.
 \description{
 Convert a model specification to a searchnet structure model
 }
+\examples{
+if (requireNamespace("yaml", quietly = TRUE)) {
+  mod <- rosetta_saomnk_model("plain-saom-two-mode")
+  names(mod)
+}
+}
 \seealso{
 \code{\link[=rosetta_run]{rosetta_run()}}, \code{\link[=saomnk_model]{saomnk_model()}}
 }

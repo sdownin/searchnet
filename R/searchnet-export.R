@@ -573,6 +573,14 @@ searchnet_export_all <- function(env, dir = "searchnet_export", prefix = "",
 #'   outAct = 0.3)}.
 #'
 #' @return Invisible named character vector of the five written file paths.
+#' @examples
+#' \donttest{
+#' env <- saomnk_env(M = 4, N = 6, density = 0.3, seed = 42)
+#' saomnk_run(env, saomnk_model(density = -0.5, popularity = 0.2),
+#'            steps_per_actor = 5, seed = 12345)
+#' files <- searchnet_export_for_manim(env, dir = file.path(tempdir(), "manim"))
+#' basename(files)
+#' }
 #' @export
 searchnet_export_for_manim <- function(env,
                                        dir = NULL,

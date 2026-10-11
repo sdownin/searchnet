@@ -61,6 +61,15 @@ actor attribute rather than a tie, and its \code{id_to} column carries a
 behavior value rather than a component id, so including it would corrupt the
 replayed state.
 }
+\examples{
+## Synthetic event logs on a 6 x 5 actor-by-component network
+set.seed(1)
+B0 <- matrix(0L, 6, 5)
+make_log <- function(n = 40) data.frame(actor = sample(6, n, TRUE),
+                                        comp  = sample(5, n, TRUE))
+cs <- searchnet_chain_stats(make_log(), B0 = B0)
+head(cs)
+}
 \references{
 Tonellato, M., Tasselli, S., Conaldi, G., Lerner, J. and Lomi, A. (2024).
 A Microstructural Approach to Self-Organizing: The Emergence of Attention
