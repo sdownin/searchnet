@@ -1,19 +1,19 @@
-#' @title Replicator Dynamics and Evolutionary Game Theory
-#' @description Functions for running replicator dynamics, ELO tournaments,
-#'   and computing evolutionarily stable strategies (ESS) for policy type
-#'   populations in the SAOM-NK framework.
-#' @name searchnet-replicator
+## Replicator dynamics and Elo tournaments over strategy profiles (internal).
+##
+## Functions for running replicator dynamics over a population of strategy
+## profiles, extracting terminal shares, and running a round-robin Elo
+## tournament between profiles from their fitness draws. None is exported.
 
-# Okabe-Ito policy colors
-.policy_colors <- c(RS = "#1a1a1a", RE = "#E69F00", RR = "#56B4E9", RF = "#009E73")
+# Okabe-Ito colors, one per default strategy profile
+.profile_colors <- c(A = "#1a1a1a", B = "#E69F00", C = "#56B4E9", D = "#009E73")
 
-#' Run Replicator Dynamics on Policy Type Populations
+#' Replicator dynamics over strategy profiles
 #'
 #' Implements discrete-time replicator dynamics with softmax selection.
 #' The replicator equation: x_i(t+1) = x_i(t) * exp(s * f_i) / Z
 #' where s is selection strength and Z is the normalization constant.
 #'
-#' @param fitness_matrix Matrix of fitness values. Rows = policy types,
+#' @param fitness_matrix Matrix of fitness values. Rows = strategy profiles,
 #'   columns = replications or conditions. If a named vector, treated as
 #'   a single condition.
 #' @param population Numeric vector of initial population shares (must sum to 1).
@@ -21,21 +21,20 @@
 #' @param generations Integer number of generations to simulate (default 500).
 #' @param selection_strength Numeric selection intensity (default 200).
 #'   Higher values = stronger selection pressure.
-#' @param policy_labels Character vector of policy type names.
-#' @return Data frame with columns: generation, policy_type, share, fitness
+#' @param profile_labels Character vector of profile names. If its length
+#'   does not match the number of profiles, "Type_1", "Type_2", ... are used.
+#' @return Data frame with columns: generation, profile, share, fitness
 #' @examples
-#' ## Near-parity fitness with a slight RF advantage
-#' traj <- saomnk_replicator_dynamics(
-#'   c(RS = 0.80, RE = 0.81, RR = 0.79, RF = 0.82),
-#'   generations = 100
-#' )
+#' traj <- replicator_dynamics(c(A = 0.80, B = 0.81, C = 0.79, D = 0.82),
+#'                             generations = 100)
 #' tail(traj, 4)   # terminal population shares
-#' @export
-saomnk_replicator_dynamics <- function(fitness_matrix,
-                                        population = NULL,
-                                        generations = 500L,
-                                        selection_strength = 200,
-                                        policy_labels = c("RS", "RE", "RR", "RF")) {
+#' @keywords internal
+#' @noRd
+replicator_dynamics <- function(fitness_matrix,
+                                population = NULL,
+                                generations = 500L,
+                                selection_strength = 200,
+                                profile_labels = c("A", "B", "C", "D")) {
   # Handle vector input
   if (is.null(dim(fitness_matrix))) {
     fitness <- as.numeric(fitness_matrix)
@@ -50,8 +49,8 @@ saomnk_replicator_dynamics <- function(fitness_matrix,
   stopifnot(abs(sum(population) - 1) < 1e-6)
   stopifnot(length(population) == n_types)
 
-  if (length(policy_labels) != n_types) {
-    policy_labels <- paste0("Type_", seq_len(n_types))
+  if (length(profile_labels) != n_types) {
+    profile_labels <- paste0("Type_", seq_len(n_types))
   }
 
   # Normalize fitness to [0, 1] range for numerical stability
@@ -70,7 +69,7 @@ saomnk_replicator_dynamics <- function(fitness_matrix,
   for (g in 0:generations) {
     results[[g + 1]] <- data.frame(
       generation = g,
-      policy_type = policy_labels,
+      profile = profile_labels,
       share = x,
       fitness = fitness,
       stringsAsFactors = FALSE
@@ -92,73 +91,56 @@ saomnk_replicator_dynamics <- function(fitness_matrix,
 }
 
 
-#' Compute Evolutionarily Stable Strategy (ESS)
+#' Terminal shares of a replicator run (evolutionarily stable strategy)
 #'
 #' Extracts terminal population shares from replicator dynamics
 #' as the evolutionarily stable strategy.
 #'
-#' @param replicator_result Data frame output from saomnk_replicator_dynamics
+#' @param replicator_result Data frame output from replicator_dynamics()
 #' @param threshold Numeric minimum share to be considered present (default 0.01)
-#' @return Named numeric vector of ESS population shares
-#' @examples
-#' traj <- saomnk_replicator_dynamics(
-#'   c(RS = 0.80, RE = 0.81, RR = 0.79, RF = 0.82),
-#'   generations = 100
-#' )
-#' ess <- saomnk_ess(traj)
-#' ess
-#' attr(ess, "surviving")
-#' @export
-saomnk_ess <- function(replicator_result, threshold = 0.01) {
+#' @return Named numeric vector of terminal shares, with attributes
+#'   "extinct" and "surviving"
+#' @keywords internal
+#' @noRd
+replicator_ess <- function(replicator_result, threshold = 0.01) {
   max_gen <- max(replicator_result$generation)
   terminal <- replicator_result[replicator_result$generation == max_gen, ]
-  ess <- setNames(terminal$share, terminal$policy_type)
-  # Flag types below threshold
+  ess <- setNames(terminal$share, terminal$profile)
+  # Flag profiles below threshold
   attr(ess, "extinct") <- names(ess)[ess < threshold]
   attr(ess, "surviving") <- names(ess)[ess >= threshold]
   ess
 }
 
 
-#' Run ELO Tournament Between Policy Types
+#' Elo tournament between strategy profiles
 #'
-#' Runs a round-robin ELO tournament where policy types compete
-#' head-to-head based on fitness outcomes from simulation.
+#' Runs a round-robin Elo tournament where strategy profiles compete
+#' head-to-head on fitness outcomes drawn from simulation.
 #'
-#' @param fitness_by_type Named list of fitness vectors, one per policy type.
+#' @param fitness_by_profile Named list of fitness vectors, one per profile.
 #'   Each vector contains fitness outcomes from multiple replications.
 #' @param matches_per_pair Integer number of matches per pairwise comparison
 #'   (default 60).
-#' @param K_elo Numeric ELO update constant (default 32).
-#' @param initial_rating Numeric starting ELO rating (default 1500).
-#' @param policy_labels Character vector of policy type labels.
-#' @return List with components:
-#'   \item{ratings}{Named numeric vector of final ELO ratings}
-#'   \item{history}{Data frame of match results}
-#'   \item{parity_test}{Logical: are all ratings within 20 points?}
-#' @examples
-#' set.seed(42)
-#' fitness_by_type <- list(
-#'   RS = rnorm(30, 0.80, 0.05),
-#'   RE = rnorm(30, 0.80, 0.05),
-#'   RR = rnorm(30, 0.80, 0.05),
-#'   RF = rnorm(30, 0.80, 0.05)
-#' )
-#' tour <- saomnk_elo_tournament(fitness_by_type, matches_per_pair = 10)
-#' tour$ratings
-#' tour$parity_test
-#' @export
-saomnk_elo_tournament <- function(fitness_by_type,
-                                   matches_per_pair = 60L,
-                                   K_elo = 32,
-                                   initial_rating = 1500,
-                                   policy_labels = names(fitness_by_type)) {
-  n_types <- length(fitness_by_type)
-  if (is.null(policy_labels)) {
-    policy_labels <- paste0("Type_", seq_len(n_types))
+#' @param K_elo Numeric Elo update constant (default 32).
+#' @param initial_rating Numeric starting Elo rating (default 1500).
+#' @param profile_labels Character vector of profile labels.
+#' @return List with components ratings (named numeric vector of final
+#'   ratings), history (data frame of match results), ratings_within_20
+#'   (logical: are all ratings within 20 points?) and rating_range.
+#' @keywords internal
+#' @noRd
+elo_tournament <- function(fitness_by_profile,
+                           matches_per_pair = 60L,
+                           K_elo = 32,
+                           initial_rating = 1500,
+                           profile_labels = names(fitness_by_profile)) {
+  n_types <- length(fitness_by_profile)
+  if (is.null(profile_labels)) {
+    profile_labels <- paste0("Type_", seq_len(n_types))
   }
 
-  ratings <- setNames(rep(initial_rating, n_types), policy_labels)
+  ratings <- setNames(rep(initial_rating, n_types), profile_labels)
   history <- list()
   match_id <- 0
 
@@ -167,9 +149,9 @@ saomnk_elo_tournament <- function(fitness_by_type,
       for (m in seq_len(matches_per_pair)) {
         match_id <- match_id + 1
 
-        # Sample fitness from each type
-        f_i <- sample(fitness_by_type[[i]], 1)
-        f_j <- sample(fitness_by_type[[j]], 1)
+        # Sample fitness from each profile
+        f_i <- sample(fitness_by_profile[[i]], 1)
+        f_j <- sample(fitness_by_profile[[j]], 1)
 
         # Determine outcome
         if (f_i > f_j) {
@@ -190,8 +172,8 @@ saomnk_elo_tournament <- function(fitness_by_type,
 
         history[[match_id]] <- data.frame(
           match = match_id,
-          type_a = policy_labels[i],
-          type_b = policy_labels[j],
+          type_a = profile_labels[i],
+          type_b = profile_labels[j],
           fitness_a = f_i,
           fitness_b = f_j,
           outcome_a = s_i,
@@ -209,44 +191,35 @@ saomnk_elo_tournament <- function(fitness_by_type,
   list(
     ratings = ratings,
     history = history_df,
-    parity_test = rating_range < 20,
+    ratings_within_20 = rating_range < 20,
     rating_range = rating_range
   )
 }
 
 
-#' Plot Replicator Dynamics Trajectories
+#' Plot replicator population shares over generations
 #'
-#' Creates a line plot showing how population shares evolve over generations.
-#'
-#' @param replicator_result Data frame output from saomnk_replicator_dynamics
-#' @param colors Named vector of colors for policy types (default Okabe-Ito)
+#' @param replicator_result Data frame output from replicator_dynamics()
+#' @param colors Named vector of colors, one per profile (default Okabe-Ito)
 #' @param title Character plot title
 #' @return ggplot object
-#' @examples
-#' \donttest{
-#' traj <- saomnk_replicator_dynamics(
-#'   c(RS = 0.80, RE = 0.81, RR = 0.79, RF = 0.82),
-#'   generations = 100
-#' )
-#' p <- saomnk_plot_replicator(traj)
-#' }
-#' @export
-saomnk_plot_replicator <- function(replicator_result,
-                                    colors = .policy_colors,
-                                    title = "Replicator Dynamics: Evolutionary Competition Among Policy Types") {
+#' @keywords internal
+#' @noRd
+plot_replicator_shares <- function(replicator_result,
+                                   colors = .profile_colors,
+                                   title = "Replicator Dynamics Across Strategy Profiles") {
   requireNamespace("ggplot2", quietly = TRUE)
 
   ggplot2::ggplot(replicator_result,
                   ggplot2::aes(x = generation, y = share,
-                               color = policy_type, group = policy_type)) +
+                               color = profile, group = profile)) +
     ggplot2::geom_line(linewidth = 1.2) +
     ggplot2::scale_color_manual(values = colors) +
     ggplot2::labs(
       title = title,
       x = "Generation",
       y = "Population Share",
-      color = "Policy Type"
+      color = "Strategy Profile"
     ) +
     theme_searchnet(base_size = 12) +
     ggplot2::theme(
@@ -256,52 +229,45 @@ saomnk_plot_replicator <- function(replicator_result,
 }
 
 
-#' Plot Replicator Dynamics on Strategy Simplex
+#' Plot a replicator run on two coordinates of the strategy simplex
 #'
-#' Creates a 2D De Finetti diagram (simplex projection) showing
-#' evolutionary pressure and population trajectory.
+#' Plots the population trajectory projected on the shares of two
+#' profiles (start: dot; end: star).
 #'
-#' @param replicator_result Data frame from saomnk_replicator_dynamics
-#' @param x_type Character name of policy type for x-axis
-#' @param y_type Character name of policy type for y-axis
+#' @param replicator_result Data frame from replicator_dynamics()
+#' @param x_profile Character name of the profile on the x-axis
+#' @param y_profile Character name of the profile on the y-axis
 #' @param colors Named color vector
 #' @param title Character plot title
 #' @return ggplot object
-#' @examples
-#' \donttest{
-#' traj <- saomnk_replicator_dynamics(
-#'   c(RS = 0.80, RE = 0.81, RR = 0.79, RF = 0.82),
-#'   generations = 100
-#' )
-#' p <- saomnk_plot_simplex(traj, x_type = "RE", y_type = "RF")
-#' }
-#' @export
-saomnk_plot_simplex <- function(replicator_result,
-                                 x_type = "RE", y_type = "RF",
-                                 colors = .policy_colors,
-                                 title = "Strategy Simplex") {
+#' @keywords internal
+#' @noRd
+plot_replicator_simplex <- function(replicator_result,
+                                    x_profile = "B", y_profile = "D",
+                                    colors = .profile_colors,
+                                    title = "Strategy Simplex") {
   requireNamespace("ggplot2", quietly = TRUE)
 
   # Reshape to wide format
   wide <- stats::reshape(
-    replicator_result[, c("generation", "policy_type", "share")],
-    idvar = "generation", timevar = "policy_type",
+    replicator_result[, c("generation", "profile", "share")],
+    idvar = "generation", timevar = "profile",
     direction = "wide"
   )
   names(wide) <- gsub("share\\.", "", names(wide))
 
-  x_col <- x_type
-  y_col <- y_type
+  x_col <- x_profile
+  y_col <- y_profile
 
   ggplot2::ggplot(wide, ggplot2::aes(x = .data[[x_col]], y = .data[[y_col]])) +
-    ggplot2::geom_path(color = colors[x_type], linewidth = 1, alpha = 0.7) +
+    ggplot2::geom_path(color = colors[x_profile], linewidth = 1, alpha = 0.7) +
     ggplot2::geom_point(data = wide[1, ], size = 4, shape = 16, color = "black") +
     ggplot2::geom_point(data = wide[nrow(wide), ], size = 5, shape = 8,
-                        color = colors[y_type], stroke = 2) +
+                        color = colors[y_profile], stroke = 2) +
     ggplot2::labs(
       title = title,
-      x = paste0(x_type, " Share"),
-      y = paste0(y_type, " Share")
+      x = paste0(x_profile, " Share"),
+      y = paste0(y_profile, " Share")
     ) +
     ggplot2::coord_equal() +
     theme_searchnet(base_size = 12) +
@@ -309,42 +275,31 @@ saomnk_plot_simplex <- function(replicator_result,
 }
 
 
-#' Plot ELO Tournament Results
+#' Plot Elo tournament ratings
 #'
-#' Bar chart of final ELO ratings with parity band.
+#' Bar chart of final Elo ratings with a +/- 10 point band around the mean.
 #'
-#' @param tournament_result List output from saomnk_elo_tournament
+#' @param tournament_result List output from elo_tournament()
 #' @param colors Named color vector
 #' @param title Character plot title
 #' @return ggplot object
-#' @examples
-#' \donttest{
-#' set.seed(42)
-#' fitness_by_type <- list(
-#'   RS = rnorm(30, 0.80, 0.05),
-#'   RE = rnorm(30, 0.80, 0.05),
-#'   RR = rnorm(30, 0.80, 0.05),
-#'   RF = rnorm(30, 0.80, 0.05)
-#' )
-#' tour <- saomnk_elo_tournament(fitness_by_type, matches_per_pair = 10)
-#' p <- saomnk_plot_elo(tour)
-#' }
-#' @export
-saomnk_plot_elo <- function(tournament_result,
-                             colors = .policy_colors,
-                             title = "ELO Tournament Ratings") {
+#' @keywords internal
+#' @noRd
+plot_elo_ratings <- function(tournament_result,
+                             colors = .profile_colors,
+                             title = "Elo Tournament Ratings") {
   requireNamespace("ggplot2", quietly = TRUE)
 
   df <- data.frame(
-    policy_type = names(tournament_result$ratings),
+    profile = names(tournament_result$ratings),
     rating = as.numeric(tournament_result$ratings),
     stringsAsFactors = FALSE
   )
 
   mean_rating <- mean(df$rating)
 
-  ggplot2::ggplot(df, ggplot2::aes(x = stats::reorder(policy_type, -rating),
-                                    y = rating, fill = policy_type)) +
+  ggplot2::ggplot(df, ggplot2::aes(x = stats::reorder(profile, -rating),
+                                    y = rating, fill = profile)) +
     ggplot2::geom_col(width = 0.6) +
     ggplot2::geom_hline(yintercept = mean_rating, linetype = "dashed", color = "gray50") +
     ggplot2::geom_hline(yintercept = c(mean_rating - 10, mean_rating + 10),
@@ -353,9 +308,10 @@ saomnk_plot_elo <- function(tournament_result,
     ggplot2::labs(
       title = title,
       subtitle = paste0("Rating range: ", round(tournament_result$rating_range, 1),
-                        " | Parity: ", ifelse(tournament_result$parity_test, "YES", "NO")),
-      x = "Policy Type",
-      y = "ELO Rating"
+                        " | Within 20 points: ",
+                        ifelse(tournament_result$ratings_within_20, "YES", "NO")),
+      x = "Strategy Profile",
+      y = "Elo Rating"
     ) +
     theme_searchnet(base_size = 12) +
     ggplot2::theme(

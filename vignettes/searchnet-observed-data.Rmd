@@ -126,3 +126,12 @@ dat <- searchnet_coevolve_data(
   verbose = FALSE)
 class(dat)
 ```
+
+## 6. A project skeleton
+
+`searchnet_new_analysis("my-analysis")` writes a short, reproducible project
+that runs these steps in order on a synthetic example: setup and a version
+record, long data to `B`, {K} readings, a moment gate against tolerances fixed
+in a pre-registered chunk, a small recovery check, a placebo-gated
+counterfactual, and a report that prints every null with its minimum
+detectable effect. Replace the data file and keep the gates.

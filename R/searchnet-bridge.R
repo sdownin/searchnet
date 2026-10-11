@@ -1,7 +1,7 @@
 #' @title Empirical Bridge: SAOM Estimation to SAOM-NK Simulation
 #' @description
-#' Functions that bridge between empirical SAOM estimation (e.g., from the ORM
-#' project) and SAOM-NK counterfactual simulation.  The core idea is that
+#' Functions that bridge between empirical SAOM estimation and SAOM-NK
+#' counterfactual simulation.  The core idea is that
 #' RSiena's \code{siena07()} estimates the actor-oriented conditional logit
 #' utility for an observed network; these estimated parameters can be
 #' transplanted directly into SAOM-NK's bipartite structure model to run
@@ -1132,7 +1132,7 @@ empirical_to_saomnk_env <- function(mi_data, wave = 1, imputation = 1,
 #'
 #' result <- run_calibrated_counterfactual(
 #'   bridge_env, bridge_params,
-#'   scenario = get_orm_scenarios()$double_closure,
+#'   scenario = list(name = "double_closure", modify = list(cycle4 = 2.0)),
 #'   n_reps = 20
 #' )
 #' result$comparison    # mean delta K values over replications
@@ -1210,7 +1210,7 @@ run_calibrated_counterfactual <- function(bridge_env, bridge_params,
   ##
   ## DEFECT 2: registering W is not enough.  No effect referenced it, so the
   ## matrix sat in the RSiena data object contributing nothing, and
-  ## get_orm_scenarios()$epistasis_boost -- which multiplies `XWX` -- could never
+  ## counterfactual_scenarios()$epistasis_boost -- which multiplies `XWX` -- could never
   ## act.  An XWX effect pointed at the same slot is added below.
 
   W_ok <- is.matrix(W) && is.numeric(W) &&
@@ -1871,30 +1871,27 @@ run_calibrated_counterfactual <- function(bridge_env, bridge_params,
 
 
 # ---------------------------------------------------------------------------- #
-#  get_orm_scenarios
+#  counterfactual_scenarios (internal)
 # ---------------------------------------------------------------------------- #
 
-#' Get predefined counterfactual scenarios for the ORM paper
+#' A table of example counterfactual scenarios
 #'
 #' Returns a named list of scenario specifications suitable for use with
-#' \code{\link{run_calibrated_counterfactual}}.  Each scenario modifies one
-#' or more effect parameters via a multiplier applied to the baseline value.
+#' run_calibrated_counterfactual().  Each scenario modifies one or more
+#' effect parameters via a multiplier applied to the baseline value.
+#'
+#' Every modify key must name an effect the converted baseline model
+#' actually contains, because run_calibrated_counterfactual() refuses a key
+#' that matches nothing rather than ignoring it.  A scenario is therefore
+#' only usable against a bridge whose SAOM estimated the effect it names:
+#' remove_homophily needs an egoX in the fitted model, epistasis_boost needs
+#' a fitted XWX weight, and so on.
 #'
 #' @return Named list of scenario specifications.  Each element is a list
-#'   with \code{name}, \code{description}, and \code{modify}.
-#' @section Keys are SAOM-NK-side effect names:
-#' Every \code{modify} key must name an effect the converted baseline model
-#' actually contains, because \code{\link{run_calibrated_counterfactual}} now
-#' refuses a key that matches nothing rather than ignoring it.  A scenario is
-#' therefore only usable against a bridge whose SAOM estimated the effect it
-#' names: \code{remove_homophily} needs an \code{egoX} in the fitted model,
-#' \code{epistasis_boost} needs a fitted \code{XWX} weight, and so on.
-#' @export
-#' @examples
-#' scenarios <- get_orm_scenarios()
-#' names(scenarios)
-#' scenarios$double_closure
-get_orm_scenarios <- function() {
+#'   with name, description, and modify.
+#' @keywords internal
+#' @noRd
+counterfactual_scenarios <- function() {
   list(
     ## Closure for a BIPARTITE dependent variable is the 4-cycle, not the
     ## transitive triad: RSiena 1.5.0 offers `transTriads` in the
@@ -2038,7 +2035,7 @@ get_orm_scenarios <- function() {
 #' bridge_env <- empirical_to_saomnk_env(mi_data, wave = 3)
 #' out <- run_counterfactual_with_uncertainty(
 #'   bridge_env, fit,
-#'   scenario = get_orm_scenarios()$double_popularity,
+#'   scenario = list(name = "double_popularity", modify = list(inPop = 2.0)),
 #'   n_draws = 25, n_reps = 10
 #' )
 #' out$summary[, c("measure", "mean_delta", "sd_mc", "sd_parameter")]

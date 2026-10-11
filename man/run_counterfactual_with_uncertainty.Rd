@@ -136,7 +136,7 @@ fit <- siena07(alg, data = mydata, effects = myeffects)
 bridge_env <- empirical_to_saomnk_env(mi_data, wave = 3)
 out <- run_counterfactual_with_uncertainty(
   bridge_env, fit,
-  scenario = get_orm_scenarios()$double_popularity,
+  scenario = list(name = "double_popularity", modify = list(inPop = 2.0)),
   n_draws = 25, n_reps = 10
 )
 out$summary[, c("measure", "mean_delta", "sd_mc", "sd_parameter")]

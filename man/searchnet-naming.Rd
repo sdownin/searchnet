@@ -22,6 +22,19 @@ until one minor release after the SAOM-NK software paper in the Journal of
 Statistical Software is accepted. The full old-to-new mapping is in
 \link{searchnet-deprecated-plots}.
 }
+\section{API classes}{
+
+Every exported function belongs to one of five classes: \emph{core}
+(simulation, the estimation bridge, the \{K\} framework, diagnostics and
+causal tools), \emph{visualization} (plots, themes, palettes, and exporters for
+animation), \emph{teaching} (classroom and strategy-game workflows), \emph{legacy}
+(the deprecated wrappers described above), and \emph{advanced} (exported but
+documented as internal; candidates to stop exporting in a future minor
+release). The full list, with each function's class and help topic, is
+generated from \code{NAMESPACE} and the help pages and ships as
+\code{system.file("API_CLASSIFICATION.md", package = "searchnet")}.
+}
+
 \seealso{
 \link{searchnet-deprecated-plots}
 }

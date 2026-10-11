@@ -42,7 +42,7 @@ utils::globalVariables(c(
   "mean_risk_taking", "mean_rivals_at_entry", "mean_score",
   "median_estimate", "n_obs", "n_rivals_present", "node_group",
   "node_type", "panel_label", "panel_label_text", "period", "PeriodFct",
-  "phase", "policy", "policy_type", "pop_mean_prop", "primary_group",
+  "param_set", "phase", "pop_mean_prop", "profile", "primary_group",
   "prop_exploitation", "prop_exploration", "proportion", "Proportion",
   "Q25_K_E", "Q25_K_S", "Q75_K_E", "Q75_K_S", "rating",
   "risk_taking_score", "rivals_mean", "rivals_se", "robust", "run_seed",

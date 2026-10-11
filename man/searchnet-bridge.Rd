@@ -4,8 +4,8 @@
 \alias{searchnet-bridge}
 \title{Empirical Bridge: SAOM Estimation to SAOM-NK Simulation}
 \description{
-Functions that bridge between empirical SAOM estimation (e.g., from the ORM
-project) and SAOM-NK counterfactual simulation.  The core idea is that
+Functions that bridge between empirical SAOM estimation and SAOM-NK
+counterfactual simulation.  The core idea is that
 RSiena's \code{siena07()} estimates the actor-oriented conditional logit
 utility for an observed network; these estimated parameters can be
 transplanted directly into SAOM-NK's bipartite structure model to run

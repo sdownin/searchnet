@@ -9,6 +9,21 @@
 ## Usage, from the package root:
 ##
 ##     Rscript tools/make_all_actors_gif.R [--export-only] [--out DIR] [--fps F]
+##                                         [--shared=entrant|average]
+##
+## Without --shared the scene draws the six grids described below, unchanged.
+## With --shared it draws ONE grid with all six tokens on it
+## (SharedLandscapeScene in the same scene file):
+##   entrant  each portfolio colored by the objective a hypothetical seventh
+##            actor with the same parameters would get from it, given ALL six
+##            actors' current ties, computed by the package's statistics
+##            function on the 7-row state. Actor i's own landscape differs
+##            from it only through actor i's own ties, which the entrant
+##            counts as other holders; the script checks that difference
+##            against its prediction and reports its largest value.
+##   average  the mean of the six actors' own landscapes, with the largest
+##            deviation of any actor's own landscape from that mean.
+## The trajectories on the left stay each actor's OWN objective.
 ##
 ## The GIF is written to DIR (default: the session's tempdir), never into the
 ## package; it is a draft for review, not a README figure.
@@ -41,6 +56,14 @@ export_only <- "--export-only" %in% args
 out_dir <- if ("--out" %in% args) args[which(args == "--out") + 1L] else
   file.path(tempdir(), "all_actors_gif")
 FPS <- if ("--fps" %in% args) as.integer(args[which(args == "--fps") + 1L]) else 10L
+SHARED <- NA_character_
+if (any(grepl("^--shared=", args))) SHARED <- sub("^--shared=", "", args[grepl("^--shared=", args)][1])
+if ("--shared" %in% args) SHARED <- args[which(args == "--shared") + 1L]
+if (!is.na(SHARED) && !SHARED %in% c("entrant", "average"))
+  stop("--shared must be 'entrant' or 'average'")
+## render size: the six-grid scene keeps 1440 x 810; the single shared grid
+## reads as well at 1280 x 720 (same 16:9 frame, so the layout is identical)
+RES <- if (is.na(SHARED)) "1440,810" else "1280,720"
 
 if (file.exists("DESCRIPTION") &&
     any(grepl("^Package: searchnet", readLines("DESCRIPTION", n = 1)))) {
@@ -140,6 +163,67 @@ for (i in seq_len(M)) {
 cat(sprintf("gate passed: %d ministeps x %d actors, every landscape reproduces the recorded utility\n",
             n_t, M))
 
+## ---- 3b. optional: one shared landscape ---------------------------------
+shared <- NULL
+if (!is.na(SHARED)) {
+  states <- c(list(B0), lapply(seq_len(n_t), function(t) arr[, , t]))
+  if (SHARED == "entrant") {
+    ## The package's statistics on the 7-row state: the six actors plus the
+    ## entrant in row 7. The effects in this model (density, inPop, XWX) read
+    ## only the matrix, so the one thing that changes is the empty statistics
+    ## template, which gets one zero row more.
+    eff <- prep$theta_df$shortName
+    if (!all(eff %in% c("density", "inPop", "XWX")))
+      stop("entrant view: the check below covers density, inPop and XWX only")
+    prep7 <- prep
+    prep7$mat_template <- rbind(prep$mat_template, 0)
+    rownames(prep7$mat_template) <- seq_len(M + 1L)
+    ## sanity: an entrant holding nothing leaves the six actors' statistics as they are
+    for (t in c(1L, n_t)) {
+      s6 <- env$get_struct_mod_stats_mat_from_bi_mat(arr[, , t], .prep = prep)
+      s7 <- env$get_struct_mod_stats_mat_from_bi_mat(rbind(arr[, , t], 0), .prep = prep7)
+      if (max(abs(s7[1:M, ] - s6)) > 1e-9)
+        stop("entrant view: an empty entrant changed the actors' statistics")
+    }
+    f_ent <- function(state, t) {
+      th <- theta_at(t)
+      apply(configs, 1L, function(x)
+        sum(env$get_struct_mod_stats_mat_from_bi_mat(rbind(state, x), .prep = prep7)[M + 1L, ] * th))
+    }
+    S <- matrix(NA_real_, n_t + 1L, nrow(configs))
+    for (k in seq_len(n_t + 1L)) S[k, ] <- f_ent(states[[k]], max(1L, k - 1L))
+    ## check: entrant(x) - own_i(x) = theta_inPop * sum_j x_j b_ij. The
+    ## entrant counts actor i among the holders of each component; actor i,
+    ## standing at x itself, does not count its current ties b_i. density and
+    ## XWX depend on ego's own row only.
+    k_pop <- which(eff == "inPop")
+    dev <- matrix(NA_real_, n_t + 1L, M)
+    for (k in seq_len(n_t + 1L)) {
+      th_pop <- theta_at(max(1L, k - 1L))[k_pop]
+      for (i in seq_len(M)) {
+        d_obs  <- S[k, ] - land[[i]][k, ]
+        d_pred <- th_pop * as.numeric(configs %*% states[[k]][i, ])
+        if (max(abs(d_obs - d_pred)) > 1e-9)
+          stop(sprintf("entrant check: ministep %d, actor %d: the difference is not its own-holdings effect",
+                       k - 1L, i))
+        dev[k, i] <- max(abs(d_obs))
+      }
+    }
+    cat("entrant check passed: entrant - own_i = theta_inPop * (x . b_i) at every portfolio, actor and ministep\n")
+  } else {
+    S <- Reduce(`+`, land) / M
+    dev <- matrix(NA_real_, n_t + 1L, M)
+    for (k in seq_len(n_t + 1L)) for (i in seq_len(M))
+      dev[k, i] <- max(abs(land[[i]][k, ] - S[k, ]))
+  }
+  max_dev <- max(dev)
+  cat(sprintf("shared (%s): max |shown - own| over portfolios and actors, per ministep:\n", SHARED))
+  print(round(apply(dev, 1L, max), 3))
+  cat(sprintf("shared (%s): overall max |shown - own| = %.4f\n", SHARED, max_dev))
+  shared <- list(mode = SHARED, landscape = unname(S), max_dev = max_dev,
+                 max_dev_by_step = unname(apply(dev, 1L, max)))
+}
+
 steps <- vector("list", n_t)
 prev <- B0
 for (t in seq_len(n_t)) {
@@ -160,11 +244,13 @@ out <- list(
   utilities = unname(rec_util),
   seeds = list(env = ENV_SEED, run = RUN_SEED)
 )
+if (!is.null(shared)) out$shared <- shared
 
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 work <- file.path(out_dir, "work")
 dir.create(work, showWarnings = FALSE, recursive = TRUE)
-json <- file.path(work, "all_actors_landscape.json")
+stem <- if (is.na(SHARED)) "all_actors_landscape" else paste0("all_actors_shared_", SHARED)
+json <- file.path(work, paste0(stem, ".json"))
 jsonlite::write_json(out, json, auto_unbox = TRUE, digits = 8)
 cat("wrote", json, "\n")
 if (export_only) quit(status = 0)
@@ -174,16 +260,18 @@ py    <- Sys.getenv("SEARCHNET_PYTHON", "python")
 scene <- normalizePath(file.path("inst", "manim", "scene_all_actors_landscape.py"))
 Sys.setenv(SEARCHNET_ALL_ACTORS_JSON = json)
 status <- system2(py, c("-m", "manim", "render", "--media_dir", shQuote(work),
-                        "-r", "1440,810", "--fps", FPS, "--disable_caching",
+                        "-r", RES, "--fps", FPS, "--disable_caching",
                         ## -t: lossless qtrle .mov (see make_two_actor_gif.R)
                         "-t",
-                        "-o", "all_actors_landscape", shQuote(scene), "AllActorsLandscapeScene"))
+                        "-o", stem, shQuote(scene),
+                        if (is.na(SHARED)) "AllActorsLandscapeScene" else "SharedLandscapeScene"))
 if (status != 0) stop("manim render failed")
-mov <- list.files(work, pattern = "^all_actors_landscape[.]mov$", recursive = TRUE, full.names = TRUE)[1]
+mov <- list.files(work, pattern = paste0("^", stem, "[.]mov$"), recursive = TRUE, full.names = TRUE)[1]
 if (is.na(mov)) stop("manim output not found under ", work)
 
-gif <- file.path(out_dir, "all-actors-landscape.gif")
-pal <- file.path(work, "palette.png")
+gif <- file.path(out_dir, if (is.na(SHARED)) "all-actors-landscape.gif" else
+  sprintf("all-actors-shared-%s.gif", SHARED))
+pal <- file.path(work, if (is.na(SHARED)) "palette.png" else paste0(stem, "_palette.png"))
 system2("ffmpeg", c("-v", "error", "-y", "-i", shQuote(mov),
                     "-vf", shQuote(sprintf("fps=%d,palettegen=max_colors=256:stats_mode=diff", FPS)), shQuote(pal)))
 system2("ffmpeg", c("-v", "error", "-y", "-i", shQuote(mov), "-i", shQuote(pal),

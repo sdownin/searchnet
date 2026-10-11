@@ -25,7 +25,7 @@ want_export <- c(
   "saom_to_saomnk", "empirical_to_saomnk_env", "run_calibrated_counterfactual",
   "searchnet_export_all", "searchnet_export_k4",
   "searchnet_export_snapshots", "searchnet_export_utility",
-  "get_orm_scenarios", "saomnk_assent", "saomnk_confirm",
+  "saomnk_assent", "saomnk_confirm",
   "saomnk_monte_carlo", "saomnk_run_two_sided")
 want_s3 <- c("plot.saomnk_sai")
 

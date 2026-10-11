@@ -1,0 +1,235 @@
+---
+title: "{{TITLE}}"
+output:
+  html_document:
+    toc: true
+params:
+  data: "{{DATA}}"
+  seed: 20261010
+  tiny: false
+  run_recovery: true
+---
+
+<!-- Created by searchnet_new_analysis() with searchnet {{SEARCHNET_VERSION}}.
+     Render with rmarkdown::render("analysis.Rmd"). For a quick smoke run:
+     rmarkdown::render("analysis.Rmd", params = list(tiny = TRUE)). -->
+
+```{r opts, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## 1. Setup
+
+Versions are recorded so the results can be tied to the code that produced
+them. Every random step below sets its own seed from `params$seed`, so a
+chunk reruns identically on its own.
+
+```{r setup}
+library(searchnet)
+source(file.path("R", "world.R"))
+
+## Guards against a broken installation being mistaken for a result.
+setup <- searchnet_check_setup(run_smoke = FALSE, verbose = FALSE)
+setup$checks[, c("check", "status", "detail")]
+stopifnot(setup$ok)
+
+versions <- c(searchnet = as.character(packageVersion("searchnet")),
+              RSiena    = as.character(packageVersion("RSiena")),
+              R         = as.character(getRversion()))
+versions
+seed <- params$seed
+rec <- NULL   # filled by the recovery section when it runs
+
+## Sizes. `tiny` is for a smoke run only; no result from it should be read.
+size <- if (isTRUE(params$tiny)) {
+  list(M = 20, N = 12, W = 3, gate_reps = 10, placebo_draws = 30,
+       cf_W = 6, rec_reps = 1, rec_M = 12, rec_N = 8, rec_n3 = 100,
+       rec_nsub = 2)
+} else {
+  list(M = 30, N = 20, W = 4, gate_reps = 100, placebo_draws = 199,
+       cf_W = 8, rec_reps = 50, rec_M = NULL, rec_N = NULL, rec_n3 = 500,
+       rec_nsub = 4)
+}
+```
+
+## 2. Data
+
+Either a synthetic panel or a long-format CSV with one row per
+actor-component-period tie. Both go through `searchnet_bipartite_from_long()`,
+so the rest of the analysis sees one format.
+
+```{r data}
+## `actors` and `components` fix the universe, so a node with no ties in some
+## period keeps a row of zeros. With your own data, list the full universe;
+## NULL uses the ids that appear in the file.
+if (identical(params$data, "long_csv")) {
+  long <- utils::read.csv(file.path("data", "example_long.csv"),
+                          stringsAsFactors = FALSE)
+  actors <- NULL
+  components <- NULL
+} else {
+  set.seed(seed + 1)
+  long <- world_to_long(world_redraw_panel(size$M, size$N, size$W,
+                                           p = 0.2, redraw = 0.15))
+  actors <- sprintf("a%03d", seq_len(size$M))
+  components <- sprintf("c%03d", seq_len(size$N))
+}
+head(long)
+
+obs <- searchnet_bipartite_from_long(long, actor = "actor",
+                                     component = "component", period = "period",
+                                     actors = actors, components = components)
+obs
+B_obs <- obs$B
+```
+
+## 3. {K} readings
+
+Per-node expansiveness (K_AC), popularity (K_CA), sociality (K_AA) and
+epistasis (K_CC), per period. The function asserts the accounting identities,
+so a malformed array stops here rather than downstream.
+
+```{r k-readings}
+k_obs <- searchnet_k_readings(obs)
+attr(k_obs, "summary")
+```
+
+## 4. Simulated world and moment gate
+
+### Pre-registered criteria
+
+Stated before any simulation is run. Change them only in a new, dated commit,
+never after looking at the gate.
+
+```{r preregistered-criteria}
+## Moment gate: largest acceptable gap of the simulated mean from the observed
+## value. density and change_rate are calibrated (they check the simulator);
+## the degree means and spreads are not, so they test the world.
+gate_tolerance <- list(density = 0.01, change_rate = 0.02,
+                       mean_K_AC = c(rel = 0.10), mean_K_CA = c(rel = 0.10),
+                       sd_K_AC = c(rel = 0.25), sd_K_CA = c(rel = 0.25))
+## Recovery: design checks on the estimator at this panel size.
+recovery_criterion <- list(max_abs_bias = 0.10, min_coverage = 0.85,
+                           min_converged_share = 0.80)
+## Tests: two-sided level and the power at which a minimum detectable effect
+## (MDE) is reported for every null.
+alpha <- 0.05
+power <- 0.80
+```
+
+### Simulated world
+
+The simplest world with the observed density and rate of change (see
+`R/world.R`). A failed gate means conclusions drawn in this world would be
+drawn in the wrong world; it guards against tests run on an uncalibrated
+simulation.
+
+```{r world}
+cal <- world_calibrate(B_obs)
+unlist(cal)
+set.seed(seed + 2)
+world <- lapply(seq_len(size$gate_reps), function(r)
+  world_redraw_panel(cal$M, cal$N, cal$W, cal$p, cal$redraw))
+gate <- searchnet_moment_gate(B_obs, world, moments = names(gate_tolerance),
+                              tolerance = gate_tolerance, on_fail = "warn",
+                              theta_source = "redraw_world_calibrated")
+gate
+```
+
+## 5. Recovery check
+
+Can the estimator recover a planted effect at this panel size? Guards
+against reading an estimate, or a null, from a design that cannot identify it.
+Set `run_recovery: false` in the header to skip (it is the slowest section).
+
+```{r recovery, eval = isTRUE(params$run_recovery)}
+rec <- searchnet_recovery(
+  c("density", "inPop"),
+  theta_true = c(rate = 3, density = -1.2, inPop = 0.15),
+  reps = size$rec_reps,
+  M = if (is.null(size$rec_M)) cal$M else size$rec_M,
+  N = if (is.null(size$rec_N)) cal$N else size$rec_N,
+  waves = 3, nbrNodes = 1,    # nbrNodes and seed held fixed across comparisons
+  seed = seed + 3, alpha = alpha, power = power,
+  criterion = recovery_criterion, focal = "inPop",
+  init_density = min(max(cal$p, 0.05), 0.5),
+  n3 = size$rec_n3, nsub = size$rec_nsub)
+rec
+```
+
+## 6. Counterfactual shock
+
+In the calibrated world, the tie propensity of half the actors rises by
+`delta` from period `t0` on. Two gates come before the estimate is read:
+the support check (is the post-shock world structurally poorer, so that a
+lower outcome follows arithmetically?) and the real-time random-date placebo
+(does the estimator return an effect when exposure is random?).
+
+```{r counterfactual}
+delta <- 0.05
+t0 <- floor(size$cf_W / 2) + 1
+treated <- seq_len(cal$M) <= cal$M %/% 2
+set.seed(seed + 4)
+B_cf <- world_redraw_panel(cal$M, cal$N, size$cf_W, cal$p, cal$redraw,
+                           shock = list(period = t0, actors = which(treated),
+                                        p_post = min(1, cal$p + delta)))
+dimnames(B_cf) <- list(sprintf("a%03d", seq_len(cal$M)),
+                        sprintf("c%03d", seq_len(cal$N)),
+                        as.character(seq_len(size$cf_W)))
+k_cf <- searchnet_k_readings(B_cf)
+panel <- world_actor_panel(k_cf, sprintf("a%03d", which(treated)), t0)
+
+support <- searchnet_shock_support_check(panel, shock_step = t0, warn = FALSE)
+support
+
+pl <- searchnet_placebo(panel, estimator = "did_2x2",
+                        n_draws = size$placebo_draws, seed = seed + 5,
+                        alpha = alpha)
+pl
+```
+
+## 7. Report: every null with its minimum detectable effect
+
+A null is a bound on an association, not evidence of absence. Each test
+below is listed with its MDE: the smallest effect the design detects with
+probability `power` at level `alpha`, under a normal approximation.
+
+```{r report}
+z <- qnorm(1 - alpha / 2) + qnorm(power)
+tests <- data.frame(
+  test     = "counterfactual DID (placebo-calibrated)",
+  estimate = pl$estimate,
+  p_value  = pl$p_value,
+  null     = !isTRUE(pl$p_value <= alpha),
+  mde      = z * pl$placebo_sd,
+  note     = paste("placebo gate:", pl$gate$verdict),
+  stringsAsFactors = FALSE)
+if (!is.null(rec)) {
+  r <- rec$table[rec$table$effect == "inPop", ]
+  tests <- rbind(tests, data.frame(
+    test = "recovery: inPop (planted 0.15)", estimate = r$mean_est,
+    p_value = NA_real_,
+    null = if (r$n_converged > 0) r$rejection < power else NA,
+    mde = r$mde,
+    note = paste0("rejection rate ", signif(r$rejection, 3), ", ",
+                  r$n_converged, " converged; verdict ", rec$verdict),
+    stringsAsFactors = FALSE))
+}
+tests
+cat("Moment gate:", gate$verdict, "
+")
+for (i in which(is.na(tests$null)))
+  cat(sprintf("NOT ASSESSED: %s (%s).
+", tests$test[i], tests$note[i]))
+nulls <- tests[tests$null %in% TRUE, , drop = FALSE]
+for (i in seq_len(nrow(nulls)))
+  cat(sprintf("NULL: %s, estimate %.3g; effects smaller than %.3g cannot be excluded.
+",
+              nulls$test[i], nulls$estimate[i], nulls$mde[i]))
+if (!nrow(nulls)) cat("No nulls among the assessed tests.
+")
+```
+
+```{r session-info}
+sessionInfo()
+```

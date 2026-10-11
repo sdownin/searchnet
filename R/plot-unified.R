@@ -31,6 +31,17 @@
 #' Statistical Software is accepted. The full old-to-new mapping is in
 #' [searchnet-deprecated-plots].
 #'
+#' @section API classes:
+#' Every exported function belongs to one of five classes: *core*
+#' (simulation, the estimation bridge, the \{K\} framework, diagnostics and
+#' causal tools), *visualization* (plots, themes, palettes, and exporters for
+#' animation), *teaching* (classroom and strategy-game workflows), *legacy*
+#' (the deprecated wrappers described above), and *advanced* (exported but
+#' documented as internal; candidates to stop exporting in a future minor
+#' release). The full list, with each function's class and help topic, is
+#' generated from `NAMESPACE` and the help pages and ships as
+#' `system.file("API_CLASSIFICATION.md", package = "searchnet")`.
+#'
 #' @name searchnet-naming
 #' @seealso [searchnet-deprecated-plots]
 NULL

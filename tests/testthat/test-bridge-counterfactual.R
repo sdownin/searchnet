@@ -1518,13 +1518,13 @@ test_that("an unmatched modify key is refused, naming the key and the alternativ
 })
 
 test_that("the shipped scenarios stop when the fitted model lacks their effect", {
-  ## get_orm_scenarios()$remove_homophily modifies egoX. A bridge whose SAOM
+  ## counterfactual_scenarios()$remove_homophily modifies egoX. A bridge whose SAOM
   ## estimated no egoX has no such effect, and the run must say so rather than
   ## simulate an intervention that does not happen.
   bp <- saom_to_saomnk(c(density = -1.2, inPop = 0.3), verbose = FALSE)
   expect_error(
     run_calibrated_counterfactual(fake_bridge_env, bp,
-                                  scenario = get_orm_scenarios()$remove_homophily,
+                                  scenario = counterfactual_scenarios()$remove_homophily,
                                   verbose = FALSE),
     "egoX", fixed = TRUE)
 })
@@ -1536,7 +1536,7 @@ test_that("XWX counts as available whenever a W matrix is registered", {
   bp <- saom_to_saomnk(c(density = -1.2), verbose = FALSE)
   err <- tryCatch(
     run_calibrated_counterfactual(fake_bridge_env, bp,
-                                  scenario = get_orm_scenarios()$epistasis_boost,
+                                  scenario = counterfactual_scenarios()$epistasis_boost,
                                   n_reps = 1, verbose = FALSE),
     error = function(e) conditionMessage(e),
     warning = function(w) conditionMessage(w))
@@ -1635,11 +1635,11 @@ test_that("the bipartite construction itself is not exercised here", {
 
 
 # ===========================================================================
-# 8. get_orm_scenarios(): shape of the shipped scenarios
+# 8. counterfactual_scenarios(): shape of the shipped scenarios
 # ===========================================================================
 
 test_that("every shipped scenario has the fields run_calibrated_counterfactual reads", {
-  sc <- get_orm_scenarios()
+  sc <- counterfactual_scenarios()
   expect_type(sc, "list")
   expect_setequal(names(sc),
                   c("double_closure", "remove_homophily", "double_popularity",
@@ -1661,7 +1661,7 @@ test_that("scenario modify keys are SAOM-NK-side effect names, not SAOM ones", {
   ## The multiplier is matched against `e$effect`, which is the SAOM-NK name
   ## produced by the crosswalk, not the SAOM name it came from. `cycle4`
   ## (SAOM-NK) rather than `cycle3`/`recip` (SAOM) is the tell.
-  sc <- get_orm_scenarios()
+  sc <- counterfactual_scenarios()
   keys <- unique(unlist(lapply(sc, function(s) names(s$modify))))
   expect_true("cycle4" %in% keys)
   expect_false(any(c("cycle3", "recip", "gwespFF", "transTrip") %in% keys))
@@ -1682,7 +1682,7 @@ test_that("scenario modify keys are SAOM-NK-side effect names, not SAOM ones", {
 test_that("double_closure targets a statistic a bipartite DV actually has", {
   ## It used to modify `transTriads`, which no bipartite SAOM-NK model can carry,
   ## so the scenario was a no-op dressed as an intervention.
-  sc <- get_orm_scenarios()$double_closure
+  sc <- counterfactual_scenarios()$double_closure
   expect_identical(names(sc$modify), "cycle4")
   expect_equal(sc$modify$cycle4, 2.0)
 })
@@ -1696,7 +1696,7 @@ test_that("no shipped scenario names an effect the crosswalk cannot produce", {
   producible <- c("density", "cycle4", "inPop", "inPopSqrt", "outAct",
                   "outActSqrt", "egoX", "altX", "X", "XWX",
                   "totInDist2", "simEgoInDist2")
-  keys <- unique(unlist(lapply(get_orm_scenarios(), function(s) names(s$modify))))
+  keys <- unique(unlist(lapply(counterfactual_scenarios(), function(s) names(s$modify))))
   expect_true(all(keys %in% producible),
               info = paste("not producible:",
                            paste(setdiff(keys, producible), collapse = ", ")))
@@ -1995,7 +1995,7 @@ test_that("with no fitted XWX the weight is 0, said out loud, and never invented
   ## and multiplying a zero weight is flagged as the no-op it is
   expect_warning(
     run_calibrated_counterfactual(
-      be, bp, scenario = get_orm_scenarios()$epistasis_boost,
+      be, bp, scenario = counterfactual_scenarios()$epistasis_boost,
       iterations = 15, n_reps = 1, seed = 7, verbose = FALSE),
     "cannot change anything", fixed = TRUE)
 })

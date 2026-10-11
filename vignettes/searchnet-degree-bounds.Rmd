@@ -128,6 +128,26 @@ No existing figure changes: a plotting script opts in by calling it. The
 README landscape script (`tools/make_readme_gif.R`) adds the flag to its JSON
 only when its model carries bounds, which the README model does not.
 
+## Choice probabilities under bounds
+
+`env$compute_choice_probabilities()` reports, per actor, the logit
+probabilities of each single toggle and of staying put. Under bounds it follows
+the two mechanisms, which differ in kind:
+
+* **An actor cap is a hard constraint.** `MaxDegree` removes the add options of
+  an actor at the cap from its choice set, so they get probability exactly 0
+  and the remaining toggles and the status quo are renormalized. Against
+  RSiena's own simulated ministeps from a cap state, an actor never added and
+  the frequency of staying put matched the renormalized probability within
+  Monte Carlo error.
+* **A floor or component cap is a fixed penalty.** The crossing move stays in
+  the choice set with its weight multiplied by `exp(-20)`, as in the
+  simulation; it is not set to 0, because the model is soft there.
+
+Each element also carries `infeasible` (toggles that would leave any bound) and
+`removed` (toggles `MaxDegree` removes). `renormalize = FALSE` returns the
+unbounded formal-utility logit for comparison.
+
 ## Evidence: recovery with and without the bound
 
 **What this section shows, and what it does not.** It shows recovery at one

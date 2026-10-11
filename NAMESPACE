@@ -247,6 +247,12 @@ S3method(print, searchnet_ergodicity)
 S3method(plot, searchnet_ergodicity)
 
 # ---------------------------------------------------------------------------
+# Within-run stationarity check -- searchnet-stationarity.R
+# ---------------------------------------------------------------------------
+export(searchnet_stationarity_check)
+S3method(print, searchnet_stationarity)
+
+# ---------------------------------------------------------------------------
 # Teaching module -- searchnet-teaching.R
 # ---------------------------------------------------------------------------
 export(searchnet_classroom_init)
@@ -258,6 +264,7 @@ export(searchnet_classroom_status)
 S3method(print, searchnet_classroom)
 export(searchnet_classroom_submit_batch)
 export(searchnet_check_setup)
+export(searchnet_new_analysis)
 export(searchnet_validate_preset)
 S3method(print, searchnet_setup_check)
 
@@ -269,27 +276,6 @@ export(searchnet_game_step)
 export(searchnet_game_scoreboard)
 export(searchnet_game_available_moves)
 export(searchnet_game_summary)
-
-# ---------------------------------------------------------------------------
-# Replicator Dynamics / EGT -- searchnet-replicator.R
-# ---------------------------------------------------------------------------
-export(saomnk_replicator_dynamics)
-export(saomnk_ess)
-export(saomnk_elo_tournament)
-export(saomnk_plot_replicator)
-export(saomnk_plot_simplex)
-export(saomnk_plot_elo)
-
-# ---------------------------------------------------------------------------
-# Basin Geometry / Depth-Width Tradeoff -- searchnet-basins.R
-# ---------------------------------------------------------------------------
-export(saomnk_basin_geometry)
-export(saomnk_depth_width_tradeoff)
-export(saomnk_cross_partial)
-export(saomnk_plot_tradeoff_frontier)
-export(saomnk_plot_basin_comparison)
-export(saomnk_plot_erosion_simulation)
-export(saomnk_imitation_penalty)
 
 # ---------------------------------------------------------------------------
 # Brock-Durlauf Mean-Field Reduction (Property 5) -- searchnet-brock-durlauf.R
@@ -372,7 +358,6 @@ export(searchnet_export_snapshots)
 export(searchnet_export_utility)
 
 # misc
-export(get_orm_scenarios)
 export(saomnk_assent)
 export(saomnk_confirm)
 export(saomnk_monte_carlo)

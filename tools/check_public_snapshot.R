@@ -38,7 +38,7 @@ if (!file.exists(exclude) && length(args) < 2 && file.exists(".public-exclude"))
 ## that has drifted still reports success.
 ## ---------------------------------------------------------------------------
 .read_patterns <- function(path) {
-  if (!file.exists(path)) return(NULL)
+  if (is.null(path) || !file.exists(path)) return(NULL)
   p <- trimws(readLines(path, warn = FALSE))
   p[nzchar(p) & !startsWith(p, "#")]
 }
@@ -193,6 +193,125 @@ if (length(pdfs)) {
   }
 }
 
+## -- 3b. embargoed API NAMES --------------------------------------------------- #
+## The content scan reads text line by line against terms that must never
+## appear anywhere. An exported NAME is a narrower and more durable leak: it is
+## printed by ls("package:searchnet"), listed on CRAN and in the reference
+## index, and it survives in user scripts after the source is cleaned. Until
+## v0.14.0 functions named after an unpublished paper's construct were exported.
+## This section parses the snapshot's NAMESPACE (export, exportPattern,
+## S3method) and the R/ sources WITHOUT loading the package, collects every
+## exported name, the S3 generics and classes it registers, the formal argument
+## names of exported functions, and the public method names and arguments of
+## exported R6 classes, and checks each against the PRIVATE list
+## tools/embargo-api-patterns.txt. Same lookup and the same refusal when the
+## list is missing as the content lists above.
+API_FILE <- NULL
+for (cand in c(if (!is.na(.self_dir)) file.path(.self_dir, "embargo-api-patterns.txt"),
+               "tools/embargo-api-patterns.txt")) {
+  if (!is.null(cand) && file.exists(cand)) { API_FILE <- cand; break }
+}
+API_PATTERNS <- .read_patterns(API_FILE)
+if (is.null(API_PATTERNS) || !length(API_PATTERNS))
+  fail("cannot read embargo-api-patterns.txt; refusing to certify a ",
+       "snapshot without the exported-name scan. Run this script from the dev ",
+       "checkout (Rscript tools/check_public_snapshot.R <worktree>).")
+
+.ns_path <- file.path(wt, "NAMESPACE")
+if ("NAMESPACE" %in% shipped && file.exists(.ns_path)) {
+  ## parseNamespaceFile() reads <lib>/<pkg>/NAMESPACE; point it at a temporary
+  ## directory holding a copy so the worktree's own folder name does not matter.
+  .nsd <- file.path(tempfile("ns"), "pkg"); dir.create(.nsd, recursive = TRUE)
+  file.copy(.ns_path, file.path(.nsd, "NAMESPACE"))
+  ns <- tryCatch(parseNamespaceFile("pkg", dirname(.nsd), mustExist = TRUE),
+                 error = function(e) e)
+  unlink(dirname(.nsd), recursive = TRUE)
+  if (inherits(ns, "error"))
+    fail("cannot parse the snapshot's NAMESPACE: ", conditionMessage(ns))
+
+  ## Top-level definitions in the shipped R/ files: name -> list of
+  ## "where" labels and the names to check (formals, R6 public methods/args).
+  .fun_args <- function(f) if (is.call(f) && identical(f[[1]], as.name("function")))
+    names(f[[2]]) else NULL
+  .r6_members <- function(rhs) {
+    out <- character()
+    if (!is.call(rhs)) return(out)
+    callee <- deparse(rhs[[1]])
+    if (!callee %in% c("R6Class", "R6::R6Class")) return(out)
+    a <- as.list(rhs)[-1]
+    for (slot in intersect(names(a), c("public", "active"))) {
+      lst <- a[[slot]]
+      if (!is.call(lst)) next
+      el <- as.list(lst)[-1]
+      for (m in names(el)[nzchar(names(el))]) {
+        out <- c(out, m, .fun_args(el[[m]]))
+      }
+    }
+    out
+  }
+  defs <- list()
+  rfiles <- shipped[grepl("^R/.*[.][Rr]$", shipped)]
+  for (f in rfiles) {
+    ex <- tryCatch(parse(file.path(wt, f), keep.source = FALSE),
+                   error = function(e) e)
+    if (inherits(ex, "error")) {
+      problems[["R file that cannot be parsed (exported names unchecked)"]] <-
+        c(problems[["R file that cannot be parsed (exported names unchecked)"]], f)
+      next
+    }
+    for (e in ex) {
+      if (!is.call(e) || !is.name(e[[1]]) ||
+          !as.character(e[[1]]) %in% c("<-", "=", "<<-")) next
+      lhs <- e[[2]]
+      nm <- if (is.name(lhs)) as.character(lhs) else if (is.character(lhs)) lhs else NULL
+      if (is.null(nm)) next
+      defs[[nm]] <- list(file = f,
+                         inner = unique(c(.fun_args(e[[3]]), .r6_members(e[[3]]))))
+    }
+  }
+
+  exported <- unique(ns$exports)
+  for (pat in ns$exportPatterns)
+    exported <- union(exported, grep(pat, names(defs), value = TRUE))
+  s3 <- ns$S3methods
+  s3_names <- if (length(s3)) unique(c(s3[, 1], s3[, 2],
+                                       ifelse(is.na(s3[, 3]),
+                                              paste(s3[, 1], s3[, 2], sep = "."),
+                                              s3[, 3]))) else character()
+
+  ## Each candidate is a (name, label) pair; the label says where it came from.
+  cand_name <- character(); cand_lab <- character()
+  add <- function(n, lab) {
+    cand_name <<- c(cand_name, n); cand_lab <<- c(cand_lab, rep(lab, length(n)))
+  }
+  for (n in exported) {
+    add(n, paste0("NAMESPACE export ", n))
+    d <- defs[[n]]
+    if (!is.null(d) && length(d$inner))
+      add(d$inner, paste0("argument or member of ", n, " (", d$file, ")"))
+  }
+  for (n in s3_names) {
+    add(n, paste0("NAMESPACE S3method name ", n))
+    d <- defs[[n]]
+    if (!is.null(d) && length(d$inner))
+      add(d$inner, paste0("argument of ", n, " (", d$file, ")"))
+  }
+  for (p in API_PATTERNS) {
+    hit <- grepl(p, cand_name, perl = TRUE)
+    if (any(hit)) {
+      key <- paste0("exported API name matches embargo pattern ", p)
+      problems[[key]] <- unique(c(problems[[key]],
+                                  paste0(cand_name[hit], "  [", cand_lab[hit], "]")))
+    }
+  }
+  cat("[info] API-name scan: ", length(exported), " exports, ",
+      nrow(s3), " S3 registrations, ", length(unique(cand_name)),
+      " distinct names checked against ", length(API_PATTERNS),
+      " pattern(s).\n", sep = "")
+} else {
+  problems[["snapshot has no NAMESPACE (exported names unchecked)"]] <- "NAMESPACE"
+}
+
 ## -- 4. images must be reviewed ------------------------------------------------ #
 ## The content scan reads text; it cannot read pixels. On 2026-10-08 the JSS
 ## paper's Figure 1 turned out to be another paper's conceptual figure, with
@@ -240,6 +359,9 @@ if (length(problems)) {
   }
   cat("\nFix: remove them from the snapshot worktree before committing, e.g.\n")
   cat("     git -C <worktree> rm --cached -- <path>...\n")
+  if (any(startsWith(names(problems), "exported API name")))
+    cat("For an exported API name: rename it on dev (keep a deprecated wrapper\n",
+        "only if its old name is not itself the leak), then cut a new snapshot.\n", sep = "")
   cat("Then re-run this check. Do not push until it exits 0.\n")
   quit(status = 1)
 }

@@ -31,7 +31,7 @@ knitr::opts_chunk$set(
 > builds itself; no empirical data ships with the package. The functions used
 > are all implemented and exported: `saom_to_saomnk()`,
 > `empirical_to_saomnk_env()`, `run_calibrated_counterfactual()`,
-> `get_orm_scenarios()`, `searchnet_k_readings()`, `gof_battery()`,
+> `searchnet_k_readings()`, `gof_battery()`,
 > `searchnet_recovery()` and `searchnet_chain_calibrate()`. The last three need
 > a fitted RSiena model or several minutes, so their chunks are shown with
 > `eval = FALSE`. Interfaces that are planned but not implemented are listed
@@ -220,7 +220,7 @@ seconds; use more replications and iterations for reported results.
 ```{r worked-baseline}
 result <- run_calibrated_counterfactual(
   bridge_env, bridge,
-  scenario   = get_orm_scenarios()$double_popularity,
+  scenario   = list(name = "double_popularity", modify = list(inPop = 2.0)),
   iterations = 20,
   n_reps     = 3,
   seed       = 42,
@@ -255,10 +255,10 @@ modifying specific parameters in the calibrated vector and comparing
 outcomes.  The `run_calibrated_counterfactual()` function automates this
 workflow.
 
-## 5.1 Predefined scenarios
+## 5.1 Scenarios
 
-`get_orm_scenarios()` returns six predefined scenarios, each a named
-multiplier on a SAOM-NK effect:
+A scenario is a list with a `name` and a `modify` element: a named
+multiplier on each SAOM-NK effect it changes. Six examples:
 
 | # | Scenario               | Modification                   | Research Question                                     |
 |---|------------------------|--------------------------------|-------------------------------------------------------|
@@ -298,10 +298,13 @@ result$summary[, c("measure", "mean_baseline", "mean_cf", "mean_delta",
 Per-actor and per-component deltas are in `result$actor_deltas` and
 `result$component_deltas` for heterogeneous effects.
 
-## 5.4 Running several predefined scenarios
+## 5.4 Running several scenarios
 
 ```{r counterfactual-all}
-applicable <- get_orm_scenarios()[c("double_popularity", "density_shock")]
+applicable <- list(
+  double_popularity = list(name = "double_popularity", modify = list(inPop = 2.0)),
+  density_shock     = list(name = "density_shock",     modify = list(density = 1.5))
+)
 all_results <- lapply(applicable, function(s)
   run_calibrated_counterfactual(bridge_env, bridge, scenario = s,
                                 iterations = 20, n_reps = 3, seed = 42,
@@ -403,7 +406,7 @@ of these names exists:
 
 - `saom_to_saomnk_manual()`: superseded, since `saom_to_saomnk()` already
   accepts a named vector.
-- `run_all_counterfactuals()`: run every predefined scenario; section 5.4
+- `run_all_counterfactuals()`: run a list of scenarios in one call; section 5.4
   shows the implemented route.
 - `compute_empirical_k()`, `run_calibrated_waves()` and
   `plot_trajectory_comparison()`: wave-matched trajectory comparison;

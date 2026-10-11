@@ -4299,14 +4299,45 @@ SaomNkRSienaBiEnv <- R6Class(
     #' where \eqn{\Delta U_{ij}} is the change in formal utility from toggling
     #' activity \eqn{j}.
     #'
+    #' @details
+    #' Degree bounds. When the structure model carries degree bounds
+    #' (\code{saomnk_model(degree_bounds = )}), the reported probabilities are
+    #' those of the bounded choice set, following RSiena's two mechanisms:
+    #' \itemize{
+    #'   \item An \strong{actor cap} is RSiena's \code{MaxDegree}, a hard
+    #'     constraint: an actor at the cap has no add options at all. Those
+    #'     moves get probability exactly 0 and the logit is renormalized over
+    #'     the remaining toggles and the status quo.
+    #'   \item A \strong{floor or component cap} is a fixed penalty effect in
+    #'     the objective, so the move stays in the choice set. Its change
+    #'     \eqn{\Delta P_{ij}} in the penalty term is added to the exponent,
+    #'     \eqn{\exp(\beta \Delta U_{ij} + \Delta P_{ij})}, as in RSiena, which
+    #'     leaves a crossing move about \eqn{e^{-20}} times as likely as staying
+    #'     put. It is not set to 0, because the model is soft there.
+    #' }
+    #' Each actor's element then also carries \code{infeasible} (toggles that
+    #' would leave any bound) and \code{removed} (toggles \code{MaxDegree}
+    #' removes). \code{delta_u} stays the formal-utility change alone. Without
+    #' bounds the result is unchanged.
+    #'
     #' @param beta  Logit sensitivity / inverse temperature parameter.
     #' @param step  Integer time step, or NULL for current bipartite matrix.
+    #' @param renormalize Logical. Under degree bounds, \code{TRUE} (default)
+    #'   reports the bounded choice set described above. \code{FALSE} returns
+    #'   the formal-utility logit over all \eqn{N} toggles with no bound terms
+    #'   (the behavior before searchnet 0.14.1), for comparison; the flags are
+    #'   still reported. Ignored without bounds.
     #' @param ...   Additional arguments passed to \code{compute_formal_utility}.
     #' @return A list of length M, each element containing
     #'   \code{actor_id}, \code{delta_u} (N-vector of utility changes),
     #'   \code{probabilities} (named vector of N flip probabilities plus
-    #'   the pass/status-quo probability), and \code{beta}.
-    compute_choice_probabilities = function(beta = 1, step = NULL, ...) {
+    #'   the pass/status-quo probability), and \code{beta}; under degree
+    #'   bounds also \code{infeasible} and \code{removed}.
+    compute_choice_probabilities = function(beta = 1, step = NULL,
+                                            renormalize = TRUE, ...) {
+      stopifnot(is.logical(renormalize), length(renormalize) == 1L,
+                !is.na(renormalize))
+      .bounds <- .searchnet_model_bounds(self$config_structure_model)
       if (is.null(step)) {
         bi_mat <- self$bipartite_matrix
       } else {
@@ -4352,21 +4383,37 @@ SaomNkRSienaBiEnv <- R6Class(
         probs <- c(exp_vals / denom, 1 / denom)
         names(probs) <- c(paste0("flip_", 1:self$N), "pass")
 
+        ## Under degree bounds, the probabilities are those of RSiena's
+        ## bounded choice set (see R/searchnet-degree-bounds.R): the fixed
+        ## penalty terms enter the exponent (soft), and the adds MaxDegree
+        ## removes get exactly 0, the rest renormalized (hard).
+        removed <- NULL
+        if (!is.null(.bounds)) {
+          removed <- .searchnet_maxdegree_removed(b_i, .bounds)
+          if (renormalize) {
+            pen <- .searchnet_bound_penalty_delta(bi_mat, i, .bounds)
+            w <- exp(beta * delta_u + pen)
+            w[removed] <- 0
+            denom <- 1 + sum(w)
+            probs <- c(w / denom, 1 / denom)
+            names(probs) <- c(paste0("flip_", 1:self$N), "pass")
+          }
+        }
+
         result[[i]] <- list(
           actor_id     = i,
           delta_u      = delta_u,
           probabilities = probs,
           beta         = beta
         )
-        ## Under degree bounds, flag the toggles that would leave them, so a
-        ## figure can grey them out. The formal-utility probabilities above
-        ## are left as they are.
-        .bounds <- .searchnet_model_bounds(self$config_structure_model)
+        ## Flag the toggles that would leave the bounds, so a figure can grey
+        ## them out.
         if (!is.null(.bounds)) {
           cand <- t(vapply(seq_len(self$N), function(j) {
             x <- as.numeric(b_i); x[j] <- 1 - x[j]; x }, numeric(self$N)))
           result[[i]]$infeasible <- as.logical(searchnet_portfolio_infeasible(
             cand, .bounds, state = bi_mat, actor = i))
+          result[[i]]$removed <- removed
         }
       }
       return(result)

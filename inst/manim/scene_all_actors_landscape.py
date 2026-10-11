@@ -23,6 +23,13 @@ outlined in the mover's color. Landscapes are never averaged.
 
 Every number drawn comes from the JSON written by tools/make_all_actors_gif.R.
 
+SharedLandscapeScene (tools/make_all_actors_gif.R --shared=entrant|average)
+keeps the left panel and replaces the six grids with ONE grid on which all
+six tokens move: either the landscape a hypothetical new actor with the same
+parameters would face given everyone's current ties ("entrant"), or the mean
+of the six actors' own landscapes ("average"). AllActorsLandscapeScene is
+unchanged.
+
     SEARCHNET_ALL_ACTORS_JSON=/path/all_actors_landscape.json \
         manim render -r 1440,810 --fps 10 scene_all_actors_landscape.py AllActorsLandscapeScene
 """
@@ -37,7 +44,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from manim import (DOWN, LEFT, RIGHT, UP, Arc, Circle, Create, DashedLine, FadeOut,  # noqa: E402
                    Line, Rectangle, Scene, Square, VGroup, VMobject, config)
 from scene_readme_landscape import (CIVIDIS, GREY, INK, LETTERS, ORDER, cividis,  # noqa: E402
-                                    txt)
+                                    colorbar, glyph, txt)
 
 # ── colors: Okabe-Ito, one per actor (yellow #F0E442 omitted: illegible on
 # white); components, W and axes neutral grey ──────────────────────────────
@@ -409,3 +416,312 @@ class AllActorsLandscapeScene(Scene):
         self.add(txt(f"end of the run ({n_t} ministeps)", 16, INK, "BOLD").move_to([LX, CAP_Y, 0]))
         self.wait(2.2)
         print(f"[scene] ministeps with a best-move outline: {n_hl}")
+
+
+class SharedLandscapeScene(Scene):
+    """One shared grid with all six tokens on it (tools/make_all_actors_gif.R
+    --shared=entrant|average). The left panel is the one drawn by
+    AllActorsLandscapeScene; the right panel is a single 16 x 16 grid colored
+    by d["shared"]["landscape"], which the R script computes and checks:
+
+      entrant  the objective a hypothetical seventh actor with the same
+               parameters would get from each portfolio, given all six
+               actors' current ties;
+      average  the mean of the six actors' own landscapes.
+
+    The trajectories on the left stay each actor's own objective."""
+
+    def construct(self):
+        path = os.environ.get("SEARCHNET_ALL_ACTORS_JSON", "all_actors_landscape.json")
+        with open(path, encoding="utf-8") as fh:
+            d = json.load(fh)
+        M, N = d["M"], d["N"]
+        lands = [np.array(L) for L in d["landscapes"]]
+        rows = [[r - 1 for r in rr] for rr in d["rows"]]
+        steps = d["steps"]
+        n_t = len(steps)
+        sh = d["shared"]
+        mode = sh["mode"]
+        S = np.array(sh["landscape"])                       # (n_t + 1) x 2^N
+        max_dev = float(sh["max_dev"])
+        assert N == 8 and M == 6
+        # one color scale over the shown landscape, all ministeps
+        lo, hi = float(S.min()), float(S.max())
+        norm = lambda v: (v - lo) / (hi - lo) if hi > lo else 0.5
+        self.add(Rectangle(width=config.frame_width + 0.2, height=config.frame_height + 0.2,
+                           stroke_width=0, fill_color="#FFFFFF", fill_opacity=1))
+
+        # ── left: network, W, six objectives (as in AllActorsLandscapeScene) ──
+        LX = -4.2
+        hdr_l = txt("Six actors hold components", 22, weight="BOLD").move_to([LX, 3.66, 0])
+        sub_l = txt("circles: actors; squares: components (one simulated run)", 14, GREY)
+        sub_l.next_to(hdr_l, DOWN, buff=0.1)
+        self.add(hdr_l, sub_l)
+        ax = np.linspace(-6.45, -1.95, M)
+        cx = np.linspace(-6.75, -1.65, N)
+        y_a, y_c, ra = 2.5, 1.02, 0.25
+        actors, comps = [], []
+        for i in range(M):
+            c = Circle(radius=ra, color=INK, stroke_width=1.2,
+                       fill_color=ACTOR_COLORS[i], fill_opacity=1).move_to([ax[i], y_a, 0])
+            lab = txt(str(i + 1), 16, ACTOR_TEXT[i], "BOLD").move_to(c)
+            actors.append(VGroup(c, lab))
+        for j in range(N):
+            s = Square(side_length=0.4, color=COMP, fill_color=COMP, fill_opacity=1, stroke_width=0)
+            s.move_to([cx[j], y_c, 0])
+            lab = txt(LETTERS[j], 15, "#FFFFFF", "BOLD").move_to(s)
+            comps.append(VGroup(s, lab))
+        mod1 = txt("module 1", 12, GREY).move_to([(cx[0] + cx[3]) / 2, y_c - 0.44, 0])
+        mod2 = txt("module 2", 12, GREY).move_to([(cx[4] + cx[7]) / 2, y_c - 0.44, 0])
+        brk1 = Line([cx[0] - 0.2, y_c - 0.29, 0], [cx[3] + 0.2, y_c - 0.29, 0], color=GREY, stroke_width=2)
+        brk2 = Line([cx[4] - 0.2, y_c - 0.29, 0], [cx[7] + 0.2, y_c - 0.29, 0], color=GREY, stroke_width=2)
+
+        def edge(i, j):
+            return Line([ax[i], y_a - ra, 0], [cx[j], y_c + 0.2, 0],
+                        color=ACTOR_COLORS[i], stroke_width=2.6)
+
+        edges = {}
+        start = np.array(d["start"])
+        for i in range(M):
+            for j in range(N):
+                if start[i][j] == 1:
+                    edges[(i, j)] = edge(i, j)
+        self.add(*edges.values(), *actors, *comps, mod1, mod2, brk1, brk2)
+
+        W = np.array(d["W"])
+        wc = 0.12
+        w0 = np.array([-6.95, -1.38, 0])
+        wcells = VGroup()
+        for r in range(N):
+            for c in range(N):
+                fill = "#eeeeee" if r == c else (COMP if W[r][c] > 0 else "#FFFFFF")
+                sq = Square(side_length=wc, fill_color=fill, fill_opacity=1, color="#d0d0d0", stroke_width=0.5)
+                sq.move_to(w0 + np.array([c * wc + wc / 2, -r * wc - wc / 2, 0]))
+                wcells.add(sq)
+        w_t = txt("influence W", 12, INK, "BOLD").next_to(wcells, UP, buff=0.1).align_to(wcells, LEFT)
+        w_s = txt("two modules", 11, GREY).next_to(wcells, DOWN, buff=0.08).align_to(wcells, LEFT)
+        self.add(wcells, w_t, w_s)
+
+        f_tr = [np.array([lands[a][k][rows[a][k]] for k in range(n_t + 1)]) for a in range(M)]
+        tlo = float(min(t.min() for t in f_tr))
+        thi = float(max(t.max() for t in f_tr))
+        pad = 0.06 * (thi - tlo)
+        tlo, thi = tlo - pad, thi + pad
+        tx0, tx1, ty0, ty1 = -5.6, -2.3, -3.62, -1.22
+        X = lambda k: tx0 + (tx1 - tx0) * k / n_t
+        Y = lambda v: ty0 + (ty1 - ty0) * (v - tlo) / (thi - tlo)
+        axis = VGroup(Line([tx0, ty0, 0], [tx1, ty0, 0], color=GREY, stroke_width=1.5),
+                      Line([tx0, ty0, 0], [tx0, ty1, 0], color=GREY, stroke_width=1.5))
+        t_t = txt("each actor's objective f at its own portfolio", 13, INK, "BOLD")
+        t_t.move_to([(tx0 + tx1) / 2 + 0.3, ty1 + 0.24, 0])
+        t_x = txt("ministep", 12, GREY).move_to([(tx0 + tx1) / 2, ty0 - 0.2, 0])
+        self.add(axis, t_t, t_x)
+        traces = []
+        for a in range(M):
+            tr = VMobject(color=ACTOR_COLORS[a], stroke_width=3)
+            p0 = [X(0), Y(f_tr[a][0]), 0]
+            tr.set_points_as_corners([p0, p0])
+            traces.append(tr)
+        self.add(*traces)
+        now_line = DashedLine([X(0), ty0, 0], [X(0), ty1, 0], color=GREY, stroke_width=1.5,
+                              dash_length=0.06)
+        self.add(now_line)
+
+        def end_labels(k):
+            ys = [Y(f_tr[a][k]) for a in range(M)]
+            order = sorted(range(M), key=lambda a: ys[a])
+            gap = 0.19
+            pos = {}
+            prev = -1e9
+            for a in order:
+                y = max(ys[a], prev + gap)
+                pos[a] = y
+                prev = y
+            over = max(pos.values()) - (ty1 + 0.1)
+            if over > 0:
+                for a in pos:
+                    pos[a] -= over
+            g = VGroup()
+            for a in range(M):
+                g.add(txt(f"actor {a + 1}", 11, ACTOR_COLORS[a], "BOLD")
+                      .move_to([tx1 + 0.08, pos[a], 0], aligned_edge=LEFT))
+            return g
+
+        labs = end_labels(0)
+        self.add(labs)
+
+        # ── right: one shared grid ───────────────────────────────────────
+        cs = 0.285
+        gw = 16 * cs
+        G0 = np.array([0.95, 2.55, 0])                     # top-left corner
+        RX = G0[0] + gw / 2
+        inv = {b: k for k, b in enumerate(ORDER)}
+
+        def cell_xy(cfg):
+            r, c = inv[cfg & 15], inv[cfg >> 4]
+            return G0 + np.array([c * cs + cs / 2, -r * cs - cs / 2, 0])
+
+        title = {"entrant": "One shared landscape: a new actor's view",
+                 "average": "One shared landscape: the six actors' average"}[mode]
+        self.add(txt(title, 22, weight="BOLD").move_to([RX, 3.66, 0]))
+        cells = []
+        for cfg in range(256):
+            c0 = cividis(norm(S[0][cfg]))
+            sq = Square(side_length=cs, stroke_width=0.6, stroke_color=c0,
+                        fill_opacity=1, fill_color=c0)
+            sq.move_to(cell_xy(cfg))
+            cells.append(sq)
+        self.add(*cells)
+        for k in range(16):
+            gr = glyph(ORDER[k], True).move_to(G0 + np.array([-0.2, -k * cs - cs / 2, 0]))
+            gc = glyph(ORDER[k], False).move_to(G0 + np.array([k * cs + cs / 2, 0.2, 0]))
+            self.add(gr, gc)
+        ax_r = txt("holds which of A B C D", 13, GREY).rotate(np.pi / 2)
+        ax_r.move_to(G0 + np.array([-0.5, -8 * cs, 0]))
+        ax_c = txt("holds which of E F G H", 13, GREY).move_to(G0 + np.array([8 * cs, 0.5, 0]))
+        self.add(ax_r, ax_c)
+
+        def peak_marks(f):
+            return VGroup(*[Square(side_length=cs - 0.03, color="#FFFFFF", stroke_width=2.4)
+                            .move_to(cell_xy(p)) for p in range(256)
+                            if all(f[p] >= f[p ^ (1 << j)] for j in range(N))])
+
+        pk = peak_marks(S[0])
+        self.add(pk)
+
+        # tokens: a solid disc per actor; actors sharing a cell, one ring
+        # split into colored arcs
+        R_DISC, R_RING, W_RING = 0.085, 0.08, 5.6
+
+        def disc(a, r=R_DISC):
+            return Circle(radius=r, color=INK, stroke_width=2.2,
+                          fill_color=ACTOR_COLORS[a], fill_opacity=1)
+
+        def ring(ids, r=R_RING, w=W_RING):
+            g = VGroup(Circle(radius=r, color=INK, stroke_width=w + 2.6))
+            n = len(ids)
+            for k, a in enumerate(ids):
+                g.add(Arc(radius=r, start_angle=np.pi / 2 - 2 * np.pi * k / n,
+                          angle=-2 * np.pi / n, color=ACTOR_COLORS[a], stroke_width=w))
+            return g
+
+        def token(ids):
+            return disc(ids[0]) if len(ids) == 1 else ring(ids)
+
+        def layout(pos, skip=None):
+            out = VGroup()
+            by_cell = {}
+            for a in range(M):
+                if a != skip:
+                    by_cell.setdefault(pos[a], []).append(a)
+            for cfg, ids in by_cell.items():
+                out.add(token(ids).move_to(cell_xy(cfg)))
+            return out
+
+        pos = [rows[a][0] for a in range(M)]
+        toks = layout(pos)
+        self.add(toks)
+
+        # color bar, legend and the two-line caption, under the grid
+        cb_x0, cb_x1, cb_y = RX - 1.35, RX + 1.0, -2.28
+        self.add(*colorbar(cb_x0, cb_x1, cb_y, lo_label=f"lower f ({lo:.1f})",
+                           hi_label=f"higher f ({hi:.1f})"))
+        l1 = disc(0).move_to([0, 0, 0])
+        l1t = txt("an actor's portfolio", 12, INK).next_to(l1, RIGHT, buff=0.08)
+        l3 = ring([2, 4, 5]).next_to(l1t, RIGHT, buff=0.3)
+        l3t = txt("actors sharing a portfolio", 12, INK).next_to(l3, RIGHT, buff=0.08)
+        pk_bg = Square(side_length=cs, stroke_width=0, fill_color=CIVIDIS[1], fill_opacity=1)
+        pk_bg.next_to(l3t, RIGHT, buff=0.3)
+        pk_sq = Square(side_length=cs - 0.03, color="#FFFFFF", stroke_width=2.4).move_to(pk_bg)
+        pk_t = txt("local peak of this grid", 12, INK).next_to(pk_bg, RIGHT, buff=0.08)
+        self.add(VGroup(l1, l1t, l3, l3t, pk_bg, pk_sq, pk_t).move_to([RX, -2.68, 0]))
+        if mode == "entrant":
+            cap_lines = [
+                "Grid: the objective a new actor would get from each portfolio given everyone's current ties;",
+                f"each actor's own landscape differs only by its own holdings' effect (at most {max_dev:.1f} here).",
+            ]
+        else:
+            cap_lines = [
+                "Grid: the average of the six actors' own landscapes;",
+                f"no actor's own landscape is farther than {max_dev:.2f} from it at any portfolio or ministep.",
+            ]
+        for k, s in enumerate(cap_lines):
+            self.add(txt(s, 13, INK).move_to([RX, -3.14 - 0.3 * k, 0]))
+        self.add(txt("rows = which of A B C D held, columns = which of E F G H, each ordered by how many are held",
+                     11, GREY).move_to([RX, -3.78, 0]))
+
+        # ── captions (left) ───────────────────────────────────────────────
+        CAP_Y = 0.12
+
+        def caption(k, s=None):
+            if s is None:
+                msg, col = f"ministep 0 of {n_t}: the start of the run", INK
+            else:
+                verb = {"add": "adds", "drop": "drops"}.get(s["change"])
+                what = f"{verb} component {LETTERS[s['comp'] - 1]}" if verb else "keeps its portfolio"
+                msg = f"ministep {k} of {n_t}: actor {s['actor']} {what}"
+                col = ACTOR_COLORS[s["actor"] - 1]
+            return txt(msg, 16, col, "BOLD").move_to([LX, CAP_Y, 0])
+
+        cap = caption(0)
+        self.add(cap)
+        self.wait(1.2)
+
+        for k, s in enumerate(steps, start=1):
+            mover = s["actor"] - 1
+            changed = s["change"] != "none"
+            self.remove(cap)
+            cap = caption(k, s)
+            self.add(cap)
+            for a in range(M):
+                traces[a].set_points_as_corners([[X(m), Y(f_tr[a][m]), 0] for m in range(k + 1)])
+            self.remove(labs)
+            labs = end_labels(k)
+            self.add(labs)
+            now_line.put_start_and_end_on([X(k), ty0, 0], [X(k), ty1, 0])
+            # the shared grid follows every ministep's state
+            for cfg in range(256):
+                if S[k][cfg] != S[k - 1][cfg]:
+                    c1 = cividis(norm(S[k][cfg]))
+                    cells[cfg].set_fill(c1).set_stroke(c1)
+            self.remove(pk)
+            pk = peak_marks(S[k])
+            self.add(pk)
+            self.bring_to_front(toks)
+            if not changed:
+                self.wait(0.1)
+                continue
+
+            i, j = mover, s["comp"] - 1
+            anims = []
+            if s["change"] == "add":
+                e = edge(i, j)
+                edges[(i, j)] = e
+                anims.append(Create(e))
+            else:
+                dropped = edges.pop((i, j))
+                dropped.set_stroke(DROP, width=3.5)
+                anims.append(FadeOut(dropped))
+            old, new = rows[mover][k - 1], rows[mover][k]
+            self.remove(toks)
+            toks = layout(pos, skip=mover)
+            self.add(toks)
+            # the mover travels enlarged, with a halo in its color (the pulse)
+            m = disc(mover, R_DISC * 1.5).move_to(cell_xy(old))
+            halo = Circle(radius=R_DISC * 2.6, color=ACTOR_COLORS[mover], stroke_width=5).move_to(cell_xy(old))
+            self.add(halo, m)
+            anims += [m.animate.move_to(cell_xy(new)), halo.animate.move_to(cell_xy(new))]
+            self.play(*anims, run_time=0.3)
+            pos[mover] = new
+            self.play(halo.animate.scale(1.7).set_stroke(opacity=0), m.animate.scale(1 / 1.5),
+                      run_time=0.2)
+            self.remove(m, halo, toks)
+            toks = layout(pos)
+            self.add(toks)
+            for e in actors + comps:
+                self.bring_to_front(e)
+            self.wait(0.1)
+
+        self.remove(cap)
+        self.add(txt(f"end of the run ({n_t} ministeps)", 16, INK, "BOLD").move_to([LX, CAP_Y, 0]))
+        self.wait(2.2)

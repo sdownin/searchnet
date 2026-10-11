@@ -1,22 +1,23 @@
-#' @title Basin Geometry and Depth-Width Tradeoff
-#' @description Functions for computing basin geometry metrics (width, depth,
-#'   steepness, escape difficulty), the depth-width tradeoff frontier,
-#'   cross-partial derivatives, and imitation penalties.
-#' @name searchnet-basins
+## Basin geometry of a parameterized landscape (internal).
+##
+## Functions for computing basin geometry metrics (width, depth, steepness,
+## escape difficulty) from search parameters, the depth-width table across a
+## set of parameter sets, a numerical cross-partial of basin width, and the
+## fitness penalty of landing off a basin's floor. None is exported.
 
-# Okabe-Ito policy colors
-.basin_colors <- c(RS = "#1a1a1a", RE = "#E69F00", RR = "#56B4E9", RF = "#009E73")
+# Okabe-Ito colors, one per default parameter set
+.basin_colors <- c(A = "#1a1a1a", B = "#E69F00", C = "#56B4E9", D = "#009E73")
 
-# Default policy parameter profiles
-.policy_params <- list(
-  RS = list(scope_cost = 0.60, synergy = -0.30, herding = 0.20, label = "Res-Suppressing"),
-  RE = list(scope_cost = -0.50, synergy = 0.00, herding = 0.40, label = "Res-Enriching"),
-  RR = list(scope_cost = 0.00, synergy = 0.60, herding = -0.30, label = "Res-Retaining"),
-  RF = list(scope_cost = -0.60, synergy = 0.50, herding = 0.00, label = "Res-Freeing")
+# Default parameter sets (illustrative corners of the parameter space)
+.basin_param_sets <- list(
+  A = list(scope_cost = 0.60, synergy = -0.30, herding = 0.20, label = "Set A"),
+  B = list(scope_cost = -0.50, synergy = 0.00, herding = 0.40, label = "Set B"),
+  C = list(scope_cost = 0.00, synergy = 0.60, herding = -0.30, label = "Set C"),
+  D = list(scope_cost = -0.60, synergy = 0.50, herding = 0.00, label = "Set D")
 )
 
 
-#' Compute Basin Geometry from Policy Parameters
+#' Basin geometry from search parameters
 #'
 #' Derives basin width, depth, and steepness from the three search
 #' parameters (scope cost, synergy, herding) using the analytical
@@ -28,17 +29,16 @@
 #' @param base_width Numeric baseline width (default 0.4)
 #' @param base_depth Numeric baseline depth (default 0.3)
 #' @param base_steepness Numeric baseline steepness exponent (default 1.0)
-#' @return Named list with width, depth, steepness, escape_difficulty
+#' @return Named list with width, depth, steepness, escape_difficulty and the
+#'   three inputs.
 #' @examples
-#' ## Resource-suppressing policy: narrow, shallow, steep-walled basin
-#' saomnk_basin_geometry(scope_cost = 0.6, synergy = -0.3, herding = 0.2)
-#'
-#' ## Resource-freeing policy: wide and deep
-#' saomnk_basin_geometry(scope_cost = -0.6, synergy = 0.5, herding = 0)
-#' @export
-saomnk_basin_geometry <- function(scope_cost, synergy, herding,
-                                   base_width = 0.4, base_depth = 0.3,
-                                   base_steepness = 1.0) {
+#' ## High scope cost, negative synergy: narrow, shallow, steep-walled basin
+#' basin_geometry(scope_cost = 0.6, synergy = -0.3, herding = 0.2)
+#' @keywords internal
+#' @noRd
+basin_geometry <- function(scope_cost, synergy, herding,
+                           base_width = 0.4, base_depth = 0.3,
+                           base_steepness = 1.0) {
   # Normalize to [0,1]
   norm_scope <- (scope_cost + 0.6) / 1.2
   norm_syn <- (synergy + 0.6) / 1.2
@@ -64,24 +64,26 @@ saomnk_basin_geometry <- function(scope_cost, synergy, herding,
 }
 
 
-#' Compute Depth-Width Tradeoff Across Policy Types
+#' Basin geometry for each of a set of parameter sets
 #'
-#' Computes basin geometry for each policy type and returns the
-#' tradeoff frontier data.
+#' Computes basin geometry for each parameter set and returns one row per
+#' set: the data behind a depth-width frontier.
 #'
-#' @param policy_params Named list of policy parameter lists. Each must
-#'   contain scope_cost, synergy, herding. Default uses four illustrative policy archetypes.
-#' @return Data frame with columns: policy, label, width, depth, steepness,
+#' @param param_sets Named list of parameter sets. Each must contain
+#'   scope_cost, synergy, herding and label. The default uses four
+#'   illustrative corners of the parameter space (sets A to D).
+#' @return Data frame with columns: param_set, label, width, depth, steepness,
 #'   escape_difficulty, scope_cost, synergy, herding
 #' @examples
-#' saomnk_depth_width_tradeoff()
-#' @export
-saomnk_depth_width_tradeoff <- function(policy_params = .policy_params) {
-  results <- lapply(names(policy_params), function(pid) {
-    p <- policy_params[[pid]]
-    geom <- saomnk_basin_geometry(p$scope_cost, p$synergy, p$herding)
+#' basin_geometry_table()
+#' @keywords internal
+#' @noRd
+basin_geometry_table <- function(param_sets = .basin_param_sets) {
+  results <- lapply(names(param_sets), function(pid) {
+    p <- param_sets[[pid]]
+    geom <- basin_geometry(p$scope_cost, p$synergy, p$herding)
     data.frame(
-      policy = pid,
+      param_set = pid,
       label = p$label,
       width = geom$width,
       depth = geom$depth,
@@ -97,29 +99,26 @@ saomnk_depth_width_tradeoff <- function(policy_params = .policy_params) {
 }
 
 
-#' Compute Cross-Partial Derivative Numerically
+#' Cross-partial of basin width in synergy and scope cost
 #'
 #' Numerically estimates d2W/d(sigma)d(gamma), the cross-partial
 #' of basin width with respect to synergy and scope cost.
-#' Negative cross-partial = the complementarity trap.
 #'
 #' @param sigma_range Numeric vector c(min, max) for synergy (default c(-0.6, 0.6))
 #' @param gamma_range Numeric vector c(min, max) for scope cost (default c(-0.6, 0.6))
 #' @param n_grid Integer grid resolution (default 50)
 #' @param herding Numeric fixed herding value (default 0)
-#' @return List with:
-#'   \item{cross_partial}{Matrix of d2W/dsigma.dgamma values}
-#'   \item{sigma_values}{Numeric vector of sigma grid points}
-#'   \item{gamma_values}{Numeric vector of gamma grid points}
-#'   \item{mean_cross_partial}{Scalar mean cross-partial (should be < 0)}
+#' @return List with cross_partial (matrix of d2W/dsigma.dgamma values),
+#'   sigma_values, gamma_values, mean_cross_partial and width_surface.
 #' @examples
-#' cp <- saomnk_cross_partial(n_grid = 21)
-#' cp$mean_cross_partial   # negative: the complementarity trap
-#' @export
-saomnk_cross_partial <- function(sigma_range = c(-0.6, 0.6),
-                                  gamma_range = c(-0.6, 0.6),
-                                  n_grid = 50L,
-                                  herding = 0) {
+#' cp <- basin_width_cross_partial(n_grid = 21)
+#' cp$mean_cross_partial
+#' @keywords internal
+#' @noRd
+basin_width_cross_partial <- function(sigma_range = c(-0.6, 0.6),
+                                      gamma_range = c(-0.6, 0.6),
+                                      n_grid = 50L,
+                                      herding = 0) {
   sigma_vals <- seq(sigma_range[1], sigma_range[2], length.out = n_grid)
   gamma_vals <- seq(gamma_range[1], gamma_range[2], length.out = n_grid)
   ds <- sigma_vals[2] - sigma_vals[1]
@@ -129,7 +128,7 @@ saomnk_cross_partial <- function(sigma_range = c(-0.6, 0.6),
   W <- matrix(0, n_grid, n_grid)
   for (i in seq_len(n_grid)) {
     for (j in seq_len(n_grid)) {
-      geom <- saomnk_basin_geometry(gamma_vals[j], sigma_vals[i], herding)
+      geom <- basin_geometry(gamma_vals[j], sigma_vals[i], herding)
       W[i, j] <- geom$width
     }
   }
@@ -153,40 +152,38 @@ saomnk_cross_partial <- function(sigma_range = c(-0.6, 0.6),
 }
 
 
-#' Plot Depth-Width Tradeoff Frontier
+#' Plot basin depth against basin width
 #'
-#' Scatter plot with width on x-axis, depth on y-axis. Each policy type
-#' is a labeled point. Optionally shows RBV-optimal and DC-optimal endpoints.
+#' Scatter plot with width on x-axis, depth on y-axis. Each parameter set
+#' is a labeled point. Optionally marks the deepest and the widest basin.
 #'
-#' @param tradeoff_data Data frame from saomnk_depth_width_tradeoff
-#' @param colors Named vector of policy colors (default Okabe-Ito)
-#' @param show_rbv_dc Logical whether to annotate RBV and DC endpoints
-#' @param show_frontier Logical whether to draw the Pareto frontier curve
+#' @param tradeoff_data Data frame from basin_geometry_table()
+#' @param colors Named vector of colors, one per parameter set
+#' @param show_extremes Logical whether to annotate the deepest and the widest
+#'   basin
+#' @param show_frontier Logical whether to draw a smoothed frontier curve
 #' @param title Character plot title
 #' @return ggplot object
-#' @examples
-#' \donttest{
-#' td <- saomnk_depth_width_tradeoff()
-#' p <- saomnk_plot_tradeoff_frontier(td, show_frontier = FALSE)
-#' }
-#' @export
-saomnk_plot_tradeoff_frontier <- function(tradeoff_data,
-                                           colors = .basin_colors,
-                                           show_rbv_dc = TRUE,
-                                           show_frontier = TRUE,
-                                           title = "The Depth-Width Tradeoff") {
+#' @keywords internal
+#' @noRd
+plot_basin_depth_width <- function(tradeoff_data,
+                                   colors = .basin_colors,
+                                   show_extremes = TRUE,
+                                   show_frontier = TRUE,
+                                   title = "The Depth-Width Tradeoff") {
   requireNamespace("ggplot2", quietly = TRUE)
 
   p <- ggplot2::ggplot(tradeoff_data,
-                       ggplot2::aes(x = width, y = depth, color = policy, label = policy)) +
+                       ggplot2::aes(x = width, y = depth, color = param_set,
+                                    label = param_set)) +
     ggplot2::geom_point(size = 6) +
     ggplot2::geom_text(nudge_y = 0.03, fontface = "bold", size = 5) +
     ggplot2::scale_color_manual(values = colors) +
     ggplot2::labs(
       title = title,
-      subtitle = "Each point: one policy type, placed by the width and depth of its basin",
-      x = "Basin Width (Strategic Flexibility)",
-      y = "Basin Depth (Fitness Commitment)"
+      subtitle = "Each point: one parameter set, placed by the width and depth of its basin",
+      x = "Basin Width",
+      y = "Basin Depth"
     ) +
     theme_searchnet(base_size = 12) +
     ggplot2::theme(
@@ -202,17 +199,17 @@ saomnk_plot_tradeoff_frontier <- function(tradeoff_data,
     )
   }
 
-  if (show_rbv_dc) {
-    # Annotate RBV-optimal (max depth) and DC-optimal (max width)
-    rbv_row <- tradeoff_data[which.max(tradeoff_data$depth), ]
-    dc_row <- tradeoff_data[which.max(tradeoff_data$width), ]
+  if (show_extremes) {
+    # Annotate the deepest (max depth) and the widest (max width) basin
+    deep_row <- tradeoff_data[which.max(tradeoff_data$depth), ]
+    wide_row <- tradeoff_data[which.max(tradeoff_data$width), ]
 
     p <- p +
-      ggplot2::annotate("text", x = rbv_row$width, y = rbv_row$depth + 0.06,
-                        label = "RBV optimal\n(deep, narrow)", color = "#D55E00",
+      ggplot2::annotate("text", x = deep_row$width, y = deep_row$depth + 0.06,
+                        label = "Deepest\n(deep, narrow)", color = "#D55E00",
                         fontface = "italic", size = 3.5) +
-      ggplot2::annotate("text", x = dc_row$width, y = dc_row$depth + 0.06,
-                        label = "DC optimal\n(wide, shallow)", color = "#0072B2",
+      ggplot2::annotate("text", x = wide_row$width, y = wide_row$depth + 0.06,
+                        label = "Widest\n(wide, shallow)", color = "#0072B2",
                         fontface = "italic", size = 3.5)
   }
 
@@ -220,45 +217,43 @@ saomnk_plot_tradeoff_frontier <- function(tradeoff_data,
 }
 
 
-#' Plot Basin Shape Comparison
+#' Plot basin profiles
 #'
-#' Overlays basin profiles for all policy types on the same axes.
+#' Overlays the basin profile of every parameter set on the same axes.
 #'
-#' @param tradeoff_data Data frame from saomnk_depth_width_tradeoff
+#' @param tradeoff_data Data frame from basin_geometry_table()
 #' @param colors Named color vector
 #' @param x_range Numeric vector c(min, max) for x-axis (default c(-3, 3))
 #' @param title Character plot title
 #' @return ggplot object
-#' @examples
-#' \donttest{
-#' td <- saomnk_depth_width_tradeoff()
-#' p <- saomnk_plot_basin_comparison(td)
-#' }
-#' @export
-saomnk_plot_basin_comparison <- function(tradeoff_data,
-                                          colors = .basin_colors,
-                                          x_range = c(-3, 3),
-                                          title = "Basin Geometry Comparison Across Policy Types") {
+#' @keywords internal
+#' @noRd
+plot_basin_profiles <- function(tradeoff_data,
+                                colors = .basin_colors,
+                                x_range = c(-3, 3),
+                                title = "Basin Geometry Comparison Across Parameter Sets") {
   requireNamespace("ggplot2", quietly = TRUE)
 
   x <- seq(x_range[1], x_range[2], length.out = 500)
   curves <- lapply(seq_len(nrow(tradeoff_data)), function(i) {
     row <- tradeoff_data[i, ]
     y <- -row$depth * exp(-((abs(x) / row$width)^row$steepness))
-    data.frame(x = x, y = y, policy = row$policy, stringsAsFactors = FALSE)
+    data.frame(x = x, y = y, param_set = row$param_set, stringsAsFactors = FALSE)
   })
   curve_df <- do.call(rbind, curves)
 
-  ggplot2::ggplot(curve_df, ggplot2::aes(x = x, y = y, color = policy, fill = policy)) +
+  ggplot2::ggplot(curve_df, ggplot2::aes(x = x, y = y, color = param_set,
+                                         fill = param_set)) +
     ggplot2::geom_line(linewidth = 1.5) +
     ggplot2::geom_ribbon(ggplot2::aes(ymin = y, ymax = 0), alpha = 0.15) +
     ggplot2::scale_color_manual(values = colors) +
     ggplot2::scale_fill_manual(values = colors) +
     ggplot2::labs(
       title = title,
-      subtitle = "Each curve: one policy type's basin, drawn from its depth, width and steepness",
+      subtitle = "Each curve: one parameter set's basin, drawn from its depth, width and steepness",
       x = "Strategy Space",
-      y = "Fitness Landscape"
+      y = "Fitness Landscape",
+      color = "Parameter Set", fill = "Parameter Set"
     ) +
     theme_searchnet(base_size = 12) +
     ggplot2::theme(
@@ -268,12 +263,13 @@ saomnk_plot_basin_comparison <- function(tradeoff_data,
 }
 
 
-#' Simulate and Plot Erosion / Landscape Perturbation
+#' Simulate and plot fitness after a landscape shock
 #'
-#' Simulates 4 firms with different basin geometries over n_periods.
-#' Shows fitness parity pre-shock, then divergent trajectories post-shock.
+#' Simulates one actor per parameter set over n_periods: a common fitness
+#' level before the shock, then a loss and recovery set by each basin's
+#' geometry. Sets the RNG seed to 42.
 #'
-#' @param tradeoff_data Data frame from saomnk_depth_width_tradeoff
+#' @param tradeoff_data Data frame from basin_geometry_table()
 #' @param n_periods Integer simulation length (default 20)
 #' @param shock_period Integer when shock hits (default 11)
 #' @param shock_magnitude Numeric perturbation size (default 0.5)
@@ -281,26 +277,22 @@ saomnk_plot_basin_comparison <- function(tradeoff_data,
 #' @param colors Named color vector
 #' @param title Character plot title
 #' @return ggplot object
-#' @examples
-#' \donttest{
-#' td <- saomnk_depth_width_tradeoff()
-#' p <- saomnk_plot_erosion_simulation(td, n_periods = 20, shock_period = 11)
-#' }
-#' @export
-saomnk_plot_erosion_simulation <- function(tradeoff_data,
-                                            n_periods = 20L,
-                                            shock_period = 11L,
-                                            shock_magnitude = 0.5,
-                                            noise_sd = 0.02,
-                                            colors = .basin_colors,
-                                            title = "Fitness Trajectories Under Landscape Perturbation") {
+#' @keywords internal
+#' @noRd
+plot_basin_shock_recovery <- function(tradeoff_data,
+                                      n_periods = 20L,
+                                      shock_period = 11L,
+                                      shock_magnitude = 0.5,
+                                      noise_sd = 0.02,
+                                      colors = .basin_colors,
+                                      title = "Fitness Trajectories Under Landscape Perturbation") {
   requireNamespace("ggplot2", quietly = TRUE)
   set.seed(42)
 
   trajectories <- lapply(seq_len(nrow(tradeoff_data)), function(i) {
     row <- tradeoff_data[i, ]
     fitness <- numeric(n_periods)
-    base_fitness <- 0.8  # parity level
+    base_fitness <- 0.8  # common pre-shock level
 
     for (t in seq_len(n_periods)) {
       if (t < shock_period) {
@@ -320,14 +312,14 @@ saomnk_plot_erosion_simulation <- function(tradeoff_data,
     data.frame(
       period = seq_len(n_periods),
       fitness = fitness,
-      policy = row$policy,
+      param_set = row$param_set,
       stringsAsFactors = FALSE
     )
   })
   traj_df <- do.call(rbind, trajectories)
 
   ggplot2::ggplot(traj_df, ggplot2::aes(x = period, y = fitness,
-                                         color = policy, group = policy)) +
+                                         color = param_set, group = param_set)) +
     ggplot2::geom_line(linewidth = 1.2) +
     ggplot2::geom_vline(xintercept = shock_period, linetype = "dashed", color = "#D55E00", alpha = 0.5) +
     ggplot2::annotate("text", x = shock_period + 0.5, y = max(traj_df$fitness),
@@ -335,10 +327,10 @@ saomnk_plot_erosion_simulation <- function(tradeoff_data,
     ggplot2::scale_color_manual(values = colors) +
     ggplot2::labs(
       title = title,
-      subtitle = "Each line: one policy type's fitness per period; the landscape shifts at the dashed line",
+      subtitle = "Each line: one parameter set's fitness per period; the landscape shifts at the dashed line",
       x = "Period",
-      y = "Competitive Fitness",
-      color = "Policy Type"
+      y = "Fitness",
+      color = "Parameter Set"
     ) +
     theme_searchnet(base_size = 12) +
     ggplot2::theme(
@@ -348,20 +340,21 @@ saomnk_plot_erosion_simulation <- function(tradeoff_data,
 }
 
 
-#' Compute Imitation Penalty for Each Basin Type
+#' Imitation penalty for each basin
 #'
-#' The imitation penalty = fitness cost of landing on the basin wall
-#' rather than the floor. Steeper walls = higher penalty.
+#' The imitation penalty is the fitness cost of landing on the basin wall
+#' rather than the floor. Steeper walls give a higher penalty.
 #'
-#' @param tradeoff_data Data frame from saomnk_depth_width_tradeoff
+#' @param tradeoff_data Data frame from basin_geometry_table()
 #' @param imitation_distance Numeric how far from the peak the imitator lands
 #'   (as fraction of basin width, default 0.5)
-#' @return Data frame with policy, penalty, gradient, width, steepness
+#' @return Data frame with param_set, penalty, gradient, width, steepness
 #' @examples
-#' td <- saomnk_depth_width_tradeoff()
-#' saomnk_imitation_penalty(td, imitation_distance = 0.5)
-#' @export
-saomnk_imitation_penalty <- function(tradeoff_data, imitation_distance = 0.5) {
+#' td <- basin_geometry_table()
+#' basin_imitation_penalty(td, imitation_distance = 0.5)
+#' @keywords internal
+#' @noRd
+basin_imitation_penalty <- function(tradeoff_data, imitation_distance = 0.5) {
   penalties <- lapply(seq_len(nrow(tradeoff_data)), function(i) {
     row <- tradeoff_data[i, ]
     # Position on the wall at imitation_distance * width
@@ -378,7 +371,7 @@ saomnk_imitation_penalty <- function(tradeoff_data, imitation_distance = 0.5) {
       exp(-((x_wall / row$width)^row$steepness))
 
     data.frame(
-      policy = row$policy,
+      param_set = row$param_set,
       penalty = penalty,
       gradient = gradient,
       width = row$width,

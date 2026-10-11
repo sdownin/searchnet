@@ -312,7 +312,7 @@ saomnk_plot_bipartite_system_from_mat <- function(env,
 # ---------------------------------------------------------------------------- #
 
 ## Okabe-Ito (Okabe and Ito 2008), the colorblind-safe palette the package's
-## policy, basin and README plots use. Actor strategy groups take orange, sky
+## basin, replicator and README plots use. Actor strategy groups take orange, sky
 ## blue, yellow, reddish purple and black in that order (vermillion is kept
 ## for events); components take blue (initially unused) and reddish purple
 ## (initially used), matching the {K} degree panels.

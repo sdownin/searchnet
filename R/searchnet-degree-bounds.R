@@ -734,3 +734,52 @@ searchnet_portfolio_infeasible <- function(portfolios, degree_bounds,
   }
   stop("not a degree-bound statistic: ", effect, call. = FALSE)
 }
+
+## ---------------------------------------------------------------------------
+## Choice sets under bounds (used by compute_choice_probabilities())
+## ---------------------------------------------------------------------------
+## The two mechanisms enter an actor's ministep choice differently, and the
+## reported probabilities follow RSiena exactly in both cases:
+##
+##   * MaxDegree is a HARD constraint on the choice set. RSiena removes every
+##     option that would push the actor's outdegree above the cap, so an actor
+##     at the cap chooses among its drops and "no change" only, by the logit
+##     over that reduced set. Removed moves get probability exactly 0.
+##
+##   * every other bound is a FIXED PENALTY effect in the objective. Nothing is
+##     removed; the move stays in the choice set with its utility lowered by
+##     the penalty, so its probability is about exp(-20) times that of staying
+##     put. That is the model (soft in principle), so it is reported as such.
+
+## Per toggle of actor i's row, the change in the fixed penalty part of the
+## objective: sum_k theta_k * (s_k(after) - s_k(before)) for actor i.
+.searchnet_bound_penalty_delta <- function(B, i, b) {
+  N <- ncol(B)
+  eff <- b$effects
+  if (is.null(eff) || !nrow(eff)) return(numeric(N))
+  pen <- function(X) {
+    tot <- 0
+    for (k in seq_len(nrow(eff))) {
+      ip <- eff$internal_parameter[k]
+      tot <- tot + eff$theta[k] *
+        .searchnet_bound_stat(eff$shortName[k], if (is.na(ip)) NULL else ip,
+                              eff$theta[k], X)[i]
+    }
+    tot
+  }
+  p0 <- pen(B)
+  vapply(seq_len(N), function(j) {
+    X <- B; X[i, j] <- 1 - X[i, j]
+    pen(X) - p0
+  }, numeric(1))
+}
+
+## Toggles of actor i's row that RSiena's MaxDegree removes from the choice
+## set: every add, once the actor's outdegree is at (or above) the cap. A cap
+## at or above N removes nothing (.searchnet_max_degree() drops it too).
+.searchnet_maxdegree_removed <- function(b_i, b) {
+  N <- length(b_i)
+  cap <- b$actor[["max"]]
+  if (is.na(cap) || cap >= N) return(logical(N))
+  (b_i == 0) & (sum(b_i) >= cap)
+}

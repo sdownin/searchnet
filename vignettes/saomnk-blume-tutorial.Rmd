@@ -247,6 +247,44 @@ speed it up. That setting skips writing the simulated end state back to
 `$bipartite_matrix`, so your "final" density is silently the *starting* density
 and the chain looks like it never mixes at all.
 
+## Is one run long enough? A within-run check
+
+The sweep compares many runs. A single run raises a different question: when
+you read its end state, is that state a draw from the stationary law, or a
+point on the way there? `searchnet_stationarity_check()` reads the run's own
+ministep trajectory (density, the mean of each K degree, mean utility),
+discards a burn-in, and gives each statistic one of four verdicts:
+
+- **trending**: the statistic still drifts after burn-in, so the end state is
+  not yet a stationary draw;
+- **absorbed**: the statistic stopped changing for the last quarter of the
+  run. A frozen run has hit a state it does not leave; its end state is where
+  it stopped, not an equilibrium distribution;
+- **too_short**: too few effective samples to say anything;
+- **stationary**: no drift was detected.
+
+The last verdict needs care. It is a bound, not a proof. The check reports the
+minimum detectable drift (`mdd_sd`, in within-run standard deviations): the
+smallest drift it would have caught with 80 percent power. "Stationary" says
+only that no drift at least that large was found. A short run can pass with a
+bound so wide that it rules out almost nothing, so read `mdd_sd` beside the
+verdict, and lengthen the run if the bound is too coarse for your claim.
+
+```{r stationarity-check}
+env_st <- saomnk_env(M = 5, N = 6, density = 0.4, seed = 11)
+saomnk_run(env_st, saomnk_model(density = -0.6, popularity = 0.1),
+           steps_per_actor = 1000, seed = 11)
+st <- searchnet_stationarity_check(env_st)
+st$results[, c("statistic", "verdict", "ess", "drift_sd", "mdd_sd")]
+st$overall
+```
+
+Each statistic is tested at the stated level without a multiplicity
+correction, and the overall verdict is the worst one, so a run that is in fact
+stationary will sometimes read "trending" on one statistic. Density and the
+mean scope and popularity degrees are rescalings of one another and always
+agree.
+
 ---
 
 # PART 2: For the Intermediate --- "The Logit-Gibbs Connection" {.tabset}

@@ -126,7 +126,7 @@ bridge_params <- saom_to_saomnk(thetas, strict = FALSE)
 
 result <- run_calibrated_counterfactual(
   bridge_env, bridge_params,
-  scenario = get_orm_scenarios()$double_closure,
+  scenario = list(name = "double_closure", modify = list(cycle4 = 2.0)),
   n_reps = 20
 )
 result$comparison    # mean delta K values over replications

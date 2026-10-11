@@ -20,7 +20,7 @@
 ## objective figures are README-only and are built here.
 ##
 ## Styling: light background, Okabe-Ito colors (the colorblind-safe palette
-## the package's own policy and synthetic-control plots use), PNGs at 2x
+## the package's own basin and synthetic-control plots use), PNGs at 2x
 ## (200 dpi) so they stay sharp on high-density displays.
 ##
 ## Figures written:
